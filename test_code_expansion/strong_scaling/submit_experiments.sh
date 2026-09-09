@@ -51,7 +51,7 @@ for p in "${counts[@]}"; do
     mkdir -p "${RUN_ROOT}/p${p}"
     export PROCESS_COUNT="${p}"
     command=("${SBATCH_COMMAND}" --parsable -p "${PARTITION}" -N "${nodes}" -n "${p}"
-             --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "mesh_p${p}"
+             --cpus-per-task "${CPUS_PER_TASK}" --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "mesh_p${p}"
              --output "${RUN_ROOT}/p${p}/job-%j.log" "${batch_extra[@]}" "${SCRIPT_DIR}/run_experiments.sh")
     if [[ "${DRY_RUN}" == 1 ]]; then
         printf '%q ' "${command[@]}"; printf '\n'

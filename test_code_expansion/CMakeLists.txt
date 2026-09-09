@@ -8,16 +8,17 @@ IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
 ENDIF()
 
 PROJECT(HPDS_test)
+SET(NETGEN_INSTALL_DIR "${CMAKE_SOURCE_DIR}/../install" CACHE PATH "Matching Netgen kernel installation")
 
 add_definitions("-g")
 add_definitions("-O3")
 set(CMAKE_CXX_STANDARD 17)
 
-INCLUDE_DIRECTORIES(NG_INCLUDE_DIR nglib.h /vol8/home/hnu_lhz/cjz/NETGEN/install/include)
+INCLUDE_DIRECTORIES(NG_INCLUDE_DIR nglib.h ${NETGEN_INSTALL_DIR}/include)
 
-FIND_PATH(NG_LIBRARY_DIR libnglib.so /vol8/home/hnu_lhz/cjz/NETGEN/install/lib)
+FIND_PATH(NG_LIBRARY_DIR libnglib.so ${NETGEN_INSTALL_DIR}/lib)
 
-SET(OpenCascade_DIR /vol8/home/hnu_lhz/cjz/NETGEN/install/lib/cmake/opencascade)
+SET(OpenCascade_DIR ${NETGEN_INSTALL_DIR}/lib/cmake/opencascade)
 find_package(OpenCascade NAMES OpenCASCADE opencascade  ${OpenCascade_DIR} REQUIRED)
 add_definitions(-DOCCGEOMETRY)
     set(OCC_LIBRARIES
@@ -55,11 +56,11 @@ add_definitions(-DOCCGEOMETRY)
       TKernel
     )
 
-SET(OCC_LIBRARIES_DIR   /vol8/home/hnu_lhz/cjz/NETGEN/install/lib)
-SET(OCC_INLUCDE_DIR     /vol8/home/hnu_lhz/cjz/NETGEN/install/include)
+SET(OCC_LIBRARIES_DIR   ${NETGEN_INSTALL_DIR}/lib)
+SET(OCC_INLUCDE_DIR     ${NETGEN_INSTALL_DIR}/include)
 
-SET(METIS_LIBRARIES_DIR /vol8/home/hnu_lhz/cjz/NETGEN/install/lib)
-SET(METIS_INCLUDE_DIR    /vol8/home/hnu_lhz/cjz/NETGEN/install/include)
+SET(METIS_LIBRARIES_DIR ${NETGEN_INSTALL_DIR}/lib)
+SET(METIS_INCLUDE_DIR    ${NETGEN_INSTALL_DIR}/include)
 
 # SET(MPI_LIBRARIES_DIR   /usr/lib/aarch64-linux-gnu/openmpi/lib/)
 # SET(MPI_INCLUDE_DIR     /usr/lib/aarch64-linux-gnu/openmpi/include/)

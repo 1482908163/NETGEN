@@ -14,6 +14,60 @@
 namespace netgen
 {
 
+// Read-only candidate evaluation: preserve edge order and serial mutation order.
+// Partition by endpoint-star work, not by independent closed volume meshes.
+template <typename TFUNC>
+static void ForVolumeCandidates(const MeshingParameters & mp,
+    const Array<std::tuple<PointIndex,PointIndex>> & edges,
+    const Table<ElementIndex,PointIndex> & incidence, TFUNC evaluate)
+{
+  const int workers = ngcore::TaskManager::GetNumThreads();
+  if (!mp.volume_candidate_schedule || workers<=1 || edges.Size()<256)
+  {
+    ParallelForRange(Range(edges), evaluate, ngcore::TasksPerThread(4));
+    return;
+  }
+  static Timer planning("Volume candidates: cavity planning");
+  static Timer claiming("Volume candidates: dynamic evaluation");
+  planning.Start();
+  // Squared star size approximates the scans and local topology comparisons.
+  // It is a scheduling proxy, not a claimed predictor of generation time.
+  auto work = [&](size_t i) {
+    auto [a,b] = edges[i];
+    const double degree = double(incidence[a].Size()) + double(incidence[b].Size());
+    return std::max(1.0, degree*degree);
+  };
+  double total = 0;
+  for (size_t i=0; i<edges.Size(); ++i) total += work(i);
+  const double target = std::max(1.0,total/(32.0*workers));
+  std::vector<std::pair<size_t,size_t>> chunks;
+  size_t begin=0;
+  double accumulated=0;
+  for (size_t i=0; i<edges.Size(); ++i)
+  {
+    accumulated += work(i);
+    if (accumulated>=target)
+    {
+      chunks.emplace_back(begin,i+1);
+      begin=i+1; accumulated=0;
+    }
+  }
+  if (begin<edges.Size()) chunks.emplace_back(begin,edges.Size());
+  planning.Stop();
+  std::atomic<size_t> next{0};
+  claiming.Start();
+  ngcore::ParallelJob([&](ngcore::TaskInfo) {
+    while (true)
+    {
+      size_t k=next.fetch_add(1,std::memory_order_relaxed);
+      if (k>=chunks.size()) break;
+      auto [first,last]=chunks[k];
+      evaluate(ngcore::Range(first,last));
+    }
+  },workers);
+  claiming.Stop();
+}
+
 bool WrongOrientation(Point<3> p1, Point<3> p2, Point<3> p3, Point<3> p4)
 {
   Vec<3> v1 = p2 - p1;
@@ -374,7 +428,6 @@ void MeshOptimize3d :: CombineImprove ()
   
   int np = mesh.GetNP();
   int ne = mesh.GetNE();
-  int ntasks = 4*ngcore::TaskManager::GetNumThreads();
 
   Array<bool, PointIndex> is_point_removed (np);
   is_point_removed = false;
@@ -405,7 +458,7 @@ void MeshOptimize3d :: CombineImprove ()
   std::atomic<int> improvement_counter(0);
 
   tsearch.Start();
-  ParallelForRange(Range(edges), [&] (auto myrange)
+  ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
     for(auto i : myrange)
     {
@@ -417,7 +470,7 @@ void MeshOptimize3d :: CombineImprove ()
         combine_candidate_edges[index] = make_tuple(d_badness, i);
       }
     }
-  }, ntasks);
+  });
   tsearch.Stop();
 
   auto edges_with_improvement = combine_candidate_edges.Part(0, improvement_counter.load());
@@ -669,7 +722,7 @@ void MeshOptimize3d :: SplitImprove ()
   auto ptmp = mesh.AddPoint( {0,0,0} );
 
   tsearch.Start();
-  ParallelForRange(Range(edges), [&] (auto myrange)
+  ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
     NgArray<PointIndices<3>> locfaces;
 
@@ -683,7 +736,7 @@ void MeshOptimize3d :: SplitImprove ()
         candidate_edges[index] = make_tuple(d_badness, i);
       }
     }
-  }, ngcore::TasksPerThread(4));
+  });
   tsearch.Stop();
 
   auto edges_with_improvement = candidate_edges.Part(0, improvement_counter.load());
@@ -1274,7 +1327,7 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
 
   auto num_elements_before = mesh.VolumeElements().Range().Next();
 
-  ParallelForRange(Range(edges), [&] (auto myrange)
+  ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
     for(auto i : myrange)
     {
@@ -1289,7 +1342,7 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
         candidate_edges[index] = make_tuple(d_badness, i);
       }
     }
-  }, TasksPerThread (4));
+  });
 
   auto edges_with_improvement = candidate_edges.Part(0, improvement_counter.load());
   QuickSort(edges_with_improvement);

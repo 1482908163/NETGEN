@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 
 using namespace std;
 
@@ -15,7 +16,7 @@ int main (int argc, char ** argv)
 
   if (argc < 2)
     {
-      cerr << "use: ng_vol filename" << endl;
+      cerr << "use: ng_vol filename [threads schedule [maxh]]" << endl;
       return 1;
     }
 
@@ -61,12 +62,17 @@ int main (int argc, char ** argv)
 
   // generate volume mesh
   Ng_Meshing_Parameters mp;
-  mp.maxh = 1e6;
+  mp.maxh = argc>=5 ? std::stod(argv[4]) : 1e6;
   mp.fineness = 1;
   mp.second_order = 0;
 
   cout << "start meshing" << endl;
-  Ng_GenerateVolumeMesh (mesh, &mp);
+  double phases[3]={};
+  Ng_Result status = argc>=4
+      ? Ng_GenerateVolumeMeshKernel(mesh,&mp,std::stoi(argv[2]),std::stoi(argv[3]),phases)
+      : Ng_GenerateVolumeMesh(mesh,&mp);
+  if(status!=NG_OK) return 2;
+  cout << "Kernel phases: " << phases[0] << " " << phases[1] << " " << phases[2] << endl;
   cout << "meshing done" << endl;
 
   // volume mesh output

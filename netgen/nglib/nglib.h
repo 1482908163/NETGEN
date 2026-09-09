@@ -468,6 +468,12 @@ NGLIB_API void Ng_RestrictMeshSizeBox (Ng_Mesh * mesh, double * pmin, double * p
 */
 NGLIB_API Ng_Result Ng_GenerateVolumeMesh (Ng_Mesh * mesh, Ng_Meshing_Parameters * mp);
 
+// Scoped volume-kernel experiment; threads>=1, schedule 0=static, 1=cavity.
+// seconds[0..2] receive volume generation, legality repair, optimization times.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel (Ng_Mesh * mesh,
+    Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds);
+
+
 // ------------------------------------------------------------------
 
 

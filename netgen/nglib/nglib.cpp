@@ -20,6 +20,7 @@
 #include <../meshing/soldata.hpp>
 
 #include <filesystem>
+#include <chrono>
 
 #include <nginterface.h>
 
@@ -414,6 +415,45 @@ namespace nglib
 
 
 
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel (Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds)
+   {
+      if (!mesh || !mp || !seconds || threads<1 || (schedule!=0 && schedule!=1))
+         return NG_ERROR;
+      std::fill_n(seconds,3,0.0);
+      try {
+         // The public parameter transfer uses a global; restore it on exit.
+         // Like the existing nglib API, this entry must be called by one host
+         // thread per process. Worker tasks are created inside the kernel.
+         struct Restore {
+            MeshingParameters saved = mparam;
+            ~Restore() { mparam = std::move(saved); }
+         } restore;
+         mp->Transfer_Parameters();
+         MeshingParameters local = mparam;
+         local.parallel_meshing = threads>1;
+         local.nthreads = threads;
+         local.volume_candidate_schedule = schedule;
+         Mesh & m = *reinterpret_cast<Mesh*>(mesh);
+         m.CalcLocalH(local.grading);
+         auto measure = [&](int phase, auto fn) {
+            auto start=std::chrono::steady_clock::now();
+            auto result=fn();
+            seconds[phase]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+            return result;
+         };
+         if (measure(0,[&] { return MeshVolume(local,m); })!=MESHING3_OK)
+            return NG_VOLUME_FAILURE;
+         measure(1,[&] { RemoveIllegalElements(m); return 0; });
+         if (measure(2,[&] { return OptimizeVolume(local,m); })!=MESHING3_OK)
+            return NG_VOLUME_FAILURE;
+         return NG_OK;
+      } catch (const std::exception & error) {
+         std::cerr << "Volume kernel failed: " << error.what() << std::endl;
+         return NG_VOLUME_FAILURE;
+      }
+   }
 
    /* ------------------ 2D Meshing Functions ------------------------- */
    NGLIB_API void Ng_AddPoint_2D (Ng_Mesh * mesh, double * x)

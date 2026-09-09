@@ -179,6 +179,27 @@ def inspect(path, sample_sink=None):
                   cut_before=max(r["metrics"].get("partition_cut_before", 0) for r in rows),
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
+    if int(metadata.get("kernel_threads",0))>0:
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity"):
+            raise ValueError("invalid kernel experiment metadata")
+        for phase in ("generation","repair","optimization"):
+            key="kernel_"+phase+"_seconds"
+            values=[r["metrics"][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 for v in values):
+                raise ValueError("invalid kernel timing")
+            result[key]=max(values)
+    if metadata.get("feature_schema")=="mesh_comm_v1":
+        if (metadata["algorithm"] not in ("baseline","sparse") or
+            metadata.get("cost_model")!="none" or metadata.get("balance_method")!="none" or
+            int(metadata.get("mesh_tasks",-1))!=0 or int(metadata.get("active_workers",0))!=n):
+            raise ValueError("invalid communication baseline configuration")
+        for r in rows:
+            if any(r["stages"].get(s,{}).get("calls",0)!=1 for s in COMPUTE) or r["metrics"].get("local_volume_elements_before_adjacency",0)<=0:
+                raise ValueError("communication baseline requires one complete local mesh per rank")
+            if any(s.startswith(("task_","partition_cost_","partition_node_mapping")) for s in r["stages"]):
+                raise ValueError("historical balancing entered communication baseline")
+        result.update(compute_max_seconds=max(compute),compute_mean_seconds=mean(compute),
+                      vertex_wait_mean_seconds=mean(waiting) if split else None)
     if metadata.get("feature_schema") in ("mesh_phase_v2", "mesh_phase_v3"):
         # Validate even during --finish-run, before SUCCESS is written.
         samples=[]
@@ -362,13 +383,60 @@ def write_overview(root, runs, summaries, errors):
     (root/"RESULT_SUMMARY.txt").write_text("\n".join(lines)+"\n")
     return expected, complete
 
+def kernel_overview(root, ranks):
+    """Variant runs stay isolated; this summary never adds stage maxima."""
+    report=[];issues=[]
+    for threads in os.environ.get("KERNEL_THREAD_COUNTS","1 2 4 8 16").split():
+        for scheduler in os.environ.get("KERNEL_SCHEDULERS","static cavity").split():
+            folder=root/f"kernel_{scheduler}_t{threads}"/f"p{ranks}"
+            try:
+                status=(folder/"analysis/issues.txt").read_text().strip()
+                if status: issues.append(f"{folder.name}/{scheduler}/t{threads}: {status}")
+                with (folder/"analysis/summary.csv").open() as stream:
+                    rows=list(csv.DictReader(stream))
+                if not rows: raise ValueError("empty summary")
+                for row in rows:
+                    report.append(dict(scheduler=scheduler,threads=int(threads),
+                        algorithm=row['algorithm'],timing=row['timing'],seed=row['partition_seed'],
+                        repeats=int(row['successful_repeats']),core_seconds=float(row['core_median']),
+                        volume_elements=float(row['volume_elements_sum_median']),
+                        generation_seconds=float(row['kernel_generation_seconds_median']),
+                        repair_seconds=float(row['kernel_repair_seconds_median']),
+                        optimization_seconds=float(row['kernel_optimization_seconds_median'])))
+            except (OSError,ValueError,KeyError) as error:
+                issues.append(f"{folder}: {error}")
+    controls={(r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report if r['scheduler']=='static'}
+    for row in report:
+        control=controls.get((row['threads'],row['algorithm'],row['timing'],row['seed']))
+        row['speedup_vs_static']=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
+        if control and control['volume_elements']!=row['volume_elements']:
+            issues.append(f"t{row['threads']} {row['scheduler']}: volume count differs from static")
+    out=root/f"p{ranks}";out.mkdir(exist_ok=True)
+    write_csv(out/'kernel_summary.csv',report)
+    lines=["内核协作原型汇总",f"进程数: {ranks}; 异常项: {len(issues)}",
+           "scheduler threads core/s generation/s optimization/s speedup_vs_static"]
+    for row in report:
+        lines.append(f"{row['scheduler']} {row['threads']} {row['core_seconds']:.6f} "
+                     f"{row['generation_seconds']:.6f} {row['optimization_seconds']:.6f} "
+                     f"{compact(row['speedup_vs_static'])}")
+    lines += ["同线程 static/cavity 对照用于判断调度净收益；跨线程为固定预留核数的线程扩展。",
+              "单元数相同不代替几何、边界和质量核对。",*issues]
+    (out/'RESULT_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
+    if issues: raise SystemExit(1)
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
     parser.add_argument("--require-calibration",action="store_true",help="采样完整后还必须通过分区多样性与节点轮换检查")
+    parser.add_argument("--kernel-overview",action="store_true")
+    parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.kernel_overview:
+        if not args.kernel_ranks: parser.error("--kernel-ranks required")
+        kernel_overview(args.root,args.kernel_ranks)
+        return
     if args.finish_run:
         try:
             with run_guard(args.root) as acquired:
@@ -469,7 +537,7 @@ def main():
     write_csv(output/"summary.csv", summaries)
     (output/"issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))
     sample_stream.close()
-    if any("compute_max_seconds" in r and "task_count" not in r for r in runs):
+    if any("phase_0_max_seconds" in r for r in runs):
         os.replace(sample_tmp,output/"model_samples.csv.gz")
     else:
         sample_tmp.unlink()

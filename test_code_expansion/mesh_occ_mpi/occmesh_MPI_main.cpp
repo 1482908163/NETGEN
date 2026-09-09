@@ -38,6 +38,8 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static或cavity候选调度" << endl <<
+         "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
          "--cost-weights <a,b,c,d> : 四阶段代价权重，默认1,1,1,1" << endl <<
@@ -170,10 +172,14 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--profile-natural")) {
             profile_enabled = true; profile_split = false;
         }
+        else if(!strcmp(argv[i],"--communication-only")) {
+            mesh_research::options().communication_only = true;
+        }
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") ||
+                !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
                 !strcmp(argv[i],"--phase-model") || !strcmp(argv[i],"--min-gain-seconds") ||
@@ -189,7 +195,13 @@ int main(int argc, char **argv) {
             try {
                 auto &research=mesh_research::options();
                 std::size_t consumed=0;
-                if(option=="--algorithm") research.algorithm=value;
+                if(option=="--kernel-threads") {
+                    research.kernel_threads=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.kernel_threads<0)
+                        throw std::runtime_error("invalid kernel thread count");
+                }
+                else if(option=="--kernel-scheduler") research.kernel_scheduler=value;
+                else if(option=="--algorithm") research.algorithm=value;
                 else if(option=="--mesh-tasks") {
                     research.mesh_tasks=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.mesh_tasks<0)throw std::runtime_error("invalid task count");
@@ -289,6 +301,18 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
+    if((research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity") ||
+       (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
+       (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
+        if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
+        MPI_Abort(MPI_COMM_WORLD,2);
+    }
+    if(research.communication_only && (research.balance() || research.mesh_tasks>0 ||
+       !research.model_path.empty() || !research.resource_path.empty() || !research.capacity_path.empty() ||
+       !research.reference_path.empty() || research.preflight_parts>0 || research.rank_shift!=0)) {
+        if(id==0)std::cerr<<"通信基线仅允许 baseline/sparse，不使用任务、模型、预检或进程重映射。"<<std::endl;
+        MPI_Abort(MPI_COMM_WORLD,2);
+    }
     if(research.mesh_tasks>0 && (p<2 || research.mesh_tasks<p-1 || research.rank_shift!=0 ||
        !research.model_path.empty() || !research.resource_path.empty() || !research.capacity_path.empty() ||
        !research.reference_path.empty() || research.preflight_parts>0)) {
@@ -370,23 +394,25 @@ int main(int argc, char **argv) {
     profiler.add_metadata("adjacency_enabled", isComputeAdj ? "true" : "false");
     profiler.add_metadata("save_vol", save_vol ? "true" : "false");
     profiler.add_metadata("profiler_schema_version", "research_1");
-    profiler.add_metadata("feature_schema", research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3");
+    profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
+    profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
+    profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
     profiler.add_metadata("active_workers",std::to_string(research.mesh_tasks>0?p-1:p));
     profiler.add_metadata("partition_seed",std::to_string(research.partition_seed));
     profiler.add_metadata("partition_variant",research.partition_variant);
     profiler.add_metadata("rank_shift",std::to_string(research.rank_shift));
-    profiler.add_metadata("sampling_protocol",research.reference_path.empty()?"legacy":"partition_sampling_v1");
+    profiler.add_metadata("sampling_protocol",research.communication_only?"communication_baseline_v1":(research.reference_path.empty()?"legacy":"partition_sampling_v1"));
     profiler.add_metadata("algorithm",research.algorithm);
     profiler.add_metadata("timing_mode",profile_split?"split":"natural");
     profiler.add_metadata("timing_boundary","post_coarse_barrier_to_adjacency_complete");
     profiler.add_metadata("core_only",profile_core_only?"true":"false");
     profiler.add_metadata("partition_contract",research.mesh_tasks>0?"fixed closed tasks; rank zero dispatcher":"one partition per MPI rank");
-    profiler.add_metadata("cost_model",research.mesh_tasks>0?"none_task_queue":(!research.resource_path.empty()?"phase_seconds_resource":
+    profiler.add_metadata("cost_model",research.communication_only?"none":research.mesh_tasks>0?"none_task_queue":(!research.resource_path.empty()?"phase_seconds_resource":
         (research.model_path.empty()?"geometric_proxy":"phase_seconds")));
-    profiler.add_metadata("balance_method",research.mesh_tasks>0?"task_queue":(research.resource_path.empty()?"boundary":"node_mapping"));
+    profiler.add_metadata("balance_method",research.communication_only?"none":research.mesh_tasks>0?"task_queue":(research.resource_path.empty()?"boundary":"node_mapping"));
     for(const char *key:{"MESH_INPUT_SHA256","MESH_BINARY_SHA256","MESH_SOURCE_REVISION","MESH_MODEL_SHA256","EXPERIMENT_STAGE",
-                        "MESH_PARTITION_SIGNATURE","MESH_PREFLIGHT_SHA256","RANKS_PER_NODE","MESH_CAPACITY_SHA256"}) {
+                        "MESH_PARTITION_SIGNATURE","MESH_PREFLIGHT_SHA256","RANKS_PER_NODE","MESH_CAPACITY_SHA256","MESH_KERNEL_SHA256","CPUS_PER_TASK"}) {
         const char *v=std::getenv(key);profiler.add_metadata(key,v?v:"unset");
     }
     profiler.add_metadata("cut_growth",std::to_string(research.cost.cut_growth));
@@ -726,7 +752,16 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
-            const auto local_status=nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
+            double kernel_seconds[3]={};
+            const auto local_status=research.kernel_threads>0
+                ? nglib::Ng_GenerateVolumeMeshKernel(submesh,&nmp,research.kernel_threads,
+                    research.kernel_scheduler=="cavity"?1:0,kernel_seconds)
+                : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
+            if(research.kernel_threads>0) {
+                profiler.set_metric("kernel_generation_seconds",kernel_seconds[0]);
+                profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
+                profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);
+            }
             if(local_status!=nglib::NG_OK) {
                 std::cerr<<"局部体网格生成失败，进程 "<<id<<std::endl;
                 MPI_Abort(MPI_COMM_WORLD,3);

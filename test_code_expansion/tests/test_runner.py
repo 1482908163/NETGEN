@@ -426,8 +426,63 @@ rows=[]""")
         for stage in ['part_face_create','surface_refine','local_volume_mesh']:
             stages[stage]=dict(seconds=.1*completed,calls=completed)
     rows.append(dict(rank=rank""")
-    modern.write_text(task_mock+"\n# mesh_tasks_v1 --mesh-tasks\n")
+    task_mock=task_mock.replace("rows=[]", """if '--communication-only' in args:
+    assert not any(flag in args for flag in ['--mesh-tasks','--phase-model','--resource-model',
+        '--rank-capacities','--partition-reference','--preflight-parts','--balance-sweeps'])
+    assert shift==0 and value('--algorithm') in ('baseline','sparse')
+    metadata.update(feature_schema='mesh_comm_v1',sampling_protocol='communication_baseline_v1',
+        balance_method='none',cost_model='none',mesh_tasks='0',active_workers=str(p))
+rows=[]""")
+    modern.write_text(task_mock+"\n# mesh_tasks_v1 --mesh-tasks mesh_comm_v1 --communication-only\n")
+    kernel_mock=modern.read_text().replace("rows=[]", """if '--kernel-threads' in args:
+    metadata.update(kernel_threads=value('--kernel-threads'),kernel_scheduler=value('--kernel-scheduler'))
+rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kernel-threads' in args:
+        metrics.update(kernel_generation_seconds=.1,kernel_repair_seconds=.1,kernel_optimization_seconds=.1)
+    stages={s:dict(seconds=.1,calls=1)""")
+    modern.write_text(kernel_mock)
     modern.chmod(0o755)
+    # 通信默认路径：同一入口、无模型/任务、压缩后续跑仍识别成功结果。
+    communication=dict(env,EXPERIMENT_STAGE='communication',BALANCE_METHOD='none',PROCESS_COUNT='3',
+        RANKS_PER_NODE='1',REPEATS='1',WARMUPS='1',ALGORITHMS='baseline sparse',TIMING_MODES='natural split',
+        PARTITION_SEEDS='-1',CALIBRATION_ROOT='/does/not/exist',
+        RUN_ROOT=str(tmp/'communication_results'),BINARY=str(modern),MOCK_AUDIT=str(tmp/'communication_audit'))
+    comm_run=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=communication,
+                            capture_output=True,text=True)
+    assert comm_run.returncode==0,(comm_run.stdout,comm_run.stderr)
+    comm_dir=tmp/'communication_results/p3'
+    assert not (comm_dir/'partition_preflight').exists() and not (comm_dir/'capacity_warmup').exists()
+    assert not (comm_dir/'analysis/model_samples.csv.gz').exists()
+    assert not (comm_dir/'analysis/issues.txt').read_text()
+    assert len(list(csv.DictReader((comm_dir/'analysis/runs.csv').open())))==4
+    assert len((tmp/'communication_audit').read_text().splitlines())==8
+    comm_resume=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=communication,
+                               capture_output=True,text=True)
+    assert comm_resume.returncode==0,(comm_resume.stdout,comm_resume.stderr)
+    assert len((tmp/'communication_audit').read_text().splitlines())==8
+    # 内核矩阵共用唯一入口；输出隔离，固定资源，压缩续跑不重复执行。
+    kernel_lib=tmp/'kernel_lib';kernel_lib.mkdir();(kernel_lib/'libnglib.so').write_text('mock kernel')
+    kernel_env=dict(communication,EXPERIMENT_STAGE='kernel',EXPERIMENT_PRESET='kernel',
+        KERNEL_THREAD_COUNTS='1 2',KERNEL_SCHEDULERS='static cavity',CPUS_PER_TASK='2',
+        NETGEN_INSTALL_LIB=str(kernel_lib),ALGORITHMS='sparse',TIMING_MODES='natural',
+        RUN_ROOT=str(tmp/'kernel_results'),MOCK_AUDIT=str(tmp/'kernel_audit'))
+    kernel_run=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_env,capture_output=True,text=True)
+    assert kernel_run.returncode==0,(kernel_run.stdout,kernel_run.stderr)
+    kernel_report=list(csv.DictReader((tmp/'kernel_results/p3/kernel_summary.csv').open()))
+    assert len(kernel_report)==4 and {r['threads'] for r in kernel_report}=={'1','2'}
+    assert all(float(row['speedup_vs_static'])==1 for row in kernel_report)
+    assert len((tmp/'kernel_audit').read_text().splitlines())==8
+    kernel_resume=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_env,capture_output=True,text=True)
+    assert kernel_resume.returncode==0,(kernel_resume.stdout,kernel_resume.stderr)
+    assert len((tmp/'kernel_audit').read_text().splitlines())==8
+    kernel_invalid=dict(kernel_env,KERNEL_THREAD_COUNTS='3',RUN_ROOT=str(tmp/'kernel_invalid'))
+    assert subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_invalid,capture_output=True).returncode==2
+    kernel_submit=dict(submit_base,EXPERIMENT_PRESET='kernel',EXPERIMENT_STAGE='kernel',
+        PROCESS_COUNTS='1 2 4',RANKS_PER_NODE='1',CPUS_PER_TASK='16',RUN_ROOT=str(tmp/'kernel_submitted'))
+    preview=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_submit,capture_output=True,text=True)
+    assert preview.returncode==0 and preview.stdout.count('--cpus-per-task 16')==3,preview.stderr
+    invalid_comm=dict(communication,ALGORITHMS='combined',RUN_ROOT=str(tmp/'invalid_comm'))
+    rejected=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=invalid_comm,capture_output=True,text=True)
+    assert rejected.returncode==2 and not (tmp/'invalid_comm').exists()
     calibration=dict(env,EXPERIMENT_STAGE='calibration',PROCESS_COUNT='3',RANKS_PER_NODE='1',
         REPEATS='3',WARMUPS='1',ALGORITHMS='sparse',PARTITION_SEEDS='-1 17 41',
         RUN_ROOT=str(tmp/'modern_results'),BINARY=str(modern),MOCK_AUDIT=str(tmp/'modern_audit'))

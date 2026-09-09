@@ -10,21 +10,39 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   kernel     : 1 节点、1 进程、预留16核，比较内核候选调度
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-production}"
-# 本轮默认任务调度：固定封闭子域、按需领取，不训练模型或额外参考预热。
-# boundary / node_mapping 仅保留历史实验的复现入口。
-EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-evaluation}"
-BALANCE_METHOD="${BALANCE_METHOD:-task_queue}"
+# 当前默认：一进程一分区，只比较全收集和已验证的稀疏通信。
+# boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
+default_stage=communication
+[[ "${EXPERIMENT_PRESET}" != kernel ]] || default_stage=kernel
+EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
+# 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
+KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-1 2 4 8 16}"
+KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static cavity}"
+KERNEL_THREADS="${KERNEL_THREADS:-0}"
+KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-static}"
+default_cpus=1;default_rpn=16
+[[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
+CPUS_PER_TASK="${CPUS_PER_TASK:-${default_cpus}}"
+export CPUS_PER_TASK KERNEL_THREADS KERNEL_SCHEDULER KERNEL_THREAD_COUNTS KERNEL_SCHEDULERS
+BALANCE_METHOD="${BALANCE_METHOD:-none}"
 CALIBRATION_ROOT="${CALIBRATION_ROOT:-${SCRIPT_DIR}/../strong_scaling_results/mesh_algorithms_20260908-135236}"
 MIN_GAIN_SECONDS="${MIN_GAIN_SECONDS:-0.35}"
 MIN_GAIN_FRACTION="${MIN_GAIN_FRACTION:-0.05}"
 CLOSURE_GROWTH="${CLOSURE_GROWTH:-0}"
 SEARCH_SECONDS="${SEARCH_SECONDS:-0.35}"
 case "${EXPERIMENT_STAGE}" in
+    communication|kernel)
+        default_algorithms="baseline sparse"
+        default_timings="natural split"
+        default_seeds="-1"
+        default_repeats=5
+        ;;
     calibration)
         default_algorithms="sparse"
         default_timings="natural"
@@ -38,9 +56,18 @@ case "${EXPERIMENT_STAGE}" in
         [[ "${EXPERIMENT_STAGE}" == evaluation && "${BALANCE_METHOD}" != boundary ]] && default_seeds="41"
         default_repeats=5
         ;;
-    *) echo "EXPERIMENT_STAGE must be calibration, evaluation or legacy" >&2; exit 2 ;;
+    *) echo "EXPERIMENT_STAGE must be kernel, communication, calibration, evaluation or legacy" >&2; exit 2 ;;
 esac
 case "${EXPERIMENT_PRESET}" in
+    kernel)
+        default_tasks=0
+        default_process_counts="1"
+        default_levels=1
+        default_refines=1
+        default_verify_faces=0
+        default_algorithms="sparse"
+        default_timings="natural"
+        ;;
     pilot)
         default_tasks=128
         default_process_counts="16 32 64"
@@ -55,10 +82,10 @@ case "${EXPERIMENT_PRESET}" in
         default_refines=3
         default_verify_faces=0
         ;;
-    *) echo "EXPERIMENT_PRESET must be pilot or production" >&2; exit 2 ;;
+    *) echo "EXPERIMENT_PRESET must be kernel, pilot or production" >&2; exit 2 ;;
 esac
 
-TASK_COUNT="${TASK_COUNT:-${default_tasks}}"  # 所有进程规模使用同一任务数。
+TASK_COUNT="${TASK_COUNT:-${default_tasks}}"  # 仅历史 task_queue 使用；通信基线忽略。
 TASK_CUT_GROWTH="${TASK_CUT_GROWTH:-0.10}"  # 跨节点粗面切分相对固定分配最多增加 10%。
 PROCESS_COUNTS="${PROCESS_COUNTS:-${default_process_counts}}"
 ALGORITHMS="${ALGORITHMS:-${default_algorithms}}"
@@ -66,10 +93,10 @@ TIMING_MODES="${TIMING_MODES:-${default_timings}}"
 # -1 保留原输入顺序；17/41 用于固定粗单元重排，并检查实际归属确实不同。
 PARTITION_SEEDS="${PARTITION_SEEDS:-${default_seeds}}"
 default_variant=cell_order_v1
-[[ "${EXPERIMENT_STAGE}" == legacy ]] && default_variant=metis_seed
+[[ "${EXPERIMENT_STAGE}" == legacy || "${EXPERIMENT_STAGE}" == communication || "${EXPERIMENT_STAGE}" == kernel ]] && default_variant=metis_seed
 PARTITION_VARIANT="${PARTITION_VARIANT:-${default_variant}}"
 PLACEMENT_ROTATION="${PLACEMENT_ROTATION:-1}"
-RANKS_PER_NODE="${RANKS_PER_NODE:-16}"
+RANKS_PER_NODE="${RANKS_PER_NODE:-${default_rpn}}"
 REPEATS="${REPEATS:-${default_repeats}}"
 WARMUPS="${WARMUPS:-1}"
 LEVELS="${LEVELS:-${default_levels}}"
@@ -98,6 +125,28 @@ export BALANCE_SWEEPS CUT_GROWTH COST_WEIGHTS TIMEOUT_SECONDS START_DELAY_SECOND
 export PARTITION SBATCH_COMMAND SBATCH_EXTRA_ARGS MPI_LAUNCHER MPI_EXTRA_ARGS DRY_RUN INPUT_PATH
 export EXPERIMENT_STAGE CALIBRATION_ROOT MIN_GAIN_SECONDS MIN_GAIN_FRACTION CLOSURE_GROWTH
 export PARTITION_SEEDS SEARCH_SECONDS
+[[ "${CPUS_PER_TASK}" =~ ^[1-9][0-9]*$ && "${KERNEL_THREADS}" =~ ^[0-9]+$ ]] || exit 2
+(( KERNEL_THREADS<=CPUS_PER_TASK )) || { echo "内核线程数超过每进程预留核数。" >&2;exit 2; }
+if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
+    for threads in ${KERNEL_THREAD_COUNTS}; do
+        [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
+    done
+    for scheduler in ${KERNEL_SCHEDULERS}; do
+        [[ "$scheduler" == static || "$scheduler" == cavity ]] || { echo "内核调度仅支持 static/cavity。" >&2;exit 2; }
+    done
+    [[ -n "${KERNEL_THREAD_COUNTS}" && -n "${KERNEL_SCHEDULERS}" ]] || exit 2
+fi
+if [[ "${EXPERIMENT_STAGE}" == communication || "${EXPERIMENT_STAGE}" == kernel ]]; then
+    [[ "${BALANCE_METHOD}" == none ]] || { echo "通信基线要求 BALANCE_METHOD=none。" >&2;exit 2; }
+    for algorithm in ${ALGORITHMS//,/ }; do
+        [[ "$algorithm" == baseline || "$algorithm" == sparse ]] || {
+            echo "通信基线仅允许 baseline sparse；历史均衡需显式选择 evaluation 和对应方法。" >&2;exit 2;
+        }
+    done
+    PLACEMENT_ROTATION=0
+elif [[ "${BALANCE_METHOD}" == none ]]; then
+    echo "历史实验需在统一配置区显式指定 BALANCE_METHOD。" >&2;exit 2
+fi
 if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     [[ "${EXPERIMENT_STAGE}" == evaluation && "${TASK_COUNT}" =~ ^[1-9][0-9]*$ ]] || {
         echo "任务调度使用 evaluation，TASK_COUNT 为正整数。" >&2;exit 2;
@@ -110,6 +159,23 @@ export PARTITION_VARIANT PLACEMENT_ROTATION BALANCE_METHOD TASK_COUNT TASK_CUT_G
 if [[ "${MESH_EXPERIMENT_WORKER:-0}" != 1 ]]; then
     export MESH_EXPERIMENT_DRIVER_READY=1
     exec "${SCRIPT_DIR}/submit_experiments.sh" "$@"
+fi
+
+if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
+    kernel_root="${RUN_ROOT:?}";kernel_failures=0
+    mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
+    for threads in ${KERNEL_THREAD_COUNTS}; do
+      for scheduler in ${KERNEL_SCHEDULERS}; do
+        variant="${kernel_root}/kernel_${scheduler}_t${threads}"
+        if ! EXPERIMENT_STAGE=communication KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
+             RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
+            kernel_failures=$((kernel_failures+1))
+        fi
+      done
+    done
+    python3 "${SCRIPT_DIR}/analyze_results.py" "$kernel_root" --kernel-overview --kernel-ranks "$PROCESS_COUNT"
+    ((kernel_failures==0)) || exit 1
+    exit 0
 fi
 
 [[ -r "${SCRIPT_DIR}/cluster_env.sh" && -r "${SCRIPT_DIR}/analyze_results.py" ]] || {
@@ -153,7 +219,7 @@ if [[ "${EXPERIMENT_STAGE}" == evaluation && "${BALANCE_METHOD}" == node_mapping
         echo "节点映射本轮固定使用留出分区 41；-1/17 已用于训练。" >&2;exit 2;
     }
 fi
-[[ "${BALANCE_METHOD}" == node_mapping || "${BALANCE_METHOD}" == boundary || "${BALANCE_METHOD}" == task_queue ]] || exit 2
+[[ "${BALANCE_METHOD}" == none || "${BALANCE_METHOD}" == node_mapping || "${BALANCE_METHOD}" == boundary || "${BALANCE_METHOD}" == task_queue ]] || exit 2
 read -r -a mpi_extra <<< "${MPI_EXTRA_ARGS}"
 for a in "${algorithms[@]}"; do
     case "$a" in baseline|balance|sparse|combined) ;; *) echo "Unknown algorithm: $a" >&2; exit 2;; esac
@@ -171,9 +237,19 @@ done
 # revisions.  That produces ordinary mesh artifacts but no rank profile, and
 # the failure would otherwise be discovered only after many expensive runs.
 binary_error=""
+if ((KERNEL_THREADS>0)); then
+    [[ -r "${NETGEN_INSTALL_LIB}/libnglib.so" ]] || { echo "缺少本次内核库，请先运行 build_project.sh。" >&2;exit 2; }
+    MESH_KERNEL_SHA256="$(sha256sum "${NETGEN_INSTALL_LIB}/libnglib.so" | cut -d ' ' -f1)"
+    export MESH_KERNEL_SHA256
+fi
 markers=("--profile-core-only" "--algorithm" "research_1" "global_id_bits" "mesh_phase_v3")
-[[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
+if [[ "${EXPERIMENT_STAGE}" == communication ]]; then
+    markers+=("mesh_comm_v1" "--communication-only")
+else
+    [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
+fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
+((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
 for marker in "${markers[@]}"; do
     if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then
@@ -234,18 +310,26 @@ failure_file="${pdir}/failures.log"
 launch=("${MPI_LAUNCHER}" "${mpi_extra[@]}" -n "${PROCESS_COUNT}")
 case "$(basename "${MPI_LAUNCHER}")" in yhrun|srun)
     launch+=(-N "$(( (PROCESS_COUNT+RANKS_PER_NODE-1)/RANKS_PER_NODE ))")
+    ((KERNEL_THREADS==0)) || launch+=(--cpus-per-task "${CPUS_PER_TASK}" --cpu-bind cores)
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || launch+=(--ntasks-per-node "${RANKS_PER_NODE}" --distribution block)
     ;;
 esac
 common=(-i "${INPUT_PATH}" -l "${LEVELS}" -r "${REFINES}" --maxh "${MAXH}" --minh "${MINH}" -adj
-        --balance-sweeps "${BALANCE_SWEEPS:-4}" --cut-growth "${CUT_GROWTH:-0.05}" --cost-weights "${COST_WEIGHTS:-1,1,1,1}"
-        --partition-variant "${PARTITION_VARIANT}"
-        "${model_args[@]}")
+        --partition-variant "${PARTITION_VARIANT}")
+if [[ "${EXPERIMENT_STAGE}" == communication ]]; then
+    common+=(--communication-only)
+else
+    common+=(--balance-sweeps "${BALANCE_SWEEPS}" --cut-growth "${CUT_GROWTH}" --cost-weights "${COST_WEIGHTS}"
+             "${model_args[@]}")
+fi
+if ((KERNEL_THREADS>0)); then
+    common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
+fi
 if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2
@@ -262,7 +346,7 @@ preflight_failed() {
     cat "${pdir}/RESULT_SUMMARY.txt" >&2
     exit 2
 }
-if [[ "${EXPERIMENT_STAGE}" != legacy && "${BALANCE_METHOD}" != task_queue ]]; then
+if [[ "${EXPERIMENT_STAGE}" != legacy && "${EXPERIMENT_STAGE}" != communication && "${BALANCE_METHOD}" != task_queue ]]; then
     mkdir -p "${preflight}"
     preflight_check=(--levels "${LEVELS}" --refines "${REFINES}" --target-ranks "${PROCESS_COUNT}"
         --input-sha "${MESH_INPUT_SHA256}" --binary-sha "${MESH_BINARY_SHA256}"
@@ -324,7 +408,9 @@ fi
 # Correctness checks deliberately cannot be combined with timing collection.
 if [[ "${VERIFY_FACES}" == 1 ]]; then
   for seed in "${seeds[@]}"; do
-    for a in sparse combined; do
+    verify_algorithms="sparse combined"
+    [[ "${EXPERIMENT_STAGE}" != communication ]] || verify_algorithms="sparse"
+    for a in ${verify_algorithms}; do
         checkdir="${pdir}/verify_${a}_seed${seed}"
         mkdir -p "${checkdir}"
         timeout "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${common[@]}" \
@@ -352,7 +438,7 @@ for ((rep=1-WARMUPS;rep<=REPEATS;++rep)); do
   for ((s=0;s<${#seeds[@]};++s)); do
     seed="${seeds[$(( (s+rep+WARMUPS-1)%${#seeds[@]} ))]}"
     reference_args=()
-    if [[ "${EXPERIMENT_STAGE}" != legacy && "${BALANCE_METHOD}" != task_queue ]]; then
+    if [[ "${EXPERIMENT_STAGE}" != legacy && "${EXPERIMENT_STAGE}" != communication && "${BALANCE_METHOD}" != task_queue ]]; then
         reference_args=(--partition-reference "${preflight}/seed_${seed}.labels")
         export MESH_PARTITION_SIGNATURE="$(python3 - "${preflight}/manifest.json" "${seed}" <<'SIGNATURE'
 import json,sys

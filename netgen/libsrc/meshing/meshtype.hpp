@@ -1611,6 +1611,7 @@ namespace netgen
     ///
     bool autozrefine = false;
 
+    int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;
     int nthreads = 4;
 
