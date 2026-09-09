@@ -1,0 +1,47 @@
+build/
+result/
+inputData/
+install-test/
+err/
+*.o
+*.pyc
+__pycache__/
+*.so
+*.a
+*.exe
+*.log
+*.tmp
+.vscode/
+
+# General logs（普通日志）
+*.log
+
+# Strong-scaling large outputs（强扩展大体积数据）
+
+# 网格和应用输出，通常最大
+strong_scaling_results/**/application_output/
+
+# 每次重复实验的逐-rank 原始数据体积很大；保留 analysis/*.csv、
+# 第二轮 analysis/model_samples.csv.gz 和 models/，供分析及冻结模型复现。
+strong_scaling_results/**/rank_profiles.jsonl
+strong_scaling_results/**/rank_profiles.jsonl.gz
+
+# 单次运行日志和状态哨兵只用于集群现场排错。
+strong_scaling_results/**/run.log.gz
+strong_scaling_results/**/.run.lock
+strong_scaling_results/**/RUNNING
+strong_scaling_results/**/SUCCESS
+
+# 网格、划分和正确性验证输出可由同一配置重新生成。
+strong_scaling_results/**/mesh/
+strong_scaling_results/**/verify_*/
+
+# 启动器、调度器和页缓存日志
+strong_scaling_results/**/launcher_logs/
+strong_scaling_results/**/scheduler_logs/
+strong_scaling_results/**/page_cache_logs/
+strong_scaling_results/**/build_logs/
+
+# Slurm 标准输出和错误文件
+strong_scaling_results/**/*.out
+strong_scaling_results/**/*.err
