@@ -15,7 +15,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-production}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-kernel}"
 # 当前默认：一进程一分区，只比较全收集和已验证的稀疏通信。
 # boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
 default_stage=communication
