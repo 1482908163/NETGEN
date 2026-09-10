@@ -23,7 +23,8 @@ default_stage=communication
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4 16}"
-KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static repair frontier}"
+# 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
+KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static repair}"
 KERNEL_THREADS="${KERNEL_THREADS:-0}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-static}"
 default_cpus=1;default_rpn=16

@@ -6,15 +6,15 @@
 第二轮 v2 校准已经完成；尾部预测不足的分析见 [校准结果](../docs/experiments/20260907_calibration.md)。随后 v3 的36次正式采样也已完成，但三个种子的分区特征重复，不能进入评价，见 [v3 实验分析](../docs/experiments/20260907_v3_calibration.md)。
 第四次四组评价已经完成：160次正式运行成功，稀疏通信收益得到再次验证，但节点组映射没有兑现预测中的显著净收益。8192进程组合相对仅稀疏自然核心仅下降1.44%，屏障拆分模式略慢。原因与后续主线见 [第四次实验结果](../docs/experiments/20260908_iteration4_results.md)。本次已接入面依赖约束的封闭子域任务调度，方法与判据见 [任务调度版本](../docs/experiments/20260909_task_scheduling.md)。任务版160次正式运行已完成：仅8192进程动态调度改善8.85%，其余规模退化，且整体慢于旧稀疏流程；详见 [任务实验及初始版本对照](../docs/experiments/20260909_task_results.md)。任务版已退出默认配置。当前固化一进程一分区的通信基线，停止继续调整失败的均衡方案；见 [固化说明与替代算法研究](../docs/experiments/20260909_sparse_baseline_and_new_directions.md)。
 
-## 当前内核第二轮：并行修复与邻域限制
+## 当前状态：固化并行修复，研究节点内资源协作
 
-上一轮没有证明稳定整体收益，本轮方法和结果归档见 [内核结果与修复算法](../docs/experiments/20260910_kernel_results_and_repair.md)。
+`mesh_algorithms_20260910-201124` 已完成。并行修复使本批六组自然核心时间下降约31.4%～46.9%；邻域限制相对并行修复慢约1.2%～2.9%，退出默认方案。完整数据、适用边界和新研究设计见 [修复结果与资源协作研究](../docs/experiments/20260910_repair_baseline_and_cooperation.md)。
 
-在 `NETGEN/test_code_expansion` 执行 `bash build_project.sh`，它会重新编译内核与应用并安装到原 `NETGEN/install`；随后进入 `strong_scaling`，执行 `bash run_experiments.sh`。默认已是 kernel（内核实验），不需要再切换预设。
+已验证的增强基线是 sparse（稀疏通信）＋repair（并行修复）。原 `run_experiments.sh` 仍为统一入口；当前默认保留 static（原流程）与 repair 对照，4/16线程、每节点1进程并预留16核、1/4/16节点，其余计时及重复规则不变。frontier（邻域限制）只供显式复现，旧实验归档不改写。
 
-默认1/4/16节点，每节点1进程，每进程固定预留16核；使用4/16线程，对比 static（原流程）、repair（并行修复）、frontier（邻域限制修复），分别记录 natural（自然执行）与 split（等待拆分），每组1次预热、5次正式。先看本批结果根目录各 `p*/RESULT_SUMMARY.txt`，再看 `kernel_summary.csv`。所有参数继续只在原入口顶部修改。
+**当前入口仍是已完成的进程内部修复对照，不是跨进程资源协作实验。无需为本次文档和默认配置更新重编内核或重复运行已有实验。** 下一种算法尚未接入运行时；设计中的4进程/节点配置也未设为默认，避免提交没有资源协作的伪对照。
 
-新旧策略在同进程、同线程、同预留核数下比较。内部子阶段计时有嵌套，不能相加；单元数量变化会标记异常。三种规模合计180次正式、36次预热。尚无本轮集群收益结论。
+需要重建代码时，仍在 `NETGEN/test_code_expansion` 执行 `bash build_project.sh`，安装到原路径，然后进入 `strong_scaling` 执行 `bash run_experiments.sh`。结果优先看各 `p*/RESULT_SUMMARY.txt` 和 `kernel_summary.csv`。后续资源协作必须与相同节点数、进程数和总核数的并行修复基线比较；不能直接拿改变进程布局后的时间与本批比较。
 
 ## 当前通信对照
 
