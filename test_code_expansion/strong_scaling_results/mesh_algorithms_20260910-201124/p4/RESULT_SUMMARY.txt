@@ -1,0 +1,17 @@
+内核协作原型汇总
+进程数: 4; 异常项: 0
+scheduler threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static
+static 4 natural 15.945077 3.954186 15.461 - 3097.000 1.000
+static 4 split 15.490135 3.946529 15.029 1.709 3097.000 1.000
+repair 4 natural 10.542194 1.707998 10.084 - 3097.000 1.513
+repair 4 split 10.609127 1.707289 10.096 1.398 3097.000 1.460
+frontier 4 natural 10.852340 1.836396 10.389 - 3097.000 1.469
+frontier 4 split 10.873786 1.863489 10.400 1.330 3097.000 1.425
+static 16 natural 13.986443 3.933084 13.506 - 3097.000 1.000
+static 16 split 13.805362 3.889154 13.323 1.264 3097.000 1.000
+repair 16 natural 7.512439 1.074643 7.042 - 3097.000 1.862
+repair 16 split 7.430681 1.094569 6.897 0.856 3097.000 1.858
+frontier 16 natural 7.709392 1.156176 7.211 - 3097.000 1.814
+frontier 16 split 7.623065 1.152076 7.138 0.875 3097.000 1.811
+同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。
+natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。
