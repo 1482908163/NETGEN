@@ -38,7 +38,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static或cavity候选调度" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
-    if((research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity") ||
+    if((research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
         if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
@@ -395,6 +395,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("save_vol", save_vol ? "true" : "false");
     profiler.add_metadata("profiler_schema_version", "research_1");
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
+    if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
@@ -752,12 +753,16 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
-            double kernel_seconds[3]={};
+            double kernel_seconds[3]={},kernel_details[12]={};
             const auto local_status=research.kernel_threads>0
-                ? nglib::Ng_GenerateVolumeMeshKernel(submesh,&nmp,research.kernel_threads,
-                    research.kernel_scheduler=="cavity"?1:0,kernel_seconds)
+                ? nglib::Ng_GenerateVolumeMeshRepair(submesh,&nmp,research.kernel_threads,
+                    research.kernel_scheduler=="frontier"?3:research.kernel_scheduler=="repair"?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
             if(research.kernel_threads>0) {
+                const char * names[]={"delaunay_seconds","front_seconds","domain_repair_seconds",
+                    "repair_mark_seconds","repair_split_seconds","repair_swap_seconds","repair_swap2_seconds",
+                    "repair_rounds","repair_candidates_total","repair_candidates_active","repair_fallbacks","final_illegal"};
+                for(int k=0;k<12;++k) profiler.set_metric(std::string("kernel_")+names[k],kernel_details[k]);
                 profiler.set_metric("kernel_generation_seconds",kernel_seconds[0]);
                 profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
                 profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);

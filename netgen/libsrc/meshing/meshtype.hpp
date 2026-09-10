@@ -9,6 +9,8 @@
 /**************************************************************************/
 
 #include <variant>
+#include <atomic>
+#include <chrono>
 
 #include <mydefs.hpp>
 #include <general/template.hpp>
@@ -21,6 +23,28 @@
 
 namespace netgen
 {
+  // Per-call diagnostics; domain workers may contribute concurrently.
+  struct VolumeKernelStats {
+    static constexpr int count = 12;
+    std::atomic<double> values[count];
+    VolumeKernelStats() { for(auto & v : values) v.store(0); }
+    void Add(int i, double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+  };
+  struct VolumeKernelTimer {
+    VolumeKernelStats * stats;
+    int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeKernelTimer(VolumeKernelStats * s, int i):stats(s),index(i) {
+      if(stats) start=std::chrono::steady_clock::now();
+    }
+    ~VolumeKernelTimer() {
+      if(stats) stats->Add(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
+
 
   /*
     Classes for NETGEN
@@ -1611,6 +1635,9 @@ namespace netgen
     ///
     bool autozrefine = false;
 
+    bool volume_parallel_repair = false;
+    bool volume_repair_frontier = false;
+    VolumeKernelStats * volume_kernel_stats = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;
     int nthreads = 4;

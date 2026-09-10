@@ -180,7 +180,7 @@ def inspect(path, sample_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -188,6 +188,17 @@ def inspect(path, sample_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid kernel timing")
             result[key]=max(values)
+    if metadata.get("kernel_diagnostics")=="repair_v2":
+        timing_names=("delaunay_seconds","front_seconds","domain_repair_seconds","repair_mark_seconds",
+                      "repair_split_seconds","repair_swap_seconds","repair_swap2_seconds")
+        count_names=("repair_rounds","repair_candidates_total","repair_candidates_active","repair_fallbacks","final_illegal")
+        for name in timing_names+count_names:
+            key="kernel_"+name
+            values=[r["metrics"][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 for v in values): raise ValueError("invalid repair diagnostics")
+            result[key]=max(values) if name in timing_names else sum(values)
+        if result["kernel_repair_candidates_active"]>result["kernel_repair_candidates_total"]:
+            raise ValueError("active candidates exceed full candidates")
     if metadata.get("feature_schema")=="mesh_comm_v1":
         if (metadata["algorithm"] not in ("baseline","sparse") or
             metadata.get("cost_model")!="none" or metadata.get("balance_method")!="none" or
@@ -385,9 +396,9 @@ def write_overview(root, runs, summaries, errors):
 
 def kernel_overview(root, ranks):
     """Variant runs stay isolated; this summary never adds stage maxima."""
-    report=[];issues=[]
-    for threads in os.environ.get("KERNEL_THREAD_COUNTS","1 2 4 8 16").split():
-        for scheduler in os.environ.get("KERNEL_SCHEDULERS","static cavity").split():
+    report=[];issues=[];workloads={};illegal_max={}
+    for threads in os.environ.get("KERNEL_THREAD_COUNTS","4 16").split():
+        for scheduler in os.environ.get("KERNEL_SCHEDULERS","static repair frontier").split():
             folder=root/f"kernel_{scheduler}_t{threads}"/f"p{ranks}"
             try:
                 status=(folder/"analysis/issues.txt").read_text().strip()
@@ -395,6 +406,13 @@ def kernel_overview(root, ranks):
                 with (folder/"analysis/summary.csv").open() as stream:
                     rows=list(csv.DictReader(stream))
                 if not rows: raise ValueError("empty summary")
+                with (folder/"analysis/runs.csv").open() as stream:
+                    raw=list(csv.DictReader(stream))
+                for run in raw:
+                    key=(int(threads),scheduler,run['algorithm'],run['timing'],run['partition_seed'])
+                    workloads.setdefault(key,set()).add(float(run['volume_elements_sum']))
+                    if run.get('kernel_final_illegal') not in (None,''):
+                        illegal_max[key]=max(illegal_max.get(key,0),float(run['kernel_final_illegal']))
                 for row in rows:
                     report.append(dict(scheduler=scheduler,threads=int(threads),
                         algorithm=row['algorithm'],timing=row['timing'],seed=row['partition_seed'],
@@ -403,24 +421,35 @@ def kernel_overview(root, ranks):
                         generation_seconds=float(row['kernel_generation_seconds_median']),
                         repair_seconds=float(row['kernel_repair_seconds_median']),
                         optimization_seconds=float(row['kernel_optimization_seconds_median'])))
+                    for key in ('compute_max_seconds','compute_imbalance','vertex_wait_seconds','kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds','kernel_repair_mark_seconds','kernel_repair_split_seconds','kernel_repair_swap_seconds','kernel_repair_swap2_seconds','kernel_repair_candidates_total','kernel_repair_candidates_active','kernel_repair_fallbacks','kernel_final_illegal'):
+                        value=row.get(key+'_median')
+                        report[-1][key]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
+    for key, counts in workloads.items():
+        reference=workloads.get((key[0],'static',*key[2:]))
+        if len(counts)!=1 or (reference is not None and counts!=reference):
+            issues.append(f"{key}: per-run volume counts differ")
+        if illegal_max.get(key,0)>illegal_max.get((key[0],'static',*key[2:]),float('inf')):
+            issues.append(f"{key}: per-run illegal element maximum exceeds static")
     controls={(r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report if r['scheduler']=='static'}
     for row in report:
         control=controls.get((row['threads'],row['algorithm'],row['timing'],row['seed']))
         row['speedup_vs_static']=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
+        if control and row.get('kernel_final_illegal') is not None and control.get('kernel_final_illegal') is not None and row['kernel_final_illegal']>control['kernel_final_illegal']:
+            issues.append(f"t{row['threads']} {row['scheduler']}: more illegal elements than static")
         if control and control['volume_elements']!=row['volume_elements']:
             issues.append(f"t{row['threads']} {row['scheduler']}: volume count differs from static")
     out=root/f"p{ranks}";out.mkdir(exist_ok=True)
     write_csv(out/'kernel_summary.csv',report)
     lines=["内核协作原型汇总",f"进程数: {ranks}; 异常项: {len(issues)}",
-           "scheduler threads core/s generation/s optimization/s speedup_vs_static"]
+           "scheduler threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
     for row in report:
-        lines.append(f"{row['scheduler']} {row['threads']} {row['core_seconds']:.6f} "
-                     f"{row['generation_seconds']:.6f} {row['optimization_seconds']:.6f} "
-                     f"{compact(row['speedup_vs_static'])}")
-    lines += ["同线程 static/cavity 对照用于判断调度净收益；跨线程为固定预留核数的线程扩展。",
-              "单元数相同不代替几何、边界和质量核对。",*issues]
+        lines.append(f"{row['scheduler']} {row['threads']} {row['timing']} {row['core_seconds']:.6f} "
+                     f"{row['repair_seconds']:.6f} {compact(row.get('compute_max_seconds'))} {compact(row.get('vertex_wait_seconds'))} "
+                     f"{compact(row.get('kernel_final_illegal'))} {compact(row['speedup_vs_static'])}")
+    lines += ["同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。",
+              "natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。",*issues]
     (out/'RESULT_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
     if issues: raise SystemExit(1)
 

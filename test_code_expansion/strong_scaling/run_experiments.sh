@@ -10,7 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   kernel     : 1 节点、1 进程、预留16核，比较内核候选调度
+#   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
@@ -22,8 +22,8 @@ default_stage=communication
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || default_stage=kernel
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
-KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-1 2 4 8 16}"
-KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static cavity}"
+KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4 16}"
+KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static repair frontier}"
 KERNEL_THREADS="${KERNEL_THREADS:-0}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-static}"
 default_cpus=1;default_rpn=16
@@ -61,12 +61,12 @@ esac
 case "${EXPERIMENT_PRESET}" in
     kernel)
         default_tasks=0
-        default_process_counts="1"
+        default_process_counts="1 4 16"
         default_levels=1
         default_refines=1
         default_verify_faces=0
         default_algorithms="sparse"
-        default_timings="natural"
+        default_timings="natural split"
         ;;
     pilot)
         default_tasks=128
@@ -132,7 +132,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity ]] || { echo "内核调度仅支持 static/cavity。" >&2;exit 2; }
+        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier ]] || { echo "内核策略仅支持 static/cavity/repair/frontier。" >&2;exit 2; }
     done
     [[ -n "${KERNEL_THREAD_COUNTS}" && -n "${KERNEL_SCHEDULERS}" ]] || exit 2
 fi
@@ -164,13 +164,19 @@ fi
 if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
     kernel_root="${RUN_ROOT:?}";kernel_failures=0
     mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
-    for threads in ${KERNEL_THREAD_COUNTS}; do
-      for scheduler in ${KERNEL_SCHEDULERS}; do
-        variant="${kernel_root}/kernel_${scheduler}_t${threads}"
-        if ! EXPERIMENT_STAGE=communication KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
-             RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
-            kernel_failures=$((kernel_failures+1))
-        fi
+    read -r -a schedulers <<< "${KERNEL_SCHEDULERS}"
+    # Interleave strategy runs by repetition; rotate which strategy runs first.
+    # Each child retains the full plan/signature, but runs only this repetition.
+    for ((kr=1-WARMUPS;kr<=REPEATS;++kr)); do
+      for threads in ${KERNEL_THREAD_COUNTS}; do
+        for ((ks=0;ks<${#schedulers[@]};++ks)); do
+          scheduler="${schedulers[$(((ks+kr+WARMUPS-1)%${#schedulers[@]}))]}"
+          variant="${kernel_root}/kernel_${scheduler}_t${threads}"
+          if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$kr" KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
+               RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
+              kernel_failures=$((kernel_failures+1))
+          fi
+        done
       done
     done
     python3 "${SCRIPT_DIR}/analyze_results.py" "$kernel_root" --kernel-overview --kernel-ranks "$PROCESS_COUNT"
@@ -249,7 +255,7 @@ else
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
-((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler")
+((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
 for marker in "${markers[@]}"; do
     if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then
@@ -329,7 +335,7 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2
@@ -429,6 +435,7 @@ failures=0
 # Negative/zero repeats are warmups. Rotate mode order to avoid always giving
 # one algorithm the first file-cache/allocator state. No cache eviction code.
 for ((rep=1-WARMUPS;rep<=REPEATS;++rep)); do
+  [[ -z "${KERNEL_REPEAT:-}" || "${KERNEL_REPEAT}" == "$rep" ]] || continue
   rank_shift=0
   if [[ "${PLACEMENT_ROTATION}" == 1 && "${EXPERIMENT_STAGE}" != legacy ]] && (( rep>0 )); then
     stride=$(( (PROCESS_COUNT/RANKS_PER_NODE/3)*RANKS_PER_NODE ))
@@ -486,6 +493,9 @@ SIGNATURE
     done
   done
 done
+if [[ -n "${KERNEL_REPEAT:-}" && "${KERNEL_REPEAT}" != "${REPEATS}" ]]; then
+    ((failures==0));exit $?
+fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1

@@ -472,6 +472,12 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMesh (Ng_Mesh * mesh, Ng_Meshing_Parameters
 // seconds[0..2] receive volume generation, legality repair, optimization times.
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel (Ng_Mesh * mesh,
     Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds);
+// v2: schedules 0 original, 1 cavity, 2 parallel repair, 3 active-front repair.
+// seconds[3]; details[12]: Delaunay, front, domain repair, repair marking,
+// split, swap, swap2 seconds; rounds, all/retained candidates, fallbacks, final illegal.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepair(Ng_Mesh * mesh,
+    Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details);
+
 
 
 // ------------------------------------------------------------------

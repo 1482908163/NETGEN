@@ -6,14 +6,15 @@
 第二轮 v2 校准已经完成；尾部预测不足的分析见 [校准结果](../docs/experiments/20260907_calibration.md)。随后 v3 的36次正式采样也已完成，但三个种子的分区特征重复，不能进入评价，见 [v3 实验分析](../docs/experiments/20260907_v3_calibration.md)。
 第四次四组评价已经完成：160次正式运行成功，稀疏通信收益得到再次验证，但节点组映射没有兑现预测中的显著净收益。8192进程组合相对仅稀疏自然核心仅下降1.44%，屏障拆分模式略慢。原因与后续主线见 [第四次实验结果](../docs/experiments/20260908_iteration4_results.md)。本次已接入面依赖约束的封闭子域任务调度，方法与判据见 [任务调度版本](../docs/experiments/20260909_task_scheduling.md)。任务版160次正式运行已完成：仅8192进程动态调度改善8.85%，其余规模退化，且整体慢于旧稀疏流程；详见 [任务实验及初始版本对照](../docs/experiments/20260909_task_results.md)。任务版已退出默认配置。当前固化一进程一分区的通信基线，停止继续调整失败的均衡方案；见 [固化说明与替代算法研究](../docs/experiments/20260909_sparse_baseline_and_new_directions.md)。
 
-## 本轮内核实验：仍使用统一入口
+## 当前内核第二轮：并行修复与邻域限制
 
-先在 `NETGEN/test_code_expansion` 运行 `bash build_project.sh`，它会依次编译本仓库的 Netgen 内核和应用，安装到原 `NETGEN/install`。
-然后修改 `strong_scaling/run_experiments.sh` 开头的 `EXPERIMENT_PRESET` 默认值为 `kernel`，运行该脚本即可。
+上一轮没有证明稳定整体收益，本轮方法和结果归档见 [内核结果与修复算法](../docs/experiments/20260910_kernel_results_and_repair.md)。
 
-默认1节点、1进程、固定预留16核；分别使用1/2/4/8/16线程，比较 `static`（原候选调度）与 `cavity`（邻域代价分块和动态领取）。每组1次预热、5次正式运行，使用相同几何和稀疏通信流程。不需要在命令行输入一串配置。
+在 `NETGEN/test_code_expansion` 执行 `bash build_project.sh`，它会重新编译内核与应用并安装到原 `NETGEN/install`；随后进入 `strong_scaling`，执行 `bash run_experiments.sh`。默认已是 kernel（内核实验），不需要再切换预设。
 
-先查看结果根目录的 `p1/RESULT_SUMMARY.txt`，详细数据在同目录 `kernel_summary.csv`。它比较同线程数的整体核心时间，同时列出生成、修复、优化阶段；粗网格不计入核心时间。新调度尚无集群性能结论，单节点试验也不能证明进程间不均衡已经解决。方法和局限见 [本轮记录](../docs/experiments/20260909_kernel_candidate_scheduling.md)。
+默认1/4/16节点，每节点1进程，每进程固定预留16核；使用4/16线程，对比 static（原流程）、repair（并行修复）、frontier（邻域限制修复），分别记录 natural（自然执行）与 split（等待拆分），每组1次预热、5次正式。先看本批结果根目录各 `p*/RESULT_SUMMARY.txt`，再看 `kernel_summary.csv`。所有参数继续只在原入口顶部修改。
+
+新旧策略在同进程、同线程、同预留核数下比较。内部子阶段计时有嵌套，不能相加；单元数量变化会标记异常。三种规模合计180次正式、36次预热。尚无本轮集群收益结论。
 
 ## 当前通信对照
 

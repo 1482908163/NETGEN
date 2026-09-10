@@ -58,7 +58,7 @@ out=pathlib.Path(value('--profile-dir'))
         ALGORITHMS='baseline sparse', TIMING_MODES='natural', REPEATS='1', WARMUPS='1',
         MPI_LAUNCHER=str(launcher), MPI_EXTRA_ARGS=' ', START_EPOCH='0', VERIFY_FACES='0',
         RANKS_PER_NODE='1', TIMEOUT_SECONDS='10', CLEANUP_RESULTS='1',
-        MESH_EXPERIMENT_WORKER='1',PARTITION_SEEDS='-1',EXPERIMENT_STAGE='legacy',BALANCE_METHOD='boundary')
+        MESH_EXPERIMENT_WORKER='1',PARTITION_SEEDS='-1',EXPERIMENT_PRESET='production',EXPERIMENT_STAGE='legacy',BALANCE_METHOD='boundary')
     # Reproduce yhbatch: execute a copy named slurm_script outside the source
     # tree while STRONG_SCALING_DIR points back to the real companion scripts.
     spooled=tmp/'slurm_script'
@@ -435,9 +435,11 @@ rows=[]""")
 rows=[]""")
     modern.write_text(task_mock+"\n# mesh_tasks_v1 --mesh-tasks mesh_comm_v1 --communication-only\n")
     kernel_mock=modern.read_text().replace("rows=[]", """if '--kernel-threads' in args:
-    metadata.update(kernel_threads=value('--kernel-threads'),kernel_scheduler=value('--kernel-scheduler'))
+    metadata.update(kernel_threads=value('--kernel-threads'),kernel_scheduler=value('--kernel-scheduler'),kernel_diagnostics='repair_v2')
 rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kernel-threads' in args:
         metrics.update(kernel_generation_seconds=.1,kernel_repair_seconds=.1,kernel_optimization_seconds=.1)
+        for name in ('delaunay_seconds','front_seconds','domain_repair_seconds','repair_mark_seconds','repair_split_seconds','repair_swap_seconds','repair_swap2_seconds','repair_rounds','repair_candidates_total','repair_candidates_active','repair_fallbacks','final_illegal'):
+            metrics['kernel_'+name]=0
     stages={s:dict(seconds=.1,calls=1)""")
     modern.write_text(kernel_mock)
     modern.chmod(0o755)
@@ -462,18 +464,18 @@ rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kerne
     # 内核矩阵共用唯一入口；输出隔离，固定资源，压缩续跑不重复执行。
     kernel_lib=tmp/'kernel_lib';kernel_lib.mkdir();(kernel_lib/'libnglib.so').write_text('mock kernel')
     kernel_env=dict(communication,EXPERIMENT_STAGE='kernel',EXPERIMENT_PRESET='kernel',
-        KERNEL_THREAD_COUNTS='1 2',KERNEL_SCHEDULERS='static cavity',CPUS_PER_TASK='2',
+        KERNEL_THREAD_COUNTS='1 2',KERNEL_SCHEDULERS='static repair frontier',CPUS_PER_TASK='2',
         NETGEN_INSTALL_LIB=str(kernel_lib),ALGORITHMS='sparse',TIMING_MODES='natural',
         RUN_ROOT=str(tmp/'kernel_results'),MOCK_AUDIT=str(tmp/'kernel_audit'))
     kernel_run=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_env,capture_output=True,text=True)
     assert kernel_run.returncode==0,(kernel_run.stdout,kernel_run.stderr)
     kernel_report=list(csv.DictReader((tmp/'kernel_results/p3/kernel_summary.csv').open()))
-    assert len(kernel_report)==4 and {r['threads'] for r in kernel_report}=={'1','2'}
+    assert len(kernel_report)==6 and {r['threads'] for r in kernel_report}=={'1','2'}
     assert all(float(row['speedup_vs_static'])==1 for row in kernel_report)
-    assert len((tmp/'kernel_audit').read_text().splitlines())==8
+    assert len((tmp/'kernel_audit').read_text().splitlines())==12
     kernel_resume=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_env,capture_output=True,text=True)
     assert kernel_resume.returncode==0,(kernel_resume.stdout,kernel_resume.stderr)
-    assert len((tmp/'kernel_audit').read_text().splitlines())==8
+    assert len((tmp/'kernel_audit').read_text().splitlines())==12
     kernel_invalid=dict(kernel_env,KERNEL_THREAD_COUNTS='3',RUN_ROOT=str(tmp/'kernel_invalid'))
     assert subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_invalid,capture_output=True).returncode==2
     kernel_submit=dict(submit_base,EXPERIMENT_PRESET='kernel',EXPERIMENT_STAGE='kernel',

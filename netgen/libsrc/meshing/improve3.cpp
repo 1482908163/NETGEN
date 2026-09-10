@@ -14,6 +14,33 @@
 namespace netgen
 {
 
+// Restrict repair candidates to the vertex stars of illegal tetrahedra.
+// Rebuilt after every mutation phase, so no stale edge/index cache survives.
+static void RestrictRepairFrontier(Mesh & mesh, const MeshingParameters & mp,
+    const Table<ElementIndex,PointIndex> & incidence,
+    Array<std::tuple<PointIndex,PointIndex>> & edges, OPTIMIZEGOAL goal)
+{
+  if(goal!=OPT_LEGAL) return;
+  auto * stats=mp.volume_kernel_stats;
+  if(stats) stats->Add(8,edges.Size());
+  if(mp.volume_repair_frontier) {
+    mesh.MarkIllegalElements();
+    Array<unsigned char,PointIndex> active(mesh.GetNP()); active=0;
+    // Include all vertices of cells touching an illegal cell's vertex.
+    for(auto & el : mesh.VolumeElements()) if(!el.IsDeleted() && el.Illegal())
+      for(auto pi : el.PNums())
+        for(auto ei : incidence[pi])
+          for(auto pj : mesh[ei].PNums()) active[pj]=1;
+    size_t kept=0;
+    for(auto edge : edges) {
+      auto [a,b]=edge;
+      if(active[a] || active[b]) edges[kept++]=edge;
+    }
+    edges.SetSize(kept);
+  }
+  if(stats) stats->Add(9,edges.Size());
+}
+
 // Read-only candidate evaluation: preserve edge order and serial mutation order.
 // Partition by endpoint-star work, not by independent closed volume meshes.
 template <typename TFUNC>
@@ -452,6 +479,7 @@ void MeshOptimize3d :: CombineImprove ()
 
   Array<std::tuple<PointIndex,PointIndex>> edges;
   BuildEdgeList(mesh, elementsonnode, edges);
+  RestrictRepairFrontier(mesh, mp, elementsonnode, edges, goal);
 
   // Find edges with improvement
   Array<std::tuple<double, int>> combine_candidate_edges(edges.Size());
@@ -715,6 +743,7 @@ void MeshOptimize3d :: SplitImprove ()
 
   Array<std::tuple<PointIndex,PointIndex>> edges;
   BuildEdgeList(mesh, elementsonnode, edges);
+  RestrictRepairFrontier(mesh, mp, elementsonnode, edges, goal);
 
   // Find edges with improvement
   Array<std::tuple<double, int>> candidate_edges(edges.Size());
@@ -1317,6 +1346,7 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
 
   Array<std::tuple<PointIndex,PointIndex>> edges;
   BuildEdgeList(mesh, elementsonnode, edges);
+  RestrictRepairFrontier(mesh, mp, elementsonnode, edges, goal);
 
   Array<std::tuple<double, int>> candidate_edges(edges.Size());
   std::atomic<int> improvement_counter(0);

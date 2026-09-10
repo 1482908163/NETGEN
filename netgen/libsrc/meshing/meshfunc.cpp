@@ -408,7 +408,8 @@ namespace netgen
     {
       int oldne = mesh.GetNE();
 
-      md.meshing->Delaunay (mesh, domain, mp);
+      { VolumeKernelTimer time(mp.volume_kernel_stats,0);
+      md.meshing->Delaunay (mesh, domain, mp); }
 
       // for (int i = oldne + 1; i <= mesh.GetNE(); i++)
       for (ElementIndex i : mesh.VolumeElements().Range().Modify(oldne, 0))
@@ -477,7 +478,8 @@ namespace netgen
 
          mp.giveuptol = 15 + 10 * cntsteps; 
          mp.sloppy = 5;
-         meshing.GenerateMesh (mesh, mp);
+         { VolumeKernelTimer time(mp.volume_kernel_stats,1);
+         meshing.GenerateMesh (mesh, mp); }
          
          for (auto & el : mesh.VolumeElements().Range(oldne, END))
            el.SetIndex (domain);
@@ -538,7 +540,8 @@ namespace netgen
       PrintError ("Surface mesh not consistent");
       throw NgException ("Stop meshing since surface mesh not consistent");
     }
-    RemoveIllegalElements (mesh, domain);
+    { VolumeKernelTimer time(mp.volume_kernel_stats,2);
+      RemoveIllegalElements (mesh, mp, domain); }
     ConformToFreeSegments (mesh, domain);
   }
 
@@ -931,6 +934,17 @@ namespace netgen
 
   void RemoveIllegalElements (Mesh & mesh3d, int domain)
   {
+    RemoveIllegalElements(mesh3d, MeshingParameters(), domain);
+  }
+
+  void RemoveIllegalElements (Mesh & mesh3d, const MeshingParameters & options, int domain)
+  {
+    RegionTaskManager repair_tasks(options.volume_parallel_repair && options.parallel_meshing ? options.nthreads : 0);
+    auto * stats=options.volume_kernel_stats;
+    auto mark = [&](int d=0) {
+      VolumeKernelTimer time(stats,3);
+      return mesh3d.MarkIllegalElements(d);
+    };
     static Timer t("RemoveIllegalElements"); RegionTimer reg(t);
     
     // return, if non-pure tet-mesh
@@ -940,7 +954,7 @@ namespace netgen
     */
     mesh3d.CalcSurfacesOfNode();
 
-    int nillegal = mesh3d.MarkIllegalElements(domain);
+    int nillegal = mark(domain);
     if(nillegal)
       PrintMessage (1, "Remove Illegal Elements");
 
@@ -948,6 +962,9 @@ namespace netgen
     int nillegal_min = nillegal;
 
     MeshingParameters dummymp;
+    dummymp.volume_candidate_schedule=options.volume_repair_frontier ? 1 : 0;
+    dummymp.volume_repair_frontier=options.volume_repair_frontier;
+    dummymp.volume_kernel_stats=stats;
     MeshOptimize3d optmesh(mesh3d, dummymp, OPT_LEGAL);
     int it = 10;
     while (nillegal && (it--) > 0)
@@ -956,16 +973,24 @@ namespace netgen
 	  break;
 
 	PrintMessage (5, nillegal, " illegal tets");
-        optmesh.SplitImprove ();
+        if(stats) stats->Add(7,1);
+        { VolumeKernelTimer time(stats,4); optmesh.SplitImprove (); }
 
-	mesh3d.MarkIllegalElements();  // test
-	optmesh.SwapImprove ();
-	mesh3d.MarkIllegalElements();  // test
-	optmesh.SwapImprove2 ();
+	mark();
+        { VolumeKernelTimer time(stats,5); optmesh.SwapImprove (); }
+	mark();
+        { VolumeKernelTimer time(stats,6); optmesh.SwapImprove2 (); }
 
 	oldn = nillegal;
-	nillegal = mesh3d.MarkIllegalElements();
+	nillegal = mark();
         nillegal_min = min(nillegal_min, nillegal);
+        // A restricted search is never allowed to stop the global repair early.
+        if(dummymp.volume_repair_frontier && nillegal>=oldn) {
+          dummymp.volume_repair_frontier=false;
+          if(stats) stats->Add(10,1);
+          it=10;
+          continue;
+        }
         if(nillegal > nillegal_min)
           break;
 

@@ -67,12 +67,13 @@ int main (int argc, char ** argv)
   mp.second_order = 0;
 
   cout << "start meshing" << endl;
-  double phases[3]={};
+  double phases[3]={},details[12]={};
   Ng_Result status = argc>=4
-      ? Ng_GenerateVolumeMeshKernel(mesh,&mp,std::stoi(argv[2]),std::stoi(argv[3]),phases)
+      ? Ng_GenerateVolumeMeshRepair(mesh,&mp,std::stoi(argv[2]),std::stoi(argv[3]),phases,details)
       : Ng_GenerateVolumeMesh(mesh,&mp);
   if(status!=NG_OK) return 2;
   cout << "Kernel phases: " << phases[0] << " " << phases[1] << " " << phases[2] << endl;
+  cout << "Repair details:"; for(double d : details) cout << " " << d; cout << endl;
   cout << "meshing done" << endl;
 
   // volume mesh output

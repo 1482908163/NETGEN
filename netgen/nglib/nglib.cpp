@@ -416,12 +416,14 @@ namespace nglib
 
 
 
-   NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel (Ng_Mesh * mesh,
-       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds)
+   static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details)
    {
-      if (!mesh || !mp || !seconds || threads<1 || (schedule!=0 && schedule!=1))
+      if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
+      VolumeKernelStats stats;
+      if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
          // The public parameter transfer uses a global; restore it on exit.
          // Like the existing nglib API, this entry must be called by one host
@@ -434,7 +436,10 @@ namespace nglib
          MeshingParameters local = mparam;
          local.parallel_meshing = threads>1;
          local.nthreads = threads;
-         local.volume_candidate_schedule = schedule;
+         local.volume_candidate_schedule = schedule==1;
+         local.volume_parallel_repair = schedule>=2;
+         local.volume_repair_frontier = schedule==3;
+         local.volume_kernel_stats = details ? &stats : nullptr;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
@@ -445,14 +450,32 @@ namespace nglib
          };
          if (measure(0,[&] { return MeshVolume(local,m); })!=MESHING3_OK)
             return NG_VOLUME_FAILURE;
-         measure(1,[&] { RemoveIllegalElements(m); return 0; });
+         measure(1,[&] { RemoveIllegalElements(m,local); return 0; });
          if (measure(2,[&] { return OptimizeVolume(local,m); })!=MESHING3_OK)
             return NG_VOLUME_FAILURE;
+         if(details) {
+            stats.Add(11,m.MarkIllegalElements());
+            for(int i=0;i<VolumeKernelStats::count;++i) details[i]=stats.values[i].load();
+         }
          return NG_OK;
       } catch (const std::exception & error) {
          std::cerr << "Volume kernel failed: " << error.what() << std::endl;
          return NG_VOLUME_FAILURE;
       }
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds)
+   {
+     if(schedule<0 || schedule>1) return NG_ERROR;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,schedule,seconds,nullptr);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepair(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details)
+   {
+     if(!details) return NG_ERROR;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,schedule,seconds,details);
    }
 
    /* ------------------ 2D Meshing Functions ------------------------- */
