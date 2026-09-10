@@ -11,6 +11,7 @@
 #include <variant>
 #include <atomic>
 #include <chrono>
+#include <core/taskmanager.hpp>
 
 #include <mydefs.hpp>
 #include <general/template.hpp>
@@ -23,6 +24,33 @@
 
 namespace netgen
 {
+  // Optional host-side CPU leasing. Callbacks run only on the host thread.
+  struct VolumeResources {
+    void * context = nullptr;
+    int (*acquire)(void *, int, double, int) = nullptr;
+    void (*release)(void *, int, double, int, double) = nullptr;
+  };
+  struct VolumeResourceScope {
+    const VolumeResources * resources;
+    int phase, threads;
+    double work;
+    std::chrono::steady_clock::time_point start;
+    VolumeResourceScope(const VolumeResources * r, int p, double w, int fallback)
+      : resources(r),phase(p),threads(fallback),work(std::max(1.0,w)) {
+      if(resources) {
+        if(ngcore::task_manager) throw std::runtime_error("nested resource task manager");
+        threads=resources->acquire(resources->context,phase,work,0);
+        if(threads<1) throw std::runtime_error("invalid resource thread count");
+        start=std::chrono::steady_clock::now();
+      }
+    }
+    // Declare the task manager AFTER this scope: workers must join first.
+    ~VolumeResourceScope() {
+      if(resources) resources->release(resources->context,phase,work,threads,
+        std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
+
   // Per-call diagnostics; domain workers may contribute concurrently.
   struct VolumeKernelStats {
     static constexpr int count = 12;
@@ -1638,6 +1666,7 @@ namespace netgen
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
     VolumeKernelStats * volume_kernel_stats = nullptr;
+    const VolumeResources * volume_resources = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;
     int nthreads = 4;

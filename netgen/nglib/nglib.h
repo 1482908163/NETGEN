@@ -478,6 +478,19 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshKernel (Ng_Mesh * mesh,
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepair(Ng_Mesh * mesh,
     Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details);
 
+// v3 node cooperation: phase 1 Delaunay optimization, 2 marking, 3 split,
+// 4 swap, 5 serial swap2, 6 final optimization. Work is the current tet count.
+// acquire maximum=0 allows the host to choose within the node allocation.
+// Release runs after the region's worker threads have joined. No MPI in workers.
+struct Ng_VolumeResources {
+    void * context;
+    int (*acquire)(void *, int, double, int);
+    void (*release)(void *, int, double, int, double);
+};
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperative(Ng_Mesh * mesh,
+    Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+    double * seconds, double * details);
+
 
 
 // ------------------------------------------------------------------

@@ -1658,7 +1658,8 @@ namespace netgen
         tempmesh.Compress();
         tempmesh.FindOpenElements ();
       #ifndef EMSCRIPTEN
-        RegionTaskManager rtm(mp.parallel_meshing ? mp.nthreads : 0);
+        VolumeResourceScope resources(mp.volume_resources,1,tempmesh.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
+        RegionTaskManager rtm(resources.threads);
       #endif // EMSCRIPTEN
         for (auto i : Range(10))
           {

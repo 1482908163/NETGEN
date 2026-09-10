@@ -20,6 +20,8 @@ export MESH_EXPERIMENT_WORKER=1
 [[ "${RANKS_PER_NODE}" =~ ^[1-9][0-9]*$ && "${START_EPOCH}" =~ ^[0-9]+$ ]] || exit 2
 read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
 read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
+# 所有协作对照采用相同物理核布局，避免把超线程当额外计算核。
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || batch_extra+=(--hint=nomultithread)
 ((${#counts[@]}>0)) || exit 2
 for p in "${counts[@]}"; do [[ "${p}" =~ ^[1-9][0-9]*$ ]] || exit 2; done
 mkdir -p "${RUN_ROOT}"

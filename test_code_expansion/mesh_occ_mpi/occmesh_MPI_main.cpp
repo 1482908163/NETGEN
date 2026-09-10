@@ -14,6 +14,8 @@
 #include "mesh_mpi_types.h"
 #include "research_mesh.h"
 #include "task_mesh.h"
+#include "node_resources.h"
+#include <memory>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <cstdlib>
@@ -38,7 +40,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_fixed/node_lend/node_model内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -70,7 +72,9 @@ int main(int argc, char **argv) {
 
     int id; //进程号
     int p = 1;  //进程总数
-    MPI_Init(nullptr, nullptr);
+    int mpi_thread_support=0;
+    MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&mpi_thread_support);
+    if(mpi_thread_support<MPI_THREAD_FUNNELED) MPI_Abort(MPI_COMM_WORLD,87);
     MPI_Comm_rank(MPI_COMM_WORLD, &id); //获取进程号
     MPI_Comm_size(MPI_COMM_WORLD, &p);  //获取进程总数
 
@@ -301,7 +305,8 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
-    if((research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
+    const bool node_cooperative=research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" || research.kernel_scheduler=="node_model";
+    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
         if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
@@ -396,6 +401,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("profiler_schema_version", "research_1");
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
+    if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
@@ -643,6 +649,12 @@ int main(int argc, char **argv) {
     // double Coarse_endTime = clock();
     double Coarse_endTime = MPI_Wtime();
     profiler.begin_core();
+    std::unique_ptr<mesh_node::NodeResources> node_resources;
+    if(node_cooperative) {
+        scaling::StageScope setup("node_resource_setup","compute");
+        node_resources.reset(new mesh_node::NodeResources(MPI_COMM_WORLD,research.kernel_threads,
+            research.kernel_scheduler=="node_fixed"?0:research.kernel_scheduler=="node_lend"?1:2));
+    }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
 
@@ -754,10 +766,15 @@ int main(int argc, char **argv) {
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
             double kernel_seconds[3]={},kernel_details[12]={};
-            const auto local_status=research.kernel_threads>0
+            nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
+            if(node_resources) node_resources->prepare(nglib::Ng_GetNP(submesh));
+            const auto local_status=node_resources
+                ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
+                : research.kernel_threads>0
                 ? nglib::Ng_GenerateVolumeMeshRepair(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="frontier"?3:research.kernel_scheduler=="repair"?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
+            if(node_resources) {node_resources->finish();node_resources->report(profiler);}
             if(research.kernel_threads>0) {
                 const char * names[]={"delaunay_seconds","front_seconds","domain_repair_seconds",
                     "repair_mark_seconds","repair_split_seconds","repair_swap_seconds","repair_swap2_seconds",
@@ -1135,6 +1152,7 @@ int main(int argc, char **argv) {
 
     if(id == 0) cout << "successful!!!" << endl;
     profiler.finalize();
+    if(node_resources) node_resources->close();
     netgen_mpi_checkpoint(MPI_COMM_WORLD, "MPI_Finalize.begin");
     MPI_Finalize();
 

@@ -19,3 +19,7 @@ ENDIF()
 INSTALL(TARGETS mesh_occ_mpi   
        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# 节点共享资源租约使用进程共享互斥锁。
+FIND_PACKAGE(Threads REQUIRED)
+TARGET_LINK_LIBRARIES(mesh_occ_mpi Threads::Threads)

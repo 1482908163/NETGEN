@@ -1,0 +1,273 @@
+#ifndef NETGEN_NODE_RESOURCES_H
+#define NETGEN_NODE_RESOURCES_H
+// Linux node-local, non-preemptive CPU leases. No mesh pointers cross processes.
+#include <mpi.h>
+#include <pthread.h>
+#include <sched.h>
+#include <time.h>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace mesh_node {
+class NodeResources {
+    static constexpr int max_ranks=128, phases=8;
+    struct Model {
+        double n=0,sx=0,sy=0,sxx=0,sxy=0,error=0;
+        int samples=0;
+        void coefficients(double &a,double &b) const {
+            double determinant=n*sxx-sx*sx;
+            if(determinant>1e-15) {
+                b=std::max(0.0,(n*sxy-sx*sy)/determinant);
+                a=std::max(0.0,(sy-b*sx)/n);
+            } else { a=0; b=sx>0?sy/sx:0; }
+        }
+        void observe(int k,double work,double seconds) {
+            double x=1.0/k,y=seconds/std::max(1.0,work),a,b;
+            coefficients(a,b);
+            error=.8*error+.2*std::abs(y-a-b*x);
+            n=.8*n+1;sx=.8*sx+x;sy=.8*sy+y;
+            sxx=.8*sxx+x*x;sxy=.8*sxy+x*y;++samples;
+        }
+    };
+    struct RankState {
+        int active=0,done=0,prepared=0,phase=0,threads=1;
+        double work=1,start=0;
+        Model model[phases];
+    };
+    struct Shared {
+        pthread_mutex_t mutex;
+        int size=0,cpus=0;
+        int cpu[CPU_SETSIZE],home[CPU_SETSIZE],owner[CPU_SETSIZE];
+        int anchor[max_ranks];
+        RankState rank[max_ranks];
+    };
+    MPI_Comm node=MPI_COMM_NULL;
+    MPI_Win window=MPI_WIN_NULL;
+    Shared *shared=nullptr;
+    cpu_set_t initial;
+    int me=0,size=0,base=1,mode=0,held=1,borrowed=0;
+    bool live=false;
+    double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
+    double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
+    static double now() { timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec; }
+    [[noreturn]] void fail(const char *message) const {
+        std::cerr<<"node_coop_v1: "<<message<<std::endl;
+        MPI_Abort(MPI_COMM_WORLD,87);std::terminate();
+    }
+    void lock() { if(pthread_mutex_lock(&shared->mutex)!=0) fail("节点资源锁失败"); }
+    void unlock() { if(pthread_mutex_unlock(&shared->mutex)!=0) fail("节点资源解锁失败"); }
+    void pin(const cpu_set_t &mask) {
+        if(sched_setaffinity(0,sizeof(mask),&mask)!=0) fail("集群不允许作业内跨进程核亲和性调整");
+        cpu_set_t actual;CPU_ZERO(&actual);
+        if(sched_getaffinity(0,sizeof(actual),&actual)!=0 || !CPU_EQUAL(&actual,&mask))
+            fail("实际核集合与资源租约不一致，停止实验");
+    }
+    int fair_target() const {
+        int pending=0,available=shared->cpus;
+        for(int i=0;i<size;++i) {
+            const auto &r=shared->rank[i];
+            if(!r.prepared) available-=base;
+            else if(r.active) available-=r.threads;
+            else if(r.done) --available;
+            else ++pending;
+        }
+        return std::max(1,available/std::max(1,pending));
+    }
+    int model_target(int fair,int cap) {
+        // Asynchronous snapshot: active leases are immutable; idle ranks advertise
+        // their last phase until their next entry. Only this caller's target commits.
+        const double stamp=now();int budget=shared->cpus;double locked_tail=0,locked_lower=0;
+        std::vector<int> pending;
+        for(int i=0;i<size;++i) {
+            const auto &r=shared->rank[i];
+            if(!r.prepared && !r.done) { ++cold;return fair; }
+            if(r.active) {
+                budget-=r.threads;
+                double a,b;r.model[r.phase].coefficients(a,b);
+                double remaining=r.work*(a+b/r.threads)-(stamp-r.start);
+                locked_tail=std::max(locked_tail,std::max(0.0,remaining));
+                if(r.model[r.phase].samples>=2)
+                    locked_lower=std::max(locked_lower,std::max(0.0,remaining-2*r.work*r.model[r.phase].error));
+            } else if(r.done) --budget;
+            else pending.push_back(i);
+        }
+        if(pending.empty() || budget<int(pending.size())) return fair;
+        // Do not invent speedup curves for phases with no runtime observations.
+        for(int i:pending) if(shared->rank[i].model[shared->rank[i].phase].samples<2) {
+            ++cold;return fair;
+        }
+        const double inf=std::numeric_limits<double>::infinity();
+        std::vector<double> dp(budget+1,inf),next(budget+1,inf);
+        std::vector<std::vector<int>> choice(pending.size(),std::vector<int>(budget+1));
+        dp[0]=locked_tail;double fixed=locked_tail,uncertainty=0;
+        for(size_t j=0;j<pending.size();++j) {
+            const auto &r=shared->rank[pending[j]];const auto &m=r.model[r.phase];
+            double a,b;m.coefficients(a,b);
+            fixed=std::max(fixed,r.work*(a+b/(r.phase==5?1:fair)));
+            uncertainty=std::max(uncertainty,r.work*m.error);
+            std::fill(next.begin(),next.end(),inf);
+            for(int used=0;used<=budget;++used) if(std::isfinite(dp[used])) {
+                int limit=std::min(cap,budget-used);
+                // SwapImprove2 is serial in this kernel.
+                if(r.phase==5) limit=1;
+                for(int k=1;k<=limit;++k) {
+                    double value=std::max(dp[used],r.work*(a+b/k));
+                    if(value<next[used+k]) { next[used+k]=value;choice[j][used+k]=k; }
+                }
+            }
+            dp.swap(next);
+        }
+        int used=int(std::min_element(dp.begin(),dp.end())-dp.begin());
+        if(!std::isfinite(dp[used])) { ++rejected;return fair; }
+        const double best=dp[used];
+        int target=fair;double pending_upper=0;
+        for(int j=int(pending.size())-1;j>=0;--j) {
+            int k=choice[j][used];if(k<1) return fair;
+            const auto &r=shared->rank[pending[j]];const auto &m=r.model[r.phase];
+            double a,b;m.coefficients(a,b);
+            pending_upper=std::max(pending_upper,r.work*(a+b/k+2*m.error));
+            if(pending[j]==me) target=k;used-=k;
+        }
+        // Two admissible updates: shorten the predicted tail, or use fewer
+        // CPUs while this pending work stays below an immutable active tail.
+        // Error bands are empirical guards, not statistical guarantees.
+        double overhead=epochs>0?management/epochs:0;
+        bool shorter=fixed-best>2*uncertainty+2*overhead;
+        bool slack=target<fair && pending_upper+2*overhead<locked_lower;
+        if(target==fair || (!shorter && !slack)) { ++rejected;return fair; }
+        ++decisions;return target;
+    }
+public:
+    // mode 0=fixed, 1=greedy idle lending, 2=phase cost guided allocation.
+    NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
+        const double start=now();CPU_ZERO(&initial);
+        if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
+        MPI_Comm_split_type(world,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL,&node);
+        MPI_Comm_rank(node,&me);MPI_Comm_size(node,&size);
+        if(size<2 || size>max_ranks || base<2) fail("资源协作需要每节点2至128进程，每进程至少2核");
+        std::vector<cpu_set_t> masks(size);
+        MPI_Allgather(&initial,sizeof(initial),MPI_BYTE,masks.data(),sizeof(initial),MPI_BYTE,node);
+        cpu_set_t total;CPU_ZERO(&total);
+        for(int r=0;r<size;++r) {
+            if(CPU_COUNT(&masks[r])!=base) fail("每进程绑定的逻辑CPU数须等于初始线程数；请使用脚本默认绑定");
+            for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
+                if(CPU_ISSET(c,&total)) fail("进程初始核绑定重叠，无法进行无超售借核");
+                CPU_SET(c,&total);
+            }
+        }
+        if(CPU_COUNT(&total)>256) fail("当前节点调度原型最多支持256个已分配核");
+        // Verify the task's cgroup permits the union, then immediately restore.
+        // No worker threads exist at this point, and the union contains only job CPUs.
+        pin(total);pin(initial);
+        void *local=nullptr;
+        MPI_Win_allocate_shared(me==0?sizeof(Shared):0,1,MPI_INFO_NULL,node,&local,&window);
+        MPI_Aint bytes;int unit;void *root=nullptr;
+        MPI_Win_shared_query(window,0,&bytes,&unit,&root);shared=static_cast<Shared*>(root);
+        int *memory_model=nullptr,flag=0;
+        MPI_Win_get_attr(window,MPI_WIN_MODEL,&memory_model,&flag);
+        if(!flag || *memory_model!=MPI_WIN_UNIFIED) fail("资源协作要求MPI共享窗口采用统一内存模型");
+        MPI_Win_lock_all(0,window);
+        if(me==0) {
+            new(shared) Shared{};shared->size=size;
+            pthread_mutexattr_t attr;
+            if(pthread_mutexattr_init(&attr) || pthread_mutexattr_setpshared(&attr,PTHREAD_PROCESS_SHARED) ||
+               pthread_mutexattr_setrobust(&attr,PTHREAD_MUTEX_ROBUST) || pthread_mutex_init(&shared->mutex,&attr))
+                fail("无法建立进程共享资源锁");
+            pthread_mutexattr_destroy(&attr);
+            for(int r=0;r<size;++r) {
+                bool first=true;
+                for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
+                    int index=shared->cpus++;shared->cpu[index]=c;shared->home[index]=r;
+                    if(first) {shared->anchor[r]=c;first=false;shared->owner[index]=r;}
+                    else shared->owner[index]=r;
+                }
+            }
+        }
+        MPI_Win_sync(window);MPI_Barrier(node);MPI_Win_sync(window);live=true;
+        setup=now()-start;
+    }
+    NodeResources(const NodeResources&)=delete;
+    ~NodeResources() = default; // close() is explicit and must precede MPI_Finalize.
+    void prepare(double work) {
+        // Preserve the original resources during surface/pre-volume work.
+        // Publish idle worker CPUs only after this host is pinned to its anchor.
+        if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
+        lock();auto &r=shared->rank[me];
+        if(r.prepared) fail("内核资源准备被重复调用");
+        if(mode!=0) for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
+        r.prepared=1;r.work=std::max(1.0,work);unlock();
+    }
+    static int acquire_callback(void *ctx,int phase,double work,int maximum) {
+        return static_cast<NodeResources*>(ctx)->acquire(phase,work,maximum);
+    }
+    static void release_callback(void *ctx,int phase,double work,int threads,double seconds) {
+        static_cast<NodeResources*>(ctx)->release(phase,work,threads,seconds);
+    }
+    int acquire(int phase,double work,int maximum) {
+        const double start=now();if(phase<0 || phase>=phases) fail("未知内核资源阶段");
+        lock();auto &r=shared->rank[me];if(r.active || r.done) fail("资源租约嵌套或生命周期错误");
+        r.phase=phase;r.work=std::max(1.0,work);
+        int free=1;
+        for(int c=0;c<shared->cpus;++c) if(shared->owner[c]<0) ++free;
+        if(maximum<=0) maximum=shared->cpus-size+1;
+        int cap=std::min(maximum,mode==0?base:free);
+        int target=cap;
+        if(mode==2 && phase!=5) {
+            int fair=std::min(cap,fair_target());target=model_target(fair,cap);
+        }
+        if(phase==5) target=1;
+        target=std::max(1,std::min(target,cap));
+        cpu_set_t mask;CPU_ZERO(&mask);CPU_SET(shared->anchor[me],&mask);held=1;borrowed=0;
+        // Prefer own CPUs; use only idle CPUs, never revoke an active lease.
+        for(int pass=0;pass<2;++pass) for(int c=0;c<shared->cpus && held<target;++c) {
+            if(shared->cpu[c]==shared->anchor[me]) continue;
+            if((shared->home[c]==me)!=(pass==0)) continue;
+            if((mode==0 && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0)) {
+                shared->owner[c]=me;CPU_SET(shared->cpu[c],&mask);++held;
+                borrowed+=shared->home[c]!=me;
+            }
+        }
+        r.active=1;r.threads=held;r.start=now();unlock();pin(mask);
+        ++epochs;if(borrowed) ++borrow_epochs;peak=std::max(peak,double(held));
+        management+=now()-start;return held;
+    }
+    void release(int phase,double work,int threads,double seconds) {
+        const double start=now();
+        // Caller guarantees all workers have joined BEFORE this callback.
+        cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);
+        pin(mode==0?initial:anchor);
+        lock();auto &r=shared->rank[me];
+        if(!r.active || r.phase!=phase || r.threads!=threads) fail("资源归还与活动租约不匹配");
+        if(mode!=0) for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
+        r.model[phase].observe(threads,work,seconds);r.active=0;r.threads=1;
+        unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
+        phase_seconds+=seconds;management+=now()-start;
+    }
+    void finish() {
+        lock();auto &r=shared->rank[me];if(r.active) fail("内核结束时仍持有活动租约");r.done=1;unlock();
+    }
+    template<class Profiler> void report(Profiler &p) const {
+        const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
+            "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions","node_ranks","node_cpus"};
+        double values[]={setup,management,epochs,borrow_epochs,borrow_seconds,lease_seconds,phase_seconds,peak,
+            decisions,rejected,cold,double(size),double(shared->cpus)};
+        for(int i=0;i<13;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
+    }
+    void close() {
+        if(!live) return;
+        // Administrative teardown is outside core timing; all mesh work is done.
+        MPI_Barrier(node);pin(initial);
+        if(me==0) pthread_mutex_destroy(&shared->mutex);
+        MPI_Win_unlock_all(window);MPI_Win_free(&window);MPI_Comm_free(&node);shared=nullptr;live=false;
+    }
+};
+}
+#endif

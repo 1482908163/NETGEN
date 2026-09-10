@@ -482,6 +482,30 @@ rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kerne
         PROCESS_COUNTS='1 2 4',RANKS_PER_NODE='1',CPUS_PER_TASK='16',RUN_ROOT=str(tmp/'kernel_submitted'))
     preview=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kernel_submit,capture_output=True,text=True)
     assert preview.returncode==0 and preview.stdout.count('--cpus-per-task 16')==3,preview.stderr
+    # 节点协作沿用同一入口，验证结果指标、四组对照和压缩后续跑。
+    node_mock=modern.read_text().replace("rows=[]", """if '--kernel-scheduler' in args and value('--kernel-scheduler').startswith('node_'):
+    metadata['node_resources']='node_coop_v1'
+rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kernel-scheduler' in args and value('--kernel-scheduler').startswith('node_'):
+        for name in ('setup_seconds','management_seconds','epochs','borrow_epochs','borrowed_core_seconds','leased_core_seconds','phase_seconds','peak_threads','model_decisions','model_rejections','cold_decisions','node_ranks','node_cpus'):
+            metrics['coop_'+name]=0
+        metrics.update(coop_node_ranks=4,coop_node_cpus=8,coop_peak_threads=2,coop_epochs=3,coop_leased_core_seconds=.3,coop_phase_seconds=.15)
+        if value('--kernel-scheduler')!='node_fixed':
+            metrics.update(coop_borrow_epochs=1,coop_borrowed_core_seconds=.1)
+    stages={s:dict(seconds=.1,calls=1)""")
+    modern.write_text(node_mock+"\n# node_coop_v1\n")
+    node_env=dict(kernel_env,EXPERIMENT_PRESET='cooperate',PROCESS_COUNT='4',PROCESS_COUNTS='4',
+        RANKS_PER_NODE='4',KERNEL_THREAD_COUNTS='2',KERNEL_SCHEDULERS='repair node_fixed node_lend node_model',
+        RUN_ROOT=str(tmp/'node_results'),MOCK_AUDIT=str(tmp/'node_audit'))
+    node_run=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=node_env,capture_output=True,text=True)
+    assert node_run.returncode==0,(node_run.stdout,node_run.stderr)
+    node_report=list(csv.DictReader((tmp/'node_results/p4/kernel_summary.csv').open()))
+    assert len(node_report)==4 and all(float(row['speedup_vs_repair'])==1 for row in node_report)
+    assert all(float(row['speedup_vs_node_fixed'])==1 for row in node_report)
+    node_resume=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=node_env,capture_output=True,text=True)
+    assert node_resume.returncode==0,(node_resume.stdout,node_resume.stderr)
+    assert len((tmp/'node_audit').read_text().splitlines())==8
+    invalid_node=dict(node_env,KERNEL_THREAD_COUNTS='1 2')
+    assert subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=invalid_node,capture_output=True).returncode==2
     invalid_comm=dict(communication,ALGORITHMS='combined',RUN_ROOT=str(tmp/'invalid_comm'))
     rejected=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=invalid_comm,capture_output=True,text=True)
     assert rejected.returncode==2 and not (tmp/'invalid_comm').exists()

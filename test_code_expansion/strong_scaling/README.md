@@ -6,15 +6,27 @@
 第二轮 v2 校准已经完成；尾部预测不足的分析见 [校准结果](../docs/experiments/20260907_calibration.md)。随后 v3 的36次正式采样也已完成，但三个种子的分区特征重复，不能进入评价，见 [v3 实验分析](../docs/experiments/20260907_v3_calibration.md)。
 第四次四组评价已经完成：160次正式运行成功，稀疏通信收益得到再次验证，但节点组映射没有兑现预测中的显著净收益。8192进程组合相对仅稀疏自然核心仅下降1.44%，屏障拆分模式略慢。原因与后续主线见 [第四次实验结果](../docs/experiments/20260908_iteration4_results.md)。本次已接入面依赖约束的封闭子域任务调度，方法与判据见 [任务调度版本](../docs/experiments/20260909_task_scheduling.md)。任务版160次正式运行已完成：仅8192进程动态调度改善8.85%，其余规模退化，且整体慢于旧稀疏流程；详见 [任务实验及初始版本对照](../docs/experiments/20260909_task_results.md)。任务版已退出默认配置。当前固化一进程一分区的通信基线，停止继续调整失败的均衡方案；见 [固化说明与替代算法研究](../docs/experiments/20260909_sparse_baseline_and_new_directions.md)。
 
-## 当前状态：固化并行修复，研究节点内资源协作
+## 当前版本：节点内资源协作
 
-`mesh_algorithms_20260910-201124` 已完成。并行修复使本批六组自然核心时间下降约31.4%～46.9%；邻域限制相对并行修复慢约1.2%～2.9%，退出默认方案。完整数据、适用边界和新研究设计见 [修复结果与资源协作研究](../docs/experiments/20260910_repair_baseline_and_cooperation.md)。
+已实现跨进程核租约和在线阶段代价分配，保留稀疏通信及并行修复。算法、适用边界和验证记录见 [完整实现说明](../docs/experiments/20260910_node_cooperation_implementation.md)。邻域限制不参与默认实验。
 
-已验证的增强基线是 sparse（稀疏通信）＋repair（并行修复）。原 `run_experiments.sh` 仍为统一入口；当前默认保留 static（原流程）与 repair 对照，4/16线程、每节点1进程并预留16核、1/4/16节点，其余计时及重复规则不变。frontier（邻域限制）只供显式复现，旧实验归档不改写。
+**需要重新编译 Netgen 内核与应用。** 在研究分支的仓库根目录依次执行，构建成功后再提交：
 
-**当前入口仍是已完成的进程内部修复对照，不是跨进程资源协作实验。无需为本次文档和默认配置更新重编内核或重复运行已有实验。** 下一种算法尚未接入运行时；设计中的4进程/节点配置也未设为默认，避免提交没有资源协作的伪对照。
+```bash
+git pull --ff-only
+cd test_code_expansion
+bash build_project.sh
+cd strong_scaling
+bash run_experiments.sh
+```
 
-需要重建代码时，仍在 `NETGEN/test_code_expansion` 执行 `bash build_project.sh`，安装到原路径，然后进入 `strong_scaling` 执行 `bash run_experiments.sh`。结果优先看各 `p*/RESULT_SUMMARY.txt` 和 `kernel_summary.csv`。后续资源协作必须与相同节点数、进程数和总核数的并行修复基线比较；不能直接拿改变进程布局后的时间与本批比较。
+默认 cooperate（节点协作）：1/4/16节点，对应4/16/64进程；每节点4进程、固定16核，初始每进程4线程。对比 repair（原并行修复）、node_fixed（新接口固定资源）、node_lend（普通借核）、node_model（在线代价分配）。全部使用稀疏通信，分别运行自然计时和等待拆分；1次预热、5次正式，共144次运行。LEVELS=1、REFINES=1，实际单元数以输出为准，不是百亿规模测试。
+
+仍只在 run_experiments.sh 顶部修改参数，不需要命令行传一串变量。每个进程保留1个主核，忙进程最多使用同节点13核。集群若不允许作业内跨进程核绑定，程序会明确失败，不会超售运行。
+
+结果先看各 p4/p16/p64 下的 RESULT_SUMMARY.txt（结果摘要）和 kernel_summary.csv（内核汇总）。摘要会给出相对原修复、固定接口、普通借核的比较，并提示是否真正借核、模型是否被采用。原压缩、清理和续跑规则保留，使用新结果目录。代码可运行不代表已证明性能收益或创新性，需以同资源实验判断。
+
+旧 kernel（原内核实验）、pilot（预检）、production（旧大规模实验）预设仅在显式选择时运行。上一批修复收益和失败方案保留在 [历史归档](../docs/experiments/20260910_repair_baseline_and_cooperation.md)。
 
 ## 当前通信对照
 

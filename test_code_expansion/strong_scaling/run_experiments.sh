@@ -10,25 +10,29 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   cooperate  : 1/4/16 节点，每节点4进程/16核，比较跨进程资源分配
 #   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-kernel}"
-# 当前默认：一进程一分区，只比较全收集和已验证的稀疏通信。
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-cooperate}"
+# 默认保持一进程一分区和稀疏通信，比较节点内资源分配。
 # boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
 default_stage=communication
-[[ "${EXPERIMENT_PRESET}" != kernel ]] || default_stage=kernel
+[[ "${EXPERIMENT_PRESET}" != kernel && "${EXPERIMENT_PRESET}" != cooperate ]] || default_stage=kernel
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
-KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4 16}"
+default_kernel_counts="4 16";default_kernel_schedulers="static repair"
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="repair node_fixed node_lend node_model"; }
+KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
-KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-static repair}"
+KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
 KERNEL_THREADS="${KERNEL_THREADS:-0}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-static}"
 default_cpus=1;default_rpn=16
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_cpus=4;default_rpn=4; }
 CPUS_PER_TASK="${CPUS_PER_TASK:-${default_cpus}}"
 export CPUS_PER_TASK KERNEL_THREADS KERNEL_SCHEDULER KERNEL_THREAD_COUNTS KERNEL_SCHEDULERS
 BALANCE_METHOD="${BALANCE_METHOD:-none}"
@@ -60,9 +64,10 @@ case "${EXPERIMENT_STAGE}" in
     *) echo "EXPERIMENT_STAGE must be kernel, communication, calibration, evaluation or legacy" >&2; exit 2 ;;
 esac
 case "${EXPERIMENT_PRESET}" in
-    kernel)
+    kernel|cooperate)
         default_tasks=0
         default_process_counts="1 4 16"
+        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="4 16 64"
         default_levels=1
         default_refines=1
         default_verify_faces=0
@@ -83,7 +88,7 @@ case "${EXPERIMENT_PRESET}" in
         default_refines=3
         default_verify_faces=0
         ;;
-    *) echo "EXPERIMENT_PRESET must be kernel, pilot or production" >&2; exit 2 ;;
+    *) echo "EXPERIMENT_PRESET must be cooperate, kernel, pilot or production" >&2; exit 2 ;;
 esac
 
 TASK_COUNT="${TASK_COUNT:-${default_tasks}}"  # 仅历史 task_queue 使用；通信基线忽略。
@@ -133,8 +138,16 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier ]] || { echo "内核策略仅支持 static/cavity/repair/frontier。" >&2;exit 2; }
+        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model ]] || { echo "内核策略仅支持 static/cavity/repair/frontier/node_fixed/node_lend/node_model。" >&2;exit 2; }
     done
+    if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
+        [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
+            echo "节点协作要求单一初始线程数等于每进程预留核数，且每节点至少2进程、每进程至少2核。" >&2;exit 2;
+        }
+        for count in ${PROCESS_COUNTS}; do
+            ((count>=RANKS_PER_NODE && count%RANKS_PER_NODE==0)) || { echo "协作实验进程数须填满节点。" >&2;exit 2; }
+        done
+    fi
     [[ -n "${KERNEL_THREAD_COUNTS}" && -n "${KERNEL_SCHEDULERS}" ]] || exit 2
 fi
 if [[ "${EXPERIMENT_STAGE}" == communication || "${EXPERIMENT_STAGE}" == kernel ]]; then
@@ -257,6 +270,7 @@ else
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
+[[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v1")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
 for marker in "${markers[@]}"; do
     if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then
@@ -317,7 +331,11 @@ failure_file="${pdir}/failures.log"
 launch=("${MPI_LAUNCHER}" "${mpi_extra[@]}" -n "${PROCESS_COUNT}")
 case "$(basename "${MPI_LAUNCHER}")" in yhrun|srun)
     launch+=(-N "$(( (PROCESS_COUNT+RANKS_PER_NODE-1)/RANKS_PER_NODE ))")
-    ((KERNEL_THREADS==0)) || launch+=(--cpus-per-task "${CPUS_PER_TASK}" --cpu-bind cores)
+    if ((KERNEL_THREADS>0)); then
+        binding=cores
+        [[ "${EXPERIMENT_PRESET}" != cooperate && "${KERNEL_SCHEDULER}" != node_* ]] || binding=threads
+        launch+=(--cpus-per-task "${CPUS_PER_TASK}" --cpu-bind "${binding}")
+    fi
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || launch+=(--ntasks-per-node "${RANKS_PER_NODE}" --distribution block)
     ;;
 esac

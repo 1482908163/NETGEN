@@ -686,7 +686,8 @@ namespace netgen
   {
     static Timer t("OptimizeVolume"); RegionTimer reg(t);
   #ifndef EMSCRIPTEN
-    RegionTaskManager rtm(mp.parallel_meshing ? mp.nthreads : 0);
+    VolumeResourceScope resources(mp.volume_resources,6,mesh3d.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
+    RegionTaskManager rtm(resources.threads);
   #endif // EMSCRIPTEN
     const char* savetask = multithread.task;
     multithread.task = "Optimize Volume";
@@ -939,10 +940,12 @@ namespace netgen
 
   void RemoveIllegalElements (Mesh & mesh3d, const MeshingParameters & options, int domain)
   {
-    RegionTaskManager repair_tasks(options.volume_parallel_repair && options.parallel_meshing ? options.nthreads : 0);
+    RegionTaskManager repair_tasks(!options.volume_resources && options.volume_parallel_repair && options.parallel_meshing ? options.nthreads : 0);
     auto * stats=options.volume_kernel_stats;
     auto mark = [&](int d=0) {
       VolumeKernelTimer time(stats,3);
+      VolumeResourceScope resources(options.volume_resources,2,mesh3d.GetNE(),0);
+      RegionTaskManager tasks(resources.threads);
       return mesh3d.MarkIllegalElements(d);
     };
     static Timer t("RemoveIllegalElements"); RegionTimer reg(t);
@@ -974,12 +977,21 @@ namespace netgen
 
 	PrintMessage (5, nillegal, " illegal tets");
         if(stats) stats->Add(7,1);
-        { VolumeKernelTimer time(stats,4); optmesh.SplitImprove (); }
+        { VolumeKernelTimer time(stats,4);
+          VolumeResourceScope resources(options.volume_resources,3,mesh3d.GetNE(),0);
+          RegionTaskManager tasks(resources.threads);
+          optmesh.SplitImprove (); }
 
 	mark();
-        { VolumeKernelTimer time(stats,5); optmesh.SwapImprove (); }
+        { VolumeKernelTimer time(stats,5);
+          VolumeResourceScope resources(options.volume_resources,4,mesh3d.GetNE(),0);
+          RegionTaskManager tasks(resources.threads);
+          optmesh.SwapImprove (); }
 	mark();
-        { VolumeKernelTimer time(stats,6); optmesh.SwapImprove2 (); }
+        { VolumeKernelTimer time(stats,6);
+          VolumeResourceScope resources(options.volume_resources,5,mesh3d.GetNE(),0);
+          RegionTaskManager tasks(resources.threads);
+          optmesh.SwapImprove2 (); }
 
 	oldn = nillegal;
 	nillegal = mark();

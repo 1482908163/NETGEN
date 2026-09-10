@@ -417,7 +417,8 @@ namespace nglib
 
 
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
-       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details)
+       Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
+       const VolumeResources * resources=nullptr)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -440,6 +441,7 @@ namespace nglib
          local.volume_parallel_repair = schedule>=2;
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
+         local.volume_resources = resources;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
@@ -476,6 +478,15 @@ namespace nglib
    {
      if(!details) return NG_ERROR;
      return GenerateVolumeKernelImpl(mesh,mp,threads,schedule,seconds,details);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperative(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !details) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
    }
 
    /* ------------------ 2D Meshing Functions ------------------------- */
