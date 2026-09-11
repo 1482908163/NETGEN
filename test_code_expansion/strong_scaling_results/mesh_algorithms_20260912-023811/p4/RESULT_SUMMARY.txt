@@ -1,0 +1,9 @@
+内核协作原型汇总
+进程数: 4; 异常项: 0
+scheduler threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static
+node_fixed 4 natural 13.730229 3.155822 13.211 - 3097.000 -
+资源 node_fixed natural: 相对原修复加速=- 相对固定接口加速=1.000 相对普通借核加速=- 借核租约核秒=0.000 峰值线程=4.000 模型采用次数=0.000
+node_fixed=固定资源新接口，node_lend=普通空闲借核，node_model=阶段代价分配（含公平回退）；均启用并行修复。
+租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。
+同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。
+natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。
