@@ -6,5 +6,5 @@ node_fixed=固定资源新接口，node_lend=普通空闲借核，node_model=阶
 同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。
 natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。
 p4/node_fixed/t4: Missing measured repeats: p4 seed=-1 sparse/natural: [1]
-Failed run (exit 87): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-172847/kernel_node_fixed_t4/p4/sparse_natural/repeat_1
-/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-172847/kernel_node_fixed_t4/p4: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-172847/kernel_node_fixed_t4/p4/analysis/summary.csv'
+Failed run (exit 87): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-174541/kernel_node_fixed_t4/p4/sparse_natural/repeat_1
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-174541/kernel_node_fixed_t4/p4: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-174541/kernel_node_fixed_t4/p4/analysis/summary.csv'
