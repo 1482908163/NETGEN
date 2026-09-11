@@ -494,7 +494,7 @@ SIGNATURE
                   --profile-experiment "${a}" --profile-repeat "${rep}" -o "${out}/mesh/")
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
             rc=0
-            timeout "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
+            timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
             rm -f "${out}/RUNNING"
             exec 9>&-
             if ((rc==0)); then

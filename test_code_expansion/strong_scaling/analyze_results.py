@@ -459,7 +459,9 @@ def kernel_overview(root, ranks):
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
     for key, counts in workloads.items():
-        reference_name='node_fixed' if key[1].startswith('node_') else 'static'
+        reference_name=('repair' if key[1]=='node_fixed' and
+                        (key[0],'repair',*key[2:]) in workloads else
+                        'node_fixed' if key[1].startswith('node_') else 'static')
         reference=workloads.get((key[0],reference_name,*key[2:]))
         if len(counts)!=1 or (reference is not None and counts!=reference):
             issues.append(f"{key}: per-run volume counts differ")
@@ -505,6 +507,7 @@ def kernel_overview(root, ranks):
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
     lines += ["node_fixed=固定资源新接口，node_lend=普通空闲借核，node_model=阶段代价分配（含公平回退）；均启用并行修复。",
+              "质量计数对照：有 repair 时 node_fixed 与 repair 比较，借核模式与 node_fixed 比较；单元数或标记数检查不代替完整质量验证。",
               "租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。",
               "同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。",
               "natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。",*issues]
