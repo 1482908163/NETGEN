@@ -52,7 +52,7 @@ class NodeResources {
     Shared *shared=nullptr;
     cpu_set_t initial,home_mask;
     int me=0,size=0,base=1,mode=0,held=1,borrowed=0;
-    bool live=false,shared_pool=false;
+    bool live=false,shared_pool=false,hostname_grouping=false;
     double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
     static double now() { timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec; }
@@ -148,9 +148,43 @@ public:
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
-        MPI_Comm_split_type(world,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL,&node);
+
+        int world_rank=0,world_size=0;
+        MPI_Comm_rank(world,&world_rank);MPI_Comm_size(world,&world_size);
+        int split_rc=MPI_Comm_split_type(world,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL,&node);
+        if(split_rc!=MPI_SUCCESS || node==MPI_COMM_NULL)
+            fail("MPI_COMM_TYPE_SHARED 节点分组失败");
         MPI_Comm_rank(node,&me);MPI_Comm_size(node,&size);
-        if(size<2 || size>max_ranks || base<2) fail("资源协作需要每节点2至128进程，每进程至少2核");
+
+        // MPI-X/PMIx on the target cluster can return singleton communicators for
+        // MPI_COMM_TYPE_SHARED even when all ranks physically share a node. Fall back
+        // to an explicit processor-name grouping so the validation is independent of
+        // the MPI implementation's shared-node discovery path.
+        if(size==1 && world_size>1) {
+            MPI_Comm_free(&node);node=MPI_COMM_NULL;
+            char myname[MPI_MAX_PROCESSOR_NAME];std::memset(myname,0,sizeof(myname));
+            int name_len=0;
+            if(MPI_Get_processor_name(myname,&name_len)!=MPI_SUCCESS)
+                fail("无法读取MPI处理器名称用于节点分组");
+            std::vector<char> names(size_t(world_size)*MPI_MAX_PROCESSOR_NAME,0);
+            if(MPI_Allgather(myname,MPI_MAX_PROCESSOR_NAME,MPI_CHAR,
+                             names.data(),MPI_MAX_PROCESSOR_NAME,MPI_CHAR,world)!=MPI_SUCCESS)
+                fail("无法收集MPI处理器名称用于节点分组");
+            int color=world_rank;
+            for(int r=0;r<world_size;++r) {
+                const char *other=names.data()+size_t(r)*MPI_MAX_PROCESSOR_NAME;
+                if(std::strncmp(other,myname,MPI_MAX_PROCESSOR_NAME)==0) { color=r;break; }
+            }
+            if(MPI_Comm_split(world,color,world_rank,&node)!=MPI_SUCCESS || node==MPI_COMM_NULL)
+                fail("按处理器名称建立节点通信域失败");
+            MPI_Comm_rank(node,&me);MPI_Comm_size(node,&size);hostname_grouping=true;
+        }
+        if(size<2 || size>max_ranks || base<2) {
+            std::cerr<<"node_coop_v1: world_rank="<<world_rank<<" world_size="<<world_size
+                     <<" local_size="<<size<<" threads="<<base
+                     <<" grouping="<<(hostname_grouping?"processor_name":"MPI_COMM_TYPE_SHARED")<<std::endl;
+            fail("资源协作需要每节点2至128进程，每进程至少2核");
+        }
 
         std::vector<cpu_set_t> masks(size);
         MPI_Allgather(&initial,sizeof(initial),MPI_BYTE,masks.data(),sizeof(initial),MPI_BYTE,node);
@@ -198,9 +232,12 @@ public:
         }
 
         void *local=nullptr;
-        MPI_Win_allocate_shared(me==0?sizeof(Shared):0,1,MPI_INFO_NULL,node,&local,&window);
+        if(MPI_Win_allocate_shared(me==0?sizeof(Shared):0,1,MPI_INFO_NULL,node,&local,&window)!=MPI_SUCCESS)
+            fail("MPI共享窗口创建失败；当前MPI实现可能不支持该节点通信域");
         MPI_Aint bytes;int unit;void *root=nullptr;
-        MPI_Win_shared_query(window,0,&bytes,&unit,&root);shared=static_cast<Shared*>(root);
+        if(MPI_Win_shared_query(window,0,&bytes,&unit,&root)!=MPI_SUCCESS || !root)
+            fail("MPI共享窗口查询失败");
+        shared=static_cast<Shared*>(root);
         int *memory_model=nullptr,flag=0;
         MPI_Win_get_attr(window,MPI_WIN_MODEL,&memory_model,&flag);
         if(!flag || *memory_model!=MPI_WIN_UNIFIED) fail("资源协作要求MPI共享窗口采用统一内存模型");
@@ -224,7 +261,8 @@ public:
         MPI_Win_sync(window);MPI_Barrier(node);MPI_Win_sync(window);live=true;
         setup=now()-start;
         if(me==0)
-            std::cerr<<"node_coop_v1: affinity_layout="<<(shared_pool?"shared_pool":"disjoint")
+            std::cerr<<"node_coop_v1: node_group="<<(hostname_grouping?"processor_name":"MPI_COMM_TYPE_SHARED")
+                     <<" affinity_layout="<<(shared_pool?"shared_pool":"disjoint")
                      <<" node_ranks="<<size<<" node_cpus="<<shared->cpus<<" home_cpus="<<base<<std::endl;
     }
     NodeResources(const NodeResources&)=delete;
@@ -292,10 +330,10 @@ public:
     template<class Profiler> void report(Profiler &p) const {
         const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
             "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions",
-            "node_ranks","node_cpus","shared_pool_layout"};
+            "node_ranks","node_cpus","shared_pool_layout","hostname_grouping"};
         double values[]={setup,management,epochs,borrow_epochs,borrow_seconds,lease_seconds,phase_seconds,peak,
-            decisions,rejected,cold,double(size),double(shared->cpus),shared_pool?1.0:0.0};
-        for(int i=0;i<14;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
+            decisions,rejected,cold,double(size),double(shared->cpus),shared_pool?1.0:0.0,hostname_grouping?1.0:0.0};
+        for(int i=0;i<15;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
     }
     void close() {
         if(!live) return;
