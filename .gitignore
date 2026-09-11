@@ -25,12 +25,16 @@ __pycache__/
 /netgen/build/
 /netgen/install/
 
-# test_code_expansion 内部过滤 (保留您原有的规则)
+# test_code_expansion 内部过滤
 /test_code_expansion/build/
 /test_code_expansion/result/
 /test_code_expansion/err/
 /test_code_expansion/inputData/
 /test_code_expansion/install-test/
+
+# ====================================================
+# strong_scaling_results：保留可复现实验与故障诊断文本，忽略大体积中间产物
+# ====================================================
 /test_code_expansion/strong_scaling_results/**/application_output/
 /test_code_expansion/strong_scaling_results/**/rank_profiles.jsonl
 /test_code_expansion/strong_scaling_results/**/rank_profiles.jsonl.gz
@@ -41,8 +45,16 @@ __pycache__/
 /test_code_expansion/strong_scaling_results/**/mesh/
 /test_code_expansion/strong_scaling_results/**/verify_*/
 /test_code_expansion/strong_scaling_results/**/launcher_logs/
-test_code_expansion/strong_scaling_results/**/scheduler_logs/
+/test_code_expansion/strong_scaling_results/**/scheduler_logs/
 /test_code_expansion/strong_scaling_results/**/page_cache_logs/
 /test_code_expansion/strong_scaling_results/**/build_logs/
 /test_code_expansion/strong_scaling_results/**/*.out
 /test_code_expansion/strong_scaling_results/**/*.err
+
+# 覆盖全局 *.log 规则：实验诊断日志需要提交，便于直接定位失败原因
+!/test_code_expansion/strong_scaling_results/**/run.log
+!/test_code_expansion/strong_scaling_results/**/failures.log
+!/test_code_expansion/strong_scaling_results/**/job-*.log
+
+# 节点协作验证的精简诊断文件始终保留
+!/test_code_expansion/strong_scaling_results/**/node_coop_errors.txt
