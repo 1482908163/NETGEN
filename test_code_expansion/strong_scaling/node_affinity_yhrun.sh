@@ -16,6 +16,7 @@ REAL_YHRUN="${REAL_YHRUN:-$(command -v yhrun)}"
 nodes=$(( (PROCESS_COUNT + RANKS_PER_NODE - 1) / RANKS_PER_NODE ))
 exec "${REAL_YHRUN}" \
     -N "${nodes}" \
+    -n "${PROCESS_COUNT}" \
     --ntasks-per-node "${RANKS_PER_NODE}" \
     --distribution block \
     --cpus-per-task "${CPUS_PER_TASK}" \
