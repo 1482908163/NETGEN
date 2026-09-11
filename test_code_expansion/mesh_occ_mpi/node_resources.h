@@ -50,9 +50,9 @@ class NodeResources {
     MPI_Comm node=MPI_COMM_NULL;
     MPI_Win window=MPI_WIN_NULL;
     Shared *shared=nullptr;
-    cpu_set_t initial;
+    cpu_set_t initial,home_mask;
     int me=0,size=0,base=1,mode=0,held=1,borrowed=0;
-    bool live=false;
+    bool live=false,shared_pool=false;
     double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
     static double now() { timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec; }
@@ -146,25 +146,57 @@ class NodeResources {
 public:
     // mode 0=fixed, 1=greedy idle lending, 2=phase cost guided allocation.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
-        const double start=now();CPU_ZERO(&initial);
+        const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
         MPI_Comm_split_type(world,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL,&node);
         MPI_Comm_rank(node,&me);MPI_Comm_size(node,&size);
         if(size<2 || size>max_ranks || base<2) fail("资源协作需要每节点2至128进程，每进程至少2核");
+
         std::vector<cpu_set_t> masks(size);
         MPI_Allgather(&initial,sizeof(initial),MPI_BYTE,masks.data(),sizeof(initial),MPI_BYTE,node);
+
+        // Validation branch supports two launch layouts:
+        // 1) old per-rank disjoint masks; 2) --cpu-bind none, where every local rank
+        // sees the same node-wide allocation. In the second case the program creates
+        // deterministic per-rank home masks itself and later lends only within that pool.
+        shared_pool=true;
+        for(int r=1;r<size;++r) if(!CPU_EQUAL(&masks[0],&masks[r])) { shared_pool=false;break; }
+
         cpu_set_t total;CPU_ZERO(&total);
-        for(int r=0;r<size;++r) {
-            if(CPU_COUNT(&masks[r])!=base) fail("每进程绑定的逻辑CPU数须等于初始线程数；请使用脚本默认绑定");
-            for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
-                if(CPU_ISSET(c,&total)) fail("进程初始核绑定重叠，无法进行无超售借核");
-                CPU_SET(c,&total);
+        if(shared_pool) {
+            const int required=size*base;
+            if(CPU_COUNT(&initial)<required)
+                fail("节点共享CPU池不足：请使用4进程/节点、4核/进程并关闭逐进程绑核");
+            std::vector<int> cpus;
+            for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&initial)) cpus.push_back(c);
+            if(int(cpus.size())>256) cpus.resize(256);
+            if(int(cpus.size())<required) fail("节点共享CPU池可用核数不足");
+            for(int r=0;r<size;++r) {
+                CPU_ZERO(&masks[r]);
+                for(int j=0;j<base;++j) CPU_SET(cpus[r*base+j],&masks[r]);
             }
+            home_mask=masks[me];
+            for(int r=0;r<size;++r)
+                for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) CPU_SET(c,&total);
+            // Confirm the step cgroup permits the complete node allocation, then enter
+            // the deterministic home mask before any Netgen worker threads are created.
+            pin(total);pin(home_mask);
+        } else {
+            for(int r=0;r<size;++r) {
+                if(CPU_COUNT(&masks[r])!=base)
+                    fail("每进程绑定核数不一致；验证分支要求共享CPU池或每进程恰好4核");
+                for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
+                    if(CPU_ISSET(c,&total)) fail("进程初始核绑定重叠，无法进行无超售借核");
+                    CPU_SET(c,&total);
+                }
+            }
+            home_mask=initial;
+            if(CPU_COUNT(&total)>256) fail("当前节点调度原型最多支持256个已分配核");
+            // Old layout remains supported for node_fixed. Dynamic modes still verify
+            // that the scheduler/cgroup allows expanding to sibling-rank CPUs.
+            if(mode!=0) { pin(total);pin(home_mask); }
         }
-        if(CPU_COUNT(&total)>256) fail("当前节点调度原型最多支持256个已分配核");
-        // Verify the task's cgroup permits the union, then immediately restore.
-        // No worker threads exist at this point, and the union contains only job CPUs.
-        pin(total);pin(initial);
+
         void *local=nullptr;
         MPI_Win_allocate_shared(me==0?sizeof(Shared):0,1,MPI_INFO_NULL,node,&local,&window);
         MPI_Aint bytes;int unit;void *root=nullptr;
@@ -191,6 +223,9 @@ public:
         }
         MPI_Win_sync(window);MPI_Barrier(node);MPI_Win_sync(window);live=true;
         setup=now()-start;
+        if(me==0)
+            std::cerr<<"node_coop_v1: affinity_layout="<<(shared_pool?"shared_pool":"disjoint")
+                     <<" node_ranks="<<size<<" node_cpus="<<shared->cpus<<" home_cpus="<<base<<std::endl;
     }
     NodeResources(const NodeResources&)=delete;
     ~NodeResources() = default; // close() is explicit and must precede MPI_Finalize.
@@ -242,7 +277,7 @@ public:
         const double start=now();
         // Caller guarantees all workers have joined BEFORE this callback.
         cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);
-        pin(mode==0?initial:anchor);
+        pin(mode==0?home_mask:anchor);
         lock();auto &r=shared->rank[me];
         if(!r.active || r.phase!=phase || r.threads!=threads) fail("资源归还与活动租约不匹配");
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
@@ -256,10 +291,11 @@ public:
     }
     template<class Profiler> void report(Profiler &p) const {
         const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
-            "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions","node_ranks","node_cpus"};
+            "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions",
+            "node_ranks","node_cpus","shared_pool_layout"};
         double values[]={setup,management,epochs,borrow_epochs,borrow_seconds,lease_seconds,phase_seconds,peak,
-            decisions,rejected,cold,double(size),double(shared->cpus)};
-        for(int i=0;i<13;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
+            decisions,rejected,cold,double(size),double(shared->cpus),shared_pool?1.0:0.0};
+        for(int i=0;i<14;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
     }
     void close() {
         if(!live) return;
