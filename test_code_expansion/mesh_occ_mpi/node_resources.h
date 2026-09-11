@@ -5,8 +5,14 @@
 #include <pthread.h>
 #include <sched.h>
 #include <time.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -47,23 +53,32 @@ class NodeResources {
         int anchor[max_ranks];
         RankState rank[max_ranks];
     };
+
     MPI_Comm node=MPI_COMM_NULL;
-    MPI_Win window=MPI_WIN_NULL;
     Shared *shared=nullptr;
+    int shm_fd=-1;
+    std::string shm_name;
     cpu_set_t initial,home_mask;
     int me=0,size=0,base=1,mode=0,held=1,borrowed=0;
     bool live=false,shared_pool=false,hostname_grouping=false;
     double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
-    static double now() { timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec; }
+
+    static double now() {
+        timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec;
+    }
     [[noreturn]] void fail(const char *message) const {
         std::cerr<<"node_coop_v1: "<<message<<std::endl;
+        MPI_Abort(MPI_COMM_WORLD,87);std::terminate();
+    }
+    [[noreturn]] void fail_errno(const char *message) const {
+        std::cerr<<"node_coop_v1: "<<message<<": "<<std::strerror(errno)<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,87);std::terminate();
     }
     void lock() { if(pthread_mutex_lock(&shared->mutex)!=0) fail("节点资源锁失败"); }
     void unlock() { if(pthread_mutex_unlock(&shared->mutex)!=0) fail("节点资源解锁失败"); }
     void pin(const cpu_set_t &mask) {
-        if(sched_setaffinity(0,sizeof(mask),&mask)!=0) fail("集群不允许作业内跨进程核亲和性调整");
+        if(sched_setaffinity(0,sizeof(mask),&mask)!=0) fail_errno("集群不允许作业内跨进程核亲和性调整");
         cpu_set_t actual;CPU_ZERO(&actual);
         if(sched_getaffinity(0,sizeof(actual),&actual)!=0 || !CPU_EQUAL(&actual,&mask))
             fail("实际核集合与资源租约不一致，停止实验");
@@ -80,8 +95,6 @@ class NodeResources {
         return std::max(1,available/std::max(1,pending));
     }
     int model_target(int fair,int cap) {
-        // Asynchronous snapshot: active leases are immutable; idle ranks advertise
-        // their last phase until their next entry. Only this caller's target commits.
         const double stamp=now();int budget=shared->cpus;double locked_tail=0,locked_lower=0;
         std::vector<int> pending;
         for(int i=0;i<size;++i) {
@@ -98,7 +111,6 @@ class NodeResources {
             else pending.push_back(i);
         }
         if(pending.empty() || budget<int(pending.size())) return fair;
-        // Do not invent speedup curves for phases with no runtime observations.
         for(int i:pending) if(shared->rank[i].model[shared->rank[i].phase].samples<2) {
             ++cold;return fair;
         }
@@ -114,7 +126,6 @@ class NodeResources {
             std::fill(next.begin(),next.end(),inf);
             for(int used=0;used<=budget;++used) if(std::isfinite(dp[used])) {
                 int limit=std::min(cap,budget-used);
-                // SwapImprove2 is serial in this kernel.
                 if(r.phase==5) limit=1;
                 for(int k=1;k<=limit;++k) {
                     double value=std::max(dp[used],r.work*(a+b/k));
@@ -134,15 +145,40 @@ class NodeResources {
             pending_upper=std::max(pending_upper,r.work*(a+b/k+2*m.error));
             if(pending[j]==me) target=k;used-=k;
         }
-        // Two admissible updates: shorten the predicted tail, or use fewer
-        // CPUs while this pending work stays below an immutable active tail.
-        // Error bands are empirical guards, not statistical guarantees.
         double overhead=epochs>0?management/epochs:0;
         bool shorter=fixed-best>2*uncertainty+2*overhead;
         bool slack=target<fair && pending_upper+2*overhead<locked_lower;
         if(target==fair || (!shorter && !slack)) { ++rejected;return fair; }
         ++decisions;return target;
     }
+
+    void create_posix_shared_state(int world_rank) {
+        char name[128]={0};
+        if(me==0) {
+            timespec stamp{};clock_gettime(CLOCK_REALTIME,&stamp);
+            std::snprintf(name,sizeof(name),"/netgen_node_%d_%ld_%lld",world_rank,
+                          static_cast<long>(getpid()),
+                          static_cast<long long>(stamp.tv_nsec));
+        }
+        if(MPI_Bcast(name,sizeof(name),MPI_CHAR,0,node)!=MPI_SUCCESS)
+            fail("无法广播POSIX共享内存名称");
+        shm_name=name;
+
+        if(me==0) {
+            shm_fd=shm_open(shm_name.c_str(),O_CREAT|O_EXCL|O_RDWR,0600);
+            if(shm_fd<0) fail_errno("创建POSIX节点共享内存失败");
+            if(ftruncate(shm_fd,sizeof(Shared))!=0) fail_errno("设置POSIX共享内存大小失败");
+        }
+        MPI_Barrier(node);
+        if(me!=0) {
+            shm_fd=shm_open(shm_name.c_str(),O_RDWR,0600);
+            if(shm_fd<0) fail_errno("打开POSIX节点共享内存失败");
+        }
+        void *mapping=mmap(nullptr,sizeof(Shared),PROT_READ|PROT_WRITE,MAP_SHARED,shm_fd,0);
+        if(mapping==MAP_FAILED) { shared=nullptr;fail_errno("映射POSIX节点共享内存失败"); }
+        shared=static_cast<Shared*>(mapping);
+    }
+
 public:
     // mode 0=fixed, 1=greedy idle lending, 2=phase cost guided allocation.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
@@ -156,10 +192,8 @@ public:
             fail("MPI_COMM_TYPE_SHARED 节点分组失败");
         MPI_Comm_rank(node,&me);MPI_Comm_size(node,&size);
 
-        // MPI-X/PMIx on the target cluster can return singleton communicators for
-        // MPI_COMM_TYPE_SHARED even when all ranks physically share a node. Fall back
-        // to an explicit processor-name grouping so the validation is independent of
-        // the MPI implementation's shared-node discovery path.
+        // MPI-X/PMIx can return singleton shared communicators on this cluster.
+        // Fall back to explicit processor-name grouping for node-local coordination.
         if(size==1 && world_size>1) {
             MPI_Comm_free(&node);node=MPI_COMM_NULL;
             char myname[MPI_MAX_PROCESSOR_NAME];std::memset(myname,0,sizeof(myname));
@@ -188,11 +222,6 @@ public:
 
         std::vector<cpu_set_t> masks(size);
         MPI_Allgather(&initial,sizeof(initial),MPI_BYTE,masks.data(),sizeof(initial),MPI_BYTE,node);
-
-        // Validation branch supports two launch layouts:
-        // 1) old per-rank disjoint masks; 2) --cpu-bind none, where every local rank
-        // sees the same node-wide allocation. In the second case the program creates
-        // deterministic per-rank home masks itself and later lends only within that pool.
         shared_pool=true;
         for(int r=1;r<size;++r) if(!CPU_EQUAL(&masks[0],&masks[r])) { shared_pool=false;break; }
 
@@ -200,7 +229,7 @@ public:
         if(shared_pool) {
             const int required=size*base;
             if(CPU_COUNT(&initial)<required)
-                fail("节点共享CPU池不足：请使用4进程/节点、4核/进程并关闭逐进程绑核");
+                fail("节点共享CPU池不足：请关闭逐进程绑核并保证节点分配核数充足");
             std::vector<int> cpus;
             for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&initial)) cpus.push_back(c);
             if(int(cpus.size())>256) cpus.resize(256);
@@ -212,13 +241,11 @@ public:
             home_mask=masks[me];
             for(int r=0;r<size;++r)
                 for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) CPU_SET(c,&total);
-            // Confirm the step cgroup permits the complete node allocation, then enter
-            // the deterministic home mask before any Netgen worker threads are created.
             pin(total);pin(home_mask);
         } else {
             for(int r=0;r<size;++r) {
                 if(CPU_COUNT(&masks[r])!=base)
-                    fail("每进程绑定核数不一致；验证分支要求共享CPU池或每进程恰好4核");
+                    fail("每进程绑定核数不一致；验证分支要求共享CPU池或每进程固定核数");
                 for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
                     if(CPU_ISSET(c,&total)) fail("进程初始核绑定重叠，无法进行无超售借核");
                     CPU_SET(c,&total);
@@ -226,24 +253,16 @@ public:
             }
             home_mask=initial;
             if(CPU_COUNT(&total)>256) fail("当前节点调度原型最多支持256个已分配核");
-            // Old layout remains supported for node_fixed. Dynamic modes still verify
-            // that the scheduler/cgroup allows expanding to sibling-rank CPUs.
             if(mode!=0) { pin(total);pin(home_mask); }
         }
 
-        void *local=nullptr;
-        if(MPI_Win_allocate_shared(me==0?sizeof(Shared):0,1,MPI_INFO_NULL,node,&local,&window)!=MPI_SUCCESS)
-            fail("MPI共享窗口创建失败；当前MPI实现可能不支持该节点通信域");
-        MPI_Aint bytes;int unit;void *root=nullptr;
-        if(MPI_Win_shared_query(window,0,&bytes,&unit,&root)!=MPI_SUCCESS || !root)
-            fail("MPI共享窗口查询失败");
-        shared=static_cast<Shared*>(root);
-        int *memory_model=nullptr,flag=0;
-        MPI_Win_get_attr(window,MPI_WIN_MODEL,&memory_model,&flag);
-        if(!flag || *memory_model!=MPI_WIN_UNIFIED) fail("资源协作要求MPI共享窗口采用统一内存模型");
-        MPI_Win_lock_all(0,window);
+        // Do not use MPI_Win_allocate_shared here: MPI-X accepts the communicator
+        // but MPI_Win_shared_query fails after processor-name fallback grouping.
+        // POSIX shared memory is node-local by construction and independent of MPI's
+        // shared-memory communicator implementation.
+        create_posix_shared_state(world_rank);
         if(me==0) {
-            new(shared) Shared{};shared->size=size;
+            std::memset(shared,0,sizeof(Shared));shared->size=size;
             pthread_mutexattr_t attr;
             if(pthread_mutexattr_init(&attr) || pthread_mutexattr_setpshared(&attr,PTHREAD_PROCESS_SHARED) ||
                pthread_mutexattr_setrobust(&attr,PTHREAD_MUTEX_ROBUST) || pthread_mutex_init(&shared->mutex,&attr))
@@ -253,23 +272,29 @@ public:
                 bool first=true;
                 for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
                     int index=shared->cpus++;shared->cpu[index]=c;shared->home[index]=r;
-                    if(first) {shared->anchor[r]=c;first=false;shared->owner[index]=r;}
-                    else shared->owner[index]=r;
+                    if(first) {shared->anchor[r]=c;first=false;}
+                    shared->owner[index]=r;
                 }
             }
         }
-        MPI_Win_sync(window);MPI_Barrier(node);MPI_Win_sync(window);live=true;
-        setup=now()-start;
+        MPI_Barrier(node);
+        // Every local rank has opened and mapped the segment; remove its namespace
+        // entry now so crashes cannot leave persistent /dev/shm garbage.
+        if(me==0 && shm_unlink(shm_name.c_str())!=0 && errno!=ENOENT)
+            fail_errno("删除POSIX共享内存名称失败");
+        MPI_Barrier(node);
+        live=true;setup=now()-start;
         if(me==0)
             std::cerr<<"node_coop_v1: node_group="<<(hostname_grouping?"processor_name":"MPI_COMM_TYPE_SHARED")
+                     <<" shared_state=posix_shm"
                      <<" affinity_layout="<<(shared_pool?"shared_pool":"disjoint")
                      <<" node_ranks="<<size<<" node_cpus="<<shared->cpus<<" home_cpus="<<base<<std::endl;
     }
+
     NodeResources(const NodeResources&)=delete;
-    ~NodeResources() = default; // close() is explicit and must precede MPI_Finalize.
+    ~NodeResources() = default;
+
     void prepare(double work) {
-        // Preserve the original resources during surface/pre-volume work.
-        // Publish idle worker CPUs only after this host is pinned to its anchor.
         if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
         lock();auto &r=shared->rank[me];
         if(r.prepared) fail("内核资源准备被重复调用");
@@ -298,7 +323,6 @@ public:
         if(phase==5) target=1;
         target=std::max(1,std::min(target,cap));
         cpu_set_t mask;CPU_ZERO(&mask);CPU_SET(shared->anchor[me],&mask);held=1;borrowed=0;
-        // Prefer own CPUs; use only idle CPUs, never revoke an active lease.
         for(int pass=0;pass<2;++pass) for(int c=0;c<shared->cpus && held<target;++c) {
             if(shared->cpu[c]==shared->anchor[me]) continue;
             if((shared->home[c]==me)!=(pass==0)) continue;
@@ -313,7 +337,6 @@ public:
     }
     void release(int phase,double work,int threads,double seconds) {
         const double start=now();
-        // Caller guarantees all workers have joined BEFORE this callback.
         cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);
         pin(mode==0?home_mask:anchor);
         lock();auto &r=shared->rank[me];
@@ -337,10 +360,13 @@ public:
     }
     void close() {
         if(!live) return;
-        // Administrative teardown is outside core timing; all mesh work is done.
         MPI_Barrier(node);pin(initial);
         if(me==0) pthread_mutex_destroy(&shared->mutex);
-        MPI_Win_unlock_all(window);MPI_Win_free(&window);MPI_Comm_free(&node);shared=nullptr;live=false;
+        MPI_Barrier(node);
+        if(shared && munmap(shared,sizeof(Shared))!=0) fail_errno("解除POSIX共享内存映射失败");
+        shared=nullptr;
+        if(shm_fd>=0) { close(shm_fd);shm_fd=-1; }
+        MPI_Comm_free(&node);live=false;
     }
 };
 }
