@@ -1,0 +1,220 @@
+========参数========
+使用核数 : 64
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-162440/kernel_node_fixed_t4/p64/sparse_natural/repeat_4/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 1
+细化次数 : 1
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260911-162440/kernel_node_fixed_t4/p64/sparse_natural/repeat_4
+实验名称 : sparse
+重复编号 : 4
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3c35bf50
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3c35bf50
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+Volume Mesh successfully created.....
+Number of points = 8067
+Number of volume elements = 26411
+Generate Coarse Mesh Done...
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 0 (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 0
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 3 (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 3
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 1
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 2 (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 2
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 60 (rank 60 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 60
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 16 (rank 16 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 16
+Abort(87) on node 61 (rank 61 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 61
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 17 (rank 17 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 17
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 62 (rank 62 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 62
+Abort(87) on node 21 (rank 21 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 21
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 18 (rank 18 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 18
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 19 (rank 19 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 19
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 20 (rank 20 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 20
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 6 (rank 6 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 6
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 48 (rank 48 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 48
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 63 (rank 63 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 63
+Abort(87) on node 10 (rank 10 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 10
+Abort(87) on node 29 (rank 29 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 29
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 22 (rank 22 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 22
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 36 (rank 36 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 36
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 25 (rank 25 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 25
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 4 (rank 4 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 4
+Abort(87) on node 49 (rank 49 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 49
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 11 (rank 11 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 11
+Abort(87) on node 30 (rank 30 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 30
+Abort(87) on node 23 (rank 23 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 23
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 33 (rank 33 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 33
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 37 (rank 37 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 37
+Abort(87) on node 26 (rank 26 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 26
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 13 (rank 13 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 13
+Abort(87) on node 56 (rank 56 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 56
+Abort(87) on node 5 (rank 5 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 5
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 8 (rank 8 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 8
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 35 (rank 35 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 35
+Abort(87) on node 44 (rank 44 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 44
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 38 (rank 38 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 38
+Abort(87) on node 27 (rank 27 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 27
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 57 (rank 57 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 57
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 51 (rank 51 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 51
+Abort(87) on node 9 (rank 9 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 9
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 28 (rank 28 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 28
+Abort(87) on node 32 (rank 32 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 32
+Abort(87) on node 45 (rank 45 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 45
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 39 (rank 39 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 39
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 24 (rank 24 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 24
+Abort(87) on node 15 (rank 15 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 15
+Abort(87) on node 58 (rank 58 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 58
+Abort(87) on node 7 (rank 7 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 7
+Abort(87) on node 50 (rank 50 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 50
+Abort(87) on node 31 (rank 31 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 31
+Abort(87) on node 34 (rank 34 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 34
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 46 (rank 46 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 46
+Abort(87) on node 12 (rank 12 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 12
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 47 (rank 47 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 47
+Abort(87) on node 14 (rank 14 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 14
+Abort(87) on node 59 (rank 59 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 59
+Abort(87) on node 53 (rank 53 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 53
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 43 (rank 43 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 43
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 40 (rank 40 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 40
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 55 (rank 55 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 55
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 52 (rank 52 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 52
+Abort(87) on node 41 (rank 41 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 41
+Abort(87) on node 54 (rank 54 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 54
+node_coop_v1: 资源协作需要每节点2至128进程，每进程至少2核
+Abort(87) on node 42 (rank 42 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 87) - process 42
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+slurmstepd: error: *** STEP 6014435.34 ON cn2832 CANCELLED AT 2026-09-11T16:36:33 ***
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+terminate called without an active exception
+yhrun: error: cn2843: task 44: Aborted
+yhrun: error: cn2843: tasks 45-47: Killed
+yhrun: error: cn2846: tasks 56-59: Aborted
+yhrun: error: cn2835: tasks 13-14: Killed
+yhrun: error: cn2847: tasks 61-63: Aborted
+yhrun: error: cn2834: tasks 8-9: Killed
+yhrun: error: cn2842: tasks 40-43: Aborted
+yhrun: error: cn2838: tasks 24-25: Killed
+yhrun: error: cn2834: tasks 10-11: Aborted
+yhrun: error: cn2839: tasks 28,31: Killed
+yhrun: error: cn2838: tasks 26-27: Aborted
+yhrun: error: cn2833: tasks 5,7: Killed
+yhrun: error: cn2836: tasks 18-19: Aborted
+yhrun: error: cn2837: task 22: Killed
