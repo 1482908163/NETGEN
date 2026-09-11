@@ -365,7 +365,7 @@ public:
         MPI_Barrier(node);
         if(shared && munmap(shared,sizeof(Shared))!=0) fail_errno("解除POSIX共享内存映射失败");
         shared=nullptr;
-        if(shm_fd>=0) { close(shm_fd);shm_fd=-1; }
+        if(shm_fd>=0) { ::close(shm_fd);shm_fd=-1; }
         MPI_Comm_free(&node);live=false;
     }
 };
