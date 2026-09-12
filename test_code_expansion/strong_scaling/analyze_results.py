@@ -180,7 +180,7 @@ def inspect(path, sample_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_fixed","node_lend","node_model"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -188,6 +188,13 @@ def inspect(path, sample_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid kernel timing")
             result[key]=max(values)
+    if metadata.get("kernel_lifecycle")=="team_lifecycle_v1":
+        for name in ("starts","start_seconds","stop_seconds"):
+            key="kernel_team_"+name
+            values=[r["metrics"][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 for v in values):
+                raise ValueError("invalid thread lifecycle metric: "+key)
+            result[key]=sum(values) if name=="starts" else max(values)
     if metadata.get("kernel_diagnostics")=="repair_v2":
         timing_names=("delaunay_seconds","front_seconds","domain_repair_seconds","repair_mark_seconds",
                       "repair_split_seconds","repair_swap_seconds","repair_swap2_seconds")
@@ -200,7 +207,7 @@ def inspect(path, sample_sink=None):
         if result["kernel_repair_candidates_active"]>result["kernel_repair_candidates_total"]:
             raise ValueError("active candidates exceed full candidates")
     if metadata.get("kernel_scheduler", "").startswith("node_"):
-        if metadata.get("node_resources")!="node_coop_v1": raise ValueError("missing node resource schema")
+        if metadata.get("node_resources") not in ("node_coop_v1","node_coop_v2"): raise ValueError("missing node resource schema")
         maximum=("setup_seconds","management_seconds","peak_threads","node_ranks","node_cpus")
         summed=("epochs","borrow_epochs","borrowed_core_seconds","leased_core_seconds","phase_seconds",
                 "model_decisions","model_rejections","cold_decisions")
@@ -216,8 +223,37 @@ def inspect(path, sample_sink=None):
                 raise ValueError("invalid node resource peak threads")
             if m['coop_borrowed_core_seconds']>m['coop_leased_core_seconds']+1e-9:
                 raise ValueError("borrowed core seconds exceed leased core seconds")
-            if metadata['kernel_scheduler']=='node_fixed' and (m['coop_borrow_epochs'] or m['coop_borrowed_core_seconds']):
+            if metadata['kernel_scheduler'] in ('node_native','node_scoped','node_fixed') and (m['coop_borrow_epochs'] or m['coop_borrowed_core_seconds']):
                 raise ValueError("fixed resource control unexpectedly borrowed CPUs")
+        if metadata.get('node_resources')=='node_coop_v2':
+            phase_fields=('epochs','seconds','core_seconds','borrowed_core_seconds',
+                          'below_base_epochs','min_threads','max_threads')
+            for phase in range(8):
+                prefix=f'coop_phase_{phase}_'
+                for name in phase_fields:
+                    key=prefix+name;values=[r['metrics'][key] for r in rows]
+                    if any(not math.isfinite(v) or v<0 for v in values):
+                        raise ValueError('invalid per-phase resource metric: '+key)
+                    result[key]=(min((v for v in values if v>0),default=0) if name=='min_threads' else
+                                 max(values) if name=='max_threads' else sum(values))
+                for r in rows:
+                    m=r['metrics'];calls=m[prefix+'epochs']
+                    if m[prefix+'below_base_epochs']>calls or m[prefix+'borrowed_core_seconds']>m[prefix+'core_seconds']+1e-9:
+                        raise ValueError('inconsistent phase resource counts')
+                    if calls and not 1<=m[prefix+'min_threads']<=m[prefix+'max_threads']<=m['coop_peak_threads']:
+                        raise ValueError('invalid phase thread limits')
+                    if not calls and any(m[prefix+field] for field in phase_fields):
+                        raise ValueError('unused phase contains resource measurements')
+                    if metadata['kernel_scheduler'] in ('node_guarded','node_model') and phase!=5 and calls:
+                        if m[prefix+'below_base_epochs'] or m[prefix+'min_threads']<int(metadata['kernel_threads']):
+                            raise ValueError('protected allocation used fewer than base CPUs')
+            for r in rows:
+                m=r['metrics']
+                if sum(m[f'coop_phase_{i}_epochs'] for i in range(8))!=m['coop_epochs']:
+                    raise ValueError('phase lease count does not match total')
+                for field,total in (('seconds','phase_seconds'),('core_seconds','leased_core_seconds'),('borrowed_core_seconds','borrowed_core_seconds')):
+                    if not math.isclose(sum(m[f'coop_phase_{i}_{field}'] for i in range(8)),m['coop_'+total],rel_tol=1e-8,abs_tol=1e-6):
+                        raise ValueError('phase resource measurement does not match total')
     if metadata.get("feature_schema")=="mesh_comm_v1":
         if (metadata["algorithm"] not in ("baseline","sparse") or
             metadata.get("cost_model")!="none" or metadata.get("balance_method")!="none" or
@@ -450,7 +486,7 @@ def kernel_overview(root, ranks):
                         generation_seconds=float(row['kernel_generation_seconds_median']),
                         repair_seconds=float(row['kernel_repair_seconds_median']),
                         optimization_seconds=float(row['kernel_optimization_seconds_median'])))
-                    for key in ('compute_max_seconds','compute_imbalance','vertex_wait_seconds','kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds','kernel_repair_mark_seconds','kernel_repair_split_seconds','kernel_repair_swap_seconds','kernel_repair_swap2_seconds','kernel_repair_candidates_total','kernel_repair_candidates_active','kernel_repair_fallbacks','kernel_final_illegal'):
+                    for key in ('compute_max_seconds','compute_imbalance','vertex_wait_seconds','kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds','kernel_repair_mark_seconds','kernel_repair_split_seconds','kernel_repair_swap_seconds','kernel_repair_swap2_seconds','kernel_repair_candidates_total','kernel_repair_candidates_active','kernel_repair_fallbacks','kernel_final_illegal','kernel_team_starts','kernel_team_start_seconds','kernel_team_stop_seconds'):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
@@ -459,7 +495,10 @@ def kernel_overview(root, ranks):
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
     for key, counts in workloads.items():
-        reference_name=('repair' if key[1]=='node_fixed' and
+        reference_name=('node_native' if key[1]=='node_native' and (key[0],'repair',*key[2:]) not in workloads else
+                        'node_native' if key[1] in ('node_scoped','node_fixed') and
+                        (key[0],'node_native',*key[2:]) in workloads else
+                        'repair' if key[1] in ('node_native','node_scoped','node_fixed') and
                         (key[0],'repair',*key[2:]) in workloads else
                         'node_fixed' if key[1].startswith('node_') else 'static')
         reference=workloads.get((key[0],reference_name,*key[2:]))
@@ -478,7 +517,7 @@ def kernel_overview(root, ranks):
     indexed={(r['scheduler'],r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report}
     for row in report:
         key=(row['threads'],row['algorithm'],row['timing'],row['seed'])
-        for reference in ('repair','node_fixed','node_lend'):
+        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded'):
             control=indexed.get((reference,*key))
             row['speedup_vs_'+reference]=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
         if row['scheduler'].startswith('node_'):
@@ -488,6 +527,18 @@ def kernel_overview(root, ranks):
                 issues.append(f"{row['scheduler']}: volume count differs from node_fixed")
     out=root/f"p{ranks}";out.mkdir(exist_ok=True)
     write_csv(out/'kernel_summary.csv',report)
+    phase_names=('reserved','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
+    phase_report=[]
+    for row in report:
+        for phase,name in enumerate(phase_names):
+            prefix=f'coop_phase_{phase}_'
+            if not row.get(prefix+'epochs'): continue
+            item={k:row[k] for k in ('scheduler','threads','algorithm','timing','seed','repeats')}
+            item.update(phase=phase,phase_name=name)
+            for field in ('epochs','seconds','core_seconds','borrowed_core_seconds','below_base_epochs','min_threads','max_threads'):
+                item[field+'_median']=row.get(prefix+field)
+            phase_report.append(item)
+    write_csv(out/'kernel_phase_summary.csv',phase_report)
     lines=["内核协作原型汇总",f"进程数: {ranks}; 异常项: {len(issues)}",
            "scheduler threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
     for row in report:
@@ -495,20 +546,29 @@ def kernel_overview(root, ranks):
                      f"{row['repair_seconds']:.6f} {compact(row.get('compute_max_seconds'))} {compact(row.get('vertex_wait_seconds'))} "
                      f"{compact(row.get('kernel_final_illegal'))} {compact(row['speedup_vs_static'])}")
     for row in report:
+        if row.get('kernel_team_starts') is not None:
+            lines.append(f"线程组 {row['scheduler']} {row['timing']}: 启动次数={compact(row['kernel_team_starts'])} "
+                         f"启动耗时={compact(row.get('kernel_team_start_seconds'),6)}s "
+                         f"停止耗时={compact(row.get('kernel_team_stop_seconds'),6)}s")
         if not row['scheduler'].startswith('node_'): continue
         lines.append(f"资源 {row['scheduler']} {row['timing']}: 相对原修复加速={compact(row.get('speedup_vs_repair'))} "
+                     f"相对同核原修复加速={compact(row.get('speedup_vs_node_native'))} "
                      f"相对固定接口加速={compact(row.get('speedup_vs_node_fixed'))} "
+                     f"相对保底借核加速={compact(row.get('speedup_vs_node_guarded'))} "
                      f"相对普通借核加速={compact(row.get('speedup_vs_node_lend'))} "
                      f"借核租约核秒={compact(row.get('coop_borrowed_core_seconds'))} "
                      f"峰值线程={compact(row.get('coop_peak_threads'))} "
                      f"模型采用次数={compact(row.get('coop_model_decisions'))}")
-        if row['scheduler']!='node_fixed' and not row.get('coop_borrow_epochs'):
+        if row['scheduler'] in ('node_lend','node_guarded','node_model') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
-    lines += ["node_fixed=固定资源新接口，node_lend=普通空闲借核，node_model=阶段代价分配（含公平回退）；均启用并行修复。",
-              "质量计数对照：有 repair 时 node_fixed 与 repair 比较，借核模式与 node_fixed 比较；单元数或标记数检查不代替完整质量验证。",
+    lines += ["node_native=同核布局原修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
+              "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
+              "质量对照优先使用同核原修复，再检查各借核策略相对固定分配的单元数和标记数；不代替完整质量验证。",
               "租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。",
+              "线程组次数为各进程总和，启停耗时分别取进程最大值，已包含在内核耗时中，不能再加到总时间。",
+              "kernel_phase_summary.csv 给出阶段租约次数、最少/最多线程、低于保底核次数；阶段秒为进程租约时长之和，不是关键路径。",
               "同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。",
               "natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。",*issues]
     (out/'RESULT_SUMMARY.txt').write_text('\n'.join(lines)+'\n')

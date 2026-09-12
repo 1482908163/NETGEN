@@ -63,6 +63,20 @@ class NodeResources {
     bool live=false,shared_pool=false,hostname_grouping=false;
     double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
+    struct PhaseStats {
+        double calls=0,seconds=0,core_seconds=0,borrowed_seconds=0,below_base=0;
+        int minimum=0,maximum=0;
+    };
+    PhaseStats phase_stats[phases];
+    bool protected_base() const { return mode==2 || mode==3; }
+    static std::string mask_text(const cpu_set_t &mask) {
+        std::string value;
+        for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&mask)) {
+            if(!value.empty()) value+=",";
+            value+=std::to_string(c);
+        }
+        return value;
+    }
 
     static double now() {
         timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return t.tv_sec+1e-9*t.tv_nsec;
@@ -127,7 +141,8 @@ class NodeResources {
             for(int used=0;used<=budget;++used) if(std::isfinite(dp[used])) {
                 int limit=std::min(cap,budget-used);
                 if(r.phase==5) limit=1;
-                for(int k=1;k<=limit;++k) {
+                const int minimum=protected_base() && r.phase!=5 ? base : 1;
+                for(int k=minimum;k<=limit;++k) {
                     double value=std::max(dp[used],r.work*(a+b/k));
                     if(value<next[used+k]) { next[used+k]=value;choice[j][used+k]=k; }
                 }
@@ -180,7 +195,7 @@ class NodeResources {
     }
 
 public:
-    // mode 0=fixed, 1=greedy idle lending, 2=phase cost guided allocation.
+    // mode 0=fixed, 1=unprotected greedy, 2=protected model, 3=protected greedy.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -284,6 +299,11 @@ public:
             fail_errno("删除POSIX共享内存名称失败");
         MPI_Barrier(node);
         live=true;setup=now()-start;
+        if(me==0) for(int r=0;r<size;++r) {
+            const auto layout=std::string("node_coop_v2_layout: leader_world_rank=")+std::to_string(world_rank)+
+                " local_rank="+std::to_string(r)+" pool="+mask_text(total)+" home="+mask_text(masks[r]);
+            std::cerr<<layout<<std::endl;
+        }
         if(me==0)
             std::cerr<<"node_coop_v1: node_group="<<(hostname_grouping?"processor_name":"MPI_COMM_TYPE_SHARED")
                      <<" shared_state=posix_shm"
@@ -298,7 +318,7 @@ public:
         if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
         lock();auto &r=shared->rank[me];
         if(r.prepared) fail("内核资源准备被重复调用");
-        if(mode!=0) for(int c=0;c<shared->cpus;++c)
+        if(mode!=0 && !protected_base()) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
         r.prepared=1;r.work=std::max(1.0,work);unlock();
     }
@@ -312,7 +332,7 @@ public:
         const double start=now();if(phase<0 || phase>=phases) fail("未知内核资源阶段");
         lock();auto &r=shared->rank[me];if(r.active || r.done) fail("资源租约嵌套或生命周期错误");
         r.phase=phase;r.work=std::max(1.0,work);
-        int free=1;
+        int free=protected_base()?base:1;
         for(int c=0;c<shared->cpus;++c) if(shared->owner[c]<0) ++free;
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
@@ -322,17 +342,26 @@ public:
         }
         if(phase==5) target=1;
         target=std::max(1,std::min(target,cap));
+        if(protected_base() && phase!=5 && target<base)
+            fail("保底核策略产生低于初始核数的租约");
         cpu_set_t mask;CPU_ZERO(&mask);CPU_SET(shared->anchor[me],&mask);held=1;borrowed=0;
         for(int pass=0;pass<2;++pass) for(int c=0;c<shared->cpus && held<target;++c) {
             if(shared->cpu[c]==shared->anchor[me]) continue;
             if((shared->home[c]==me)!=(pass==0)) continue;
-            if((mode==0 && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0)) {
+            if(((mode==0 || protected_base()) && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0)) {
+                if(protected_base() && shared->home[c]!=me && !shared->rank[shared->home[c]].done)
+                    fail("保底核策略借用了未完成进程的核");
                 shared->owner[c]=me;CPU_SET(shared->cpu[c],&mask);++held;
                 borrowed+=shared->home[c]!=me;
             }
         }
+        if(held!=target) fail("实际分配核数与租约目标不一致");
         r.active=1;r.threads=held;r.start=now();unlock();pin(mask);
         ++epochs;if(borrowed) ++borrow_epochs;peak=std::max(peak,double(held));
+        auto &ps=phase_stats[phase];++ps.calls;
+        if(held<base) ++ps.below_base;
+        ps.minimum=ps.minimum?std::min(ps.minimum,held):held;
+        ps.maximum=std::max(ps.maximum,held);
         management+=now()-start;return held;
     }
     void release(int phase,double work,int threads,double seconds) {
@@ -342,21 +371,40 @@ public:
         lock();auto &r=shared->rank[me];
         if(!r.active || r.phase!=phase || r.threads!=threads) fail("资源归还与活动租约不匹配");
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
-            if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
+            if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me] &&
+               (!protected_base() || shared->home[c]!=me)) shared->owner[c]=-1;
         r.model[phase].observe(threads,work,seconds);r.active=0;r.threads=1;
         unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
         phase_seconds+=seconds;management+=now()-start;
+        auto &ps=phase_stats[phase];ps.seconds+=seconds;
+        ps.core_seconds+=threads*seconds;ps.borrowed_seconds+=borrowed*seconds;
     }
     void finish() {
-        lock();auto &r=shared->rank[me];if(r.active) fail("内核结束时仍持有活动租约");r.done=1;unlock();
+        if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
+        lock();auto &r=shared->rank[me];if(r.active) fail("内核结束时仍持有活动租约");
+        r.done=1;
+        if(mode!=0) for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
+        unlock();
     }
     template<class Profiler> void report(Profiler &p) const {
         const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
             "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions",
             "node_ranks","node_cpus","shared_pool_layout","hostname_grouping"};
-        double values[]={setup,management,epochs,borrow_epochs,borrow_seconds,lease_seconds,phase_seconds,peak,
+        double values[]={setup,management,epochs,borrow_epochs,borrow_seconds,lease_seconds,phase_seconds,epochs?peak:double(base),
             decisions,rejected,cold,double(size),double(shared->cpus),shared_pool?1.0:0.0,hostname_grouping?1.0:0.0};
         for(int i=0;i<15;++i) p.set_metric(std::string("coop_")+names[i],values[i]);
+        for(int phase=0;phase<phases;++phase) {
+            const auto &s=phase_stats[phase];
+            const auto prefix=std::string("coop_phase_")+std::to_string(phase)+"_";
+            p.set_metric(prefix+"epochs",s.calls);
+            p.set_metric(prefix+"seconds",s.seconds);
+            p.set_metric(prefix+"core_seconds",s.core_seconds);
+            p.set_metric(prefix+"borrowed_core_seconds",s.borrowed_seconds);
+            p.set_metric(prefix+"below_base_epochs",s.below_base);
+            p.set_metric(prefix+"min_threads",s.minimum);
+            p.set_metric(prefix+"max_threads",s.maximum);
+        }
     }
     void close() {
         if(!live) return;

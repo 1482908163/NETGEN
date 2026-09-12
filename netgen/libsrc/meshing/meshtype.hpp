@@ -29,6 +29,7 @@ namespace netgen
     void * context = nullptr;
     int (*acquire)(void *, int, double, int) = nullptr;
     void (*release)(void *, int, double, int, double) = nullptr;
+    bool grouped_repair = false;
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;

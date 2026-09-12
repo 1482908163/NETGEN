@@ -40,7 +40,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_fixed/node_lend/node_model内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -305,7 +305,9 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
-    const bool node_cooperative=research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" || research.kernel_scheduler=="node_model";
+    const bool node_cooperative=research.kernel_scheduler=="node_native" || research.kernel_scheduler=="node_scoped" ||
+        research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" ||
+        research.kernel_scheduler=="node_guarded" || research.kernel_scheduler=="node_model";
     if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
@@ -401,7 +403,8 @@ int main(int argc, char **argv) {
     profiler.add_metadata("profiler_schema_version", "research_1");
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
-    if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v1");
+    if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
+    if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
@@ -653,7 +656,8 @@ int main(int argc, char **argv) {
     if(node_cooperative) {
         scaling::StageScope setup("node_resource_setup","compute");
         node_resources.reset(new mesh_node::NodeResources(MPI_COMM_WORLD,research.kernel_threads,
-            research.kernel_scheduler=="node_fixed"?0:research.kernel_scheduler=="node_lend"?1:2));
+            research.kernel_scheduler=="node_lend"?1:research.kernel_scheduler=="node_model"?2:
+            research.kernel_scheduler=="node_guarded"?3:0));
     }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
@@ -766,16 +770,23 @@ int main(int argc, char **argv) {
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
             double kernel_seconds[3]={},kernel_details[12]={};
+            double team_before[3]={},team_after[3]={};
+            if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
             if(node_resources) node_resources->prepare(nglib::Ng_GetNP(submesh));
-            const auto local_status=node_resources
-                ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
+            const auto local_status=node_resources && research.kernel_scheduler!="node_native"
+                ? (research.kernel_scheduler=="node_scoped"
+                    ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
+                    : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
                 : research.kernel_threads>0
                 ? nglib::Ng_GenerateVolumeMeshRepair(submesh,&nmp,research.kernel_threads,
-                    research.kernel_scheduler=="frontier"?3:research.kernel_scheduler=="repair"?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
+                    research.kernel_scheduler=="frontier"?3:(research.kernel_scheduler=="repair" || research.kernel_scheduler=="node_native")?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
             if(node_resources) {node_resources->finish();node_resources->report(profiler);}
             if(research.kernel_threads>0) {
+                nglib::Ng_GetVolumeTaskManagerStats(team_after);
+                const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};
+                for(int k=0;k<3;++k) profiler.set_metric(team_names[k],team_after[k]-team_before[k]);
                 const char * names[]={"delaunay_seconds","front_seconds","domain_repair_seconds",
                     "repair_mark_seconds","repair_split_seconds","repair_swap_seconds","repair_swap2_seconds",
                     "repair_rounds","repair_candidates_total","repair_candidates_active","repair_fallbacks","final_illegal"};

@@ -16,7 +16,7 @@ REAL_YHRUN="${REAL_YHRUN:-$(command -v yhrun)}"
 nodes=$(( (PROCESS_COUNT + RANKS_PER_NODE - 1) / RANKS_PER_NODE ))
 cpu_bind=cores
 case "${KERNEL_SCHEDULER:-static}" in
-    node_fixed|node_lend|node_model) cpu_bind=none ;;
+    node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model) cpu_bind=none ;;
 esac
 
 # run_experiments.sh already passes -n PROCESS_COUNT in "$@". Do not add a
@@ -66,9 +66,9 @@ set -e
 
 if [[ -n "${stderr_copy}" && -f "${stderr_copy}" ]]; then
     # 正常初始化也写 stderr，不能把成功信息当错误。
-    grep -E 'node_coop_v1:|Abort\(87\)|MPI|sched_setaffinity|affinity' "${stderr_copy}" \
+    grep -E 'node_coop_v1:|node_coop_v2_layout:|Abort\(87\)|MPI|sched_setaffinity|affinity' "${stderr_copy}" \
         > "${profile_dir}/node_coop_diagnostics.txt" || true
-    grep -v '^node_coop_v1: node_group=.* shared_state=posix_shm affinity_layout=' \
+    grep -Ev '^node_coop_v1: node_group=.* shared_state=posix_shm affinity_layout=|^node_coop_v2_layout: leader_world_rank=' \
         "${profile_dir}/node_coop_diagnostics.txt" > "${profile_dir}/node_coop_errors.txt" || true
 fi
 exit "${rc}"

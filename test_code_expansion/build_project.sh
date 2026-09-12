@@ -41,11 +41,12 @@ echo "LIBRARY_PATH: $LIBRARY_PATH"
 echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 echo ">>> 构建同仓库 Netgen 内核（包含候选调度接口）..."
+# 节点租约负责核绑定；禁止任务管理器内部 NUMA 自动绑核覆盖租约核集合。
 cmake -S "${NETGEN_ROOT}/netgen" -B "${NETGEN_ROOT}/build-netgen" \
   -DCMAKE_INSTALL_PREFIX="${NETGEN_INSTALL_DIR}" \
   -DCMAKE_C_COMPILER="${GCCHOME}/bin/gcc" -DCMAKE_CXX_COMPILER="${GCCHOME}/bin/g++" \
   -DCMAKE_PREFIX_PATH="${NETGEN_INSTALL_DIR}" \
-  -DUSE_GUI=OFF -DUSE_PYTHON=OFF -DUSE_OCC=ON -DUSE_MPI=ON -DCMAKE_BUILD_TYPE=Release
+  -DUSE_GUI=OFF -DUSE_PYTHON=OFF -DUSE_OCC=ON -DUSE_MPI=ON -DUSE_NUMA=OFF -DCMAKE_BUILD_TYPE=Release
 cmake --build "${NETGEN_ROOT}/build-netgen" -j "${BUILD_JOBS}"
 cmake --install "${NETGEN_ROOT}/build-netgen"
 
