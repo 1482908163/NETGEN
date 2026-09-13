@@ -499,6 +499,10 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeGrouped(Ng_Mesh * mesh,
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeResponsive(Ng_Mesh * mesh,
     Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
     int (*poll)(void *), double * seconds, double * details);
+// Remaining regular optimization operations, latest operation time, restart cost.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeWorkAware(Ng_Mesh * mesh,
+    Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+    int (*poll)(void *,double,int,double,double), double * seconds, double * details);
 // Three cumulative host-side values: starts, startup seconds, shutdown seconds.
 NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values);
 

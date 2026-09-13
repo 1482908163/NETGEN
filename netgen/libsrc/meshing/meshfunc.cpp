@@ -740,7 +740,8 @@ namespace netgen
         for (auto j : Range(mp.optimize3d.size()))
 	  {
 #ifndef EMSCRIPTEN
-            resource_team.Checkpoint(mesh3d.GetNE());
+            resource_team.Checkpoint(mesh3d.GetNE(),
+              int((mp.optsteps3d-i)*mp.optimize3d.size()-j));
 #endif
             multithread.percent = 100.* (double(j)/mp.optimize3d.size() + i)/mp.optsteps3d;
 	    if (multithread.terminate)

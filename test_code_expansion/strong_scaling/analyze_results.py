@@ -180,7 +180,7 @@ def inspect(path, sample_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -244,7 +244,7 @@ def inspect(path, sample_sink=None):
                         raise ValueError('invalid phase thread limits')
                     if not calls and any(m[prefix+field] for field in phase_fields):
                         raise ValueError('unused phase contains resource measurements')
-                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail') and phase!=5 and calls:
+                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority') and phase!=5 and calls:
                         if m[prefix+'below_base_epochs'] or m[prefix+'min_threads']<int(metadata['kernel_threads']):
                             raise ValueError('protected allocation used fewer than base CPUs')
             for r in rows:
@@ -254,8 +254,8 @@ def inspect(path, sample_sink=None):
                 for field,total in (('seconds','phase_seconds'),('core_seconds','leased_core_seconds'),('borrowed_core_seconds','borrowed_core_seconds')):
                     if not math.isclose(sum(m[f'coop_phase_{i}_{field}'] for i in range(8)),m['coop_'+total],rel_tol=1e-8,abs_tol=1e-6):
                         raise ValueError('phase resource measurement does not match total')
-    if metadata.get('kernel_scheduler')=='node_tail':
-        if metadata.get('node_checkpoints')!='node_tail_v1':
+    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority'):
+        if metadata.get('node_checkpoints')!=('node_tail_v1' if metadata['kernel_scheduler']=='node_tail' else 'node_work_v1'):
             raise ValueError('missing tail checkpoint schema')
         for name in ('checks','restarts','grants','seconds'):
             key='coop_checkpoint_'+name
@@ -271,6 +271,26 @@ def inspect(path, sample_sink=None):
                 raise ValueError('checkpoint restart count exceeds peer completion events')
             if m['coop_checkpoint_grants']>m['coop_borrow_epochs']:
                 raise ValueError('checkpoint grant without a borrowed lease')
+    if metadata.get('kernel_scheduler') in ('node_budget','node_priority'):
+        expected_policy='remaining_priority' if metadata['kernel_scheduler']=='node_priority' else 'arrival_gate'
+        if metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
+        reasons=('unknown','short','cost','deferred','no_capacity','grants','already')
+        for name in ('checks',*reasons,'reserved_cores','gain_estimate_seconds','restart_estimate_seconds'):
+            key='coop_work_'+name;values=[r['metrics'][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 for v in values): raise ValueError('invalid work metric: '+key)
+            result[key]=sum(values)
+        for r in rows:
+            m=r['metrics'];grants=m['coop_work_grants']
+            if sum(m['coop_work_'+reason] for reason in reasons)!=m['coop_work_checks']:
+                raise ValueError('work decisions do not cover checkpoints')
+            if not grants==m['coop_checkpoint_grants']==m['coop_checkpoint_restarts']<=1:
+                raise ValueError('work-aware reservation or restart bound violated')
+            if m['coop_work_reserved_cores']<grants or m['coop_borrow_epochs']!=grants:
+                raise ValueError('reserved resources do not match work grants')
+            if m['coop_work_checks']!=m['coop_checkpoint_checks']:
+                raise ValueError('work checkpoint counts disagree')
+            if metadata['kernel_scheduler']=='node_budget' and m['coop_work_deferred']:
+                raise ValueError('arrival control used priority selection')
     if metadata.get("feature_schema")=="mesh_comm_v1":
         if (metadata["algorithm"] not in ("baseline","sparse") or
             metadata.get("cost_model")!="none" or metadata.get("balance_method")!="none" or
@@ -534,7 +554,7 @@ def kernel_overview(root, ranks):
     indexed={(r['scheduler'],r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report}
     for row in report:
         key=(row['threads'],row['algorithm'],row['timing'],row['seed'])
-        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded'):
+        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget'):
             control=indexed.get((reference,*key))
             row['speedup_vs_'+reference]=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
         if row['scheduler'].startswith('node_'):
@@ -576,20 +596,30 @@ def kernel_overview(root, ranks):
                      f"借核租约核秒={compact(row.get('coop_borrowed_core_seconds'))} "
                      f"峰值线程={compact(row.get('coop_peak_threads'))} "
                      f"模型采用次数={compact(row.get('coop_model_decisions'))}")
-        if row['scheduler']=='node_tail':
-            lines.append(f"安全点 {row['timing']}: 检查次数={compact(row.get('coop_checkpoint_checks'))} "
+        if row['scheduler'] in ('node_tail','node_budget','node_priority'):
+            lines.append(f"安全点 {row['scheduler']} {row['timing']}: 检查次数={compact(row.get('coop_checkpoint_checks'))} "
                          f"重建次数={compact(row.get('coop_checkpoint_restarts'))} "
                          f"实际增核次数={compact(row.get('coop_checkpoint_grants'))} "
                          f"检查耗时={compact(row.get('coop_checkpoint_seconds'))}s")
             if not row.get('coop_checkpoint_grants'):
                 lines.append('  安全点未实际增核：不能将耗时差归因于阶段内协作。')
-        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail') and not row.get('coop_borrow_epochs'):
+        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
+        if row['scheduler'] in ('node_budget','node_priority'):
+            lines.append(f"受限申请 {row['scheduler']} {row['timing']}: "
+                         f"短尾拒绝={compact(row.get('coop_work_short'))} "
+                         f"成本拒绝={compact(row.get('coop_work_cost'))} "
+                         f"让给重任务={compact(row.get('coop_work_deferred'))} "
+                         f"无可用核={compact(row.get('coop_work_no_capacity'))} "
+                         f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
+                         f"相对受限申请加速={compact(row.get('speedup_vs_node_budget'))}")
     lines += ["node_native=同核布局原修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
               "node_tail=保底安全点借核：在修复轮次及优化操作之间响应已完成进程释放的核，无新核时保留线程组。",
+              "node_budget=只在最终优化中按剩余窗口和成本门槛申请一次；node_priority=同一约束下优先剩余单元操作量较多的进程。",
+              "gain_estimate 是门槛启发量，不是实测节省时间；剩余工作优先只比较本节点已公布且未过期的进度。",
               "质量对照优先使用同核原修复，再检查各借核策略相对固定分配的单元数和标记数；不代替完整质量验证。",
               "租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。",
               "线程组次数为各进程总和，启停耗时分别取进程最大值，已包含在内核耗时中，不能再加到总时间。",

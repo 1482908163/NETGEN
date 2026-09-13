@@ -44,12 +44,15 @@ class NodeResources {
     struct RankState {
         int active=0,done=0,prepared=0,phase=0,threads=1;
         double work=1,start=0;
+        int remaining=-1,work_granted=0;
+        double progress_time=0,last_operation=0,restart_cost=0;
         Model model[phases];
     };
     struct Shared {
         pthread_mutex_t mutex;
         int size=0,cpus=0,completion_generation=0;
         int cpu[CPU_SETSIZE],home[CPU_SETSIZE],owner[CPU_SETSIZE];
+        int reserved[CPU_SETSIZE]; // 0=unreserved, local rank+1 otherwise.
         int anchor[max_ranks];
         RankState rank[max_ranks];
     };
@@ -65,12 +68,23 @@ class NodeResources {
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
     int seen_completion=0,checkpoint_old_threads=0;
     double checkpoint_checks=0,checkpoint_restarts=0,checkpoint_grants=0,checkpoint_seconds=0;
+    double work_checks=0,work_unknown=0,work_short=0,work_cost=0,work_deferred=0;
+    double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
+    double work_gain_estimate=0,work_restart_estimate=0;
     struct PhaseStats {
         double calls=0,seconds=0,core_seconds=0,borrowed_seconds=0,below_base=0;
         int minimum=0,maximum=0;
     };
     PhaseStats phase_stats[phases];
-    bool protected_base() const { return mode==2 || mode==3 || mode==4; }
+    bool protected_base() const { return mode>=2; }
+    bool work_policy() const { return mode==5 || mode==6; }
+    bool work_eligible(const RankState &r,int extra,double stamp) const {
+        if(!r.active || r.done || r.phase!=6 || r.work_granted || r.remaining<2 || r.last_operation<=0) return false;
+        // A stale peer observation must not reserve the queue indefinitely.
+        if(stamp-r.progress_time>std::max(.05,4*r.last_operation)) return false;
+        double gain=r.last_operation*r.remaining*extra/(r.threads+extra);
+        return gain>2*std::max(.001,r.restart_cost)+.005;
+    }
     static std::string mask_text(const cpu_set_t &mask) {
         std::string value;
         for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&mask)) {
@@ -197,7 +211,7 @@ class NodeResources {
     }
 
 public:
-    // mode 0=fixed, 1=unprotected greedy, 2=protected model, 3=protected greedy, 4=tail checkpoints.
+    // 0=fixed, 1=greedy, 2=model, 3=guarded, 4=tail, 5=cost gate, 6=work priority.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -331,6 +345,50 @@ public:
         static_cast<NodeResources*>(ctx)->release(phase,work,threads,seconds);
     }
     static int poll_callback(void *ctx) { return static_cast<NodeResources*>(ctx)->poll(); }
+    static int poll_work_callback(void *ctx,double work,int remaining,double last,double restart) {
+        return static_cast<NodeResources*>(ctx)->poll_work(work,remaining,last,restart);
+    }
+    int poll_work(double work,int remaining,double last,double restart) {
+        if(!work_policy()) return 0;
+        if(!std::isfinite(work) || work<=0 || !std::isfinite(last) || last<0 ||
+           !std::isfinite(restart) || restart<0) fail("非法安全点进度");
+        const double stamp=now();++checkpoint_checks;++work_checks;
+        lock();auto &r=shared->rank[me];
+        if(!r.active || r.done) fail("工作量检查不在活动租约内");
+        r.work=work;r.remaining=remaining;r.last_operation=last;
+        r.restart_cost=restart;r.progress_time=stamp;
+        int extra=0;
+        for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) ++extra;
+        bool grant=false;
+        if(r.work_granted) ++work_already;
+        else if(r.phase!=6 || remaining<0 || last<=0) ++work_unknown;
+        else if(remaining<2) ++work_short;
+        else if(!extra) ++work_no_capacity;
+        else if(!work_eligible(r,extra,stamp)) ++work_cost;
+        else {
+            int winner=me;double score=work*remaining/r.threads;
+            if(mode==6) for(int i=0;i<size;++i) {
+                const auto &peer=shared->rank[i];
+                if(!work_eligible(peer,extra,stamp)) continue;
+                double candidate=peer.work*peer.remaining/peer.threads;
+                if(candidate>score || (candidate==score && i<winner)) {winner=i;score=candidate;}
+            }
+            if(winner!=me) ++work_deferred;
+            else {
+                // Reserve before stopping workers: another claimant cannot consume
+                // the selected cores in the release/acquire gap.
+                for(int c=0;c<shared->cpus;++c)
+                    if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done)
+                        shared->reserved[c]=me+1;
+                r.work_granted=1;checkpoint_old_threads=r.threads;
+                ++checkpoint_restarts;++work_grants;work_reserved+=extra;
+                work_gain_estimate+=last*remaining*extra/(r.threads+extra);
+                work_restart_estimate+=restart;grant=true;
+            }
+        }
+        unlock();checkpoint_seconds+=now()-stamp;return grant?1:0;
+    }
     int poll() {
         if(mode!=4) return 0;
         const double start=now();++checkpoint_checks;
@@ -340,7 +398,7 @@ public:
         if(shared->completion_generation!=seen_completion) {
             seen_completion=shared->completion_generation;
             for(int c=0;c<shared->cpus;++c)
-                if(shared->owner[c]<0 && shared->rank[shared->home[c]].done) refresh=true;
+                if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) refresh=true;
         }
         if(refresh) {++checkpoint_restarts;checkpoint_old_threads=r.threads;}
         unlock();checkpoint_seconds+=now()-start;
@@ -351,7 +409,8 @@ public:
         lock();auto &r=shared->rank[me];if(r.active || r.done) fail("资源租约嵌套或生命周期错误");
         r.phase=phase;r.work=std::max(1.0,work);
         int free=protected_base()?base:1;
-        for(int c=0;c<shared->cpus;++c) if(shared->owner[c]<0) ++free;
+        for(int c=0;c<shared->cpus;++c) if(shared->owner[c]<0 &&
+            (work_policy()?shared->reserved[c]==me+1:shared->reserved[c]==0)) ++free;
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
         int target=cap;
@@ -366,19 +425,22 @@ public:
         for(int pass=0;pass<2;++pass) for(int c=0;c<shared->cpus && held<target;++c) {
             if(shared->cpu[c]==shared->anchor[me]) continue;
             if((shared->home[c]==me)!=(pass==0)) continue;
-            if(((mode==0 || protected_base()) && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0)) {
+            if(((mode==0 || protected_base()) && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0 &&
+                (work_policy()?shared->reserved[c]==me+1:shared->reserved[c]==0))) {
                 if(protected_base() && shared->home[c]!=me && !shared->rank[shared->home[c]].done)
                     fail("保底核策略借用了未完成进程的核");
-                shared->owner[c]=me;CPU_SET(shared->cpu[c],&mask);++held;
+                shared->owner[c]=me;shared->reserved[c]=0;CPU_SET(shared->cpu[c],&mask);++held;
                 borrowed+=shared->home[c]!=me;
             }
         }
         if(held!=target) fail("实际分配核数与租约目标不一致");
         if(checkpoint_old_threads) {
+            if(work_policy() && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
             if(held>checkpoint_old_threads) ++checkpoint_grants;
             checkpoint_old_threads=0;
         }
         seen_completion=shared->completion_generation;
+        r.remaining=-1;r.last_operation=0;
         r.active=1;r.threads=held;r.start=now();unlock();pin(mask);
         ++epochs;if(borrowed) ++borrow_epochs;peak=std::max(peak,double(held));
         auto &ps=phase_stats[phase];++ps.calls;
@@ -416,6 +478,11 @@ public:
         p.set_metric("coop_checkpoint_restarts",checkpoint_restarts);
         p.set_metric("coop_checkpoint_grants",checkpoint_grants);
         p.set_metric("coop_checkpoint_seconds",checkpoint_seconds);
+        const char *work_names[]={"checks","unknown","short","cost","deferred","no_capacity",
+                                  "grants","reserved_cores","already","gain_estimate_seconds","restart_estimate_seconds"};
+        const double work_values[]={work_checks,work_unknown,work_short,work_cost,work_deferred,work_no_capacity,
+                                    work_grants,work_reserved,work_already,work_gain_estimate,work_restart_estimate};
+        for(int i=0;i<11;++i) p.set_metric(std::string("coop_work_")+work_names[i],work_values[i]);
         const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
             "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions",
             "node_ranks","node_cpus","shared_pool_layout","hostname_grouping"};
