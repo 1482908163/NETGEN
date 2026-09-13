@@ -133,7 +133,7 @@ def corr(a, b):
 def seconds(row, name):
     return row["stages"].get(name, {}).get("seconds", 0.0)
 
-def inspect(path, sample_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -180,7 +180,7 @@ def inspect(path, sample_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -244,7 +244,7 @@ def inspect(path, sample_sink=None):
                         raise ValueError('invalid phase thread limits')
                     if not calls and any(m[prefix+field] for field in phase_fields):
                         raise ValueError('unused phase contains resource measurements')
-                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority') and phase!=5 and calls:
+                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic') and phase!=5 and calls:
                         if m[prefix+'below_base_epochs'] or m[prefix+'min_threads']<int(metadata['kernel_threads']):
                             raise ValueError('protected allocation used fewer than base CPUs')
             for r in rows:
@@ -254,8 +254,8 @@ def inspect(path, sample_sink=None):
                 for field,total in (('seconds','phase_seconds'),('core_seconds','leased_core_seconds'),('borrowed_core_seconds','borrowed_core_seconds')):
                     if not math.isclose(sum(m[f'coop_phase_{i}_{field}'] for i in range(8)),m['coop_'+total],rel_tol=1e-8,abs_tol=1e-6):
                         raise ValueError('phase resource measurement does not match total')
-    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority'):
-        if metadata.get('node_checkpoints')!=('node_tail_v1' if metadata['kernel_scheduler']=='node_tail' else 'node_work_v1'):
+    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority','node_reserved','node_elastic'):
+        if metadata.get('node_checkpoints')!=('node_atomic_v1' if metadata['kernel_scheduler'] in ('node_reserved','node_elastic') else 'node_tail_v1' if metadata['kernel_scheduler']=='node_tail' else 'node_work_v1'):
             raise ValueError('missing tail checkpoint schema')
         for name in ('checks','restarts','grants','seconds'):
             key='coop_checkpoint_'+name
@@ -267,10 +267,58 @@ def inspect(path, sample_sink=None):
             m=r['metrics']
             if not 0<=m['coop_checkpoint_grants']<=m['coop_checkpoint_restarts']<=m['coop_checkpoint_checks']:
                 raise ValueError('inconsistent checkpoint counts')
-            if m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
+            if metadata['kernel_scheduler'] not in ('node_reserved','node_elastic') and m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
                 raise ValueError('checkpoint restart count exceeds peer completion events')
             if m['coop_checkpoint_grants']>m['coop_borrow_epochs']:
                 raise ValueError('checkpoint grant without a borrowed lease')
+    if metadata.get('kernel_scheduler') in ('node_reserved','node_elastic'):
+        for name in ('no_capacity','no_event','reserved_cores'):
+            key='coop_elastic_'+name;values=[r['metrics'][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 or int(v)!=v for v in values): raise ValueError('invalid atomic reservation metric')
+            result[key]=sum(values)
+        for r in rows:
+            m=r['metrics'];grants=m['coop_checkpoint_grants']
+            if grants!=m['coop_checkpoint_restarts'] or m['coop_elastic_reserved_cores']<grants:
+                raise ValueError('atomic reservation did not increase CPUs')
+            if grants+m['coop_elastic_no_event']+m['coop_elastic_no_capacity']!=m['coop_checkpoint_checks']:
+                raise ValueError('atomic decision counts disagree')
+            if metadata['kernel_scheduler']=='node_elastic' and m['coop_elastic_no_event']:
+                raise ValueError('capacity-driven mode incorrectly waited for completion')
+        if metadata.get('node_timeline')!='node_timeline_v1': raise ValueError('missing resource timeline')
+    if metadata.get('node_timeline')=='node_timeline_v1':
+        fields=('node','start_seconds','finish_seconds','first_loan_seconds','last_loan_seconds',
+                'loan_events','node_last','idle_core_seconds','reserved_core_seconds')
+        nodes=defaultdict(list)
+        for r in rows:
+            m=r['metrics'];t={k:m['coop_timeline_'+k] for k in fields}
+            if any(not math.isfinite(v) or v<0 for v in t.values()): raise ValueError('invalid node timeline')
+            if t['finish_seconds']<t['start_seconds'] or t['loan_events']!=m['coop_borrow_epochs']:
+                raise ValueError('inconsistent resource timeline')
+            if t['loan_events']:
+                if not t['start_seconds']<=t['first_loan_seconds']<=t['last_loan_seconds']<=t['finish_seconds']:
+                    raise ValueError('invalid loan event order')
+            elif t['first_loan_seconds'] or t['last_loan_seconds']:
+                raise ValueError('loan timestamp without borrowing')
+            nodes[t['node']].append(r)
+        tails=[]
+        for leader,group in nodes.items():
+            last=[r for r in group if r['metrics']['coop_timeline_node_last']==1]
+            if len(group)!=group[0]['metrics']['coop_node_ranks'] or len(last)!=1 or leader not in {r['rank'] for r in group}:
+                raise ValueError('incomplete local resource timeline')
+            end=max(r['metrics']['coop_timeline_finish_seconds'] for r in group)
+            if last[0]['metrics']['coop_timeline_finish_seconds']!=end: raise ValueError('wrong last local finisher')
+            for r in group:
+                if r is not last[0] and (r['metrics']['coop_timeline_node_last'] or r['metrics']['coop_timeline_idle_core_seconds'] or r['metrics']['coop_timeline_reserved_core_seconds']):
+                    raise ValueError('node integral was reported more than once')
+            tails.append(end-min(r['metrics']['coop_timeline_finish_seconds'] for r in group))
+        for name in ('idle_core_seconds','reserved_core_seconds'):
+            result['coop_timeline_'+name]=sum(r['metrics']['coop_timeline_'+name] for r in rows)
+        result['coop_timeline_tail_seconds']=max(tails,default=0)
+        # Timings share an origin only WITHIN a node. Rank by measured compute duration,
+        # never compare node-local absolute timestamps across different machines.
+        critical=max(range(len(rows)),key=lambda i:compute[i])
+        result['coop_timeline_critical_rank']=rows[critical]['rank']
+        result['coop_timeline_critical_borrowed_core_seconds']=rows[critical]['metrics']['coop_borrowed_core_seconds']
     if metadata.get('kernel_scheduler') in ('node_budget','node_priority'):
         expected_policy='remaining_priority' if metadata['kernel_scheduler']=='node_priority' else 'arrival_gate'
         if metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
@@ -404,6 +452,14 @@ def inspect(path, sample_sink=None):
             result[stage+"_max_seconds"]=max(seconds(r,stage) for r in rows)
         result["task_control_receive_bytes"]=sum(r["stages"].get("task_dispatch",{}).get("receive_bytes",0)+
             r["stages"].get("task_metadata",{}).get("receive_bytes",0) for r in rows)
+    if timeline_sink is not None and metadata.get('node_timeline')=='node_timeline_v1' and result['repeat']>0:
+        for i,r in enumerate(rows):
+            t={k:result[k] for k in ('algorithm','timing','ranks','partition_seed','repeat')}
+            t.update(rank=r['rank'],scheduler=metadata['kernel_scheduler'],compute_seconds=compute[i],
+                     checkpoint_grants=r['metrics']['coop_checkpoint_grants'],
+                     borrowed_core_seconds=r['metrics']['coop_borrowed_core_seconds'])
+            t.update({k[len('coop_timeline_'):]:v for k,v in r['metrics'].items() if k.startswith('coop_timeline_')})
+            timeline_sink.append(t)
     return result, detail
 
 def write_csv(path, rows):
@@ -554,7 +610,7 @@ def kernel_overview(root, ranks):
     indexed={(r['scheduler'],r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report}
     for row in report:
         key=(row['threads'],row['algorithm'],row['timing'],row['seed'])
-        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget'):
+        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget','node_reserved'):
             control=indexed.get((reference,*key))
             row['speedup_vs_'+reference]=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
         if row['scheduler'].startswith('node_'):
@@ -596,17 +652,26 @@ def kernel_overview(root, ranks):
                      f"借核租约核秒={compact(row.get('coop_borrowed_core_seconds'))} "
                      f"峰值线程={compact(row.get('coop_peak_threads'))} "
                      f"模型采用次数={compact(row.get('coop_model_decisions'))}")
-        if row['scheduler'] in ('node_tail','node_budget','node_priority'):
+        if row['scheduler'] in ('node_tail','node_budget','node_priority','node_reserved','node_elastic'):
             lines.append(f"安全点 {row['scheduler']} {row['timing']}: 检查次数={compact(row.get('coop_checkpoint_checks'))} "
                          f"重建次数={compact(row.get('coop_checkpoint_restarts'))} "
                          f"实际增核次数={compact(row.get('coop_checkpoint_grants'))} "
                          f"检查耗时={compact(row.get('coop_checkpoint_seconds'))}s")
             if not row.get('coop_checkpoint_grants'):
                 lines.append('  安全点未实际增核：不能将耗时差归因于阶段内协作。')
-        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority') and not row.get('coop_borrow_epochs'):
+        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
+        if row.get('coop_timeline_idle_core_seconds') is not None:
+            lines.append(f"节点尾部 {row['scheduler']} {row['timing']}: 可借核闲置核秒={compact(row.get('coop_timeline_idle_core_seconds'))} "
+                         f"预留过渡核秒={compact(row.get('coop_timeline_reserved_core_seconds'))} "
+                         f"节点完成跨度最大值={compact(row.get('coop_timeline_tail_seconds'))}s")
+        if row['scheduler'] in ('node_reserved','node_elastic'):
+            lines.append(f"原子借核 {row['scheduler']} {row['timing']}: 新预留核数={compact(row.get('coop_elastic_reserved_cores'))} "
+                         f"无容量次数={compact(row.get('coop_elastic_no_capacity'))} "
+                         f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
+                         f"相对原子事件对照加速={compact(row.get('speedup_vs_node_reserved'))}")
         if row['scheduler'] in ('node_budget','node_priority'):
             lines.append(f"受限申请 {row['scheduler']} {row['timing']}: "
                          f"短尾拒绝={compact(row.get('coop_work_short'))} "
@@ -617,6 +682,9 @@ def kernel_overview(root, ranks):
                          f"相对受限申请加速={compact(row.get('speedup_vs_node_budget'))}")
     lines += ["node_native=同核布局原修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
+              "node_reserved=完成事件触发的原子预留；node_elastic=每个安全点检查可用容量，允许领取阶段归还的核。",
+              "node_resource_timeline.csv 保留各进程借核起止和完成时刻；时间原点仅节点内一致，不能跨节点比较绝对时刻。",
+              "可借核闲置核秒只累计首个至最后一个节点内核完成之间的可借空闲容量；不是硬件利用率。",
               "node_tail=保底安全点借核：在修复轮次及优化操作之间响应已完成进程释放的核，无新核时保留线程组。",
               "node_budget=只在最终优化中按剩余窗口和成本门槛申请一次；node_priority=同一约束下优先剩余单元操作量较多的进程。",
               "gain_estimate 是门槛启发量，不是实测节省时间；剩余工作优先只比较本节点已公布且未过期的进度。",
@@ -656,6 +724,7 @@ def main():
             raise SystemExit(1)
         return
     runs, stage_rows, errors = [], [], []
+    timeline_rows=[]
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     sample_tmp=output/"model_samples.csv.gz.tmp"
@@ -673,7 +742,7 @@ def main():
                 if not (directory/"SUCCESS").exists():
                     errors.append(f"Incomplete run: {directory}")
                     continue
-                result, details = inspect(profile_path(directory), sample_writer)
+                result, details = inspect(profile_path(directory), sample_writer, timeline_rows)
             completed.append(directory)
             if result["repeat"] <= 0:
                 continue  # Explicit warmups; no subtraction/estimated timing.
@@ -710,7 +779,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature"):
+            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "coop_timeline_critical_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
             summary[name+"_median"] = st.median(present) if present else None
@@ -738,6 +807,7 @@ def main():
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     write_csv(output/"runs.csv", runs)
+    write_csv(output/"node_resource_timeline.csv", timeline_rows)
     write_csv(output/"stages.csv", stage_rows)
     write_csv(output/"summary.csv", summaries)
     (output/"issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))

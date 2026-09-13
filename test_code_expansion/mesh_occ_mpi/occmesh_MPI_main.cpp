@@ -40,7 +40,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -308,7 +308,8 @@ int main(int argc, char **argv) {
     const bool node_cooperative=research.kernel_scheduler=="node_native" || research.kernel_scheduler=="node_scoped" ||
         research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" ||
         research.kernel_scheduler=="node_guarded" || research.kernel_scheduler=="node_model" || research.kernel_scheduler=="node_tail" ||
-        research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority";
+        research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" ||
+        research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic";
     if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
@@ -405,6 +406,9 @@ int main(int argc, char **argv) {
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
+    if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
+    if(research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
+        profiler.add_metadata("node_checkpoints","node_atomic_v1");
     if(research.kernel_scheduler=="node_tail") profiler.add_metadata("node_checkpoints","node_tail_v1");
     if(research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority") {
         profiler.add_metadata("node_checkpoints","node_work_v1");
@@ -664,7 +668,8 @@ int main(int argc, char **argv) {
         node_resources.reset(new mesh_node::NodeResources(MPI_COMM_WORLD,research.kernel_threads,
             research.kernel_scheduler=="node_lend"?1:research.kernel_scheduler=="node_model"?2:
             research.kernel_scheduler=="node_guarded"?3:research.kernel_scheduler=="node_tail"?4:
-            research.kernel_scheduler=="node_budget"?5:research.kernel_scheduler=="node_priority"?6:0));
+            research.kernel_scheduler=="node_budget"?5:research.kernel_scheduler=="node_priority"?6:
+            research.kernel_scheduler=="node_reserved"?7:research.kernel_scheduler=="node_elastic"?8:0));
     }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
@@ -785,7 +790,7 @@ int main(int argc, char **argv) {
                 ? (research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeWorkAware(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_work_callback,kernel_seconds,kernel_details)
-                    : research.kernel_scheduler=="node_tail"
+                    : (research.kernel_scheduler=="node_tail" || research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
                     ? nglib::Ng_GenerateVolumeMeshCooperativeResponsive(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_callback,kernel_seconds,kernel_details)
                     : research.kernel_scheduler=="node_scoped"
