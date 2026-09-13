@@ -24,7 +24,7 @@ default_stage=communication
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
-[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="repair node_fixed node_lend node_model"; }
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_guarded node_tail"; }
 KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
@@ -68,6 +68,7 @@ case "${EXPERIMENT_PRESET}" in
         default_tasks=0
         default_process_counts="1 4 16"
         [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="4 16 64"
+        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_repeats=3
         default_levels=1
         default_refines=1
         default_verify_faces=0
@@ -120,7 +121,9 @@ START_DELAY_SECONDS="${START_DELAY_SECONDS:-120}"
 PARTITION="${PARTITION:-mt_module}"
 SBATCH_COMMAND="${SBATCH_COMMAND:-yhbatch}"
 SBATCH_EXTRA_ARGS="${SBATCH_EXTRA_ARGS:-}"
-MPI_LAUNCHER="${MPI_LAUNCHER:-yhrun}"
+default_launcher=yhrun
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_launcher="${SCRIPT_DIR}/node_affinity_yhrun.sh"
+MPI_LAUNCHER="${MPI_LAUNCHER:-${default_launcher}}"
 MPI_EXTRA_ARGS="${MPI_EXTRA_ARGS:---mpi=pmix}"
 DRY_RUN="${DRY_RUN:-0}"
 INPUT_PATH="${INPUT_PATH:-/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP}"
@@ -138,7 +141,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model ]] || { echo "内核策略仅支持 static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model。" >&2;exit 2; }
+        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -271,6 +274,7 @@ fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
+[[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
 for marker in "${markers[@]}"; do
     if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then
@@ -518,4 +522,3 @@ fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1
-

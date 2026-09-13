@@ -686,8 +686,7 @@ namespace netgen
   {
     static Timer t("OptimizeVolume"); RegionTimer reg(t);
   #ifndef EMSCRIPTEN
-    VolumeResourceScope resources(mp.volume_resources,6,mesh3d.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
-    RegionTaskManager rtm(resources.threads);
+    VolumeResourceTeam resource_team(mp.volume_resources,6,mesh3d.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
   #endif // EMSCRIPTEN
     const char* savetask = multithread.task;
     multithread.task = "Optimize Volume";
@@ -718,6 +717,9 @@ namespace netgen
     bool do_swap2 = mp.optimize3d.find('t') != string::npos;
     for([[maybe_unused]] auto i : Range(mp.optsteps3d))
       {
+#ifndef EMSCRIPTEN
+        resource_team.Checkpoint(mesh3d.GetNE());
+#endif
         auto [total_badness, max_badness, bad_els] = optmesh.UpdateBadness();
         if(bad_els==0) break;
         if(do_split) optmesh.SplitImprove();
@@ -737,6 +739,9 @@ namespace netgen
 	// for (size_t j = 1; j <= strlen(mp.optimize3d); j++)
         for (auto j : Range(mp.optimize3d.size()))
 	  {
+#ifndef EMSCRIPTEN
+            resource_team.Checkpoint(mesh3d.GetNE());
+#endif
             multithread.percent = 100.* (double(j)/mp.optimize3d.size() + i)/mp.optsteps3d;
 	    if (multithread.terminate)
 	      break;
@@ -944,10 +949,9 @@ namespace netgen
     // across mark/split/swap, exactly as the native repair path does.
     const bool grouped = options.volume_resources && options.volume_resources->grouped_repair;
     const auto * sub_resources = grouped ? nullptr : options.volume_resources;
-    VolumeResourceScope repair_lease(grouped ? options.volume_resources : nullptr,
-                                    7,mesh3d.GetNE(),0);
-    RegionTaskManager repair_tasks(grouped ? repair_lease.threads :
-        (!options.volume_resources && options.volume_parallel_repair && options.parallel_meshing ? options.nthreads : 0));
+    VolumeResourceTeam repair_team(grouped ? options.volume_resources : nullptr,
+        7,mesh3d.GetNE(),
+        !options.volume_resources && options.volume_parallel_repair && options.parallel_meshing ? options.nthreads : 0);
     auto * stats=options.volume_kernel_stats;
     auto mark = [&](int d=0) {
       VolumeKernelTimer time(stats,3);
@@ -979,6 +983,7 @@ namespace netgen
     int it = 10;
     while (nillegal && (it--) > 0)
       {
+	if(grouped) repair_team.Checkpoint(mesh3d.GetNE());
 	if (multithread.terminate)
 	  break;
 

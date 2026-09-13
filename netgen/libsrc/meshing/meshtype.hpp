@@ -11,6 +11,7 @@
 #include <variant>
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <core/taskmanager.hpp>
 
 #include <mydefs.hpp>
@@ -30,6 +31,7 @@ namespace netgen
     int (*acquire)(void *, int, double, int) = nullptr;
     void (*release)(void *, int, double, int, double) = nullptr;
     bool grouped_repair = false;
+    int (*poll)(void *) = nullptr; // Host-only, between completed mesh operations.
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;
@@ -49,6 +51,28 @@ namespace netgen
     ~VolumeResourceScope() {
       if(resources) resources->release(resources->context,phase,work,threads,
         std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
+
+  // Lifetime ordering is essential: stop workers before returning their cores.
+  // No restart unless a completed peer has made additional cores available.
+  class VolumeResourceTeam {
+    const VolumeResources * resources;
+    int phase, fallback;
+    std::unique_ptr<VolumeResourceScope> lease;
+    std::unique_ptr<ngcore::RegionTaskManager> team;
+    void start(double work) {
+      lease.reset(new VolumeResourceScope(resources,phase,work,fallback));
+      team.reset(new ngcore::RegionTaskManager(lease->threads));
+    }
+  public:
+    VolumeResourceTeam(const VolumeResources * r,int p,double work,int threads)
+      :resources(r),phase(p),fallback(threads) { start(work); }
+    void Checkpoint(double work) {
+      if(!resources || !resources->poll || !resources->poll(resources->context)) return;
+      team.reset();
+      lease.reset();
+      start(work);
     }
   };
 
@@ -1984,4 +2008,3 @@ namespace ngcore
 
 
 #endif
-

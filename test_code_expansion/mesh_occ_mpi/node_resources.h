@@ -48,7 +48,7 @@ class NodeResources {
     };
     struct Shared {
         pthread_mutex_t mutex;
-        int size=0,cpus=0;
+        int size=0,cpus=0,completion_generation=0;
         int cpu[CPU_SETSIZE],home[CPU_SETSIZE],owner[CPU_SETSIZE];
         int anchor[max_ranks];
         RankState rank[max_ranks];
@@ -63,12 +63,14 @@ class NodeResources {
     bool live=false,shared_pool=false,hostname_grouping=false;
     double management=0,setup=0,epochs=0,borrow_epochs=0,borrow_seconds=0;
     double lease_seconds=0,phase_seconds=0,peak=1,decisions=0,rejected=0,cold=0;
+    int seen_completion=0,checkpoint_old_threads=0;
+    double checkpoint_checks=0,checkpoint_restarts=0,checkpoint_grants=0,checkpoint_seconds=0;
     struct PhaseStats {
         double calls=0,seconds=0,core_seconds=0,borrowed_seconds=0,below_base=0;
         int minimum=0,maximum=0;
     };
     PhaseStats phase_stats[phases];
-    bool protected_base() const { return mode==2 || mode==3; }
+    bool protected_base() const { return mode==2 || mode==3 || mode==4; }
     static std::string mask_text(const cpu_set_t &mask) {
         std::string value;
         for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&mask)) {
@@ -195,7 +197,7 @@ class NodeResources {
     }
 
 public:
-    // mode 0=fixed, 1=unprotected greedy, 2=protected model, 3=protected greedy.
+    // mode 0=fixed, 1=unprotected greedy, 2=protected model, 3=protected greedy, 4=tail checkpoints.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -328,6 +330,22 @@ public:
     static void release_callback(void *ctx,int phase,double work,int threads,double seconds) {
         static_cast<NodeResources*>(ctx)->release(phase,work,threads,seconds);
     }
+    static int poll_callback(void *ctx) { return static_cast<NodeResources*>(ctx)->poll(); }
+    int poll() {
+        if(mode!=4) return 0;
+        const double start=now();++checkpoint_checks;
+        lock();const auto &r=shared->rank[me];
+        if(!r.active || r.done) fail("安全点检查不在活动租约内");
+        bool refresh=false;
+        if(shared->completion_generation!=seen_completion) {
+            seen_completion=shared->completion_generation;
+            for(int c=0;c<shared->cpus;++c)
+                if(shared->owner[c]<0 && shared->rank[shared->home[c]].done) refresh=true;
+        }
+        if(refresh) {++checkpoint_restarts;checkpoint_old_threads=r.threads;}
+        unlock();checkpoint_seconds+=now()-start;
+        return refresh?1:0;
+    }
     int acquire(int phase,double work,int maximum) {
         const double start=now();if(phase<0 || phase>=phases) fail("未知内核资源阶段");
         lock();auto &r=shared->rank[me];if(r.active || r.done) fail("资源租约嵌套或生命周期错误");
@@ -356,6 +374,11 @@ public:
             }
         }
         if(held!=target) fail("实际分配核数与租约目标不一致");
+        if(checkpoint_old_threads) {
+            if(held>checkpoint_old_threads) ++checkpoint_grants;
+            checkpoint_old_threads=0;
+        }
+        seen_completion=shared->completion_generation;
         r.active=1;r.threads=held;r.start=now();unlock();pin(mask);
         ++epochs;if(borrowed) ++borrow_epochs;peak=std::max(peak,double(held));
         auto &ps=phase_stats[phase];++ps.calls;
@@ -381,13 +404,18 @@ public:
     }
     void finish() {
         if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
-        lock();auto &r=shared->rank[me];if(r.active) fail("内核结束时仍持有活动租约");
+        lock();auto &r=shared->rank[me];if(r.active || r.done) fail("内核结束时仍持有活动租约或重复结束");
         r.done=1;
+        ++shared->completion_generation;
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
         unlock();
     }
     template<class Profiler> void report(Profiler &p) const {
+        p.set_metric("coop_checkpoint_checks",checkpoint_checks);
+        p.set_metric("coop_checkpoint_restarts",checkpoint_restarts);
+        p.set_metric("coop_checkpoint_grants",checkpoint_grants);
+        p.set_metric("coop_checkpoint_seconds",checkpoint_seconds);
         const char *names[]={"setup_seconds","management_seconds","epochs","borrow_epochs","borrowed_core_seconds",
             "leased_core_seconds","phase_seconds","peak_threads","model_decisions","model_rejections","cold_decisions",
             "node_ranks","node_cpus","shared_pool_layout","hostname_grouping"};
