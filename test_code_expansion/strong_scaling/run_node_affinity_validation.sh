@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 负载均衡主线：固定、原安全点、原子预留、持续领取；不运行模型。
-# 每规模 4种策略 × 2种计时 × (1次预热 + 3次正式) = 32次运行。
+# 负载均衡主线：固定、完成后借核、阶段借核、安全点归还；不运行模型。
+# 每规模 4种策略 × 2种计时 × (1次预热 + 5次正式) = 48次运行。
 # 不同进程规模仍并行提交、统一启动延时；同一作业内轮换策略顺序。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
@@ -12,12 +12,12 @@ export PROCESS_COUNTS="${PROCESS_COUNTS:-4 16 64}"
 export RANKS_PER_NODE="${RANKS_PER_NODE:-4}"
 export CPUS_PER_TASK="${CPUS_PER_TASK:-4}"
 export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
-export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_tail node_reserved node_elastic}"
+export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_stage node_reclaim}"
 export LEVELS="${LEVELS:-2}"
 export REFINES="${REFINES:-1}"
 export ALGORITHMS="${ALGORITHMS:-sparse}"
 export TIMING_MODES="${TIMING_MODES:-natural split}"
-export REPEATS="${REPEATS:-3}"
+export REPEATS="${REPEATS:-5}"
 export WARMUPS="${WARMUPS:-1}"
 export CLEANUP_RESULTS="${CLEANUP_RESULTS:-1}"
 export RESUME="${RESUME:-0}"

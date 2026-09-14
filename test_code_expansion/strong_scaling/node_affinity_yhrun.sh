@@ -16,7 +16,7 @@ REAL_YHRUN="${REAL_YHRUN:-$(command -v yhrun)}"
 nodes=$(( (PROCESS_COUNT + RANKS_PER_NODE - 1) / RANKS_PER_NODE ))
 cpu_bind=cores
 case "${KERNEL_SCHEDULER:-static}" in
-    node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model|node_tail|node_budget|node_priority|node_reserved|node_elastic) cpu_bind=none ;;
+    node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model|node_tail|node_budget|node_priority|node_reserved|node_elastic|node_stage|node_reclaim) cpu_bind=none ;;
 esac
 
 # run_experiments.sh already passes -n PROCESS_COUNT in "$@". Do not add a

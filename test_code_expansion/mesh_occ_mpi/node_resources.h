@@ -42,7 +42,7 @@ class NodeResources {
         }
     };
     struct RankState {
-        int active=0,done=0,prepared=0,phase=0,threads=1;
+        int active=0,done=0,prepared=0,phase=0,threads=1,requesting=0;
         double work=1,start=0;
         int remaining=-1,work_granted=0;
         double progress_time=0,last_operation=0,restart_cost=0;
@@ -50,11 +50,13 @@ class NodeResources {
     };
     struct Shared {
         pthread_mutex_t mutex;
+        pthread_cond_t changed;
         int size=0,cpus=0,completion_generation=0,leader_world=0;
         int cpu[CPU_SETSIZE],home[CPU_SETSIZE],owner[CPU_SETSIZE];
         int reserved[CPU_SETSIZE]; // 0=unreserved, local rank+1 otherwise.
         int anchor[max_ranks];
         double origin=0,clock=0,idle_core_seconds=0,reserved_core_seconds=0;
+        double phase_idle_core_seconds=0,early_loan_core_seconds=0;
         RankState rank[max_ranks];
     };
 
@@ -76,8 +78,23 @@ class NodeResources {
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
     double elastic_no_capacity=0,elastic_no_event=0,elastic_reserved=0;
+    double stage_waits=0,stage_wait_seconds=0,stage_early_epochs=0,stage_early_cores=0;
+    double stage_reclaims=0,stage_shrinks=0,stage_unchanged=0,stage_no_change=0;
+    double node_phase_idle=0,node_early_loan=0;
+    bool force_base=false;
+    bool stage_policy() const { return mode==9 || mode==10; }
+    bool donor_available(int home) const {
+        const auto &d=shared->rank[home];
+        return d.done || (stage_policy() && d.prepared && !d.active && !d.requesting);
+    }
+    bool home_ready() const {
+        for(int c=0;c<shared->cpus;++c) if(shared->home[c]==me && shared->owner[c]>=0 && shared->owner[c]!=me) return false;
+        return true;
+    }
     bool atomic_tail() const { return mode==7 || mode==8; }
     bool can_take(int c) const {
+        if(stage_policy()) return shared->home[c]!=me && donor_available(shared->home[c]) &&
+            (shared->reserved[c]==0 || shared->reserved[c]==me+1);
         if(work_policy() || (atomic_tail() && checkpoint_old_threads))
             return shared->reserved[c]==me+1;
         return shared->reserved[c]==0;
@@ -86,11 +103,18 @@ class NodeResources {
     // Fixed control counts finished owners' non-anchor CPUs as idle donor capacity.
     // End integration at the last local kernel completion; no MPI wait is included.
     void account_pool() {
-        const double stamp=now();int unfinished=0,idle=0,reserving=0;
+        const double stamp=now();int unfinished=0,idle=0,reserving=0,phase_idle=0,early=0;
         for(int i=0;i<size;++i) unfinished+=!shared->rank[i].done;
         if(unfinished) for(int c=0;c<shared->cpus;++c) {
             const int home=shared->home[c],owner=shared->owner[c];
-            if(!shared->rank[home].done || shared->cpu[c]==shared->anchor[home]) continue;
+            if(shared->cpu[c]==shared->anchor[home]) continue;
+            const auto &donor=shared->rank[home];
+            if(!donor.done) {
+                if(donor.prepared && !donor.active && !donor.requesting && !shared->reserved[c] &&
+                   (owner<0 || owner==home)) ++phase_idle;
+                if(owner>=0 && owner!=home && shared->rank[owner].active) ++early;
+                continue;
+            }
             if(owner<0) {
                 if(shared->reserved[c]) ++reserving;else ++idle;
             } else if(shared->rank[owner].done) ++idle;
@@ -98,6 +122,7 @@ class NodeResources {
         const double dt=stamp-shared->clock;
         shared->idle_core_seconds+=idle*dt;
         shared->reserved_core_seconds+=reserving*dt;
+        shared->phase_idle_core_seconds+=phase_idle*dt;shared->early_loan_core_seconds+=early*dt;
         shared->clock=stamp;
     }
     struct PhaseStats {
@@ -242,6 +267,7 @@ class NodeResources {
 public:
     // 0=fixed, 1=greedy, 2=model, 3=guarded, 4=tail, 5=cost gate, 6=work priority.
     // 7=atomic event-driven tail; 8=atomic capacity-driven tail.
+    // 9=stage lending; 10=stage lending with safe-point return.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -330,6 +356,10 @@ public:
                pthread_mutexattr_setrobust(&attr,PTHREAD_MUTEX_ROBUST) || pthread_mutex_init(&shared->mutex,&attr))
                 fail("无法建立进程共享资源锁");
             pthread_mutexattr_destroy(&attr);
+            pthread_condattr_t condattr;
+            if(pthread_condattr_init(&condattr) || pthread_condattr_setpshared(&condattr,PTHREAD_PROCESS_SHARED) ||
+               pthread_cond_init(&shared->changed,&condattr)) fail("无法建立节点资源条件变量");
+            pthread_condattr_destroy(&condattr);
             for(int r=0;r<size;++r) {
                 bool first=true;
                 for(int c=0;c<CPU_SETSIZE;++c) if(CPU_ISSET(c,&masks[r])) {
@@ -364,12 +394,12 @@ public:
 
     void prepare(double work) {
         if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
-        lock();auto &r=shared->rank[me];
+        lock();account_pool();auto &r=shared->rank[me];
         if(r.prepared) fail("内核资源准备被重复调用");
-        if(mode!=0 && !protected_base()) for(int c=0;c<shared->cpus;++c)
+        if(mode!=0 && (!protected_base() || stage_policy())) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
         start_offset=now()-shared->origin;
-        r.prepared=1;r.work=std::max(1.0,work);unlock();
+        r.prepared=1;r.work=std::max(1.0,work);pthread_cond_broadcast(&shared->changed);unlock();
     }
     static int acquire_callback(void *ctx,int phase,double work,int maximum) {
         return static_cast<NodeResources*>(ctx)->acquire(phase,work,maximum);
@@ -422,6 +452,33 @@ public:
         }
         unlock();checkpoint_seconds+=now()-stamp;return grant?1:0;
     }
+    int poll_stage() {
+        const double start=now();++checkpoint_checks;
+        lock();account_pool();auto &r=shared->rank[me];
+        if(!r.active || r.done || checkpoint_old_threads) fail("阶段借核检查生命周期错误");
+        int reclaim=0,extra=0;
+        for(int c=0;c<shared->cpus;++c) {
+            int home=shared->home[c];
+            if(shared->owner[c]==me && home!=me && !shared->rank[home].done && shared->rank[home].requesting) ++reclaim;
+            if(shared->owner[c]<0 && shared->reserved[c]==0 && home!=me && donor_available(home)) ++extra;
+        }
+        bool refresh=false;
+        // Return all borrowed CPUs before reacquiring the protected base. Waiting
+        // ranks never hold a foreign CPU; only active finite operations delay them.
+        if(mode==10 && reclaim) {force_base=true;++stage_reclaims;refresh=true;}
+        else if(!reclaim && extra) {
+            for(int c=0;c<shared->cpus;++c) {
+                int home=shared->home[c];
+                if((shared->owner[c]==me && home!=me) ||
+                   (shared->owner[c]<0 && !shared->reserved[c] && home!=me && donor_available(home)))
+                    shared->reserved[c]=me+1;
+            }
+            refresh=true;
+        }
+        if(refresh) {r.requesting=1;checkpoint_old_threads=r.threads;++checkpoint_restarts;}
+        else ++stage_no_change;
+        unlock();checkpoint_seconds+=now()-start;return refresh?1:0;
+    }
     int poll_atomic() {
         const double start=now();++checkpoint_checks;
         lock();account_pool();const auto &r=shared->rank[me];
@@ -447,6 +504,7 @@ public:
         unlock();checkpoint_seconds+=now()-start;return extra?1:0;
     }
     int poll() {
+        if(stage_policy()) return poll_stage();
         if(atomic_tail()) return poll_atomic();
         if(mode!=4) return 0;
         const double start=now();++checkpoint_checks;
@@ -466,12 +524,26 @@ public:
         const double start=now();if(phase<0 || phase>=phases) fail("未知内核资源阶段");
         lock();account_pool();auto &r=shared->rank[me];if(r.active || r.done) fail("资源租约嵌套或生命周期错误");
         r.phase=phase;r.work=std::max(1.0,work);
+        if(stage_policy()) {
+            r.requesting=1;
+            // Owner demand overrides any not-yet-consumed reservation. A waiting
+            // requester must not reserve foreign CPUs, avoiding wait cycles.
+            for(int c=0;c<shared->cpus;++c) if(shared->reserved[c]==me+1 &&
+                (force_base || shared->rank[shared->home[c]].requesting || !home_ready())) shared->reserved[c]=0;
+            pthread_cond_broadcast(&shared->changed);
+            const bool wait=!home_ready();const double begin=now();
+            while(!home_ready()) {
+                if(pthread_cond_wait(&shared->changed,&shared->mutex)!=0) fail("等待保底核归还失败");
+                account_pool();
+            }
+            if(wait) {++stage_waits;stage_wait_seconds+=now()-begin;}
+        }
         int free=protected_base()?base:1;
         for(int c=0;c<shared->cpus;++c) if(shared->owner[c]<0 &&
             can_take(c)) ++free;
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
-        int target=cap;
+        int target=force_base?std::min(base,cap):cap;
         if(mode==2 && phase!=5) {
             int fair=std::min(cap,fair_target());target=model_target(fair,cap);
         }
@@ -480,26 +552,34 @@ public:
         if(protected_base() && phase!=5 && target<base)
             fail("保底核策略产生低于初始核数的租约");
         cpu_set_t mask;CPU_ZERO(&mask);CPU_SET(shared->anchor[me],&mask);held=1;borrowed=0;
+        int early_cores=0;
         for(int pass=0;pass<2;++pass) for(int c=0;c<shared->cpus && held<target;++c) {
             if(shared->cpu[c]==shared->anchor[me]) continue;
             if((shared->home[c]==me)!=(pass==0)) continue;
             if(((mode==0 || protected_base()) && shared->home[c]==me) || (mode!=0 && shared->owner[c]<0 &&
                 can_take(c))) {
-                if(protected_base() && shared->home[c]!=me && !shared->rank[shared->home[c]].done)
+                if(protected_base() && !stage_policy() && shared->home[c]!=me && !shared->rank[shared->home[c]].done)
                     fail("保底核策略借用了未完成进程的核");
                 shared->owner[c]=me;shared->reserved[c]=0;CPU_SET(shared->cpu[c],&mask);++held;
                 borrowed+=shared->home[c]!=me;
+                early_cores+=shared->home[c]!=me && !shared->rank[shared->home[c]].done;
             }
         }
         if(held!=target) fail("实际分配核数与租约目标不一致");
         if(checkpoint_old_threads) {
             if((work_policy() || atomic_tail()) && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
             if(held>checkpoint_old_threads) ++checkpoint_grants;
+            else if(stage_policy()) {if(held<checkpoint_old_threads) ++stage_shrinks;else ++stage_unchanged;}
             checkpoint_old_threads=0;
         }
         seen_completion=shared->completion_generation;
         r.remaining=-1;r.last_operation=0;
-        r.active=1;r.threads=held;r.start=now();unlock();pin(mask);
+        if(stage_policy()) {
+            for(int c=0;c<shared->cpus;++c) if(shared->reserved[c]==me+1) shared->reserved[c]=0;
+            if(early_cores) {++stage_early_epochs;stage_early_cores+=early_cores;}
+        }
+        force_base=false;r.requesting=0;
+        r.active=1;r.threads=held;r.start=now();pthread_cond_broadcast(&shared->changed);unlock();pin(mask);
         ++epochs;if(borrowed) {
             ++borrow_epochs;++loan_events;last_loan=now()-shared->origin;
             if(loan_events==1) first_loan=last_loan;
@@ -518,26 +598,29 @@ public:
         if(!r.active || r.phase!=phase || r.threads!=threads) fail("资源归还与活动租约不匹配");
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me] &&
-               (!protected_base() || shared->home[c]!=me)) shared->owner[c]=-1;
+               (!protected_base() || stage_policy() || shared->home[c]!=me)) shared->owner[c]=-1;
         r.model[phase].observe(threads,work,seconds);r.active=0;r.threads=1;
-        unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
+        pthread_cond_broadcast(&shared->changed);unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
         phase_seconds+=seconds;management+=now()-start;
         auto &ps=phase_stats[phase];ps.seconds+=seconds;
         ps.core_seconds+=threads*seconds;ps.borrowed_seconds+=borrowed*seconds;
     }
     void finish() {
         if(mode!=0) {cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);}
-        lock();account_pool();auto &r=shared->rank[me];if(r.active || r.done || checkpoint_old_threads) fail("内核结束时仍持有活动租约或重复结束");
+        lock();account_pool();auto &r=shared->rank[me];if(r.active || r.done || r.requesting || checkpoint_old_threads) fail("内核结束时仍持有活动租约或重复结束");
         finish_offset=now()-shared->origin;
         r.done=1;
         ++shared->completion_generation;
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me]) shared->owner[c]=-1;
         bool last=true;for(int i=0;i<size;++i) if(!shared->rank[i].done) last=false;
-        if(last) {node_last=1;node_idle=shared->idle_core_seconds;node_reserved=shared->reserved_core_seconds;}
-        unlock();
+        if(last) {node_last=1;node_idle=shared->idle_core_seconds;node_reserved=shared->reserved_core_seconds;node_phase_idle=shared->phase_idle_core_seconds;node_early_loan=shared->early_loan_core_seconds;}
+        pthread_cond_broadcast(&shared->changed);unlock();
     }
-    template<class Profiler> void report(Profiler &p) const {
+    template<class Profiler> void report(Profiler &p,bool include_stage=true) const {
+        const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};
+        const double stage_values[]={stage_waits,stage_wait_seconds,stage_early_epochs,stage_early_cores,stage_reclaims,stage_shrinks,stage_unchanged,stage_no_change,node_phase_idle,node_early_loan};
+        if(include_stage) for(int i=0;i<10;++i) p.set_metric(std::string("coop_stage_")+stage_names[i],stage_values[i]);
         p.set_metric("coop_elastic_no_capacity",elastic_no_capacity);
         p.set_metric("coop_elastic_no_event",elastic_no_event);
         p.set_metric("coop_elastic_reserved_cores",elastic_reserved);
@@ -580,7 +663,7 @@ public:
     void close() {
         if(!live) return;
         MPI_Barrier(node);pin(initial);
-        if(me==0) pthread_mutex_destroy(&shared->mutex);
+        if(me==0) {pthread_cond_destroy(&shared->changed);pthread_mutex_destroy(&shared->mutex);}
         MPI_Barrier(node);
         if(shared && munmap(shared,sizeof(Shared))!=0) fail_errno("解除POSIX共享内存映射失败");
         shared=nullptr;

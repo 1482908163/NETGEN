@@ -520,6 +520,18 @@ namespace nglib
      return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
    }
 
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeStages(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       int (*poll)(void *), int responsive, double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !poll || !details ||
+        (responsive!=0 && responsive!=1)) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;adapter.poll=poll;
+     adapter.generation_checkpoints=responsive!=0;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
    NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values)
    {
      if(!values) return;

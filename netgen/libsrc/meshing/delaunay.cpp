@@ -1657,20 +1657,34 @@ namespace netgen
         meshopt.SetGoal(OPT_CONFORM);
         tempmesh.Compress();
         tempmesh.FindOpenElements ();
+        auto improve = [&] (auto checkpoint) {
+          for (auto i : Range(10))
+            {
+              PrintMessage (5, "Num open: ", tempmesh.GetNOpenElements());
+              if(i%5==0)
+                  tempmesh.FreeOpenElementsEnvironment (1);
+              meshopt.SwapImprove();
+              if(i+1<10) checkpoint();
+            }
+        };
       #ifndef EMSCRIPTEN
-        VolumeResourceScope resources(mp.volume_resources,1,tempmesh.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
-        RegionTaskManager rtm(resources.threads);
-      #endif // EMSCRIPTEN
-        for (auto i : Range(10))
+        if(mp.volume_resources && mp.volume_resources->generation_checkpoints)
           {
-            PrintMessage (5, "Num open: ", tempmesh.GetNOpenElements());
-
-            if(i%5==0)
-                tempmesh.FreeOpenElementsEnvironment (1);
-
-            meshopt.SwapImprove();
+            VolumeResourceTeam resources(mp.volume_resources,1,tempmesh.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
+            improve([&] { resources.Checkpoint(tempmesh.GetNE()); });
+            tempmesh.Compress();
           }
+        else
+          {
+            VolumeResourceScope resources(mp.volume_resources,1,tempmesh.GetNE(),mp.parallel_meshing ? mp.nthreads : 0);
+            RegionTaskManager rtm(resources.threads);
+            improve([] {});
+            tempmesh.Compress();
+          }
+      #else
+        improve([] {});
         tempmesh.Compress();
+      #endif // EMSCRIPTEN
       }
     
       MeshQuality3d (tempmesh);

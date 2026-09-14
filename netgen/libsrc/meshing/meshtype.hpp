@@ -33,6 +33,7 @@ namespace netgen
     bool grouped_repair = false;
     int (*poll)(void *) = nullptr; // Host-only, between completed mesh operations.
     int (*poll_work)(void *,double,int,double,double) = nullptr;
+    bool generation_checkpoints = false;
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;
@@ -56,7 +57,7 @@ namespace netgen
   };
 
   // Lifetime ordering is essential: stop workers before returning their cores.
-  // No restart unless a completed peer has made additional cores available.
+  // The host policy requests growth or return only between completed operations.
   class VolumeResourceTeam {
     const VolumeResources * resources;
     int phase, fallback;
