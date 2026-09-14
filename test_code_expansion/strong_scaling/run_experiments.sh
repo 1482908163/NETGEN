@@ -24,7 +24,7 @@ default_stage=communication
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
-[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_elastic node_stage node_reclaim"; }
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_elastic node_reclaim node_selective node_once"; }
 KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
@@ -142,7 +142,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -279,7 +279,9 @@ fi
 [[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority ]] || markers+=("node_work_v1")
 [[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
-[[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim ]] || markers+=("node_stage_v1")
+[[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")
+[[ "${KERNEL_SCHEDULER}" != node_selective ]] || markers+=("finalopt_only_v1")
+[[ "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("finalopt_once_v1")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
 for marker in "${markers[@]}"; do
     if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then

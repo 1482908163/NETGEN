@@ -180,7 +180,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -244,7 +244,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                         raise ValueError('invalid phase thread limits')
                     if not calls and any(m[prefix+field] for field in phase_fields):
                         raise ValueError('unused phase contains resource measurements')
-                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim') and phase!=5 and calls:
+                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once') and phase!=5 and calls:
                         if m[prefix+'below_base_epochs'] or m[prefix+'min_threads']<int(metadata['kernel_threads']):
                             raise ValueError('protected allocation used fewer than base CPUs')
             for r in rows:
@@ -254,8 +254,8 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                 for field,total in (('seconds','phase_seconds'),('core_seconds','leased_core_seconds'),('borrowed_core_seconds','borrowed_core_seconds')):
                     if not math.isclose(sum(m[f'coop_phase_{i}_{field}'] for i in range(8)),m['coop_'+total],rel_tol=1e-8,abs_tol=1e-6):
                         raise ValueError('phase resource measurement does not match total')
-    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim'):
-        if metadata.get('node_checkpoints')!=('node_stage_v1' if metadata['kernel_scheduler'] in ('node_stage','node_reclaim') else 'node_atomic_v1' if metadata['kernel_scheduler'] in ('node_reserved','node_elastic') else 'node_tail_v1' if metadata['kernel_scheduler']=='node_tail' else 'node_work_v1'):
+    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once'):
+        if metadata.get('node_checkpoints')!=('node_stage_v1' if metadata['kernel_scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else 'node_atomic_v1' if metadata['kernel_scheduler'] in ('node_reserved','node_elastic') else 'node_tail_v1' if metadata['kernel_scheduler']=='node_tail' else 'node_work_v1'):
             raise ValueError('missing tail checkpoint schema')
         for name in ('checks','restarts','grants','seconds'):
             key='coop_checkpoint_'+name
@@ -267,7 +267,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
             m=r['metrics']
             if not 0<=m['coop_checkpoint_grants']<=m['coop_checkpoint_restarts']<=m['coop_checkpoint_checks']:
                 raise ValueError('inconsistent checkpoint counts')
-            if metadata['kernel_scheduler'] not in ('node_reserved','node_elastic','node_stage','node_reclaim') and m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
+            if metadata['kernel_scheduler'] not in ('node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once') and m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
                 raise ValueError('checkpoint restart count exceeds peer completion events')
             if m['coop_checkpoint_grants']>m['coop_borrow_epochs']:
                 raise ValueError('checkpoint grant without a borrowed lease')
@@ -319,7 +319,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
         critical=max(range(len(rows)),key=lambda i:compute[i])
         result['coop_timeline_critical_rank']=rows[critical]['rank']
         result['coop_timeline_critical_borrowed_core_seconds']=rows[critical]['metrics']['coop_borrowed_core_seconds']
-    stage_policy=metadata.get('kernel_scheduler') in ('node_stage','node_reclaim')
+    stage_policy=metadata.get('kernel_scheduler') in ('node_stage','node_reclaim','node_selective','node_once')
     if stage_policy and (metadata.get('node_stage_metrics')!='node_stage_metrics_v1' or
                          metadata.get('node_timeline')!='node_timeline_v1' or
                          metadata.get('node_resources')!='node_coop_v2'):
@@ -351,6 +351,36 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                     raise ValueError('stage control used early return')
             elif any(m['coop_stage_'+name] for name in (*counts,'wait_seconds')):
                 raise ValueError('control unexpectedly used stage policy')
+    scope=metadata.get('node_stage_scope')
+    if metadata.get('kernel_scheduler') in ('node_selective','node_once'):
+        expected_scope='finalopt_once_v1' if metadata['kernel_scheduler']=='node_once' else 'finalopt_only_v1'
+        if scope!=expected_scope: raise ValueError('missing or inconsistent early lending scope')
+        for phase in range(8):
+            for name in ('early_epochs','reclaims'):
+                key=f'coop_phase_{phase}_{name}';values=[r['metrics'][key] for r in rows]
+                if any(not math.isfinite(v) or v<0 or int(v)!=v for v in values):
+                    raise ValueError('invalid scoped phase count')
+                result[key]=sum(values)
+                if phase!=6 and any(values): raise ValueError('early lending escaped final optimization')
+        key='coop_stage_growth_deferred';values=[r['metrics'][key] for r in rows]
+        if any(not math.isfinite(v) or v<0 or int(v)!=v for v in values):
+            raise ValueError('invalid growth suppression count')
+        result[key]=sum(values)
+        for r in rows:
+            m=r['metrics']
+            if m['coop_phase_6_early_epochs']!=m['coop_stage_early_epochs'] or m['coop_phase_6_reclaims']!=m['coop_stage_reclaims']:
+                raise ValueError('scoped phase totals disagree')
+            if m['coop_phase_6_early_epochs']>m['coop_phase_6_epochs']:
+                raise ValueError('early count exceeds final optimization leases')
+            if m['coop_stage_growth_deferred']>m['coop_stage_no_change']:
+                raise ValueError('suppressed growth not covered by unchanged decisions')
+            if metadata['kernel_scheduler']=='node_once':
+                if m['coop_stage_early_epochs']>1 or m['coop_stage_reclaims']>1:
+                    raise ValueError('single early lease bound violated')
+            elif m['coop_stage_growth_deferred']:
+                raise ValueError('selective control unexpectedly suppressed growth')
+    elif scope is not None:
+        raise ValueError('unexpected early lending scope')
     if metadata.get('kernel_scheduler') in ('node_budget','node_priority'):
         expected_policy='remaining_priority' if metadata['kernel_scheduler']=='node_priority' else 'arrival_gate'
         if metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
@@ -577,7 +607,7 @@ def write_overview(root, runs, summaries, errors):
 
 def kernel_overview(root, ranks):
     """Variant runs stay isolated; this summary never adds stage maxima."""
-    report=[];issues=[];workloads={};illegal_max={}
+    report=[];issues=[];workloads={};illegal_max={};paired_times={}
     discovered=[]
     for path in root.glob("kernel_*_t*"):
         scheduler,sep,threads=path.name[len("kernel_"): ].rpartition("_t")
@@ -602,6 +632,7 @@ def kernel_overview(root, ranks):
                 for run in raw:
                     key=(int(threads),scheduler,run['algorithm'],run['timing'],run['partition_seed'])
                     workloads.setdefault(key,set()).add(float(run['volume_elements_sum']))
+                    paired_times.setdefault(key,{})[int(run['repeat'])]=float(run['core_seconds'])
                     if run.get('kernel_final_illegal') not in (None,''):
                         illegal_max[key]=max(illegal_max.get(key,0),float(run['kernel_final_illegal']))
                 for row in rows:
@@ -643,9 +674,17 @@ def kernel_overview(root, ranks):
     indexed={(r['scheduler'],r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report}
     for row in report:
         key=(row['threads'],row['algorithm'],row['timing'],row['seed'])
-        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget','node_reserved','node_elastic','node_stage'):
+        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget','node_reserved','node_elastic','node_stage','node_reclaim','node_selective'):
             control=indexed.get((reference,*key))
             row['speedup_vs_'+reference]=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
+            if reference in ('node_elastic','node_reclaim','node_selective'):
+                candidate=paired_times.get((row['threads'],row['scheduler'],row['algorithm'],row['timing'],row['seed']),{})
+                baseline=paired_times.get((row['threads'],reference,row['algorithm'],row['timing'],row['seed']),{})
+                common=sorted(set(candidate)&set(baseline))
+                changes=[100*(1-candidate[rep]/baseline[rep]) for rep in common]
+                row['paired_count_vs_'+reference]=len(common)
+                row['paired_wins_vs_'+reference]=sum(v>0 for v in changes)
+                row['paired_reduction_pct_vs_'+reference]=st.median(changes) if changes else None
         if row['scheduler'].startswith('node_'):
             control=indexed.get(('node_fixed',*key))
             if control is None: issues.append("缺少 node_fixed 固定资源对照")
@@ -661,7 +700,7 @@ def kernel_overview(root, ranks):
             if not row.get(prefix+'epochs'): continue
             item={k:row[k] for k in ('scheduler','threads','algorithm','timing','seed','repeats')}
             item.update(phase=phase,phase_name=name)
-            for field in ('epochs','seconds','core_seconds','borrowed_core_seconds','below_base_epochs','min_threads','max_threads'):
+            for field in ('epochs','seconds','core_seconds','borrowed_core_seconds','below_base_epochs','min_threads','max_threads','early_epochs','reclaims'):
                 item[field+'_median']=row.get(prefix+field)
             phase_report.append(item)
     write_csv(out/'kernel_phase_summary.csv',phase_report)
@@ -685,17 +724,21 @@ def kernel_overview(root, ranks):
                      f"借核租约核秒={compact(row.get('coop_borrowed_core_seconds'))} "
                      f"峰值线程={compact(row.get('coop_peak_threads'))} "
                      f"模型采用次数={compact(row.get('coop_model_decisions'))}")
-        if row['scheduler'] in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim'):
+        if row['scheduler'] in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once'):
             lines.append(f"安全点 {row['scheduler']} {row['timing']}: 检查次数={compact(row.get('coop_checkpoint_checks'))} "
                          f"重建次数={compact(row.get('coop_checkpoint_restarts'))} "
                          f"实际增核次数={compact(row.get('coop_checkpoint_grants'))} "
                          f"检查耗时={compact(row.get('coop_checkpoint_seconds'))}s")
             if not row.get('coop_checkpoint_grants'):
-                lines.append('  安全点未实际增核；阶段入口是否借核需另查提前借核租约数。' if row['scheduler'] in ('node_stage','node_reclaim') else '  安全点未实际增核：不能将耗时差归因于阶段内协作。')
-        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim') and not row.get('coop_borrow_epochs'):
+                lines.append('  安全点未实际增核；阶段入口是否借核需另查提前借核租约数。' if row['scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else '  安全点未实际增核：不能将耗时差归因于阶段内协作。')
+        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
+        if row['scheduler'] in ('node_reclaim','node_selective','node_once'):
+            lines.append(f"逐轮对照 {row['scheduler']} {row['timing']}: 相对完成后借核胜出="
+                         f"{row.get('paired_wins_vs_node_elastic',0)}/{row.get('paired_count_vs_node_elastic',0)} "
+                         f"同编号耗时下降百分比中位数={compact(row.get('paired_reduction_pct_vs_node_elastic'))}%")
         if row.get('coop_stage_idle_core_seconds') is not None:
             lines.append(f"阶段共享 {row['scheduler']} {row['timing']}: 阶段闲置核秒={compact(row.get('coop_stage_idle_core_seconds'))} "
                          f"提前借核核秒={compact(row.get('coop_stage_early_core_seconds'))} "
@@ -705,7 +748,7 @@ def kernel_overview(root, ranks):
                          f"归还次数={compact(row.get('coop_stage_reclaims'))} "
                          f"缩核次数={compact(row.get('coop_stage_shrinks'))} "
                          f"重建未变次数={compact(row.get('coop_stage_unchanged'))}")
-        if row['scheduler'] in ('node_stage','node_reclaim'):
+        if row['scheduler'] in ('node_stage','node_reclaim','node_selective','node_once'):
             lines.append(f"阶段对照 {row['scheduler']} {row['timing']}: "
                          f"相对完成后借核加速={compact(row.get('speedup_vs_node_elastic'))} "
                          f"相对阶段结束归还加速={compact(row.get('speedup_vs_node_stage'))}")
@@ -720,6 +763,12 @@ def kernel_overview(root, ranks):
                          f"无容量次数={compact(row.get('coop_elastic_no_capacity'))} "
                          f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
                          f"相对原子事件对照加速={compact(row.get('speedup_vs_node_reserved'))}")
+        if row['scheduler'] in ('node_selective','node_once'):
+            lines.append(f"受限提前借核 {row['scheduler']} {row['timing']}: "
+                         f"最终优化提前借核次数={compact(row.get('coop_phase_6_early_epochs'))} "
+                         f"保留当前提前租约次数={compact(row.get('coop_stage_growth_deferred'))} "
+                         f"相对全阶段安全点归还加速={compact(row.get('speedup_vs_node_reclaim'))} "
+                         f"相对最终优化不限次加速={compact(row.get('speedup_vs_node_selective'))}")
         if row['scheduler'] in ('node_budget','node_priority'):
             lines.append(f"受限申请 {row['scheduler']} {row['timing']}: "
                          f"短尾拒绝={compact(row.get('coop_work_short'))} "
@@ -732,6 +781,8 @@ def kernel_overview(root, ranks):
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
               "node_reserved=完成事件触发的原子预留；node_elastic=每个安全点检查可用容量，允许领取阶段归还的核。",
               "node_stage=未完成进程的串行窗口也可借核，正常租约结束归还；node_reclaim=另在安全点响应归还，包含生成内部优化轮次。",
+              "node_selective=仅最终优化借用未完成进程的核；node_once=进一步限制每进程最多一次提前租约，归还请求仍优先。",
+              "已完成来源的常规借核不受一次限制；持有提前租约时暂停额外增核，原所有者需要核时仍立即在安全点归还。",
               "阶段策略进入并行租约前必须收回全部初始保底核；串行及等待时只运行主核。收回等待已包含在核心时间中，不重复相加。",
               "阶段重建可以增核、缩核或不变；阶段闲置核秒与提前借核核秒是资源状态积分，不代表硬件实际忙碌。",
               "node_resource_timeline.csv 保留各进程借核起止和完成时刻；时间原点仅节点内一致，不能跨节点比较绝对时刻。",
@@ -744,6 +795,7 @@ def kernel_overview(root, ranks):
               "线程组次数为各进程总和，启停耗时分别取进程最大值，已包含在内核耗时中，不能再加到总时间。",
               "kernel_phase_summary.csv 给出阶段租约次数、最少/最多线程、低于保底核次数；阶段秒为进程租约时长之和，不是关键路径。",
               "同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。",
+              "逐轮胜出仅比较同一批、同规模、同种子、同计时、同重复编号的正式运行，是波动诊断，不等于统计显著性。",
               "natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。",*issues]
     (out/'RESULT_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
     if issues: raise SystemExit(1)

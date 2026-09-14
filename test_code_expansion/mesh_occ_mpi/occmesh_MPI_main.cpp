@@ -40,7 +40,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -310,7 +310,8 @@ int main(int argc, char **argv) {
         research.kernel_scheduler=="node_guarded" || research.kernel_scheduler=="node_model" || research.kernel_scheduler=="node_tail" ||
         research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" ||
         research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic" ||
-        research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim";
+        research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim" ||
+        research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once";
     if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
@@ -409,8 +410,11 @@ int main(int argc, char **argv) {
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
     if(node_cooperative && research.kernel_scheduler!="node_native") profiler.add_metadata("node_stage_metrics","node_stage_metrics_v1");
-    if(research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim")
+    if(research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim" ||
+        research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once")
         profiler.add_metadata("node_checkpoints","node_stage_v1");
+    if(research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once")
+        profiler.add_metadata("node_stage_scope",research.kernel_scheduler=="node_once"?"finalopt_once_v1":"finalopt_only_v1");
     if(research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
         profiler.add_metadata("node_checkpoints","node_atomic_v1");
     if(research.kernel_scheduler=="node_tail") profiler.add_metadata("node_checkpoints","node_tail_v1");
@@ -674,7 +678,8 @@ int main(int argc, char **argv) {
             research.kernel_scheduler=="node_guarded"?3:research.kernel_scheduler=="node_tail"?4:
             research.kernel_scheduler=="node_budget"?5:research.kernel_scheduler=="node_priority"?6:
             research.kernel_scheduler=="node_reserved"?7:research.kernel_scheduler=="node_elastic"?8:
-            research.kernel_scheduler=="node_stage"?9:research.kernel_scheduler=="node_reclaim"?10:0));
+            research.kernel_scheduler=="node_stage"?9:research.kernel_scheduler=="node_reclaim"?10:
+            research.kernel_scheduler=="node_selective"?11:research.kernel_scheduler=="node_once"?12:0));
     }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
@@ -792,7 +797,8 @@ int main(int argc, char **argv) {
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
             if(node_resources) node_resources->prepare(nglib::Ng_GetNP(submesh));
             const auto local_status=node_resources && research.kernel_scheduler!="node_native"
-                ? (research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim"
+                ? (research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim" ||
+                   research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeStages(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_callback,research.kernel_scheduler=="node_reclaim",kernel_seconds,kernel_details)
                     : research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority"

@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 负载均衡主线：固定、完成后借核、阶段借核、安全点归还；不运行模型。
-# 每规模 4种策略 × 2种计时 × (1次预热 + 5次正式) = 48次运行。
+# 负载均衡主线：固定、完成后借核、安全点归还、最终优化借核、单次借核；不运行模型。
+# 每规模 5种策略 × 2种计时 × (1次预热 + 5次正式) = 60次运行。
 # 不同进程规模仍并行提交、统一启动延时；同一作业内轮换策略顺序。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
@@ -12,7 +12,7 @@ export PROCESS_COUNTS="${PROCESS_COUNTS:-4 16 64}"
 export RANKS_PER_NODE="${RANKS_PER_NODE:-4}"
 export CPUS_PER_TASK="${CPUS_PER_TASK:-4}"
 export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
-export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_stage node_reclaim}"
+export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_reclaim node_selective node_once}"
 export LEVELS="${LEVELS:-2}"
 export REFINES="${REFINES:-1}"
 export ALGORITHMS="${ALGORITHMS:-sparse}"

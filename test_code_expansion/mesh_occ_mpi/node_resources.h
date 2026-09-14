@@ -81,11 +81,16 @@ class NodeResources {
     double stage_waits=0,stage_wait_seconds=0,stage_early_epochs=0,stage_early_cores=0;
     double stage_reclaims=0,stage_shrinks=0,stage_unchanged=0,stage_no_change=0;
     double node_phase_idle=0,node_early_loan=0;
-    bool force_base=false;
-    bool stage_policy() const { return mode==9 || mode==10; }
+    bool force_base=false,early_used=false;
+    double stage_growth_deferred=0;
+    bool selective_policy() const { return mode==11 || mode==12; }
+    bool stage_policy() const { return mode==9 || mode==10 || selective_policy(); }
+    bool early_allowed() const {
+        return !selective_policy() || (shared->rank[me].phase==6 && (mode!=12 || !early_used));
+    }
     bool donor_available(int home) const {
         const auto &d=shared->rank[home];
-        return d.done || (stage_policy() && d.prepared && !d.active && !d.requesting);
+        return d.done || (stage_policy() && early_allowed() && d.prepared && !d.active && !d.requesting);
     }
     bool home_ready() const {
         for(int c=0;c<shared->cpus;++c) if(shared->home[c]==me && shared->owner[c]>=0 && shared->owner[c]!=me) return false;
@@ -128,6 +133,7 @@ class NodeResources {
     struct PhaseStats {
         double calls=0,seconds=0,core_seconds=0,borrowed_seconds=0,below_base=0;
         int minimum=0,maximum=0;
+        double early_calls=0,reclaims=0;
     };
     PhaseStats phase_stats[phases];
     bool protected_base() const { return mode>=2; }
@@ -268,6 +274,7 @@ public:
     // 0=fixed, 1=greedy, 2=model, 3=guarded, 4=tail, 5=cost gate, 6=work priority.
     // 7=atomic event-driven tail; 8=atomic capacity-driven tail.
     // 9=stage lending; 10=stage lending with safe-point return.
+    // 11=early lending only in final optimization; 12=at most one early lease.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -456,16 +463,24 @@ public:
         const double start=now();++checkpoint_checks;
         lock();account_pool();auto &r=shared->rank[me];
         if(!r.active || r.done || checkpoint_old_threads) fail("阶段借核检查生命周期错误");
-        int reclaim=0,extra=0;
+        int reclaim=0,extra=0,unfinished_held=0;
         for(int c=0;c<shared->cpus;++c) {
             int home=shared->home[c];
-            if(shared->owner[c]==me && home!=me && !shared->rank[home].done && shared->rank[home].requesting) ++reclaim;
+            if(shared->owner[c]==me && home!=me && !shared->rank[home].done) {
+                ++unfinished_held;
+                if(shared->rank[home].requesting) ++reclaim;
+            }
             if(shared->owner[c]<0 && shared->reserved[c]==0 && home!=me && donor_available(home)) ++extra;
         }
         bool refresh=false;
         // Return all borrowed CPUs before reacquiring the protected base. Waiting
         // ranks never hold a foreign CPU; only active finite operations delay them.
-        if(mode==10 && reclaim) {force_base=true;++stage_reclaims;refresh=true;}
+        if((mode==10 || selective_policy()) && reclaim) {
+            force_base=true;++stage_reclaims;++phase_stats[r.phase].reclaims;refresh=true;
+        }
+        // Keep the one early lease intact until owner demand or normal release.
+        // Demand has priority over this suppression; never postpone returning CPUs.
+        else if(mode==12 && unfinished_held && extra) ++stage_growth_deferred;
         else if(!reclaim && extra) {
             for(int c=0;c<shared->cpus;++c) {
                 int home=shared->home[c];
@@ -576,7 +591,12 @@ public:
         r.remaining=-1;r.last_operation=0;
         if(stage_policy()) {
             for(int c=0;c<shared->cpus;++c) if(shared->reserved[c]==me+1) shared->reserved[c]=0;
-            if(early_cores) {++stage_early_epochs;stage_early_cores+=early_cores;}
+            if(early_cores) {
+                if(selective_policy() && phase!=6) fail("受限提前借核进入了非最终优化阶段");
+                if(mode==12 && early_used) fail("单次提前借核策略重复借用了未完成进程的核");
+                early_used=true;++stage_early_epochs;stage_early_cores+=early_cores;
+                ++phase_stats[phase].early_calls;
+            }
         }
         force_base=false;r.requesting=0;
         r.active=1;r.threads=held;r.start=now();pthread_cond_broadcast(&shared->changed);unlock();pin(mask);
@@ -621,6 +641,7 @@ public:
         const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};
         const double stage_values[]={stage_waits,stage_wait_seconds,stage_early_epochs,stage_early_cores,stage_reclaims,stage_shrinks,stage_unchanged,stage_no_change,node_phase_idle,node_early_loan};
         if(include_stage) for(int i=0;i<10;++i) p.set_metric(std::string("coop_stage_")+stage_names[i],stage_values[i]);
+        if(include_stage) p.set_metric("coop_stage_growth_deferred",stage_growth_deferred);
         p.set_metric("coop_elastic_no_capacity",elastic_no_capacity);
         p.set_metric("coop_elastic_no_event",elastic_no_event);
         p.set_metric("coop_elastic_reserved_cores",elastic_reserved);
@@ -658,6 +679,10 @@ public:
             p.set_metric(prefix+"below_base_epochs",s.below_base);
             p.set_metric(prefix+"min_threads",s.minimum);
             p.set_metric(prefix+"max_threads",s.maximum);
+            if(include_stage) {
+                p.set_metric(prefix+"early_epochs",s.early_calls);
+                p.set_metric(prefix+"reclaims",s.reclaims);
+            }
         }
     }
     void close() {
