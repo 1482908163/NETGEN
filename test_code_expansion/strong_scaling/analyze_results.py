@@ -133,6 +133,178 @@ def corr(a, b):
 def seconds(row, name):
     return row["stages"].get(name, {}).get("seconds", 0.0)
 
+QUALITY_COUNTS = ('points','elements','surfaces','checked','invalid_indices','unsupported',
+    'nonfinite_points','repeated_vertices','zero_volume','positive','negative','nonmanifold',
+    'same_side_faces','missing_surface','orphan_surface','duplicate_surface','internal_marked',
+    'zero_surface_area','hard_errors')
+QUALITY_ERRORS = ('invalid_indices','unsupported','nonfinite_points','repeated_vertices',
+    'zero_volume','nonmanifold','same_side_faces','missing_surface','orphan_surface','zero_surface_area')
+QUALITY_IDENTITY = ('MESH_INPUT_SHA256','MESH_BINARY_SHA256','MESH_SOURCE_REVISION','MESH_KERNEL_SHA256',
+    'numlevels','numrefine','maxh','minh','partition_seed','partition_variant','rank_shift',
+    'RANKS_PER_NODE','CPUS_PER_TASK','kernel_threads')
+
+def inspect_quality(rows, metadata):
+    """Audit every owned tet in repeat zero; this is not a CAD/intersection proof."""
+    if metadata.get('mesh_quality')!='volume_audit_v1' or rows[0]['repeat']!=0 or metadata.get('timing_mode')!='natural':
+        raise ValueError('volume audit must be natural warmup repeat 0')
+    if metadata.get('core_only')!='true' or metadata.get('feature_schema')!='mesh_comm_v1':
+        raise ValueError('invalid volume audit boundary')
+    algorithm=metadata['algorithm']
+    reference={'baseline':'baseline','sparse':'allgather'}.get(algorithm)
+    if reference is None or metadata.get('quality_face_reference')!=reference:
+        raise ValueError('missing face reference validation')
+    identity={key:metadata[key] for key in QUALITY_IDENTITY}
+    if any(v in ('unset','',None) for v in identity.values()):
+        raise ValueError('missing audit provenance')
+    audited=[]
+    for row in sorted(rows,key=lambda r:r['rank']):
+        m=row['metrics']
+        q={name:m['quality_'+name] for name in QUALITY_COUNTS}
+        q.update({name:m['quality_'+name] for name in ('shape_min','shape_sum','angle_min','angle_max','abs_volume')})
+        q['shape_hist']=[m['quality_shape_bin_'+str(i)] for i in range(10)]
+        hashes={name:[m['quality_'+name+'_hi'],m['quality_'+name+'_lo']]
+                for name in ('surface_sum','surface_xor','volume_sum','volume_xor')}
+        integers=[q[k] for k in QUALITY_COUNTS]+q['shape_hist']+[v for pair in hashes.values() for v in pair]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or v!=int(v) for v in integers):
+            raise ValueError('invalid audit counter or fingerprint')
+        if any(v>=2**32 for pair in hashes.values() for v in pair):
+            raise ValueError('invalid audit fingerprint half')
+        if any(not math.isfinite(q[k]) or q[k]<0 for k in ('shape_min','shape_sum','angle_min','angle_max','abs_volume')):
+            raise ValueError('invalid audit geometry metric')
+        if q['shape_min']>1 or q['shape_sum']>q['checked']*(1+1e-12) or not 0<=q['angle_min']<=q['angle_max']<=180:
+            raise ValueError('invalid quality metric range')
+        for k,old in (('points','local_points_before_adjacency'),('elements','local_volume_elements_before_adjacency'),('surfaces','local_surface_elements_before_adjacency')):
+            if q[k]!=m[old]: raise ValueError('audit traversal count mismatch: '+k)
+        if sum(q['shape_hist'])!=q['checked'] or q['positive']+q['negative']!=q['checked'] or q['checked']>q['elements']:
+            raise ValueError('audit coverage counters disagree')
+        if q['hard_errors']!=sum(q[k] for k in QUALITY_ERRORS)+min(q['positive'],q['negative']):
+            raise ValueError('audit error counters disagree')
+        if m['quality_face_reference_passed']!=int(algorithm=='sparse'):
+            raise ValueError('face reference did not pass')
+        q.update(hashes);q['rank']=row['rank'];audited.append(q)
+    totals={k:sum(q[k] for q in audited) for k in QUALITY_COUNTS}
+    issues=[]
+    if totals['hard_errors']: issues.append('structural_errors')
+    if not totals['elements'] or totals['checked']!=totals['elements']: issues.append('incomplete_tet_coverage')
+    if totals['positive'] and totals['negative']: issues.append('mixed_tet_orientation')
+    nonempty=[q for q in audited if q['checked']]
+    result=dict(schema='volume_audit_v1',algorithm=algorithm,scheduler=metadata['kernel_scheduler'],
+        ranks=len(rows),seed=int(metadata['partition_seed']),threads=int(metadata['kernel_threads']),
+        identity=identity,counts=totals,per_rank=audited,issues=issues,structural_pass=not issues,
+        shape_min=min((q['shape_min'] for q in nonempty),default=0),
+        shape_mean=sum(q['shape_sum'] for q in audited)/totals['checked'] if totals['checked'] else 0,
+        angle_min=min((q['angle_min'] for q in nonempty),default=0),
+        angle_max=max((q['angle_max'] for q in nonempty),default=0),
+        abs_volume=sum(q['abs_volume'] for q in audited),
+        shape_hist=[sum(q['shape_hist'][i] for q in audited) for i in range(10)],
+        face_reference=reference)
+    return result
+
+def compare_quality(control, candidate):
+    """Conservative nonregression gate; changed geometry can require review."""
+    problems=[]
+    if not control['structural_pass'] or not candidate['structural_pass']: problems.append('structural_check_failed')
+    if control['identity']!=candidate['identity'] or control['ranks']!=candidate['ranks']: problems.append('provenance_mismatch')
+    for k in ('points','elements','surfaces','duplicate_surface','internal_marked'):
+        if control['counts'][k]!=candidate['counts'][k]: problems.append(k+'_changed')
+    def signature(q,prefix):
+        return [(r['rank'],r[prefix+'_sum'],r[prefix+'_xor']) for r in q['per_rank']]
+    if signature(control,'surface')!=signature(candidate,'surface'): problems.append('boundary_fingerprint_changed')
+    same_mesh=signature(control,'volume')==signature(candidate,'volume')
+    if not math.isclose(control['abs_volume'],candidate['abs_volume'],rel_tol=1e-10,abs_tol=0): problems.append('volume_changed')
+    for k in ('shape_min','shape_mean','angle_min'):
+        if candidate[k]<control[k]-1e-10*max(1,abs(control[k])): problems.append(k+'_worse')
+    if candidate['angle_max']>control['angle_max']+1e-10*max(1,control['angle_max']): problems.append('angle_max_worse')
+    # At each decile threshold, no increase in the count of low-quality tets.
+    if any(sum(candidate['shape_hist'][:i])>sum(control['shape_hist'][:i]) for i in range(1,10)):
+        problems.append('low_quality_distribution_worse')
+    return dict(quality_pass=not problems,quality_issues=';'.join(problems),same_volume_fingerprint=same_mesh)
+
+def quality_reports(folder, plan):
+    reports=[];issues=[]
+    if not plan.get('quality_warmup'): return reports,issues
+    for algorithm in plan['algorithms']:
+        for seed in plan.get('partition_seeds',[-1]):
+            name=f'{algorithm}_natural' if seed==-1 else f'{algorithm}_seed{seed}_natural'
+            directory=folder/name/'repeat_0'
+            try:
+                # Re-read the retained raw measurements, never trust a stale summary.
+                result,_=inspect(profile_path(directory));q=result['mesh_quality']
+                if q['algorithm']!=algorithm or q['seed']!=seed or q['ranks']!=plan['ranks']:
+                    raise ValueError('quality run identity mismatch')
+                (directory/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
+                reports.append(q)
+                if not q['structural_pass']: issues.append(f'{name}: quality {q["issues"]}')
+                if not (directory/'SUCCESS').exists(): issues.append(f'{name}: quality warmup not successfully finalized')
+            except (OSError,EOFError,ValueError,KeyError,TypeError) as error:
+                issues.append(f'{name}: missing/invalid quality warmup: {error}')
+    return reports,issues
+
+def ablation_reports(root, ranks, selected, indexed, paired_times):
+    quality={};issues=[];flat=[]
+    required=False
+    for threads,scheduler in selected:
+        folder=root/f'kernel_{scheduler}_t{threads}'/f'p{ranks}'
+        try:
+            plan=json.loads((folder/'plan.json').read_text())
+            required=required or bool(plan.get('quality_warmup'))
+            reports,errors=quality_reports(folder,plan);issues.extend(errors)
+            for q in reports:
+                if q['scheduler']!=scheduler or q['threads']!=int(threads): raise ValueError('quality scheduler mismatch')
+                quality[(scheduler,int(threads),q['algorithm'],str(q['seed']))]=q
+                flat.append(dict(scheduler=scheduler,threads=int(threads),algorithm=q['algorithm'],seed=q['seed'],
+                    structural_pass=q['structural_pass'],hard_errors=q['counts']['hard_errors'],
+                    checked=q['counts']['checked'],elements=q['counts']['elements'],shape_min=q['shape_min'],
+                    shape_mean=q['shape_mean'],angle_min=q['angle_min'],angle_max=q['angle_max'],
+                    abs_volume=q['abs_volume'],face_reference=q['face_reference'],issues=';'.join(q['issues']),
+                    shape_hist=json.dumps(q['shape_hist'])))
+        except (OSError,ValueError,KeyError,TypeError) as error:
+            issues.append(f'{scheduler}/t{threads}: quality plan: {error}')
+    edges=(('communication','node_original','baseline','node_original','sparse'),
+           ('parallel_repair','node_original','sparse','node_native','sparse'),
+           ('grouped_scope','node_native','sparse','node_fixed','sparse'),
+           ('borrowing','node_fixed','sparse','node_elastic','sparse'),
+           ('total','node_original','baseline','node_elastic','sparse'))
+    comparisons=[]
+    requested=set((int(t),s) for t,s in selected)
+    for threads in sorted({int(t) for t,s in selected}):
+        for name,old,oldalgo,new,newalgo in edges:
+            if (threads,old) not in requested or (threads,new) not in requested: continue
+            seeds=sorted({key[4] for key in indexed if key[1]==threads})
+            for seed in seeds:
+                a=quality.get((old,threads,oldalgo,seed));b=quality.get((new,threads,newalgo,seed))
+                gate=compare_quality(a,b) if a and b else dict(quality_pass=None,quality_issues='missing' if required else 'not_requested',same_volume_fingerprint=None)
+                # Custom subsets need not contain the baseline communication arm.
+                if not any((old,threads,oldalgo,t,seed) in indexed for t in ('natural','split')): continue
+                if required and gate['quality_pass'] is not True:
+                    issues.append(f'{name}/t{threads}/seed{seed}: quality review required: {gate["quality_issues"]}')
+                for timing in ('natural','split'):
+                    control=indexed.get((old,threads,oldalgo,timing,seed));candidate=indexed.get((new,threads,newalgo,timing,seed))
+                    if not control or not candidate: continue
+                    ct=paired_times.get((threads,old,oldalgo,timing,seed),{})
+                    nt=paired_times.get((threads,new,newalgo,timing,seed),{})
+                    common=sorted(set(ct)&set(nt));changes=[100*(1-nt[r]/ct[r]) for r in common]
+                    comparisons.append(dict(contribution=name,threads=threads,timing=timing,seed=seed,
+                        control=oldalgo+'+'+old,candidate=newalgo+'+'+new,
+                        control_seconds=control['core_seconds'],candidate_seconds=candidate['core_seconds'],
+                        speedup=control['core_seconds']/candidate['core_seconds'],
+                        reduction_pct=100*(1-candidate['core_seconds']/control['core_seconds']),
+                        paired_count=len(common),paired_wins=sum(v>0 for v in changes),
+                        paired_reduction_pct=st.median(changes) if changes else None,**gate))
+    out=root/f'p{ranks}'
+    # Always replace reports, including empty custom/historical selections.
+    for name,rows in (('mesh_quality_summary.csv',flat),('ablation_summary.csv',comparisons)):
+        (out/name).write_text('');write_csv(out/name,rows)
+    lines=[f'全量体网格预热审计：{"已要求" if required else "未要求"}；收到 {len(flat)} 组。']
+    for row in comparisons:
+        if row['timing']=='natural':
+            gate='通过' if row['quality_pass'] is True else '需核查' if required else '未要求'
+            lines.append(f"贡献 {row['contribution']}: {row['control_seconds']:.6f}→{row['candidate_seconds']:.6f}s；"
+                         f"加速 {row['speedup']:.4f}；质量门槛={gate} {row['quality_issues']}")
+    lines.append('质量门槛覆盖全部本地四面体的形状、方向、面连接与边界指纹；不覆盖任意非相邻单元相交或 CAD 距离。')
+    return lines,issues
+
+
 def inspect(path, sample_sink=None, timeline_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
@@ -180,7 +352,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -223,7 +395,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                 raise ValueError("invalid node resource peak threads")
             if m['coop_borrowed_core_seconds']>m['coop_leased_core_seconds']+1e-9:
                 raise ValueError("borrowed core seconds exceed leased core seconds")
-            if metadata['kernel_scheduler'] in ('node_native','node_scoped','node_fixed') and (m['coop_borrow_epochs'] or m['coop_borrowed_core_seconds']):
+            if metadata['kernel_scheduler'] in ('node_original','node_native','node_scoped','node_fixed') and (m['coop_borrow_epochs'] or m['coop_borrowed_core_seconds']):
                 raise ValueError("fixed resource control unexpectedly borrowed CPUs")
         if metadata.get('node_resources')=='node_coop_v2':
             phase_fields=('epochs','seconds','core_seconds','borrowed_core_seconds',
@@ -523,6 +695,8 @@ def inspect(path, sample_sink=None, timeline_sink=None):
             t.update({k[len('coop_timeline_'):]:v for k,v in r['metrics'].items() if k.startswith('coop_timeline_')})
             t.update({k[len('coop_'):]:v for k,v in r['metrics'].items() if k.startswith('coop_stage_')})
             timeline_sink.append(t)
+    if metadata.get("mesh_quality") is not None:
+        result["mesh_quality"]=inspect_quality(rows,metadata)
     return result, detail
 
 def write_csv(path, rows):
@@ -652,7 +826,8 @@ def kernel_overview(root, ranks):
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
     for key, counts in workloads.items():
-        reference_name=('node_native' if key[1]=='node_native' and (key[0],'repair',*key[2:]) not in workloads else
+        reference_name=('node_original' if key[1]=='node_native' and (key[0],'node_original',*key[2:]) in workloads else
+                        'node_native' if key[1]=='node_native' and (key[0],'repair',*key[2:]) not in workloads else
                         'node_native' if key[1] in ('node_scoped','node_fixed') and
                         (key[0],'node_native',*key[2:]) in workloads else
                         'repair' if key[1] in ('node_native','node_scoped','node_fixed') and
@@ -674,7 +849,7 @@ def kernel_overview(root, ranks):
     indexed={(r['scheduler'],r['threads'],r['algorithm'],r['timing'],r['seed']):r for r in report}
     for row in report:
         key=(row['threads'],row['algorithm'],row['timing'],row['seed'])
-        for reference in ('repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget','node_reserved','node_elastic','node_stage','node_reclaim','node_selective'):
+        for reference in ('node_original','repair','node_native','node_scoped','node_fixed','node_lend','node_guarded','node_tail','node_budget','node_reserved','node_elastic','node_stage','node_reclaim','node_selective'):
             control=indexed.get((reference,*key))
             row['speedup_vs_'+reference]=control['core_seconds']/row['core_seconds'] if control and row['core_seconds']>0 else None
             if reference in ('node_elastic','node_reclaim','node_selective'):
@@ -685,12 +860,14 @@ def kernel_overview(root, ranks):
                 row['paired_count_vs_'+reference]=len(common)
                 row['paired_wins_vs_'+reference]=sum(v>0 for v in changes)
                 row['paired_reduction_pct_vs_'+reference]=st.median(changes) if changes else None
-        if row['scheduler'].startswith('node_'):
+        if row['scheduler'].startswith('node_') and row['scheduler']!='node_original':
             control=indexed.get(('node_fixed',*key))
             if control is None: issues.append("缺少 node_fixed 固定资源对照")
             elif control['volume_elements']!=row['volume_elements']:
                 issues.append(f"{row['scheduler']}: volume count differs from node_fixed")
     out=root/f"p{ranks}";out.mkdir(exist_ok=True)
+    audit_lines,audit_issues=ablation_reports(root,ranks,selected,indexed,paired_times)
+    issues.extend(audit_issues)
     write_csv(out/'kernel_summary.csv',report)
     phase_names=('reserved','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
     phase_report=[]
@@ -704,10 +881,10 @@ def kernel_overview(root, ranks):
                 item[field+'_median']=row.get(prefix+field)
             phase_report.append(item)
     write_csv(out/'kernel_phase_summary.csv',phase_report)
-    lines=["内核协作原型汇总",f"进程数: {ranks}; 异常项: {len(issues)}",
-           "scheduler threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
+    lines=["内核协作与贡献消融汇总",*audit_lines,f"进程数: {ranks}; 异常项: {len(issues)}",
+           "scheduler algorithm threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
     for row in report:
-        lines.append(f"{row['scheduler']} {row['threads']} {row['timing']} {row['core_seconds']:.6f} "
+        lines.append(f"{row['scheduler']} {row['algorithm']} {row['threads']} {row['timing']} {row['core_seconds']:.6f} "
                      f"{row['repair_seconds']:.6f} {compact(row.get('compute_max_seconds'))} {compact(row.get('vertex_wait_seconds'))} "
                      f"{compact(row.get('kernel_final_illegal'))} {compact(row['speedup_vs_static'])}")
     for row in report:
@@ -777,7 +954,7 @@ def kernel_overview(root, ranks):
                          f"无可用核={compact(row.get('coop_work_no_capacity'))} "
                          f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
                          f"相对受限申请加速={compact(row.get('speedup_vs_node_budget'))}")
-    lines += ["node_native=同核布局原修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
+    lines += ["node_original=同核布局原串行修复；node_native=同核布局并行修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
               "node_reserved=完成事件触发的原子预留；node_elastic=每个安全点检查可用容量，允许领取阶段归还的核。",
               "node_stage=未完成进程的串行窗口也可借核，正常租约结束归还；node_reclaim=另在安全点响应归还，包含生成内部优化轮次。",
@@ -818,7 +995,11 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                inspect(profile_path(args.root))
+                result,_=inspect(profile_path(args.root))
+                if 'mesh_quality' in result:
+                    q=result['mesh_quality']
+                    (args.root/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
+                    if not q['structural_pass']: raise ValueError('volume quality audit failed: '+str(q['issues']))
                 (args.root/"SUCCESS").touch()
                 if not args.keep_artifacts:
                     try_cleanup(args.root)
@@ -866,6 +1047,8 @@ def main():
     if len(present_runs)!=len(runs): errors.append("Duplicate run identity (algorithm, timing, ranks, seed, repeat)")
     for plan_path in args.root.rglob("plan.json"):
         plan = json.loads(plan_path.read_text())
+        _,quality_errors=quality_reports(plan_path.parent,plan)
+        errors.extend(quality_errors)
         for algorithm in plan["algorithms"]:
             for timing in plan["timings"]:
                 for seed in plan.get("partition_seeds",[-1]):
@@ -941,3 +1124,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

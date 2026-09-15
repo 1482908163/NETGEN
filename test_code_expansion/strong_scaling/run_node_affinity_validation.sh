@@ -3,16 +3,18 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 负载均衡主线：固定、完成后借核、安全点归还、最终优化借核、单次借核；不运行模型。
-# 每规模 5种策略 × 2种计时 × (1次预热 + 5次正式) = 60次运行。
+# 收尾主线：原通信/稀疏、原修复/并行修复、固定整段接口、完成后借核；不运行模型。
+# 每规模 5组配置 × 2种计时 × (1次预热 + 5次正式) = 60次；自然预热含全量审计。
 # 不同进程规模仍并行提交、统一启动延时；同一作业内轮换策略顺序。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
-export PROCESS_COUNTS="${PROCESS_COUNTS:-4 16 64}"
+export PROCESS_COUNTS="${PROCESS_COUNTS:-4 16 64 128 256}"
 export RANKS_PER_NODE="${RANKS_PER_NODE:-4}"
 export CPUS_PER_TASK="${CPUS_PER_TASK:-4}"
 export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
-export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_reclaim node_selective node_once}"
+export QUALITY_WARMUP="${QUALITY_WARMUP:-1}"
+export COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-1}"
+export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_original node_native node_fixed node_elastic}"
 export LEVELS="${LEVELS:-2}"
 export REFINES="${REFINES:-1}"
 export ALGORITHMS="${ALGORITHMS:-sparse}"
@@ -29,3 +31,4 @@ printf '节点资源验证：进程数=%s；每节点进程=%s；每进程预留
 printf '策略=%s；计时=%s；预热=%s；正式重复=%s\n' "${KERNEL_SCHEDULERS}" "${TIMING_MODES}" "${WARMUPS}" "${REPEATS}"
 printf '失败后继续；每次运行限时 %s 秒；结束后查看结果目录 p*/RESULT_SUMMARY.txt\n' "${TIMEOUT_SECONDS}"
 exec "${SCRIPT_DIR}/run_experiments.sh" "$@"
+

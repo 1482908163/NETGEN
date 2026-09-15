@@ -10,7 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   cooperate  : 1/4/16 节点，每节点4进程/16核，比较跨进程资源分配
+#   cooperate  : 1/4/16/32/64 节点，每节点4进程/16核，完成贡献消融与扩展验证
 #   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
@@ -24,7 +24,7 @@ default_stage=communication
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
-[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_elastic node_reclaim node_selective node_once"; }
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_original node_native node_fixed node_elastic"; }
 KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
@@ -67,7 +67,7 @@ case "${EXPERIMENT_PRESET}" in
     kernel|cooperate)
         default_tasks=0
         default_process_counts="1 4 16"
-        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="4 16 64"
+        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="4 16 64 128 256"
         [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_repeats=5
         default_levels=1
         [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_levels=2
@@ -112,6 +112,19 @@ REFINES="${REFINES:-${default_refines}}"
 MAXH="${MAXH:-1000}"
 MINH="${MINH:-0}"
 VERIFY_FACES="${VERIFY_FACES:-${default_verify_faces}}"
+# 全量质量审计只占用自然计时的 repeat_0，不混入正式测量。
+default_final_validation=0
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_final_validation=1
+QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
+COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
+export QUALITY_WARMUP COMMUNICATION_ABLATION
+[[ "${QUALITY_WARMUP}" =~ ^[01]$ && "${COMMUNICATION_ABLATION}" =~ ^[01]$ ]] || exit 2
+if [[ "${QUALITY_WARMUP}" == 1 ]]; then
+    [[ "${WARMUPS}" =~ ^[1-9][0-9]*$ && " ${TIMING_MODES//,/ } " == *" natural "* &&
+       ( "${EXPERIMENT_STAGE}" == kernel || "${EXPERIMENT_STAGE}" == communication ) ]] || {
+        echo "QUALITY_WARMUP=1 要求至少一次预热、natural 计时及 kernel/communication 阶段。" >&2;exit 2;
+    }
+fi
 CLEANUP_RESULTS="${CLEANUP_RESULTS:-1}"
 RESUME="${RESUME:-1}"
 BALANCE_SWEEPS="${BALANCE_SWEEPS:-4}"
@@ -142,7 +155,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -190,8 +203,13 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         for ((ks=0;ks<${#schedulers[@]};++ks)); do
           scheduler="${schedulers[$(((ks+kr+WARMUPS-1)%${#schedulers[@]}))]}"
           variant="${kernel_root}/kernel_${scheduler}_t${threads}"
+          variant_algorithms="${ALGORITHMS}"
+          if [[ "${COMMUNICATION_ABLATION}" == 1 && "$scheduler" == node_original &&
+                " ${ALGORITHMS//,/ } " != *" baseline "* ]]; then
+              variant_algorithms="baseline ${ALGORITHMS}"
+          fi
           if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$kr" KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
-               RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
+               ALGORITHMS="$variant_algorithms" RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
               kernel_failures=$((kernel_failures+1))
           fi
         done
@@ -280,6 +298,8 @@ fi
 [[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
 [[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")
+[[ "${QUALITY_WARMUP}" != 1 ]] || markers+=("volume_audit_v1")
+[[ "${KERNEL_SCHEDULER}" != node_original ]] || markers+=("node_original")
 [[ "${KERNEL_SCHEDULER}" != node_selective ]] || markers+=("finalopt_only_v1")
 [[ "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("finalopt_once_v1")
 ((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
@@ -365,7 +385,7 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2
@@ -441,7 +461,7 @@ REFERENCE
     export MESH_CAPACITY_SHA256="$(sha256sum "${capacity}" | cut -d ' ' -f1)"
     common+=(--rank-capacities "${capacity}")
 fi
-# Correctness checks deliberately cannot be combined with timing collection.
+# 可选独立面参考检查；默认全量审计已将参考检查合并到自然预热轮。
 if [[ "${VERIFY_FACES}" == 1 ]]; then
   for seed in "${seeds[@]}"; do
     verify_algorithms="sparse combined"
@@ -454,12 +474,12 @@ if [[ "${VERIFY_FACES}" == 1 ]]; then
     done
   done
 fi
-python3 - "${pdir}/plan.json" "${PROCESS_COUNT}" "${REPEATS}" "${ALGORITHMS}" "${TIMING_MODES}" "${PARTITION_SEEDS}" <<'PLAN'
+python3 - "${pdir}/plan.json" "${PROCESS_COUNT}" "${REPEATS}" "${ALGORITHMS}" "${TIMING_MODES}" "${PARTITION_SEEDS}" "${QUALITY_WARMUP}" <<'PLAN'
 import json,pathlib,sys
-path,n,repeats,algorithms,timings,seeds=sys.argv[1:]
+path,n,repeats,algorithms,timings,seeds,quality=sys.argv[1:]
 pathlib.Path(path).write_text(json.dumps(dict(ranks=int(n), repeats=int(repeats),
     algorithms=algorithms.replace(',', ' ').split(), timings=timings.replace(',', ' ').split(),
-    partition_seeds=list(map(int,seeds.replace(',', ' ').split())))))
+    partition_seeds=list(map(int,seeds.replace(',', ' ').split())), quality_warmup=quality=="1")))
 PLAN
 failures=0
 # Negative/zero repeats are warmups. Rotate mode order to avoid always giving
@@ -498,12 +518,16 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json"
             touch "${out}/RUNNING"
             args=("${common[@]}" --algorithm "${a}" --partition-seed "${seed}" --rank-shift "${rank_shift}"
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
                   --profile-experiment "${a}" --profile-repeat "${rep}" -o "${out}/mesh/")
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
+            if [[ "${QUALITY_WARMUP}" == 1 && "$rep" == 0 && "$mode" == natural ]]; then
+                args+=(--validate-volume)
+                [[ "$a" != sparse ]] || args+=(--verify-faces)
+            fi
             rc=0
             timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
             rm -f "${out}/RUNNING"
@@ -529,3 +553,4 @@ fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1
+
