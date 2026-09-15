@@ -1,0 +1,13 @@
+scheduler,threads,algorithm,timing,seed,repeats,phase,phase_name,epochs_median,seconds_median,core_seconds_median,borrowed_core_seconds_median,below_base_epochs_median,min_threads_median,max_threads_median,early_epochs_median,reclaims_median
+node_elastic,4,sparse,natural,-1,5,1,delaunay_opt,4.0,13.071422787,52.285691148,0.0,0.0,4.0,4.0,,
+node_elastic,4,sparse,natural,-1,5,6,final_opt,5.0,52.970387148,265.631893133,51.924368838,0.0,4.0,13.0,,
+node_elastic,4,sparse,natural,-1,5,7,repair_group,10.0,65.99500242599999,293.120133111,26.810225820000003,0.0,4.0,13.0,,
+node_elastic,4,sparse,split,-1,5,1,delaunay_opt,4.0,13.163658480999999,52.654633923999995,0.0,0.0,4.0,4.0,,
+node_elastic,4,sparse,split,-1,5,6,final_opt,5.0,53.600407164,266.830180736,53.517227397,0.0,4.0,13.0,,
+node_elastic,4,sparse,split,-1,5,7,repair_group,9.0,66.27118749899999,294.00321682699996,29.476709688,0.0,4.0,13.0,,
+node_fixed,4,sparse,natural,-1,5,1,delaunay_opt,4.0,13.559480029,54.237920116,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,natural,-1,5,6,final_opt,4.0,58.077157977,232.308631908,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,natural,-1,5,7,repair_group,8.0,67.88702565,271.5481026,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,split,-1,5,1,delaunay_opt,4.0,13.57152,54.28608,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,split,-1,5,6,final_opt,4.0,58.254566989000004,233.01826795600002,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,split,-1,5,7,repair_group,8.0,67.96029055300001,271.84116221200003,0.0,0.0,4.0,4.0,,

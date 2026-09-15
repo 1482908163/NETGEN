@@ -1,0 +1,947 @@
+{
+  "schema": "volume_audit_v1",
+  "algorithm": "sparse",
+  "scheduler": "node_fixed",
+  "ranks": 16,
+  "seed": -1,
+  "threads": 4,
+  "identity": {
+    "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547",
+    "MESH_BINARY_SHA256": "a0e10def208ccd74ce2655e2c915e180952ca23a409eff061b6ce1f29203e350",
+    "MESH_SOURCE_REVISION": "e63ffb68d4cf85d3b188a4576493712cceb2be5c",
+    "MESH_KERNEL_SHA256": "528e981ef3955bda59bedd63377c5c57072e04fa38d41479f8e740216e1a987b",
+    "numlevels": "2",
+    "numrefine": "1",
+    "maxh": "1000.000000",
+    "minh": "0.000000",
+    "partition_seed": "-1",
+    "partition_variant": "metis_seed",
+    "rank_shift": "0",
+    "RANKS_PER_NODE": "4",
+    "CPUS_PER_TASK": "4",
+    "kernel_threads": "4"
+  },
+  "counts": {
+    "points": 1236673,
+    "elements": 5959408,
+    "surfaces": 937216,
+    "checked": 5959408,
+    "invalid_indices": 0,
+    "unsupported": 0,
+    "nonfinite_points": 0,
+    "repeated_vertices": 0,
+    "zero_volume": 0,
+    "positive": 0,
+    "negative": 5959408,
+    "nonmanifold": 0,
+    "same_side_faces": 0,
+    "missing_surface": 0,
+    "orphan_surface": 0,
+    "duplicate_surface": 0,
+    "internal_marked": 0,
+    "zero_surface_area": 0,
+    "hard_errors": 0
+  },
+  "per_rank": [
+    {
+      "points": 71242,
+      "elements": 341960,
+      "surfaces": 54656,
+      "checked": 341960,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 341960,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.16586020470714732,
+      "shape_sum": 262874.02147049195,
+      "angle_min": 3.658327349648101,
+      "angle_max": 172.05374777071785,
+      "abs_volume": 283478.8034612919,
+      "shape_hist": [
+        0,
+        22,
+        266,
+        1612,
+        8088,
+        26972,
+        55332,
+        91658,
+        109988,
+        48022
+      ],
+      "surface_sum": [
+        2272075210,
+        1969031872
+      ],
+      "surface_xor": [
+        2343959432,
+        2303344588
+      ],
+      "volume_sum": [
+        3123388892,
+        594428248
+      ],
+      "volume_xor": [
+        735958791,
+        931293268
+      ],
+      "rank": 0
+    },
+    {
+      "points": 79062,
+      "elements": 379208,
+      "surfaces": 60800,
+      "checked": 379208,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 379208,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.21847321818577425,
+      "shape_sum": 292591.0964849659,
+      "angle_min": 6.025312490899673,
+      "angle_max": 169.1424449040328,
+      "abs_volume": 1285067.088774042,
+      "shape_hist": [
+        0,
+        0,
+        112,
+        1064,
+        7750,
+        30220,
+        61344,
+        100896,
+        123852,
+        53970
+      ],
+      "surface_sum": [
+        4102449229,
+        349355585
+      ],
+      "surface_xor": [
+        1473959977,
+        611937241
+      ],
+      "volume_sum": [
+        2608766793,
+        3886764867
+      ],
+      "volume_xor": [
+        2510409955,
+        3074285
+      ],
+      "rank": 1
+    },
+    {
+      "points": 77706,
+      "elements": 372776,
+      "surfaces": 59776,
+      "checked": 372776,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 372776,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.20191682984141934,
+      "shape_sum": 288371.2613609231,
+      "angle_min": 5.452047032094146,
+      "angle_max": 171.325964634328,
+      "abs_volume": 1420622.4057586275,
+      "shape_hist": [
+        0,
+        0,
+        106,
+        1082,
+        7598,
+        29390,
+        58938,
+        97642,
+        122402,
+        55618
+      ],
+      "surface_sum": [
+        2454796052,
+        4044856197
+      ],
+      "surface_xor": [
+        3746205047,
+        3907510435
+      ],
+      "volume_sum": [
+        3973641225,
+        1751948079
+      ],
+      "volume_xor": [
+        3260159782,
+        2398885079
+      ],
+      "rank": 2
+    },
+    {
+      "points": 81267,
+      "elements": 396560,
+      "surfaces": 58240,
+      "checked": 396560,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 396560,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.16034686216224708,
+      "shape_sum": 305788.52792291646,
+      "angle_min": 4.2232590287422,
+      "angle_max": 171.6424481391428,
+      "abs_volume": 403356.48672681453,
+      "shape_hist": [
+        0,
+        14,
+        264,
+        1846,
+        9204,
+        30852,
+        63382,
+        103420,
+        129862,
+        57716
+      ],
+      "surface_sum": [
+        256298898,
+        4208488334
+      ],
+      "surface_xor": [
+        4166177280,
+        1043562204
+      ],
+      "volume_sum": [
+        277944113,
+        874584120
+      ],
+      "volume_xor": [
+        273849567,
+        3946886496
+      ],
+      "rank": 3
+    },
+    {
+      "points": 74534,
+      "elements": 356360,
+      "surfaces": 58112,
+      "checked": 356360,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 356360,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.18896210279576123,
+      "shape_sum": 275592.0295647913,
+      "angle_min": 5.067769286958143,
+      "angle_max": 170.2201274848473,
+      "abs_volume": 1032394.1925853898,
+      "shape_hist": [
+        0,
+        4,
+        80,
+        710,
+        6878,
+        27246,
+        56932,
+        96138,
+        117610,
+        50762
+      ],
+      "surface_sum": [
+        348667586,
+        597041267
+      ],
+      "surface_xor": [
+        3905538348,
+        1110257121
+      ],
+      "volume_sum": [
+        2889478606,
+        331988859
+      ],
+      "volume_xor": [
+        3579185112,
+        1444525497
+      ],
+      "rank": 4
+    },
+    {
+      "points": 83337,
+      "elements": 399840,
+      "surfaces": 64000,
+      "checked": 399840,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 399840,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.1634427846203602,
+      "shape_sum": 306229.57093713246,
+      "angle_min": 5.468163269674084,
+      "angle_max": 172.6714282246408,
+      "abs_volume": 1257360.6997019355,
+      "shape_hist": [
+        0,
+        8,
+        398,
+        2086,
+        10518,
+        33130,
+        66094,
+        106068,
+        125362,
+        56176
+      ],
+      "surface_sum": [
+        3247962726,
+        4173771255
+      ],
+      "surface_xor": [
+        1209148332,
+        3211167575
+      ],
+      "volume_sum": [
+        1243628120,
+        795507095
+      ],
+      "volume_xor": [
+        2838022244,
+        910365459
+      ],
+      "rank": 5
+    },
+    {
+      "points": 60331,
+      "elements": 291152,
+      "surfaces": 45312,
+      "checked": 291152,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 291152,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.19978766480106475,
+      "shape_sum": 224646.24270996678,
+      "angle_min": 5.143014059088593,
+      "angle_max": 169.55090424747297,
+      "abs_volume": 444215.41696303897,
+      "shape_hist": [
+        0,
+        2,
+        110,
+        1034,
+        6458,
+        22874,
+        47414,
+        76834,
+        92376,
+        44050
+      ],
+      "surface_sum": [
+        1745852491,
+        1731616983
+      ],
+      "surface_xor": [
+        3388916721,
+        410240877
+      ],
+      "volume_sum": [
+        448712614,
+        1102477447
+      ],
+      "volume_xor": [
+        1002061684,
+        2153041665
+      ],
+      "rank": 6
+    },
+    {
+      "points": 78413,
+      "elements": 376320,
+      "surfaces": 60416,
+      "checked": 376320,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 376320,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.23424510479420033,
+      "shape_sum": 291081.539213081,
+      "angle_min": 6.069923098039946,
+      "angle_max": 167.30382835819555,
+      "abs_volume": 1343587.0782061585,
+      "shape_hist": [
+        0,
+        0,
+        90,
+        834,
+        7606,
+        28840,
+        60374,
+        100386,
+        123158,
+        55032
+      ],
+      "surface_sum": [
+        217565530,
+        1113984275
+      ],
+      "surface_xor": [
+        2311251999,
+        1712846621
+      ],
+      "volume_sum": [
+        289789784,
+        1640648087
+      ],
+      "volume_xor": [
+        1163349648,
+        2123394997
+      ],
+      "rank": 7
+    },
+    {
+      "points": 77556,
+      "elements": 373944,
+      "surfaces": 58368,
+      "checked": 373944,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 373944,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.21288331577721095,
+      "shape_sum": 288240.00509337743,
+      "angle_min": 8.257278485666443,
+      "angle_max": 167.04681641182268,
+      "abs_volume": 1109290.4079242987,
+      "shape_hist": [
+        0,
+        0,
+        118,
+        1268,
+        8140,
+        29206,
+        61464,
+        99410,
+        120620,
+        53718
+      ],
+      "surface_sum": [
+        2117429384,
+        1887154876
+      ],
+      "surface_xor": [
+        710741172,
+        1881571976
+      ],
+      "volume_sum": [
+        1230785011,
+        746465932
+      ],
+      "volume_xor": [
+        1100429762,
+        3565785252
+      ],
+      "rank": 8
+    },
+    {
+      "points": 74448,
+      "elements": 354856,
+      "surfaces": 58624,
+      "checked": 354856,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 354856,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.11106945110918873,
+      "shape_sum": 271519.78878031264,
+      "angle_min": 4.969089526891513,
+      "angle_max": 171.1212120669862,
+      "abs_volume": 1132787.5937517644,
+      "shape_hist": [
+        0,
+        22,
+        274,
+        1660,
+        8922,
+        29398,
+        59708,
+        95282,
+        111246,
+        48344
+      ],
+      "surface_sum": [
+        1860812622,
+        1495427465
+      ],
+      "surface_xor": [
+        4151814580,
+        1301378735
+      ],
+      "volume_sum": [
+        999215147,
+        3686159881
+      ],
+      "volume_xor": [
+        3251647771,
+        869093899
+      ],
+      "rank": 9
+    },
+    {
+      "points": 81172,
+      "elements": 390824,
+      "surfaces": 61440,
+      "checked": 390824,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 390824,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.1713765023769347,
+      "shape_sum": 302308.5078436106,
+      "angle_min": 6.254802596827277,
+      "angle_max": 172.8751027224124,
+      "abs_volume": 1220511.0839537873,
+      "shape_hist": [
+        0,
+        8,
+        162,
+        1300,
+        8188,
+        29942,
+        61896,
+        102050,
+        129856,
+        57422
+      ],
+      "surface_sum": [
+        3117371988,
+        3109669711
+      ],
+      "surface_xor": [
+        3824379759,
+        3731162805
+      ],
+      "volume_sum": [
+        2676592470,
+        2985390283
+      ],
+      "volume_xor": [
+        3690742753,
+        2137036553
+      ],
+      "rank": 10
+    },
+    {
+      "points": 86160,
+      "elements": 412104,
+      "surfaces": 67072,
+      "checked": 412104,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 412104,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.21808467870867743,
+      "shape_sum": 320038.5780930338,
+      "angle_min": 7.6860445972884435,
+      "angle_max": 168.30896893668623,
+      "abs_volume": 853022.492264598,
+      "shape_hist": [
+        0,
+        0,
+        128,
+        798,
+        7194,
+        30658,
+        64188,
+        109952,
+        137818,
+        61368
+      ],
+      "surface_sum": [
+        2920947212,
+        692168199
+      ],
+      "surface_xor": [
+        592986348,
+        633660103
+      ],
+      "volume_sum": [
+        1578998204,
+        3991273025
+      ],
+      "volume_xor": [
+        1380850669,
+        2833057979
+      ],
+      "rank": 11
+    },
+    {
+      "points": 73566,
+      "elements": 353736,
+      "surfaces": 56064,
+      "checked": 353736,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 353736,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.20838774208524957,
+      "shape_sum": 274972.6144019626,
+      "angle_min": 5.865949316452671,
+      "angle_max": 168.91824146023103,
+      "abs_volume": 1059237.932290696,
+      "shape_hist": [
+        0,
+        0,
+        108,
+        978,
+        6768,
+        26070,
+        55364,
+        90702,
+        117324,
+        56422
+      ],
+      "surface_sum": [
+        2498114196,
+        3651180094
+      ],
+      "surface_xor": [
+        3797045300,
+        1497858454
+      ],
+      "volume_sum": [
+        1980782527,
+        3839213468
+      ],
+      "volume_xor": [
+        3658200654,
+        845175034
+      ],
+      "rank": 12
+    },
+    {
+      "points": 66267,
+      "elements": 340016,
+      "surfaces": 40448,
+      "checked": 340016,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 340016,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.16910225478778143,
+      "shape_sum": 242306.07977321921,
+      "angle_min": 4.98995358086992,
+      "angle_max": 172.12793683325762,
+      "abs_volume": 615344.4245161652,
+      "shape_hist": [
+        0,
+        24,
+        1318,
+        8608,
+        23310,
+        43992,
+        64864,
+        87434,
+        83662,
+        26804
+      ],
+      "surface_sum": [
+        397475422,
+        4123391472
+      ],
+      "surface_xor": [
+        4292084426,
+        1658054126
+      ],
+      "volume_sum": [
+        1280051776,
+        3870526394
+      ],
+      "volume_xor": [
+        3495205778,
+        3448309854
+      ],
+      "rank": 13
+    },
+    {
+      "points": 84122,
+      "elements": 405864,
+      "surfaces": 63232,
+      "checked": 405864,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 405864,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.1599695483539572,
+      "shape_sum": 313799.69701886247,
+      "angle_min": 4.323262900394102,
+      "angle_max": 172.28425894531853,
+      "abs_volume": 1134233.6448447264,
+      "shape_hist": [
+        0,
+        6,
+        172,
+        1492,
+        8276,
+        30942,
+        64618,
+        107062,
+        133392,
+        59904
+      ],
+      "surface_sum": [
+        3182175456,
+        2202423891
+      ],
+      "surface_xor": [
+        1286493027,
+        1775129273
+      ],
+      "volume_sum": [
+        3209899003,
+        1169079893
+      ],
+      "volume_xor": [
+        99629453,
+        4084727197
+      ],
+      "rank": 14
+    },
+    {
+      "points": 87490,
+      "elements": 413888,
+      "surfaces": 70656,
+      "checked": 413888,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 413888,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0,
+      "shape_min": 0.1668693554390526,
+      "shape_sum": 318840.12656144035,
+      "angle_min": 3.3145943167944356,
+      "angle_max": 172.744810162077,
+      "abs_volume": 883341.9030696169,
+      "shape_hist": [
+        0,
+        12,
+        292,
+        1684,
+        9666,
+        32732,
+        66614,
+        109068,
+        134012,
+        59808
+      ],
+      "surface_sum": [
+        80716835,
+        1320081882
+      ],
+      "surface_xor": [
+        2078184051,
+        356971216
+      ],
+      "volume_sum": [
+        886787923,
+        897916312
+      ],
+      "volume_xor": [
+        909629908,
+        3501026456
+      ],
+      "rank": 15
+    }
+  ],
+  "issues": [],
+  "structural_pass": true,
+  "shape_min": 0.11106945110918873,
+  "shape_mean": 0.7683984193111275,
+  "angle_min": 3.3145943167944356,
+  "angle_max": 172.8751027224124,
+  "abs_volume": 15477851.654792951,
+  "shape_hist": [
+    0,
+    122,
+    3998,
+    28056,
+    144564,
+    482464,
+    968526,
+    1574002,
+    1912540,
+    845136
+  ],
+  "face_reference": "allgather"
+}
