@@ -254,6 +254,30 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
   stat.qualclass = 1;
   auto * front_stats = mp.volume_kernel_stats;
+  double front_local[VolumeKernelStats::front_count] = {};
+  double * front_values = front_stats ? front_local : nullptr;
+  struct FrontTimer {
+    double * values;
+    int index;
+    std::chrono::steady_clock::time_point start;
+    FrontTimer(double * v,int i):values(v),index(i) {
+      if(values) start=std::chrono::steady_clock::now();
+    }
+    ~FrontTimer() {
+      if(values) values[index] +=
+        std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+    }
+  };
+  struct FrontFlush {
+    VolumeKernelStats * stats;
+    double * values;
+    ~FrontFlush() {
+      if(!stats || !values) return;
+      for(int i=0;i<VolumeKernelStats::front_count;++i)
+        if(i==15 || i==16 || i==18) stats->MaxFront(i,values[i]);
+        else stats->AddFront(i,values[i]);
+    }
+  } front_flush{front_stats,front_values};
 
   while (1)
     {
@@ -269,7 +293,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       if (mp.baseelnp && adfront->Empty (mp.baseelnp))
 	break;
 
-      if(front_stats) front_stats->AddFront(8,1);
+      if(front_values) front_values[8] += 1;
       locpoints.SetSize(0);
       locfaces.SetSize(0);
       locelements.SetSize(0);
@@ -284,14 +308,14 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       int baseelem;
       {
-        VolumeFrontTimer time(front_stats,0);
+        FrontTimer time(front_values,0);
         baseelem = adfront -> SelectBaseElement ();
       }
       if (mp.baseelnp && adfront->GetFace (baseelem).GetNP() != mp.baseelnp)
 	{
-          VolumeFrontTimer time(front_stats,7);
+          FrontTimer time(front_values,7);
 	  adfront->IncrementClass (baseelem);
-          if(front_stats) front_stats->AddFront(19,1);
+          if(front_values) front_values[19] += 1;
 	  continue;
 	}
 
@@ -317,20 +341,20 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       // meshing3_timer_a.Start();
       {
-        VolumeFrontTimer time(front_stats,1);
+        FrontTimer time(front_values,1);
         stat.qualclass =
           adfront -> GetLocals (baseelem, locpoints, locfaces,
 			        pindex, findex, connectedpairs,
 			        houter, hinner,
 			        locfacesplit);
       }
-      if(front_stats) {
-        front_stats->AddFront(13,locpoints.Size());
-        front_stats->AddFront(14,locfaces.Size());
-        front_stats->MaxFront(15,locpoints.Size());
-        front_stats->MaxFront(16,locfaces.Size());
-        front_stats->AddFront(17,stat.qualclass);
-        front_stats->MaxFront(18,stat.qualclass);
+      if(front_values) {
+        front_values[13] += locpoints.Size();
+        front_values[14] += locfaces.Size();
+        front_values[15] = std::max(front_values[15],double(locpoints.Size()));
+        front_values[16] = std::max(front_values[16],double(locfaces.Size()));
+        front_values[17] += stat.qualclass;
+        front_values[18] = std::max(front_values[18],double(stat.qualclass));
       }
       // meshing3_timer_a.Stop();
 
@@ -410,7 +434,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	      FindInnerPoint (grouppoints, groupfaces, inp) &&
               !adfront->PointInsideGroup(grouppindex, groupfaces))
 	    {
-              VolumeFrontTimer commit_time(front_stats,6);
+              FrontTimer commit_time(front_values,6);
 	      (*testout) << "inner point found" << endl;
 
 	      for(int i = 0; i < groupfaces.Size(); i++)
@@ -440,7 +464,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 		    }
 		  mesh.AddVolumeElement (newel);
 		}
-              if(front_stats) front_stats->AddFront(11,1);
+              if(front_values) front_values[11] += 1;
 	      continue;
 	    }
 	}
@@ -474,10 +498,10 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       for (int rotind = 1; rotind <= locfaces[0].GetNP(); rotind++)
 	{
-          if(front_stats) front_stats->AddFront(9,1);
+          if(front_values) front_values[9] += 1;
 	  // set transformatino to reference coordinates
           {
-            VolumeFrontTimer time(front_stats,2);
+            FrontTimer time(front_values,2);
 	  if (locfaces[0].GetNP() == 3)
 	    {
 	      trans.Set (locpoints[locfaces[0].PNumMod(1+rotind)],
@@ -521,7 +545,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
           // meshing3_timer_c.Start();
 
           {
-            VolumeFrontTimer time(front_stats,3);
+            FrontTimer time(front_values,3);
 	    found = ApplyRules (plainpoints, allowpoint,
 			        locfaces, locfacesplit, connectedpairs,
 			        locelements, delfaces,
@@ -529,7 +553,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
           }
 
           {
-            VolumeFrontTimer time(front_stats,4);
+            FrontTimer time(front_values,4);
 	  if (found >= 0) impossible = 0;
 	  if (found < 0) found = 0;
 
@@ -588,7 +612,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	    }
           }
 
-          if(found && front_stats) front_stats->AddFront(10,1);
+          if(found && front_values) front_values[10] += 1;
 	  if (found)
 	    ruleused[found-1]++;
           
@@ -610,7 +634,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
 	  if (found && (!hasfound || err < minerr) )
 	    {
-              VolumeFrontTimer candidate_time(front_stats,5);
+              FrontTimer candidate_time(front_values,5);
 	      
 	      if (testmode)
 		{
@@ -668,8 +692,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       if (hasfound)
 	{
-          VolumeFrontTimer commit_time(front_stats,6);
-          if(front_stats) front_stats->AddFront(11,1);
+          FrontTimer commit_time(front_values,6);
+          if(front_values) front_values[11] += 1;
 
 	  /*
 	  if (optother)
@@ -748,8 +772,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	}
       else
 	{
-          VolumeFrontTimer retry_time(front_stats,7);
-          if(front_stats) front_stats->AddFront(12,1);
+          FrontTimer retry_time(front_values,7);
+          if(front_values) front_values[12] += 1;
 	  adfront->IncrementClass (findex[0]);
 	  if (impossible && mp.check_impossible)
 	    {
