@@ -337,7 +337,9 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'kernel_front_commit_seconds','kernel_front_retry_seconds','kernel_front_iterations',
     'kernel_front_rotations','kernel_front_local_points_max','kernel_front_local_faces_max',
     'front_local_points_mean','front_local_faces_mean','front_qualclass_mean',
-    'front_candidate_rate','front_retry_rate','coop_borrowed_core_seconds','first_loan_fraction')
+    'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
+    'front_unattributed_seconds','front_profile_coverage',
+    'coop_borrowed_core_seconds','first_loan_fraction')
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -380,6 +382,14 @@ def critical_rank_details(rows, result):
         item['front_qualclass_mean']=(m.get('kernel_front_qualclass_sum',0)/iterations if iterations else None)
         item['front_candidate_rate']=(m.get('kernel_front_candidate_found',0)/rotations if rotations else None)
         item['front_retry_rate']=(m.get('kernel_front_failed_iterations',0)/iterations if iterations else None)
+        front_parts=sum(m.get(key,0) for key in (
+            'kernel_front_select_seconds','kernel_front_getlocals_seconds','kernel_front_transform_seconds',
+            'kernel_front_applyrules_seconds','kernel_front_validate_seconds','kernel_front_candidate_seconds',
+            'kernel_front_commit_seconds','kernel_front_retry_seconds'))
+        front_total=m.get('kernel_front_seconds')
+        item['front_instrumented_seconds']=front_parts
+        item['front_unattributed_seconds']=(max(0.0,front_total-front_parts) if front_total is not None else None)
+        item['front_profile_coverage']=(front_parts/front_total if front_total and front_total>0 else None)
         start=m.get('coop_timeline_start_seconds');finish=m.get('coop_timeline_finish_seconds')
         first=m.get('coop_timeline_first_loan_seconds')
         item['first_loan_fraction']=((first-start)/(finish-start)
@@ -387,7 +397,8 @@ def critical_rank_details(rows, result):
         # Validate any optional values we expose; missing measurements stay empty, not zero.
         numeric=[item[k] for k in CRITICAL_METRICS+CRITICAL_PHASES if item[k] is not None]
         numeric += [item[k] for k in ('front_local_points_mean','front_local_faces_mean','front_qualclass_mean',
-                                      'front_candidate_rate','front_retry_rate') if item[k] is not None]
+                                      'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
+                                      'front_unattributed_seconds','front_profile_coverage') if item[k] is not None]
         if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 for v in numeric):
             raise ValueError('invalid critical-rank metric')
         fraction=item['first_loan_fraction']
@@ -493,7 +504,9 @@ def critical_overview(root,ranks,selected):
                 f"局部面均值/最大={compact(r.get('front_local_faces_mean_median'))}/"
                 f"{compact(r.get('kernel_front_local_faces_max_median'),0)} "
                 f"候选命中率={compact(100*(r.get('front_candidate_rate_median') or 0))}% "
-                f"重试率={compact(100*(r.get('front_retry_rate_median') or 0))}%。")
+                f"重试率={compact(100*(r.get('front_retry_rate_median') or 0))}% "
+                f"覆盖率={compact(100*(r.get('front_profile_coverage_median') or 0))}% "
+                f"未归因={compact(r.get('front_unattributed_seconds_median'))}s。")
     lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
     lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
     (out/'CRITICAL_PATH_SUMMARY.txt').write_text('\n'.join(lines+issues)+'\n')
