@@ -118,17 +118,6 @@ namespace netgen
       while(old<value && !front_values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
     }
   };
-  struct VolumeFrontTimer {
-    VolumeKernelStats * stats;
-    int index;
-    std::chrono::steady_clock::time_point start;
-    VolumeFrontTimer(VolumeKernelStats * s, int i):stats(s),index(i) {
-      if(stats) start=std::chrono::steady_clock::now();
-    }
-    ~VolumeFrontTimer() {
-      if(stats) stats->AddFront(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
-    }
-  };
   struct VolumeKernelTimer {
     VolumeKernelStats * stats;
     int index;
