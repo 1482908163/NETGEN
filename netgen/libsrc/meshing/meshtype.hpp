@@ -98,11 +98,35 @@ namespace netgen
   // Per-call diagnostics; domain workers may contribute concurrently.
   struct VolumeKernelStats {
     static constexpr int count = 12;
+    static constexpr int front_count = 19;
     std::atomic<double> values[count];
-    VolumeKernelStats() { for(auto & v : values) v.store(0); }
+    std::atomic<double> front_values[front_count];
+    VolumeKernelStats() {
+      for(auto & v : values) v.store(0);
+      for(auto & v : front_values) v.store(0);
+    }
     void Add(int i, double value) {
       double old=values[i].load(std::memory_order_relaxed);
       while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void AddFront(int i, double value) {
+      double old=front_values[i].load(std::memory_order_relaxed);
+      while(!front_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void MaxFront(int i, double value) {
+      double old=front_values[i].load(std::memory_order_relaxed);
+      while(old<value && !front_values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
+    }
+  };
+  struct VolumeFrontTimer {
+    VolumeKernelStats * stats;
+    int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeFrontTimer(VolumeKernelStats * s, int i):stats(s),index(i) {
+      if(stats) start=std::chrono::steady_clock::now();
+    }
+    ~VolumeFrontTimer() {
+      if(stats) stats->AddFront(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
     }
   };
   struct VolumeKernelTimer {
