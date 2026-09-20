@@ -453,9 +453,15 @@ public:
             else {
                 // Reserve before stopping workers: another claimant cannot consume
                 // the selected cores in the release/acquire gap.
-                for(int c=0;c<shared->cpus;++c)
+                for(int c=0;c<shared->cpus;++c) {
                     if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done)
                         shared->reserved[c]=me+1;
+                    // phase-aware mode may already hold completed-rank CPUs from the
+                    // phase-6 entry lease. Preserve them across the team restart so a
+                    // growth request cannot accidentally shrink through a race.
+                    if(phaseaware_policy() && shared->owner[c]==me && shared->home[c]!=me)
+                        shared->reserved[c]=me+1;
+                }
                 r.work_granted=1;checkpoint_old_threads=r.threads;
                 ++checkpoint_restarts;++work_grants;work_reserved+=extra;
                 work_gain_estimate+=last*remaining*extra/(r.threads+extra);
