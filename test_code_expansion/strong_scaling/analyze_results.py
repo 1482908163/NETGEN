@@ -780,6 +780,41 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 for phase in range(8):
                     if phase!=6 and m[f'coop_phase_{phase}_borrowed_core_seconds']>1e-12:
                         raise ValueError('phase-aware lending escaped final optimization')
+    if metadata.get('natural_sync_trace')=='natural_sync_v1':
+        def sync_values(name):
+            values=[]
+            for row in rows:
+                value=row['metrics'].get(name)
+                if value is None or not math.isfinite(value) or value<0:
+                    raise ValueError('missing/invalid natural sync timestamp: '+name)
+                values.append(value)
+            return values
+        volume_done=sync_values('local_volume_complete_elapsed')
+        vertex_arrival=sync_values('vertex_arrival_elapsed')
+        core_done=[r['metrics']['core_seconds'] for r in rows]
+        result['sync_local_volume_skew_seconds']=max(volume_done)-min(volume_done)
+        result['sync_vertex_arrival_skew_seconds']=max(vertex_arrival)-min(vertex_arrival)
+        result['sync_post_volume_to_vertex_max_seconds']=max(v-a for v,a in zip(vertex_arrival,volume_done))
+        volume_rank=rows[max(range(n),key=lambda i:volume_done[i])]['rank']
+        vertex_rank=rows[max(range(n),key=lambda i:vertex_arrival[i])]['rank']
+        core_rank=rows[max(range(n),key=lambda i:core_done[i])]['rank']
+        result['sync_volume_to_vertex_handoff']=1.0 if volume_rank!=vertex_rank else 0.0
+        result['sync_vertex_to_core_handoff']=1.0 if vertex_rank!=core_rank else 0.0
+        pairs=(
+            ('face_match','face_sparse_match_arrival_elapsed','face_sparse_match_complete_elapsed'),
+            ('face_directory','face_sparse_directory_arrival_elapsed','face_sparse_directory_complete_elapsed'),
+            ('face_deliver','face_sparse_deliver_arrival_elapsed','face_sparse_deliver_complete_elapsed'),
+            ('vertex_count','vertex_count_pre_collective_wait_arrival_elapsed','vertex_count_complete_elapsed'),
+            ('element_count','element_count_pre_collective_wait_arrival_elapsed','element_count_complete_elapsed'),
+            ('volume_size','volume_size_exchange_pre_collective_wait_arrival_elapsed','volume_size_exchange_complete_elapsed'))
+        for label,arrival_name,complete_name in pairs:
+            arrival=sync_values(arrival_name);complete=sync_values(complete_name)
+            if any(c<a for a,c in zip(arrival,complete)):
+                raise ValueError('natural sync completion precedes arrival: '+label)
+            result['sync_'+label+'_arrival_skew_seconds']=max(arrival)-min(arrival)
+            result['sync_'+label+'_post_latest_seconds']=max(0.0,max(complete)-max(arrival))
+            result['sync_'+label+'_max_local_seconds']=max(c-a for a,c in zip(arrival,complete))
+
     if metadata.get("feature_schema")=="mesh_comm_v1":
         if (metadata["algorithm"] not in ("baseline","sparse") or
             metadata.get("cost_model")!="none" or metadata.get("balance_method")!="none" or
