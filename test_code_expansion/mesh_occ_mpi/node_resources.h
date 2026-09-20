@@ -85,6 +85,9 @@ class NodeResources {
     double stage_growth_deferred=0;
     bool selective_policy() const { return mode==11 || mode==12; }
     bool stage_policy() const { return mode==9 || mode==10 || selective_policy(); }
+    // mode 13: critical-path phase filtering. Generation/repair keep the protected
+    // base allocation; only final optimization may consume completed-rank cores.
+    bool phaseaware_policy() const { return mode==13; }
     bool early_allowed() const {
         return !selective_policy() || (shared->rank[me].phase==6 && (mode!=12 || !early_used));
     }
@@ -100,7 +103,8 @@ class NodeResources {
     bool can_take(int c) const {
         if(stage_policy()) return shared->home[c]!=me && donor_available(shared->home[c]) &&
             (shared->reserved[c]==0 || shared->reserved[c]==me+1);
-        if(work_policy() || (atomic_tail() && checkpoint_old_threads))
+        if(work_policy() || (phaseaware_policy() && checkpoint_old_threads) ||
+           (atomic_tail() && checkpoint_old_threads))
             return shared->reserved[c]==me+1;
         return shared->reserved[c]==0;
     }
@@ -275,6 +279,7 @@ public:
     // 7=atomic event-driven tail; 8=atomic capacity-driven tail.
     // 9=stage lending; 10=stage lending with safe-point return.
     // 11=early lending only in final optimization; 12=at most one early lease.
+    // 13=critical-path phase-aware lending: completed-rank cores only in phase 6.
     NodeResources(MPI_Comm world,int threads,int policy):base(threads),mode(policy) {
         const double start=now();CPU_ZERO(&initial);CPU_ZERO(&home_mask);
         if(sched_getaffinity(0,sizeof(initial),&initial)!=0) fail("无法读取初始核绑定");
@@ -419,7 +424,7 @@ public:
         return static_cast<NodeResources*>(ctx)->poll_work(work,remaining,last,restart);
     }
     int poll_work(double work,int remaining,double last,double restart) {
-        if(!work_policy()) return 0;
+        if(!work_policy() && !phaseaware_policy()) return 0;
         if(!std::isfinite(work) || work<=0 || !std::isfinite(last) || last<0 ||
            !std::isfinite(restart) || restart<0) fail("非法安全点进度");
         const double stamp=now();++checkpoint_checks;++work_checks;
@@ -438,7 +443,7 @@ public:
         else if(!work_eligible(r,extra,stamp)) ++work_cost;
         else {
             int winner=me;double score=work*remaining/r.threads;
-            if(mode==6) for(int i=0;i<size;++i) {
+            if(mode==6 || phaseaware_policy()) for(int i=0;i<size;++i) {
                 const auto &peer=shared->rank[i];
                 if(!work_eligible(peer,extra,stamp)) continue;
                 double candidate=peer.work*peer.remaining/peer.threads;
@@ -559,6 +564,10 @@ public:
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
         int target=force_base?std::min(base,cap):cap;
+        // Critical-path evidence shows lending in generation/repair is counterproductive
+        // at high rank counts, while phase 6 optimization benefits. Keep all other
+        // parallel phases at the protected base; phase 5 is forced serial below.
+        if(phaseaware_policy() && phase!=6 && phase!=5) target=std::min(base,cap);
         if(mode==2 && phase!=5) {
             int fair=std::min(cap,fair_target());target=model_target(fair,cap);
         }
@@ -582,7 +591,7 @@ public:
         }
         if(held!=target) fail("实际分配核数与租约目标不一致");
         if(checkpoint_old_threads) {
-            if((work_policy() || atomic_tail()) && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
+            if((work_policy() || phaseaware_policy() || atomic_tail()) && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
             if(held>checkpoint_old_threads) ++checkpoint_grants;
             else if(stage_policy()) {if(held<checkpoint_old_threads) ++stage_shrinks;else ++stage_unchanged;}
             checkpoint_old_threads=0;
