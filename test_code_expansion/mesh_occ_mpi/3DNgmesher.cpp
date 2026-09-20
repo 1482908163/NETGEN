@@ -460,7 +460,9 @@ void fid_xdMeshFaceInfo::build_MPIType() {
 
 static void ProfileCollectiveArrivalWait(const char *stage, MPI_Comm comm)
 {
-	if (!scaling::Profiler::instance().split_collectives()) return;
+	auto &profile=scaling::Profiler::instance();
+	profile.mark_elapsed(std::string(stage)+"_arrival_elapsed");
+	if (!profile.split_collectives()) return;
 	scaling::StageScope profile_stage(stage, "synchronization");
 	MPI_Barrier(comm);
 }
@@ -505,6 +507,7 @@ void Allgather_Face_Map(std::map<int, xdMeshFaceInfo> &facemap, fid_xdMeshFaceIn
             static_cast<std::uint64_t>(comm_size-1),
         static_cast<std::uint64_t>(ne-sub_ne) * 4ULL * face_record_bytes);
 	double after_allgather = MPI_Wtime();
+	scaling::Profiler::instance().mark_elapsed("face_allgatherv_complete_elapsed");
 	if (stage_time) stage_time[1] = after_allgather - before_allgather;
 	//释放自定义的数据类型
 	MPI_Type_free(&fid_xdMeshFaceInfo::MPI_type);
@@ -1480,6 +1483,7 @@ GlobalId *com_barycoords(
 		netgen_mpi_check(comm, MPI_Allgather(&newglobalnocounter, 1, MPI_INT64_T,
 		                 gathered_counts.data(), 1, MPI_INT64_T, comm), "vertex_count/Allgather");
 	}
+	scaling::Profiler::instance().mark_elapsed("vertex_count_complete_elapsed");
 	globoffsets = checked_id_offsets(gathered_counts, comm);
 	scaling::Profiler::instance().add_communication(
 		"vertex_count_allgather", 1, 1, static_cast<std::uint64_t>(numprocs-1) * sizeof(GlobalCount),
@@ -1502,6 +1506,7 @@ GlobalId *com_barycoords(
 		netgen_mpi_check(comm, MPI_Allgather(&local_elements, 1, MPI_INT64_T,
 		                 gathered_counts.data(), 1, MPI_INT64_T, comm), "element_count/Allgather");
 	}
+	scaling::Profiler::instance().mark_elapsed("element_count_complete_elapsed");
 	globoffsetsVE = checked_id_offsets(gathered_counts, comm);
 	scaling::Profiler::instance().add_communication(
 		"element_count_allgather", 1, 1, static_cast<std::uint64_t>(numprocs-1) * sizeof(GlobalCount),
@@ -1732,6 +1737,7 @@ GlobalId *com_baryVolumeElements(
 					 recv_counts.data(), 1, MPI_INT, comm),
 			"com_baryVolumeElements/MPI_Alltoall");
 	}
+	scaling::Profiler::instance().mark_elapsed("volume_size_exchange_complete_elapsed");
 	scaling::Profiler::instance().add_communication(
 		"volume_size_exchange",
 		static_cast<std::uint64_t>(comm_size-1),
