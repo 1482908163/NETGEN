@@ -24,7 +24,7 @@ default_stage=communication
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
-[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_elastic node_phaseaware"; }
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_kernel_counts=4;default_kernel_schedulers="node_fixed node_elastic"; }
 KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
@@ -67,14 +67,14 @@ case "${EXPERIMENT_PRESET}" in
     kernel|cooperate)
         default_tasks=0
         default_process_counts="1 4 16"
-        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="64 128 256"
+        [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_process_counts="128 256"
         [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_repeats=5
         default_levels=1
         [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_levels=2
         default_refines=1
         default_verify_faces=0
         default_algorithms="sparse"
-        default_timings="natural split"
+        default_timings="natural"
         ;;
     pilot)
         default_tasks=128
@@ -291,7 +291,7 @@ else
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
-((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
+((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2" "natural_sync_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
 [[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
 [[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority ]] || markers+=("node_work_v1")
