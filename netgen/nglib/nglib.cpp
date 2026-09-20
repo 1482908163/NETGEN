@@ -416,6 +416,8 @@ namespace nglib
 
 
 
+   static thread_local double last_volume_front_stats[VolumeKernelStats::front_count] = {};
+
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
        const VolumeResources * resources=nullptr)
@@ -423,6 +425,7 @@ namespace nglib
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
+      std::fill_n(last_volume_front_stats,VolumeKernelStats::front_count,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -458,6 +461,8 @@ namespace nglib
          if(details) {
             stats.Add(11,m.MarkIllegalElements());
             for(int i=0;i<VolumeKernelStats::count;++i) details[i]=stats.values[i].load();
+            for(int i=0;i<VolumeKernelStats::front_count;++i)
+               last_volume_front_stats[i]=stats.front_values[i].load();
          }
          return NG_OK;
       } catch (const std::exception & error) {
@@ -530,6 +535,12 @@ namespace nglib
      adapter.grouped_repair=true;adapter.poll=poll;
      adapter.generation_checkpoints=responsive!=0;
      return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API void Ng_GetVolumeFrontStats(double * values)
+   {
+     if(!values) return;
+     std::copy_n(last_volume_front_stats,VolumeKernelStats::front_count,values);
    }
 
    NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values)
