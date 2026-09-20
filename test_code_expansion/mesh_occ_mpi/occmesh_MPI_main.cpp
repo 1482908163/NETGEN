@@ -414,7 +414,10 @@ int main(int argc, char **argv) {
     profiler.add_metadata("save_vol", save_vol ? "true" : "false");
     profiler.add_metadata("profiler_schema_version", "research_1");
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
-    if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
+    if(research.kernel_threads>0) {
+        profiler.add_metadata("kernel_diagnostics","repair_v2");
+        profiler.add_metadata("front_profile","front_profile_v1");
+    }
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
     if(node_cooperative && research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original") profiler.add_metadata("node_stage_metrics","node_stage_metrics_v1");
@@ -810,7 +813,7 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
-            double kernel_seconds[3]={},kernel_details[12]={};
+            double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={};
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -836,6 +839,7 @@ int main(int argc, char **argv) {
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
             if(node_resources) {node_resources->finish();node_resources->report(profiler,research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original");}
             if(research.kernel_threads>0) {
+                nglib::Ng_GetVolumeFrontStats(front_details);
                 nglib::Ng_GetVolumeTaskManagerStats(team_after);
                 const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};
                 for(int k=0;k<3;++k) profiler.set_metric(team_names[k],team_after[k]-team_before[k]);
@@ -846,6 +850,14 @@ int main(int argc, char **argv) {
                 profiler.set_metric("kernel_generation_seconds",kernel_seconds[0]);
                 profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
                 profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);
+                const char * front_names[]={
+                    "select_seconds","getlocals_seconds","transform_seconds","applyrules_seconds",
+                    "validate_seconds","candidate_seconds","commit_seconds","retry_seconds",
+                    "iterations","rotations","candidate_found","successful_iterations","failed_iterations",
+                    "local_points_sum","local_faces_sum","local_points_max","local_faces_max",
+                    "qualclass_sum","qualclass_max","class_skips"};
+                for(int k=0;k<20;++k)
+                    profiler.set_metric(std::string("kernel_front_")+front_names[k],front_details[k]);
             }
             if(local_status!=nglib::NG_OK) {
                 std::cerr<<"局部体网格生成失败，进程 "<<id<<std::endl;
