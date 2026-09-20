@@ -474,8 +474,10 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       for (int rotind = 1; rotind <= locfaces[0].GetNP(); rotind++)
 	{
+          if(front_stats) front_stats->AddFront(9,1);
 	  // set transformatino to reference coordinates
-
+          {
+            VolumeFrontTimer time(front_stats,2);
 	  if (locfaces[0].GetNP() == 3)
 	    {
 	      trans.Set (locpoints[locfaces[0].PNumMod(1+rotind)],
@@ -498,6 +500,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
           for (auto i : allowpoint.Range())
             if (plainpoints[i].Z() > 0)
               allowpoint[i] = false;
+          }
 
 	  stat.cnttrials++;
 
@@ -517,11 +520,16 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	  // NgProfiler::StartTimer (meshing3_timer_c);
           // meshing3_timer_c.Start();
 
-	  found = ApplyRules (plainpoints, allowpoint, 
-			      locfaces, locfacesplit, connectedpairs,
-			      locelements, delfaces, 
-			      stat.qualclass, mp.sloppy, rotind, err);
+          {
+            VolumeFrontTimer time(front_stats,3);
+	    found = ApplyRules (plainpoints, allowpoint,
+			        locfaces, locfacesplit, connectedpairs,
+			        locelements, delfaces,
+			        stat.qualclass, mp.sloppy, rotind, err);
+          }
 
+          {
+            VolumeFrontTimer time(front_stats,4);
 	  if (found >= 0) impossible = 0;
 	  if (found < 0) found = 0;
 
@@ -578,8 +586,9 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 		      found = 0;
 		  }
 	    }
+          }
 
-
+          if(found && front_stats) front_stats->AddFront(10,1);
 	  if (found)
 	    ruleused[found-1]++;
           
@@ -601,6 +610,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
 	  if (found && (!hasfound || err < minerr) )
 	    {
+              VolumeFrontTimer candidate_time(front_stats,5);
 	      
 	      if (testmode)
 		{
@@ -658,6 +668,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
       if (hasfound)
 	{
+          VolumeFrontTimer commit_time(front_stats,6);
+          if(front_stats) front_stats->AddFront(11,1);
 
 	  /*
 	  if (optother)
@@ -736,6 +748,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	}
       else
 	{
+          VolumeFrontTimer retry_time(front_stats,7);
+          if(front_stats) front_stats->AddFront(12,1);
 	  adfront->IncrementClass (findex[0]);
 	  if (impossible && mp.check_impossible)
 	    {
