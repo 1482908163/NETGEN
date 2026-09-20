@@ -3,18 +3,18 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 收尾主线：原通信/稀疏、原修复/并行修复、固定整段接口、完成后借核；不运行模型。
-# 每规模 5组配置 × 2种计时 × (1次预热 + 5次正式) = 60次；自然预热含全量审计。
-# 不同进程规模仍并行提交、统一启动延时；同一作业内轮换策略顺序。
+# 关键路径定向迭代：固定资源、完成后弹性借核、阶段感知借核三组。
+# 只测 64/128/256 进程，重点验证 256 进程退化是否来自 generation/repair 的无效扩核。
+# 每规模 3组 × 2种计时 × (1次预热 + 5次正式) = 36次，共108次；自然预热含质量审计。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
-export PROCESS_COUNTS="${PROCESS_COUNTS:-4 16 64 128 256}"
+export PROCESS_COUNTS="${PROCESS_COUNTS:-64 128 256}"
 export RANKS_PER_NODE="${RANKS_PER_NODE:-4}"
 export CPUS_PER_TASK="${CPUS_PER_TASK:-4}"
 export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
 export QUALITY_WARMUP="${QUALITY_WARMUP:-1}"
-export COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-1}"
-export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_original node_native node_fixed node_elastic}"
+export COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-0}"
+export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_phaseaware}"
 export LEVELS="${LEVELS:-2}"
 export REFINES="${REFINES:-1}"
 export ALGORITHMS="${ALGORITHMS:-sparse}"
