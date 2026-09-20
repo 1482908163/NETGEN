@@ -1065,7 +1065,7 @@ def kernel_overview(root, ranks):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
-                        if key.startswith('coop_') and key.endswith('_median'):
+                        if (key.startswith('coop_') or key.startswith('sync_')) and key.endswith('_median'):
                             report[-1][key[:-7]]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
@@ -1134,6 +1134,13 @@ def kernel_overview(root, ranks):
                      f"{row['repair_seconds']:.6f} {compact(row.get('compute_max_seconds'))} {compact(row.get('vertex_wait_seconds'))} "
                      f"{compact(row.get('kernel_final_illegal'))} {compact(row['speedup_vs_static'])}")
     for row in report:
+        if row['timing']=='natural' and row.get('sync_local_volume_skew_seconds') is not None:
+            lines.append(f"自然同步 {row['scheduler']}: 局部体网格完成离散={compact(row.get('sync_local_volume_skew_seconds'))}s "
+                         f"到vertex入口离散={compact(row.get('sync_vertex_arrival_skew_seconds'))}s "
+                         f"体网格后至vertex最大本地尾部={compact(row.get('sync_post_volume_to_vertex_max_seconds'))}s "
+                         f"vertex最后到达后={compact(row.get('sync_vertex_count_post_latest_seconds'))}s "
+                         f"element最后到达后={compact(row.get('sync_element_count_post_latest_seconds'))}s "
+                         f"volume-size最后到达后={compact(row.get('sync_volume_size_post_latest_seconds'))}s")
         if row.get('kernel_team_starts') is not None:
             lines.append(f"线程组 {row['scheduler']} {row['timing']}: 启动次数={compact(row['kernel_team_starts'])} "
                          f"启动耗时={compact(row.get('kernel_team_start_seconds'),6)}s "
