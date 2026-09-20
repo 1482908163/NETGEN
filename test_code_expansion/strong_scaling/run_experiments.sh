@@ -291,7 +291,7 @@ else
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
-((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2" "natural_sync_v1")
+((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2" "natural_sync_v1" "front_profile_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
 [[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
 [[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority ]] || markers+=("node_work_v1")
