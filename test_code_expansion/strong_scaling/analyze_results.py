@@ -1118,7 +1118,9 @@ def kernel_overview(root, ranks):
                          f"实际增核次数={compact(row.get('coop_checkpoint_grants'))} "
                          f"检查耗时={compact(row.get('coop_checkpoint_seconds'))}s")
             if not row.get('coop_checkpoint_grants'):
-                lines.append('  安全点未实际增核；阶段入口是否借核需另查提前借核租约数。' if row['scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else '  安全点未实际增核：不能将耗时差归因于阶段内协作。')
+                lines.append('  安全点未实际增核；阶段入口仍可能直接取得已完成进程释放的核。' if row['scheduler']=='node_phaseaware' else
+                             '  安全点未实际增核；阶段入口是否借核需另查提前借核租约数。' if row['scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else
+                             '  安全点未实际增核：不能将耗时差归因于阶段内协作。')
         if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
@@ -1157,8 +1159,8 @@ def kernel_overview(root, ranks):
                          f"保留当前提前租约次数={compact(row.get('coop_stage_growth_deferred'))} "
                          f"相对全阶段安全点归还加速={compact(row.get('speedup_vs_node_reclaim'))} "
                          f"相对最终优化不限次加速={compact(row.get('speedup_vs_node_selective'))}")
-        if row['scheduler'] in ('node_budget','node_priority'):
-            lines.append(f"受限申请 {row['scheduler']} {row['timing']}: "
+        if row['scheduler'] in ('node_budget','node_priority','node_phaseaware'):
+            lines.append(f"{'阶段感知' if row['scheduler']=='node_phaseaware' else '受限申请'} {row['scheduler']} {row['timing']}: "
                          f"短尾拒绝={compact(row.get('coop_work_short'))} "
                          f"成本拒绝={compact(row.get('coop_work_cost'))} "
                          f"让给重任务={compact(row.get('coop_work_deferred'))} "
@@ -1177,6 +1179,7 @@ def kernel_overview(root, ranks):
               "可借核闲置核秒只累计首个至最后一个节点内核完成之间的可借空闲容量；不是硬件利用率。",
               "node_tail=保底安全点借核：在修复轮次及优化操作之间响应已完成进程释放的核，无新核时保留线程组。",
               "node_budget=只在最终优化中按剩余窗口和成本门槛申请一次；node_priority=同一约束下优先剩余单元操作量较多的进程。",
+              "node_phaseaware=关键路径阶段过滤：generation/repair 固定保底核，仅 final optimization 使用已完成进程释放的核；二次增核受剩余工作与重建成本门槛约束。",
               "gain_estimate 是门槛启发量，不是实测节省时间；剩余工作优先只比较本节点已公布且未过期的进度。",
               "质量对照优先使用同核原修复，再检查各借核策略相对固定分配的单元数和标记数；不代替完整质量验证。",
               "租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。",
