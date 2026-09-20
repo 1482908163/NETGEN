@@ -32,6 +32,9 @@ inline std::vector<FaceRecord> sparse_exchange(const FacePackets &outgoing,
     int rank, size;
     MPI_Comm_rank(comm, &rank); MPI_Comm_size(comm, &size);
     auto &profile = scaling::Profiler::instance();
+    // Low-perturbation natural timing: timestamps only, no extra MPI operation.
+    // In split mode the arrival stamp is deliberately taken before the diagnostic barrier.
+    profile.mark_elapsed(stage + "_arrival_elapsed");
     if (profile.split_collectives()) {
         scaling::StageScope wait(stage + "_pre_collective_wait", "synchronization");
         check_mpi(MPI_Barrier(comm), comm);
@@ -83,6 +86,7 @@ inline std::vector<FaceRecord> sparse_exchange(const FacePackets &outgoing,
         }
         if (barrier_started) check_mpi(MPI_Test(&barrier, &done, MPI_STATUS_IGNORE), comm);
     }
+    profile.mark_elapsed(stage + "_complete_elapsed");
     profile.add_communication(stage, sends, receives, sent, received);
     profile.add_metric("sparse_termination_collectives", 1);
     return incoming;
