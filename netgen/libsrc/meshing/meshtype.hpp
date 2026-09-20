@@ -11,6 +11,7 @@
 #include <variant>
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <core/taskmanager.hpp>
 
 #include <mydefs.hpp>
@@ -29,6 +30,10 @@ namespace netgen
     void * context = nullptr;
     int (*acquire)(void *, int, double, int) = nullptr;
     void (*release)(void *, int, double, int, double) = nullptr;
+    bool grouped_repair = false;
+    int (*poll)(void *) = nullptr; // Host-only, between completed mesh operations.
+    int (*poll_work)(void *,double,int,double,double) = nullptr;
+    bool generation_checkpoints = false;
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;
@@ -48,6 +53,45 @@ namespace netgen
     ~VolumeResourceScope() {
       if(resources) resources->release(resources->context,phase,work,threads,
         std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
+
+  // Lifetime ordering is essential: stop workers before returning their cores.
+  // The host policy requests growth or return only between completed operations.
+  class VolumeResourceTeam {
+    const VolumeResources * resources;
+    int phase, fallback;
+    std::unique_ptr<VolumeResourceScope> lease;
+    std::unique_ptr<ngcore::RegionTaskManager> team;
+    int previous_remaining=-1;
+    double restart_seconds=0;
+    std::chrono::steady_clock::time_point checkpoint_stamp;
+    void start(double work) {
+      lease.reset(new VolumeResourceScope(resources,phase,work,fallback));
+      team.reset(new ngcore::RegionTaskManager(lease->threads));
+    }
+  public:
+    VolumeResourceTeam(const VolumeResources * r,int p,double work,int threads)
+      :resources(r),phase(p),fallback(threads) {
+      auto begin=std::chrono::steady_clock::now();start(work);
+      checkpoint_stamp=std::chrono::steady_clock::now();
+      restart_seconds=std::chrono::duration<double>(checkpoint_stamp-begin).count();
+    }
+    void Checkpoint(double work,int remaining=-1) {
+      if(!resources) return;
+      auto stamp=std::chrono::steady_clock::now();
+      // Only consecutive regular optimization operations supply an observation.
+      double last=(remaining>=0 && previous_remaining==remaining+1)
+        ? std::chrono::duration<double>(stamp-checkpoint_stamp).count() : 0;
+      bool refresh=resources->poll_work
+        ? resources->poll_work(resources->context,work,remaining,last,restart_seconds)
+        : resources->poll && resources->poll(resources->context);
+      previous_remaining=remaining;
+      if(refresh) {
+        team.reset();lease.reset();start(work);
+        restart_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-stamp).count();
+      }
+      checkpoint_stamp=std::chrono::steady_clock::now();
     }
   };
 
@@ -1983,4 +2027,3 @@ namespace ngcore
 
 
 #endif
-

@@ -59,6 +59,8 @@ namespace ngcore
   int TaskManager::num_nodes;
   
   static mutex copyex_mutex;
+  static TaskManagerLifecycleStats lifecycle_stats;
+  TaskManagerLifecycleStats GetTaskManagerLifecycleStats() { return lifecycle_stats; }
 
   int EnterTaskManager ()
   {
@@ -68,6 +70,7 @@ namespace ngcore
         return 0;
       }
 
+    const auto lifecycle_start=std::chrono::steady_clock::now();
     task_manager = new TaskManager();
 
     GetLogger("TaskManager")->info("task-based parallelization (C++11 threads) using {} threads", task_manager->GetNumThreads());
@@ -89,6 +92,9 @@ namespace ngcore
     task_manager->StartWorkers();
 
     ParallelFor (Range(100), [&] (int i) { ; });    // startup
+    ++lifecycle_stats.starts;
+    lifecycle_stats.startup_seconds += std::chrono::duration<double>(
+        std::chrono::steady_clock::now()-lifecycle_start).count();
     return task_manager->GetNumThreads();
   }
 
@@ -97,9 +103,12 @@ namespace ngcore
   {
     if(num_threads > 0)
       {
+        const auto lifecycle_start=std::chrono::steady_clock::now();
         task_manager->StopWorkers();
         delete task_manager;
         task_manager = nullptr;
+        lifecycle_stats.shutdown_seconds += std::chrono::duration<double>(
+            std::chrono::steady_clock::now()-lifecycle_start).count();
       }
   }
 

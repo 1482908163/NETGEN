@@ -144,6 +144,12 @@ namespace ngcore
   NGCORE_API int  EnterTaskManager ();
   NGCORE_API void ExitTaskManager (int num_threads);
 
+  // Host-thread cumulative counters; snapshots must be taken outside a team.
+  struct TaskManagerLifecycleStats {
+    double starts=0, startup_seconds=0, shutdown_seconds=0;
+  };
+  NGCORE_API TaskManagerLifecycleStats GetTaskManagerLifecycleStats();
+
   class RegionTaskManager
   {
     int nthreads_before;

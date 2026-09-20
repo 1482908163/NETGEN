@@ -15,6 +15,7 @@
 #include "research_mesh.h"
 #include "task_mesh.h"
 #include "node_resources.h"
+#include "volume_audit.h"
 #include <memory>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -40,7 +41,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_fixed/node_lend/node_model内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -56,9 +57,10 @@ void print_help() {
          "--partition-reference <文件> : 核对预检粗单元归属，由统一脚本提供" << endl <<
          "--preflight-parts / --preflight-seeds / --preflight-dir : 仅分区预检，由统一脚本提供" << endl <<
          "--search-seconds <秒> : v3 候选搜索时间预算，默认0.35" << endl <<
-         "--verify-faces : 与全收集结果核对；仅用于小规模正确性运行" << endl <<
+         "--verify-faces : 与全收集核对；独立正确性检查或自然质量预热" << endl <<
          "--profile-natural : 采集自然运行时间，关闭诊断用前置屏障" << endl <<
          "--profile : 开启强扩展指标采集" << endl <<
+         "--validate-volume : 仅预热轮全量体网格质量与拓扑检查" << endl <<
          "--profile-core-only : 跳过普通网格结果写出和质量评价，仅测试核心算法" << endl <<
          "--profile-dir <目录> : 分析结果根目录，默认 <输出目录>/strong_scaling_results" << endl <<
          "--profile-experiment <名称> : 实验名称" << endl <<
@@ -96,6 +98,7 @@ int main(int argc, char **argv) {
     bool profile_enabled = false;
     bool profile_split = true;
     bool profile_core_only = false;
+    bool validate_volume = false;
     string profile_dir;
     string profile_experiment = "strong_scaling";
     int profile_repeat = 1;
@@ -178,6 +181,9 @@ int main(int argc, char **argv) {
         }
         else if(!strcmp(argv[i],"--communication-only")) {
             mesh_research::options().communication_only = true;
+        }
+        else if(!strcmp(argv[i],"--validate-volume")) {
+            validate_volume = true;
         }
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
@@ -305,7 +311,10 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
-    const bool node_cooperative=research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" || research.kernel_scheduler=="node_model";
+    const bool node_cooperative=research.kernel_scheduler=="node_original" ||
+        research.kernel_scheduler=="node_native" ||
+        research.kernel_scheduler=="node_fixed" ||
+        research.kernel_scheduler=="node_elastic";
     if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
@@ -356,14 +365,15 @@ int main(int argc, char **argv) {
     } else if(!research.capacity_path.empty())MPI_Abort(MPI_COMM_WORLD,2);
     if ((research.algorithm!="baseline" && research.algorithm!="balance" &&
          research.algorithm!="sparse" && research.algorithm!="combined") ||
-        (research.verify_faces && (!research.sparse() || profile_enabled)) ||
+        (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
+        (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
         (research.partition_variant!="metis_seed" && research.partition_variant!="cell_order_v1") ||
         research.rank_shift>=p ||
         (research.preflight_parts>0 && (research.preflight_dir.empty() || research.preflight_seeds.empty())) ||
         numlevels<0 || numrefine<0 || numlevels+numrefine>13 ||
         research.cost.sweeps<0 || !std::isfinite(research.cost.cut_growth) ||
         research.cost.cut_growth<0) {
-        if(id==0) std::cerr<<"Invalid algorithm/configuration; face verification requires sparse/combined and profiling OFF. levels+refines must be <=13 (short barycentric coordinates)."<<std::endl;
+        if(id==0) std::cerr<<"Invalid algorithm/configuration; face verification requires sparse/combined and profiling OFF or a quality warmup; volume audit requires natural core-only communication warmup repeat 0 with adjacency and sparse face verification. levels+refines must be <=13 (short barycentric coordinates)."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
     if (profile_dir.empty()) {
@@ -401,7 +411,22 @@ int main(int argc, char **argv) {
     profiler.add_metadata("profiler_schema_version", "research_1");
     profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
-    if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v1");
+    if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
+    if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
+    if(node_cooperative && research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original") profiler.add_metadata("node_stage_metrics","node_stage_metrics_v1");
+    if(research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim" ||
+        research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once")
+        profiler.add_metadata("node_checkpoints","node_stage_v1");
+    if(research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once")
+        profiler.add_metadata("node_stage_scope",research.kernel_scheduler=="node_once"?"finalopt_once_v1":"finalopt_only_v1");
+    if(research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
+        profiler.add_metadata("node_checkpoints","node_atomic_v1");
+    if(research.kernel_scheduler=="node_tail") profiler.add_metadata("node_checkpoints","node_tail_v1");
+    if(research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority") {
+        profiler.add_metadata("node_checkpoints","node_work_v1");
+        profiler.add_metadata("node_work_policy",research.kernel_scheduler=="node_priority"?"remaining_priority":"arrival_gate");
+    }
+    if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
@@ -414,6 +439,10 @@ int main(int argc, char **argv) {
     profiler.add_metadata("timing_mode",profile_split?"split":"natural");
     profiler.add_metadata("timing_boundary","post_coarse_barrier_to_adjacency_complete");
     profiler.add_metadata("core_only",profile_core_only?"true":"false");
+    if(validate_volume) {
+        profiler.add_metadata("mesh_quality","volume_audit_v1");
+        profiler.add_metadata("quality_face_reference",research.verify_faces?"allgather":"baseline");
+    }
     profiler.add_metadata("partition_contract",research.mesh_tasks>0?"fixed closed tasks; rank zero dispatcher":"one partition per MPI rank");
     profiler.add_metadata("cost_model",research.communication_only?"none":research.mesh_tasks>0?"none_task_queue":(!research.resource_path.empty()?"phase_seconds_resource":
         (research.model_path.empty()?"geometric_proxy":"phase_seconds")));
@@ -652,8 +681,9 @@ int main(int argc, char **argv) {
     std::unique_ptr<mesh_node::NodeResources> node_resources;
     if(node_cooperative) {
         scaling::StageScope setup("node_resource_setup","compute");
-        node_resources.reset(new mesh_node::NodeResources(MPI_COMM_WORLD,research.kernel_threads,
-            research.kernel_scheduler=="node_fixed"?0:research.kernel_scheduler=="node_lend"?1:2));
+        node_resources.reset(new mesh_node::NodeResources(
+            MPI_COMM_WORLD,research.kernel_threads,
+            research.kernel_scheduler=="node_elastic"?8:0));
     }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
@@ -766,16 +796,33 @@ int main(int argc, char **argv) {
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
             double kernel_seconds[3]={},kernel_details[12]={};
+            double team_before[3]={},team_after[3]={};
+            if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
             if(node_resources) node_resources->prepare(nglib::Ng_GetNP(submesh));
-            const auto local_status=node_resources
-                ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
+            const auto local_status=node_resources && research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original"
+                ? (research.kernel_scheduler=="node_stage" || research.kernel_scheduler=="node_reclaim" ||
+                   research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once"
+                    ? nglib::Ng_GenerateVolumeMeshCooperativeStages(submesh,&nmp,research.kernel_threads,&callbacks,
+                        mesh_node::NodeResources::poll_callback,research.kernel_scheduler=="node_reclaim",kernel_seconds,kernel_details)
+                    : research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority"
+                    ? nglib::Ng_GenerateVolumeMeshCooperativeWorkAware(submesh,&nmp,research.kernel_threads,&callbacks,
+                        mesh_node::NodeResources::poll_work_callback,kernel_seconds,kernel_details)
+                    : (research.kernel_scheduler=="node_tail" || research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
+                    ? nglib::Ng_GenerateVolumeMeshCooperativeResponsive(submesh,&nmp,research.kernel_threads,&callbacks,
+                        mesh_node::NodeResources::poll_callback,kernel_seconds,kernel_details)
+                    : research.kernel_scheduler=="node_scoped"
+                    ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
+                    : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
                 : research.kernel_threads>0
                 ? nglib::Ng_GenerateVolumeMeshRepair(submesh,&nmp,research.kernel_threads,
-                    research.kernel_scheduler=="frontier"?3:research.kernel_scheduler=="repair"?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
+                    research.kernel_scheduler=="frontier"?3:(research.kernel_scheduler=="repair" || research.kernel_scheduler=="node_native")?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
-            if(node_resources) {node_resources->finish();node_resources->report(profiler);}
+            if(node_resources) {node_resources->finish();node_resources->report(profiler,research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original");}
             if(research.kernel_threads>0) {
+                nglib::Ng_GetVolumeTaskManagerStats(team_after);
+                const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};
+                for(int k=0;k<3;++k) profiler.set_metric(team_names[k],team_after[k]-team_before[k]);
                 const char * names[]={"delaunay_seconds","front_seconds","domain_repair_seconds",
                     "repair_mark_seconds","repair_split_seconds","repair_swap_seconds","repair_swap2_seconds",
                     "repair_rounds","repair_candidates_total","repair_candidates_active","repair_fallbacks","final_illegal"};
@@ -818,6 +865,24 @@ int main(int argc, char **argv) {
         profiler.set_metric("local_points_before_adjacency", local_points_before_adjacency);
         profiler.set_metric("local_surface_elements_before_adjacency", local_surface_elements_before_adjacency);
         profiler.set_metric("local_volume_elements_before_adjacency", local_volume_elements_before_adjacency);
+        if(validate_volume) {
+            scaling::StageScope quality_stage("volume_audit", "validation");
+            struct AuditAccess {
+                nglib::Ng_Mesh *mesh;
+                int np() const {return nglib::Ng_GetNP(mesh);}
+                int ne() const {return nglib::Ng_GetNE(mesh);}
+                int nse() const {return nglib::Ng_GetNSE(mesh);}
+                std::array<double,3> point(int i) const {
+                    std::array<double,3> p{};nglib::Ng_GetPoint(mesh,i,p.data());return p;
+                }
+                bool tetrahedron(int i,int *v) const {return nglib::Ng_GetVolumeElement(mesh,i,v)==nglib::NG_TET;}
+                bool triangle(int i,int *v) const {return nglib::Ng_GetSurfaceElement(mesh,i,v)==nglib::NG_TRIG;}
+            };
+            const auto quality=mesh_audit::inspect(AuditAccess{submesh});
+            quality.report(profiler);
+            // VerifyFaceClosure has already returned successfully in PartFaceCreate.
+            profiler.set_metric("quality_face_reference_passed",research.verify_faces?1:0);
+        }
 
 
         if (isComputeAdj) {
@@ -1158,3 +1223,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+

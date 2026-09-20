@@ -200,10 +200,13 @@ endif (ADDITIONAL_PATHS)
 
 #######################################################################
 # build options
-include_directories ("${PROJECT_SOURCE_DIR}/include")
-include_directories ("${PROJECT_SOURCE_DIR}/libsrc")
-include_directories ("${PROJECT_SOURCE_DIR}/libsrc/include")
-include_directories ("${PROJECT_BINARY_DIR}")
+# 编译本仓库时优先使用源码及生成头文件，避免旧 install/include/core
+# 遮蔽当前 ngcore 声明。安装目录仍保留，用于 OpenCascade 等外部依赖。
+include_directories (BEFORE
+    "${PROJECT_BINARY_DIR}"
+    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/libsrc"
+    "${PROJECT_SOURCE_DIR}/libsrc/include")
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

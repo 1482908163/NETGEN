@@ -489,6 +489,56 @@ namespace nglib
      return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
    }
 
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeGrouped(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !details) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeResponsive(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       int (*poll)(void *), double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !poll || !details) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;
+     adapter.poll=poll;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeWorkAware(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       int (*poll)(void *,double,int,double,double), double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !poll || !details) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;adapter.poll_work=poll;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeStages(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+       int (*poll)(void *), int responsive, double * seconds, double * details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !poll || !details ||
+        (responsive!=0 && responsive!=1)) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;adapter.poll=poll;
+     adapter.generation_checkpoints=responsive!=0;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values)
+   {
+     if(!values) return;
+     const auto stats=ngcore::GetTaskManagerLifecycleStats();
+     values[0]=stats.starts;values[1]=stats.startup_seconds;values[2]=stats.shutdown_seconds;
+   }
+
    /* ------------------ 2D Meshing Functions ------------------------- */
    NGLIB_API void Ng_AddPoint_2D (Ng_Mesh * mesh, double * x)
    {
