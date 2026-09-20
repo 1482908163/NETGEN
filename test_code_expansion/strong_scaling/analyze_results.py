@@ -264,6 +264,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('parallel_repair','node_original','sparse','node_native','sparse'),
            ('grouped_scope','node_native','sparse','node_fixed','sparse'),
            ('borrowing','node_fixed','sparse','node_elastic','sparse'),
+           ('phaseaware','node_fixed','sparse','node_phaseaware','sparse'),
            ('total','node_original','baseline','node_elastic','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
