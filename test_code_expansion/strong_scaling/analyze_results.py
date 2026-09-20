@@ -307,6 +307,15 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
 
 
 # Export existing measurements only: no new kernel timers or mesh operations.
+FRONT_PROFILE_METRICS = (
+    'kernel_front_select_seconds','kernel_front_getlocals_seconds','kernel_front_transform_seconds',
+    'kernel_front_applyrules_seconds','kernel_front_validate_seconds','kernel_front_candidate_seconds',
+    'kernel_front_commit_seconds','kernel_front_retry_seconds','kernel_front_iterations',
+    'kernel_front_rotations','kernel_front_candidate_found','kernel_front_successful_iterations',
+    'kernel_front_failed_iterations','kernel_front_local_points_sum','kernel_front_local_faces_sum',
+    'kernel_front_local_points_max','kernel_front_local_faces_max','kernel_front_qualclass_sum',
+    'kernel_front_qualclass_max','kernel_front_class_skips')
+
 CRITICAL_METRICS = (
     'kernel_generation_seconds','kernel_repair_seconds','kernel_optimization_seconds',
     'kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds',
@@ -317,13 +326,18 @@ CRITICAL_METRICS = (
     'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
     'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
     'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
-    'coop_timeline_last_loan_seconds','coop_timeline_loan_events')
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS
 CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
     for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
 CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
     'kernel_optimization_seconds','kernel_delaunay_seconds','kernel_front_seconds',
     'kernel_domain_repair_seconds','kernel_team_start_seconds','kernel_team_stop_seconds',
-    'coop_borrowed_core_seconds','first_loan_fraction')
+    'kernel_front_select_seconds','kernel_front_getlocals_seconds','kernel_front_transform_seconds',
+    'kernel_front_applyrules_seconds','kernel_front_validate_seconds','kernel_front_candidate_seconds',
+    'kernel_front_commit_seconds','kernel_front_retry_seconds','kernel_front_iterations',
+    'kernel_front_rotations','kernel_front_local_points_max','kernel_front_local_faces_max',
+    'front_local_points_mean','front_local_faces_mean','front_qualclass_mean',
+    'front_candidate_rate','front_retry_rate','coop_borrowed_core_seconds','first_loan_fraction')
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -359,12 +373,21 @@ def critical_rank_details(rows, result):
             kernel_sha256=metadata.get('MESH_KERNEL_SHA256','unset'))
         item.update({key:m.get(key) for key in CRITICAL_METRICS+CRITICAL_PHASES})
         item.update({s+'_seconds':seconds(r,s) for s in COMPUTE})
+        iterations=m.get('kernel_front_iterations',0)
+        rotations=m.get('kernel_front_rotations',0)
+        item['front_local_points_mean']=(m.get('kernel_front_local_points_sum',0)/iterations if iterations else None)
+        item['front_local_faces_mean']=(m.get('kernel_front_local_faces_sum',0)/iterations if iterations else None)
+        item['front_qualclass_mean']=(m.get('kernel_front_qualclass_sum',0)/iterations if iterations else None)
+        item['front_candidate_rate']=(m.get('kernel_front_candidate_found',0)/rotations if rotations else None)
+        item['front_retry_rate']=(m.get('kernel_front_failed_iterations',0)/iterations if iterations else None)
         start=m.get('coop_timeline_start_seconds');finish=m.get('coop_timeline_finish_seconds')
         first=m.get('coop_timeline_first_loan_seconds')
         item['first_loan_fraction']=((first-start)/(finish-start)
             if m.get('coop_timeline_loan_events',0)>0 and None not in (start,finish,first) and finish>start else None)
         # Validate any optional values we expose; missing measurements stay empty, not zero.
         numeric=[item[k] for k in CRITICAL_METRICS+CRITICAL_PHASES if item[k] is not None]
+        numeric += [item[k] for k in ('front_local_points_mean','front_local_faces_mean','front_qualclass_mean',
+                                      'front_candidate_rate','front_retry_rate') if item[k] is not None]
         if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 for v in numeric):
             raise ValueError('invalid critical-rank metric')
         fraction=item['first_loan_fraction']
@@ -458,6 +481,19 @@ def critical_overview(root,ranks,selected):
             f"前沿={compact(r['kernel_front_seconds_median'])}s；域内修复={compact(r['kernel_domain_repair_seconds_median'])}s；"
             f"外层修复={compact(r['kernel_repair_seconds_median'])}s；优化={compact(r['kernel_optimization_seconds_median'])}s；"
             f"借核={r['borrowed_repeats']}/{r['measured_repeats']} 次运行。")
+        if r.get('kernel_front_applyrules_seconds_median') is not None:
+            lines.append(f"  front细分: ApplyRules={compact(r.get('kernel_front_applyrules_seconds_median'))}s "
+                f"GetLocals={compact(r.get('kernel_front_getlocals_seconds_median'))}s "
+                f"Transform={compact(r.get('kernel_front_transform_seconds_median'))}s "
+                f"Validate={compact(r.get('kernel_front_validate_seconds_median'))}s "
+                f"Commit={compact(r.get('kernel_front_commit_seconds_median'))}s "
+                f"Retry={compact(r.get('kernel_front_retry_seconds_median'))}s；"
+                f"迭代={compact(r.get('kernel_front_iterations_median'),0)} "
+                f"旋转尝试={compact(r.get('kernel_front_rotations_median'),0)} "
+                f"局部面均值/最大={compact(r.get('front_local_faces_mean_median'))}/"
+                f"{compact(r.get('kernel_front_local_faces_max_median'),0)} "
+                f"候选命中率={compact(100*(r.get('front_candidate_rate_median') or 0))}% "
+                f"重试率={compact(100*(r.get('front_retry_rate_median') or 0))}%。")
     lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
     lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
     (out/'CRITICAL_PATH_SUMMARY.txt').write_text('\n'.join(lines+issues)+'\n')
