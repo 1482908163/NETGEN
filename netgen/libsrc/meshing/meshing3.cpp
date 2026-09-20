@@ -253,6 +253,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   tetvol = 0;
 
   stat.qualclass = 1;
+  auto * front_stats = mp.volume_kernel_stats;
 
   while (1)
     {
@@ -268,6 +269,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       if (mp.baseelnp && adfront->Empty (mp.baseelnp))
 	break;
 
+      if(front_stats) front_stats->AddFront(8,1);
       locpoints.SetSize(0);
       locfaces.SetSize(0);
       locelements.SetSize(0);
@@ -280,10 +282,16 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       // and get local environment of radius (safety * h)
 
 
-      int baseelem = adfront -> SelectBaseElement ();
+      int baseelem;
+      {
+        VolumeFrontTimer time(front_stats,0);
+        baseelem = adfront -> SelectBaseElement ();
+      }
       if (mp.baseelnp && adfront->GetFace (baseelem).GetNP() != mp.baseelnp)
 	{
-	  adfront->IncrementClass (baseelem);	  
+          VolumeFrontTimer time(front_stats,7);
+	  adfront->IncrementClass (baseelem);
+          if(front_stats) front_stats->AddFront(19,1);
 	  continue;
 	}
 
@@ -308,11 +316,22 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       double houter = hmax * (1 + 2 * stat.qualclass);
 
       // meshing3_timer_a.Start();
-      stat.qualclass =
-        adfront -> GetLocals (baseelem, locpoints, locfaces, 
-			      pindex, findex, connectedpairs,
-			      houter, hinner,
-			      locfacesplit);
+      {
+        VolumeFrontTimer time(front_stats,1);
+        stat.qualclass =
+          adfront -> GetLocals (baseelem, locpoints, locfaces,
+			        pindex, findex, connectedpairs,
+			        houter, hinner,
+			        locfacesplit);
+      }
+      if(front_stats) {
+        front_stats->AddFront(13,locpoints.Size());
+        front_stats->AddFront(14,locfaces.Size());
+        front_stats->MaxFront(15,locpoints.Size());
+        front_stats->MaxFront(16,locfaces.Size());
+        front_stats->AddFront(17,stat.qualclass);
+        front_stats->MaxFront(18,stat.qualclass);
+      }
       // meshing3_timer_a.Stop();
 
       // (*testout) << "locfaces = " << endl << locfaces << endl;
@@ -391,6 +410,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	      FindInnerPoint (grouppoints, groupfaces, inp) &&
               !adfront->PointInsideGroup(grouppindex, groupfaces))
 	    {
+              VolumeFrontTimer commit_time(front_stats,6);
 	      (*testout) << "inner point found" << endl;
 
 	      for(int i = 0; i < groupfaces.Size(); i++)
@@ -420,6 +440,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 		    }
 		  mesh.AddVolumeElement (newel);
 		}
+              if(front_stats) front_stats->AddFront(11,1);
 	      continue;
 	    }
 	}
