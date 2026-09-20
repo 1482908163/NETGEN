@@ -587,6 +587,23 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid kernel timing")
             result[key]=max(values)
+    if metadata.get("front_profile")=="front_profile_v1":
+        for key in FRONT_PROFILE_METRICS:
+            values=[r["metrics"][key] for r in rows]
+            if any(not math.isfinite(v) or v<0 for v in values):
+                raise ValueError("invalid front profile metric: "+key)
+            result[key]=max(values)
+        iterations=[r["metrics"]["kernel_front_iterations"] for r in rows]
+        rotations=[r["metrics"]["kernel_front_rotations"] for r in rows]
+        result["kernel_front_iterations_imbalance"]=max(iterations)/mean(iterations) if mean(iterations) else None
+        result["kernel_front_rotations_imbalance"]=max(rotations)/mean(rotations) if mean(rotations) else None
+        if any(r["metrics"]["kernel_front_candidate_found"]>r["metrics"]["kernel_front_rotations"] for r in rows):
+            raise ValueError("front candidates exceed rotation trials")
+        if any(r["metrics"]["kernel_front_successful_iterations"]+
+               r["metrics"]["kernel_front_failed_iterations"]+
+               r["metrics"]["kernel_front_class_skips"]>r["metrics"]["kernel_front_iterations"]+1e-9 for r in rows):
+            raise ValueError("front iteration accounting exceeds total")
+
     if metadata.get("kernel_lifecycle")=="team_lifecycle_v1":
         for name in ("starts","start_seconds","stop_seconds"):
             key="kernel_team_"+name
@@ -1101,7 +1118,7 @@ def kernel_overview(root, ranks):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
-                        if (key.startswith('coop_') or key.startswith('sync_')) and key.endswith('_median'):
+                        if (key.startswith('coop_') or key.startswith('sync_') or key.startswith('kernel_front_')) and key.endswith('_median'):
                             report[-1][key[:-7]]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
