@@ -3,22 +3,22 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 关键路径定向迭代：固定资源、完成后弹性借核、阶段感知借核三组。
-# 只测 64/128/256 进程，重点验证 256 进程退化是否来自 generation/repair 的无效扩核。
-# 每规模 3组 × 2种计时 × (1次预热 + 5次正式) = 36次，共108次；自然预热含质量审计。
+# 自然模式低扰动同步诊断：只比较固定资源与当前主方案 node_elastic。
+# 只测 128/256 进程，不插入 split barrier；用自然时间戳离线计算 collective arrival skew。
+# 每规模 2组 × (1次预热 + 5次正式) = 12次，共24次；预热含质量审计。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
-export PROCESS_COUNTS="${PROCESS_COUNTS:-64 128 256}"
+export PROCESS_COUNTS="${PROCESS_COUNTS:-128 256}"
 export RANKS_PER_NODE="${RANKS_PER_NODE:-4}"
 export CPUS_PER_TASK="${CPUS_PER_TASK:-4}"
 export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
 export QUALITY_WARMUP="${QUALITY_WARMUP:-1}"
 export COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-0}"
-export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_phaseaware}"
+export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic}"
 export LEVELS="${LEVELS:-2}"
 export REFINES="${REFINES:-1}"
 export ALGORITHMS="${ALGORITHMS:-sparse}"
-export TIMING_MODES="${TIMING_MODES:-natural split}"
+export TIMING_MODES="${TIMING_MODES:-natural}"
 export REPEATS="${REPEATS:-5}"
 export WARMUPS="${WARMUPS:-1}"
 export CLEANUP_RESULTS="${CLEANUP_RESULTS:-1}"
