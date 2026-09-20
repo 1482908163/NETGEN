@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 自然模式低扰动同步诊断：只比较固定资源与当前主方案 node_elastic。
-# 只测 128/256 进程，不插入 split barrier；用自然时间戳离线计算 collective arrival skew。
+# Advancing-front 关键路径诊断：固定资源与 node_elastic 保持不变，只增加低扰动 front 细分统计。
+# 测 128/256 进程 natural 模式，直接比较 Select/GetLocals/ApplyRules/Validate/Commit/Retry。
 # 每规模 2组 × (1次预热 + 5次正式) = 12次，共24次；预热含质量审计。
 export EXPERIMENT_PRESET=cooperate
 export EXPERIMENT_STAGE=kernel
