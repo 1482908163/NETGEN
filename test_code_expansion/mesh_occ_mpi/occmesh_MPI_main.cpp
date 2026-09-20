@@ -468,6 +468,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata(
         "collective_timing",
         profile_split?"pre_barrier_wait_then_execution":"natural_collective_includes_arrival_skew");
+    profiler.add_metadata("natural_sync_trace","natural_sync_v1");
     profiler.add_metadata(
         "communication_fraction_definition",
         "off_rank_logical_payload; no transport_headers_or_collective_algorithm_bytes");
@@ -852,6 +853,7 @@ int main(int argc, char **argv) {
             }
         }
         volumeMesh_end = MPI_Wtime();
+        profiler.mark_elapsed("local_volume_complete_elapsed");
         //MPI_Barrier(MPI_COMM_WORLD);
         if(id == 0) printf("meshing done \n");
         double currtime4 = MPI_Wtime();
