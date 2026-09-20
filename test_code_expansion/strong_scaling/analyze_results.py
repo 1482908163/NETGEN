@@ -305,7 +305,197 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
     return lines,issues
 
 
-def inspect(path, sample_sink=None, timeline_sink=None):
+# Export existing measurements only: no new kernel timers or mesh operations.
+CRITICAL_METRICS = (
+    'kernel_generation_seconds','kernel_repair_seconds','kernel_optimization_seconds',
+    'kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds',
+    'kernel_repair_mark_seconds','kernel_repair_split_seconds','kernel_repair_swap_seconds',
+    'kernel_repair_swap2_seconds','kernel_repair_rounds','kernel_final_illegal',
+    'kernel_team_starts','kernel_team_start_seconds','kernel_team_stop_seconds',
+    'local_points_before_adjacency','local_volume_elements_before_adjacency',
+    'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
+    'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
+    'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events')
+CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
+    for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
+CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
+    'kernel_optimization_seconds','kernel_delaunay_seconds','kernel_front_seconds',
+    'kernel_domain_repair_seconds','kernel_team_start_seconds','kernel_team_stop_seconds',
+    'coop_borrowed_core_seconds','first_loan_fraction')
+
+def critical_rank_details(rows, result):
+    """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
+    metadata=rows[0]['metadata']
+    if result['repeat']<=0 or metadata.get('kernel_diagnostics')!='repair_v2': return []
+    compute={r['rank']:sum(seconds(r,s) for s in COMPUTE) for r in rows}
+    roles=defaultdict(set)
+    def select(role, value):
+        # Deterministic tie break; no hard-coded process ID or scale.
+        row=max(rows,key=lambda r:(value(r),-r['rank']))
+        roles[row['rank']].add(role);return row
+    slow=select('compute',lambda r:compute[r['rank']])
+    for phase in ('generation','repair','optimization','delaunay','front','domain_repair'):
+        select(phase,lambda r:r['metrics']['kernel_'+phase+'_seconds'])
+    # Arrival timestamps share the MPI experiment origin. Node timeline origins do not.
+    for field in ('face_complete_elapsed','vertex_arrival_elapsed'):
+        if all(field in r['metrics'] for r in rows):
+            select(field,lambda r:r['metrics'][field])
+    node=slow['metrics'].get('coop_timeline_node')
+    if node is not None:
+        for r in rows:
+            if r['metrics'].get('coop_timeline_node')==node: roles[r['rank']].add('compute_node_peer')
+    out=[]
+    for r in sorted(rows,key=lambda r:r['rank']):
+        if r['rank'] not in roles: continue
+        m=r['metrics']
+        item={k:result[k] for k in ('algorithm','timing','ranks','partition_seed','repeat')}
+        item.update(schema='critical_rank_v1',scheduler=metadata['kernel_scheduler'],
+            threads=int(metadata['kernel_threads']),rank=r['rank'],node=m.get('coop_timeline_node'),
+            selection=';'.join(sorted(roles[r['rank']])),compute_seconds=compute[r['rank']],
+            run_core_seconds=result['core_seconds'],source_revision=metadata.get('MESH_SOURCE_REVISION','unset'),
+            input_sha256=metadata.get('MESH_INPUT_SHA256','unset'),binary_sha256=metadata.get('MESH_BINARY_SHA256','unset'),
+            kernel_sha256=metadata.get('MESH_KERNEL_SHA256','unset'))
+        item.update({key:m.get(key) for key in CRITICAL_METRICS+CRITICAL_PHASES})
+        item.update({s+'_seconds':seconds(r,s) for s in COMPUTE})
+        start=m.get('coop_timeline_start_seconds');finish=m.get('coop_timeline_finish_seconds')
+        first=m.get('coop_timeline_first_loan_seconds')
+        item['first_loan_fraction']=((first-start)/(finish-start)
+            if m.get('coop_timeline_loan_events',0)>0 and None not in (start,finish,first) and finish>start else None)
+        # Validate any optional values we expose; missing measurements stay empty, not zero.
+        numeric=[item[k] for k in CRITICAL_METRICS+CRITICAL_PHASES if item[k] is not None]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 for v in numeric):
+            raise ValueError('invalid critical-rank metric')
+        fraction=item['first_loan_fraction']
+        if fraction is not None and not -1e-9<=fraction<=1+1e-9:
+            raise ValueError('first loan outside kernel interval')
+        out.append(item)
+    return out
+
+def replace_csv(path, rows):
+    """Do not leave an old successful report behind when no valid rows remain."""
+    temporary=path.with_name(path.name+'.tmp')
+    temporary.write_text('');write_csv(temporary,rows);os.replace(temporary,path)
+
+def expected_profile_runs(folder, plan):
+    for algorithm in plan['algorithms']:
+        for timing in plan['timings']:
+            for seed in plan.get('partition_seeds',[-1]):
+                name=f'{algorithm}_{timing}' if seed==-1 else f'{algorithm}_seed{seed}_{timing}'
+                for rep in range(1,plan['repeats']+1):
+                    yield folder/name/f'repeat_{rep}',(algorithm,timing,plan['ranks'],seed,rep)
+
+def refresh_critical_folder(folder, plan):
+    rows=[];issues=[]
+    for directory,expected in expected_profile_runs(folder,plan):
+        try:
+            with run_guard(directory) as acquired:
+                if not acquired or (directory/'RUNNING').exists(): raise ValueError('run is active')
+                if not (directory/'SUCCESS').exists(): raise ValueError('missing SUCCESS')
+                selected=[]
+                result,_=inspect(profile_path(directory),critical_sink=selected)
+                if tuple(result[k] for k in ('algorithm','timing','ranks','partition_seed','repeat'))!=expected:
+                    raise ValueError('run identity does not match plan')
+                if not selected: raise ValueError('missing kernel phase diagnostics')
+                rows.extend(selected)
+        except (OSError,EOFError,ValueError,KeyError,TypeError) as error:
+            issues.append(f'{directory}: {error}')
+    out=folder/'analysis';out.mkdir(exist_ok=True)
+    replace_csv(out/'kernel_critical_ranks.csv',rows)
+    (out/'critical_issues.txt').write_text('\n'.join(issues)+('\n' if issues else ''))
+    return len(rows),issues
+
+def critical_overview(root,ranks,selected):
+    """Aggregate each run's actual slowest-compute rank, not unrelated phase maxima."""
+    groups=defaultdict(list);issues=[];total_expected=0
+    for threads,scheduler in selected:
+        folder=root/f'kernel_{scheduler}_t{threads}'/f'p{ranks}'
+        try:
+            plan=json.loads((folder/'plan.json').read_text())
+            expected={identity for _,identity in expected_profile_runs(folder,plan)}
+            total_expected+=len(expected)
+            path=folder/'analysis/kernel_critical_ranks.csv'
+            if not path.exists():
+                issues.append(f'{scheduler}/t{threads}: 缺少关键进程明细，请执行 --refresh-kernel-reports')
+                continue
+            with path.open() as stream: rows=list(csv.DictReader(stream))
+            present=set()
+            for row in rows:
+                if row.get('schema')!='critical_rank_v1' or row['scheduler']!=scheduler or int(row['threads'])!=int(threads):
+                    raise ValueError('critical report schema/strategy mismatch')
+                if 'compute' not in row['selection'].split(';'): continue
+                identity=(row['algorithm'],row['timing'],int(row['ranks']),int(row['partition_seed']),int(row['repeat']))
+                if identity not in expected or identity in present: raise ValueError('invalid/duplicate critical run identity')
+                present.add(identity)
+                groups[(scheduler,int(threads),row['algorithm'],row['timing'],int(row['partition_seed']))].append(row)
+            if present!=expected: issues.append(f'{scheduler}/t{threads}: 关键进程明细 {len(present)}/{len(expected)} 次')
+            failure=folder/'analysis/critical_issues.txt'
+            if failure.exists() and failure.read_text().strip(): issues.append(f'{scheduler}/t{threads}: {failure.read_text().strip()}')
+        except (OSError,ValueError,KeyError,TypeError) as error:
+            issues.append(f'{folder}: {error}')
+    summaries=[]
+    for (scheduler,threads,algorithm,timing,seed),rows in sorted(groups.items()):
+        rank_counts=defaultdict(int)
+        for row in rows: rank_counts[int(row['rank'])]+=1
+        summary=dict(scheduler=scheduler,threads=threads,algorithm=algorithm,timing=timing,seed=seed,
+            measured_repeats=len(rows),critical_rank_counts=json.dumps(dict(sorted(rank_counts.items()))),
+            borrowed_repeats=sum(float(r.get('coop_borrowed_core_seconds') or 0)>0 for r in rows))
+        provenance={tuple(r[k] for k in ('source_revision','input_sha256','binary_sha256','kernel_sha256')) for r in rows}
+        if len(provenance)!=1: issues.append(f'{scheduler}/{algorithm}/{timing}: mixed critical provenance')
+        for key in CRITICAL_SUMMARY_METRICS:
+            values=[float(r[key]) for r in rows if r.get(key) not in ('',None)]
+            if any(not math.isfinite(v) for v in values): raise ValueError('nonfinite critical summary')
+            summary[key+'_median']=st.median(values) if values else None
+        summaries.append(summary)
+    out=root/f'p{ranks}';out.mkdir(exist_ok=True)
+    replace_csv(out/'kernel_critical_summary.csv',summaries)
+    lines=[f'关键进程阶段报告：{sum(len(g) for g in groups.values())}/{total_expected} 次正式运行。']
+    for r in summaries:
+        if r['timing']!='natural': continue
+        lines.append(f"关键计算 {r['scheduler']}/{r['algorithm']}: 进程及出现次数={r['critical_rank_counts']}；"
+            f"计算={compact(r['compute_seconds_median'])}s；生成={compact(r['kernel_generation_seconds_median'])}s；"
+            f"前沿={compact(r['kernel_front_seconds_median'])}s；域内修复={compact(r['kernel_domain_repair_seconds_median'])}s；"
+            f"外层修复={compact(r['kernel_repair_seconds_median'])}s；优化={compact(r['kernel_optimization_seconds_median'])}s；"
+            f"借核={r['borrowed_repeats']}/{r['measured_repeats']} 次运行。")
+    lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
+    lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
+    (out/'CRITICAL_PATH_SUMMARY.txt').write_text('\n'.join(lines+issues)+'\n')
+    return lines,issues
+
+def refresh_kernel_reports(root):
+    if not root.is_dir(): raise SystemExit('实验结果根目录不存在。')
+    with run_guard(root) as acquired:
+        if not acquired: raise SystemExit('该批次正在重分析，请等待现有重分析结束。')
+        _refresh_kernel_reports(root)
+
+def _refresh_kernel_reports(root):
+    """Offline-only: retain profiles, meshes, SUCCESS and existing performance tables."""
+    plans=sorted(root.glob('kernel_*_t*/p[0-9]*/plan.json'))
+    if not plans: raise SystemExit('未找到内核实验 plan.json，请传入整个 mesh_algorithms_* 目录。')
+    per_scale=defaultdict(set);failures=[]
+    for path in plans:
+        scheduler,sep,threads=path.parent.parent.name[len('kernel_'):].rpartition('_t')
+        try:
+            plan=json.loads(path.read_text());n=int(plan['ranks'])
+            if not sep or not threads.isdigit() or path.parent.name!=f'p{n}' or n<1:
+                raise ValueError('invalid kernel plan path')
+            per_scale[n].add((threads,scheduler))
+            count,errors=refresh_critical_folder(path.parent,plan);failures.extend(errors)
+            print(f'p{n} {scheduler}: 导出 {count} 行关键进程明细，异常 {len(errors)} 项。')
+        except (OSError,EOFError,ValueError,KeyError,TypeError) as error:
+            failures.append(f'{path}: {error}')
+    for n,selected in sorted(per_scale.items()):
+        _,errors=critical_overview(root,n,sorted(selected));failures.extend(errors)
+    requested=root/'requested_process_counts.txt'
+    if requested.exists():
+        missing=set(map(int,requested.read_text().split()))-set(per_scale)
+        failures.extend(f'p{n}: missing kernel plans' for n in sorted(missing))
+    (root/'critical_refresh_issues.txt').write_text('\n'.join(failures)+('\n' if failures else ''))
+    print(f'重分析完成，异常 {len(failures)} 项。查看 p*/CRITICAL_PATH_SUMMARY.txt；未启动网格实验。')
+    if failures: raise SystemExit(1)
+
+
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -697,6 +887,8 @@ def inspect(path, sample_sink=None, timeline_sink=None):
             timeline_sink.append(t)
     if metadata.get("mesh_quality") is not None:
         result["mesh_quality"]=inspect_quality(rows,metadata)
+    if critical_sink is not None:
+        critical_sink.extend(critical_rank_details(rows,result))
     return result, detail
 
 def write_csv(path, rows):
@@ -868,6 +1060,8 @@ def kernel_overview(root, ranks):
     out=root/f"p{ranks}";out.mkdir(exist_ok=True)
     audit_lines,audit_issues=ablation_reports(root,ranks,selected,indexed,paired_times)
     issues.extend(audit_issues)
+    critical_lines,critical_issues=critical_overview(root,ranks,selected)
+    issues.extend(critical_issues)
     write_csv(out/'kernel_summary.csv',report)
     phase_names=('reserved','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
     phase_report=[]
@@ -881,7 +1075,7 @@ def kernel_overview(root, ranks):
                 item[field+'_median']=row.get(prefix+field)
             phase_report.append(item)
     write_csv(out/'kernel_phase_summary.csv',phase_report)
-    lines=["内核协作与贡献消融汇总",*audit_lines,f"进程数: {ranks}; 异常项: {len(issues)}",
+    lines=["内核协作与贡献消融汇总",*audit_lines,*critical_lines,f"进程数: {ranks}; 异常项: {len(issues)}",
            "scheduler algorithm threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
     for row in report:
         lines.append(f"{row['scheduler']} {row['algorithm']} {row['threads']} {row['timing']} {row['core_seconds']:.6f} "
@@ -983,9 +1177,15 @@ def main():
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
     parser.add_argument("--require-calibration",action="store_true",help="采样完整后还必须通过分区多样性与节点轮换检查")
+    parser.add_argument("--refresh-kernel-reports",action="store_true",help="只重读已有原始指标，补齐关键进程阶段报告，不重跑、不清理网格")
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.refresh_kernel_reports:
+        if args.finish_run or args.kernel_overview or args.require_calibration or args.kernel_ranks:
+            parser.error('--refresh-kernel-reports cannot be combined with other analysis modes')
+        refresh_kernel_reports(args.root)
+        return
     if args.kernel_overview:
         if not args.kernel_ranks: parser.error("--kernel-ranks required")
         kernel_overview(args.root,args.kernel_ranks)
@@ -1009,6 +1209,7 @@ def main():
         return
     runs, stage_rows, errors = [], [], []
     timeline_rows=[]
+    critical_rows=[]
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     sample_tmp=output/"model_samples.csv.gz.tmp"
@@ -1026,7 +1227,7 @@ def main():
                 if not (directory/"SUCCESS").exists():
                     errors.append(f"Incomplete run: {directory}")
                     continue
-                result, details = inspect(profile_path(directory), sample_writer, timeline_rows)
+                result, details = inspect(profile_path(directory), sample_writer, timeline_rows, critical_rows)
             completed.append(directory)
             if result["repeat"] <= 0:
                 continue  # Explicit warmups; no subtraction/estimated timing.
@@ -1094,6 +1295,8 @@ def main():
     output.mkdir(exist_ok=True)
     write_csv(output/"runs.csv", runs)
     write_csv(output/"node_resource_timeline.csv", timeline_rows)
+    replace_csv(output/"kernel_critical_ranks.csv",critical_rows)
+    (output/"critical_issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))
     write_csv(output/"stages.csv", stage_rows)
     write_csv(output/"summary.csv", summaries)
     (output/"issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))
@@ -1124,4 +1327,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
