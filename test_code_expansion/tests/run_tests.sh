@@ -7,7 +7,7 @@ MPICXX="${MPICXX:-mpicxx}"
 MPI_LAUNCHER="${MPI_LAUNCHER:-mpiexec}"
 TEST_PROCESS_COUNTS="${TEST_PROCESS_COUNTS:-1 2 3 4 8}"
 mkdir -p "${BUILD}"
-for name in partition_cost face_dependency mesh_ids; do
+for name in partition_cost face_dependency mesh_ids worklet_schedule; do
     "${CXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" \
         "${ROOT}/tests/test_${name}.cpp" -o "${BUILD}/test_${name}"
     "${BUILD}/test_${name}"
@@ -27,3 +27,4 @@ for p in ${TEST_PROCESS_COUNTS}; do
     done
 done
 python3 "${ROOT}/tests/test_runner.py"
+python3 "${ROOT}/tests/test_worklet_routes.py"

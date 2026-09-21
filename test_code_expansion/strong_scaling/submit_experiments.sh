@@ -22,6 +22,7 @@ read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
 read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
 # 所有协作对照采用相同物理核布局，避免把超线程当额外计算核。
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || batch_extra+=(--hint=nomultithread)
+[[ "${EXPERIMENT_PRESET}" != worklets ]] || batch_extra+=(--hint=nomultithread)
 ((${#counts[@]}>0)) || exit 2
 for p in "${counts[@]}"; do [[ "${p}" =~ ^[1-9][0-9]*$ ]] || exit 2; done
 mkdir -p "${RUN_ROOT}"

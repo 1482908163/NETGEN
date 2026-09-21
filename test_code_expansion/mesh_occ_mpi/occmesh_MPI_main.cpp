@@ -42,7 +42,10 @@ void print_help() {
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic内核策略" << endl <<
-         "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
+         "--communication-only : 固定原分区、禁用历史均衡模型；可显式启用 worklets" << endl <<
+         "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
+         "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
+         "--deferred-global-ids : 合并全局计数并与邻居局部编号交换重叠" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
          "--cost-weights <a,b,c,d> : 四阶段代价权重，默认1,1,1,1" << endl <<
@@ -185,6 +188,9 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--validate-volume")) {
             validate_volume = true;
         }
+        else if(!strcmp(argv[i],"--deferred-global-ids")) {
+            mesh_research::options().deferred_global_ids = true;
+        }
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
@@ -198,7 +204,8 @@ int main(int argc, char **argv) {
                 !strcmp(argv[i],"--partition-variant") || !strcmp(argv[i],"--rank-shift") ||
                 !strcmp(argv[i],"--partition-reference") || !strcmp(argv[i],"--preflight-parts") ||
                 !strcmp(argv[i],"--preflight-seeds") || !strcmp(argv[i],"--preflight-dir") ||
-                !strcmp(argv[i],"--mesh-tasks") || !strcmp(argv[i],"--task-cut-growth")) {
+                !strcmp(argv[i],"--mesh-tasks") || !strcmp(argv[i],"--task-cut-growth") ||
+                !strcmp(argv[i],"--worklets-per-owner") || !strcmp(argv[i],"--worklet-policy")) {
             const std::string option=argv[i];
             if(i+1>=argc) { if(id==0) print_help(); MPI_Abort(MPI_COMM_WORLD,2); }
             const std::string value=argv[++i];
@@ -212,6 +219,12 @@ int main(int argc, char **argv) {
                 }
                 else if(option=="--kernel-scheduler") research.kernel_scheduler=value;
                 else if(option=="--algorithm") research.algorithm=value;
+                else if(option=="--worklet-policy") research.worklet_policy=value;
+                else if(option=="--worklets-per-owner") {
+                    research.worklets_per_owner=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.worklets_per_owner<1 || research.worklets_per_owner>64)
+                        throw std::runtime_error("worklets per owner must be in [1,64]");
+                }
                 else if(option=="--mesh-tasks") {
                     research.mesh_tasks=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.mesh_tasks<0)throw std::runtime_error("invalid task count");
@@ -315,6 +328,14 @@ int main(int argc, char **argv) {
         research.kernel_scheduler=="node_native" ||
         research.kernel_scheduler=="node_fixed" ||
         research.kernel_scheduler=="node_elastic";
+    if((research.worklets() && (!research.communication_only || research.mesh_tasks>0 || p<2 ||
+        research.kernel_threads<1 || research.kernel_scheduler!="repair")) ||
+       (research.worklet_policy!="static" && research.worklet_policy!="dynamic" && research.worklet_policy!="remaining" && research.worklet_policy!="critical") ||
+       (!research.worklets() && research.worklet_policy!="static") ||
+       (research.deferred_global_ids && (!research.communication_only || !isComputeAdj))) {
+        if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
+        MPI_Abort(MPI_COMM_WORLD,2);
+    }
     if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
@@ -409,7 +430,10 @@ int main(int argc, char **argv) {
     profiler.add_metadata("adjacency_enabled", isComputeAdj ? "true" : "false");
     profiler.add_metadata("save_vol", save_vol ? "true" : "false");
     profiler.add_metadata("profiler_schema_version", "research_1");
-    profiler.add_metadata("feature_schema", research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
+    profiler.add_metadata("feature_schema", research.worklets()?"mesh_worklets_v1":research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
+    profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
+    profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
+    profiler.add_metadata("global_numbering",research.deferred_global_ids?"deferred_pair_v1":"eager_v1");
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
@@ -430,7 +454,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
-    profiler.add_metadata("active_workers",std::to_string(research.mesh_tasks>0?p-1:p));
+    profiler.add_metadata("active_workers",std::to_string((research.mesh_tasks>0 || research.worklets())?p-1:p));
     profiler.add_metadata("partition_seed",std::to_string(research.partition_seed));
     profiler.add_metadata("partition_variant",research.partition_variant);
     profiler.add_metadata("rank_shift",std::to_string(research.rank_shift));
@@ -443,7 +467,7 @@ int main(int argc, char **argv) {
         profiler.add_metadata("mesh_quality","volume_audit_v1");
         profiler.add_metadata("quality_face_reference",research.verify_faces?"allgather":"baseline");
     }
-    profiler.add_metadata("partition_contract",research.mesh_tasks>0?"fixed closed tasks; rank zero dispatcher":"one partition per MPI rank");
+    profiler.add_metadata("partition_contract",research.worklets()?"original ownership; movable execution; ordered return":research.mesh_tasks>0?"fixed closed tasks; rank zero dispatcher":"one partition per MPI rank");
     profiler.add_metadata("cost_model",research.communication_only?"none":research.mesh_tasks>0?"none_task_queue":(!research.resource_path.empty()?"phase_seconds_resource":
         (research.model_path.empty()?"geometric_proxy":"phase_seconds")));
     profiler.add_metadata("balance_method",research.communication_only?"none":research.mesh_tasks>0?"task_queue":(research.resource_path.empty()?"boundary":"node_mapping"));
@@ -728,7 +752,7 @@ int main(int argc, char **argv) {
         idx_t *edest = nullptr;
         int i;
         double volumeMesh_start=0,volumeMesh_end=0;
-        if(research.mesh_tasks>0) {
+        if(research.mesh_tasks>0 || research.worklets()) {
             volumeMesh_end=GenerateScheduledTasks(occ_mesh,submesh,research.mesh_tasks,numlevels,maxbarycoord,
                                    facemap,g2lvrtxmap,baryc2locvrtxmap,newfaces);
         } else {
@@ -909,6 +933,21 @@ int main(int argc, char **argv) {
 
             GlobalId *newid = com_barycoords(submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
                                         baryc2locvrtxmap, adjbarycs, numParts, VEgid, id);
+            if(validate_volume) {
+                scaling::StageScope stage("numbering_audit","validation");
+                std::uint64_t hash=1469598103934665603ULL;
+                std::set<GlobalId> seen;
+                for(int v=1;v<=nglib::Ng_GetNP(submesh);++v) {
+                    if(newid[v]<=0 || !seen.insert(newid[v]).second)MPI_Abort(MPI_COMM_WORLD,3);
+                    hash=(hash^static_cast<std::uint64_t>(newid[v]))*1099511628211ULL;
+                }
+                for(int e=1;e<=numNEs;++e) {
+                    if(VEgid[e]<=0 || (e>1 && VEgid[e]!=VEgid[e-1]+1))MPI_Abort(MPI_COMM_WORLD,3);
+                    hash=(hash^static_cast<std::uint64_t>(VEgid[e]))*1099511628211ULL;
+                }
+                profiler.set_metric("quality_numbering_hi",static_cast<double>(hash>>32));
+                profiler.set_metric("quality_numbering_lo",static_cast<double>(hash&0xffffffffULL));
+            }
 
 
             // int pointdebug = nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh);
@@ -1227,4 +1266,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-

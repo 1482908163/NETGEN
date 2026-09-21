@@ -147,7 +147,7 @@ def inspect_quality(rows, metadata):
     """Audit every owned tet in repeat zero; this is not a CAD/intersection proof."""
     if metadata.get('mesh_quality')!='volume_audit_v1' or rows[0]['repeat']!=0 or metadata.get('timing_mode')!='natural':
         raise ValueError('volume audit must be natural warmup repeat 0')
-    if metadata.get('core_only')!='true' or metadata.get('feature_schema')!='mesh_comm_v1':
+    if metadata.get('core_only')!='true' or metadata.get('feature_schema') not in ('mesh_comm_v1','mesh_worklets_v1'):
         raise ValueError('invalid volume audit boundary')
     algorithm=metadata['algorithm']
     reference={'baseline':'baseline','sparse':'allgather'}.get(algorithm)
@@ -164,6 +164,8 @@ def inspect_quality(rows, metadata):
         q['shape_hist']=[m['quality_shape_bin_'+str(i)] for i in range(10)]
         hashes={name:[m['quality_'+name+'_hi'],m['quality_'+name+'_lo']]
                 for name in ('surface_sum','surface_xor','volume_sum','volume_xor')}
+        if metadata.get('global_numbering'):
+            hashes['numbering']=[m['quality_numbering_hi'],m['quality_numbering_lo']]
         integers=[q[k] for k in QUALITY_COUNTS]+q['shape_hist']+[v for pair in hashes.values() for v in pair]
         if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or v!=int(v) for v in integers):
             raise ValueError('invalid audit counter or fingerprint')
@@ -211,6 +213,8 @@ def compare_quality(control, candidate):
         return [(r['rank'],r[prefix+'_sum'],r[prefix+'_xor']) for r in q['per_rank']]
     if signature(control,'surface')!=signature(candidate,'surface'): problems.append('boundary_fingerprint_changed')
     same_mesh=signature(control,'volume')==signature(candidate,'volume')
+    if same_mesh and any(a.get('numbering')!=b.get('numbering') for a,b in zip(control['per_rank'],candidate['per_rank'])):
+        problems.append('global_numbering_changed')
     if not math.isclose(control['abs_volume'],candidate['abs_volume'],rel_tol=1e-10,abs_tol=0): problems.append('volume_changed')
     for k in ('shape_min','shape_mean','angle_min'):
         if candidate[k]<control[k]-1e-10*max(1,abs(control[k])): problems.append(k+'_worse')
@@ -323,7 +327,8 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     if metadata.get("core_only") != "true":
         raise ValueError("performance comparison requires core_only=true")
     compute = [sum(seconds(r, stage) for stage in COMPUTE) for r in rows]
-    waiting = [seconds(r, "vertex_count_pre_collective_wait") for r in rows]
+    deferred=metadata.get('global_numbering')=='deferred_pair_v1'
+    waiting = [seconds(r, "id_count_pre_collective_wait" if deferred else "vertex_count_pre_collective_wait") for r in rows]
     tets = [r["metrics"].get("local_volume_elements_before_adjacency", 0) for r in rows]
     points_before_volume = [r["metrics"].get("local_points_before_volume", 0) for r in rows]
     surfaces_before_volume = [r["metrics"].get("local_surface_elements_before_volume", 0) for r in rows]
@@ -388,7 +393,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -687,7 +692,15 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                 for r,a in zip(rows,actual))/sum(actual) if metadata["cost_model"].startswith("phase_seconds") and sum(actual)>0 else None)
         if sample_sink is not None and not split and rows[0]["repeat"]>0:
             sample_sink.writerows(samples)
-    if metadata.get("feature_schema")=="mesh_tasks_v1":
+    if deferred:
+        for r in rows:
+            if any(r['stages'].get(s,{}).get('calls',0)!=1 for s in ('id_count_begin','id_count_commit_wait','id_compaction')):
+                raise ValueError('incomplete deferred numbering lifecycle')
+            if any(r['stages'].get(s,{}).get('calls',0) for s in ('vertex_count_allgather','element_count_allgather')):
+                raise ValueError('eager collective entered deferred numbering')
+        for s in ('id_count_begin','id_count_commit_wait','id_compaction','vertex_exchange'):
+            result[s+'_max_seconds']=max(seconds(r,s) for r in rows)
+    if metadata.get("feature_schema") in ("mesh_tasks_v1","mesh_worklets_v1"):
         count=int(metadata["mesh_tasks"])
         if n<2 or count<n-1 or int(metadata["active_workers"])!=n-1:
             raise ValueError("invalid task/worker configuration")
@@ -710,6 +723,23 @@ def inspect(path, sample_sink=None, timeline_sink=None):
         limit=root["metrics"]["task_cross_node_faces_limit"]
         if min(before,after)<0 or after>limit or before>limit:
             raise ValueError("task communication budget exceeded")
+        if metadata.get('feature_schema')=='mesh_worklets_v1':
+            if metadata.get('worklet_policy') not in ('static','dynamic','remaining','critical') or metadata.get('kernel_scheduler')!='repair':
+                raise ValueError('invalid fixed-owner worklet policy')
+            if before!=after or before!=limit:
+                raise ValueError('fixed ownership changed communication graph')
+            if not re.fullmatch(r'[0-9a-f]{1,16}',metadata.get('worklet_ownership_signature','')):
+                raise ValueError('missing original ownership signature')
+            owned=[r['metrics']['worklets_owned'] for r in rows]
+            if sum(owned)!=count or any(k<1 or int(k)!=k for k in owned):
+                raise ValueError('worklet owner coverage mismatch')
+            for r,k in zip(rows,owned):
+                if r['metrics']['worklet_return_checked']!=k or r['metrics']['worklet_ownership_errors']!=0:
+                    raise ValueError('worklet return was not verified')
+            result.update(worklet_policy=metadata['worklet_policy'],
+                ownership_signature=metadata['worklet_ownership_signature'],
+                worklet_return_max_seconds=max(seconds(r,'worklet_return') for r in rows),
+                worklet_return_bytes=sum(r['stages'].get('worklet_return',{}).get('receive_bytes',0) for r in rows))
         worker_compute=[c for r,c in zip(rows,compute) if r["rank"]!=0]
         result.update(task_count=count,task_signature=signature,
                       active_workers=n-1,compute_max_seconds=max(worker_compute),
@@ -1108,7 +1138,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature",
+            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
                         "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
@@ -1174,4 +1204,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -1,4 +1,18 @@
-# 两个瓶颈的算法实验
+# 当前默认：固定归属负载均衡 A1/B1/C1
+
+`run_experiments.sh` 默认使用 `worklets` 预设。重编译后直接运行：
+
+```bash
+bash run_experiments.sh
+```
+
+一次提交 128/256 ranks 的六组对照：原分区参考、静态任务、动态任务、剩余工作量、同步关键性、延迟编号。
+各规模作业并行申请、统一延时启动；每组 natural/split、一次质量预热、三次正式重复。
+详细方案、实现边界和正确性要求见 [A/B/C 首轮说明](../docs/experiments/20260921_worklet_abc_pilot.md)。
+结果首先看根目录下 `p128/ROUTE_SUMMARY.txt` 和 `p256/ROUTE_SUMMARY.txt`。
+以下旧预设说明仅供显式选择对应历史实验。
+
+# 两个瓶颈的算法实验（历史记录）
 
 当前仓库：`1482908163/NETGEN`；研究分支：`agent/load-balance-research`。历史数据和结论保留原来源。
 

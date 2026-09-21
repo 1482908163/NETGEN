@@ -16,6 +16,10 @@ struct ResearchOptions {
     std::vector<int> reference_labels, preflight_seeds;
     int rank_shift = 0, preflight_parts = 0;
     int mesh_tasks = 0; // 0 保留历史单分区路径。
+    int worklets_per_owner = 0; // A1: subdivide each ORIGINAL partition, preserve ownership.
+    std::string worklet_policy = "static"; // static / dynamic / remaining / critical
+    bool deferred_global_ids = false; // C1: overlap fused counts with neighbor-local IDs.
+    bool worklets() const { return worklets_per_owner > 0; }
     double task_cut_growth = 0.10;
     int kernel_threads = 0; // 0: preserve the historical nglib entry
     std::string kernel_scheduler = "static";
