@@ -14,6 +14,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 #   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
+#   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-cooperate}"
@@ -90,7 +91,17 @@ case "${EXPERIMENT_PRESET}" in
         default_refines=3
         default_verify_faces=0
         ;;
-    *) echo "EXPERIMENT_PRESET must be cooperate, kernel, pilot or production" >&2; exit 2 ;;
+    diagnose)
+        default_tasks=0
+        default_process_counts="1024 2048 4096 8192"
+        default_levels=3
+        default_refines=3
+        default_verify_faces=0
+        default_algorithms="sparse"
+        default_timings="natural split"
+        default_repeats=3
+        ;;
+    *) echo "EXPERIMENT_PRESET must be cooperate, kernel, pilot, production or diagnose" >&2; exit 2 ;;
 esac
 
 TASK_COUNT="${TASK_COUNT:-${default_tasks}}"  # 仅历史 task_queue 使用；通信基线忽略。

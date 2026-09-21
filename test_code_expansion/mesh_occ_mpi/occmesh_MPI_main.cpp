@@ -792,6 +792,10 @@ int main(int argc, char **argv) {
         //nmp.maxh = 1e6;
         nmp.fineness = 1;
 
+        profiler.set_metric("local_points_before_volume", nglib::Ng_GetNP(submesh));
+        profiler.set_metric("local_surface_elements_before_volume", nglib::Ng_GetNSE(submesh));
+        profiler.set_metric("local_volume_elements_before_volume", nglib::Ng_GetNE(submesh));
+
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");

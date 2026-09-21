@@ -325,7 +325,27 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     compute = [sum(seconds(r, stage) for stage in COMPUTE) for r in rows]
     waiting = [seconds(r, "vertex_count_pre_collective_wait") for r in rows]
     tets = [r["metrics"].get("local_volume_elements_before_adjacency", 0) for r in rows]
+    points_before_volume = [r["metrics"].get("local_points_before_volume", 0) for r in rows]
+    surfaces_before_volume = [r["metrics"].get("local_surface_elements_before_volume", 0) for r in rows]
+    local_volume = [seconds(r, "local_volume_mesh") for r in rows]
     predicted = [r["metrics"].get("predicted_cost_after", 0) for r in rows]
+
+    def tail_stats(fraction):
+        count=max(1,math.ceil(n*fraction))
+        idx=sorted(range(n),key=lambda i:compute[i],reverse=True)[:count]
+        rest=[i for i in range(n) if i not in set(idx)]
+        top_compute=mean([compute[i] for i in idx])
+        top_tets=mean([tets[i] for i in idx])
+        top_unit=mean([compute[i]/tets[i] for i in idx if tets[i]>0])
+        rest_unit=mean([compute[i]/tets[i] for i in rest if tets[i]>0]) if rest else top_unit
+        return (top_compute/mean(compute) if mean(compute) else None,
+                top_tets/mean(tets) if mean(tets) else None,
+                top_unit/rest_unit if rest_unit else None)
+
+    slowest_compute_rank=max(range(n),key=lambda i:compute[i])
+    slowest_local_volume_rank=max(range(n),key=lambda i:local_volume[i])
+    unit_cost=[compute[i]/tets[i] for i in range(n) if tets[i]>0]
+    top1=tail_stats(.01);top5=tail_stats(.05)
     names = sorted({name for r in rows for name in r["stages"]})
     detail = []
     for name in names:
@@ -347,6 +367,22 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                   volume_elements_sum=sum(tets), face_payload_receive_bytes=face_bytes,
                   predicted_actual_correlation=corr(predicted, compute),
                   compute_wait_correlation=corr(compute, waiting) if split else None,
+                  compute_tet_correlation=corr(tets,compute),
+                  compute_point_correlation=corr(points_before_volume,compute),
+                  compute_surface_correlation=corr(surfaces_before_volume,compute),
+                  local_volume_tet_correlation=corr(tets,local_volume),
+                  local_volume_point_correlation=corr(points_before_volume,local_volume),
+                  local_volume_surface_correlation=corr(surfaces_before_volume,local_volume),
+                  compute_unit_cost_cv=(st.stdev(unit_cost)/mean(unit_cost) if len(unit_cost)>1 and mean(unit_cost) else None),
+                  slowest_compute_rank=slowest_compute_rank,
+                  slowest_compute_seconds=compute[slowest_compute_rank],
+                  slowest_rank_tets=tets[slowest_compute_rank],
+                  slowest_rank_points_before_volume=points_before_volume[slowest_compute_rank],
+                  slowest_rank_surfaces_before_volume=surfaces_before_volume[slowest_compute_rank],
+                  slowest_local_volume_rank=slowest_local_volume_rank,
+                  slowest_local_volume_seconds=local_volume[slowest_local_volume_rank],
+                  top1_compute_ratio=top1[0],top1_tet_ratio=top1[1],top1_unit_cost_ratio=top1[2],
+                  top5_compute_ratio=top5[0],top5_tet_ratio=top5[1],top5_unit_cost_ratio=top5[2],
                   # Root-only global partition diagnostics.
                   cut_before=max(r["metrics"].get("partition_cut_before", 0) for r in rows),
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
@@ -757,6 +793,13 @@ def write_overview(root, runs, summaries, errors):
             compact(received/(1024**3) if received is not None else None),
             compact(row.get("speedup_vs_baseline")), compact(row.get("speedup_vs_sparse")),
         )))
+        if row.get("compute_tet_correlation_median") is not None:
+            lines.append("  负载诊断：最慢rank="+str(row.get("slowest_compute_rank_mode","-"))+
+                         "（"+str(row.get("slowest_compute_rank_hits",0))+"/"+str(row["successful_repeats"])+"次）；"+
+                         "compute~tet相关="+compact(row.get("compute_tet_correlation_median"))+
+                         "；local_volume~输入surface相关="+compact(row.get("local_volume_surface_correlation_median"))+
+                         "；top1%单位单元成本="+compact(row.get("top1_unit_cost_ratio_median"))+"x"+
+                         "；top5%单位单元成本="+compact(row.get("top5_unit_cost_ratio_median"))+"x")
         if row.get("task_count_median"):
             lines.append("  任务调度：任务数="+compact(row["task_count_median"],0)+
                          "；计算进程="+str(row["ranks"]-1)+"（另 1 进程管理队列）"+
@@ -1065,10 +1108,17 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "coop_timeline_critical_rank"):
+            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature",
+                        "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
             summary[name+"_median"] = st.median(present) if present else None
+        critical=[int(r["slowest_compute_rank"]) for r in group if r.get("slowest_compute_rank") is not None]
+        if critical:
+            ordered=sorted(set(critical),key=lambda rank:(-critical.count(rank),rank))
+            summary["slowest_compute_rank_mode"]=ordered[0]
+            summary["slowest_compute_rank_hits"]=critical.count(ordered[0])
+            summary["slowest_compute_rank_unique"]=len(set(critical))
         base = groups.get(("baseline", timing, ranks, seed))
         summary["speedup_vs_baseline"] = st.median(r["core_seconds"] for r in base)/summary["core_median"] if base else None
         sparse=groups.get(("sparse",timing,ranks,seed))
