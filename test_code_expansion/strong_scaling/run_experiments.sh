@@ -38,6 +38,8 @@ KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-${default_scheduler}}"
 WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
 WORKLET_FACTOR="${WORKLET_FACTOR:-4}"
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
+WORKLET_ROUTES="${WORKLET_ROUTES:-a_static}" # 先定位共同底座失败；通过静态审计后再扩大。
+export WORKLET_ROUTES
 DEFERRED_GLOBAL_IDS="${DEFERRED_GLOBAL_IDS:-0}"
 export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
@@ -230,7 +232,14 @@ fi
 
 if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     route_root="${RUN_ROOT:?}";route_failures=0
-    routes=(reference a_static a_dynamic b_remaining b_critical c_deferred)
+    read -r -a routes <<< "${WORKLET_ROUTES}"
+    ((${#routes[@]}>0)) || exit 2
+    declare -A seen_routes=()
+    for route in "${routes[@]}"; do
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
+        seen_routes[$route]=1
+    done
     mkdir -p "${route_root}/p${PROCESS_COUNT:?}"
     (( PROCESS_COUNT>=2 )) || exit 2
     for ((rr=1-WARMUPS;rr<=REPEATS;++rr)); do
@@ -249,7 +258,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                  bash "${SCRIPT_DIR}/run_experiments.sh"; then route_failures=$((route_failures+1));fi
         done
     done
-    python3 "${SCRIPT_DIR}/analyze_worklet_routes.py" "$route_root" --ranks "$PROCESS_COUNT" || route_failures=$((route_failures+1))
+    python3 "${SCRIPT_DIR}/analyze_worklet_routes.py" "$route_root" --ranks "$PROCESS_COUNT" --routes "${routes[@]}" || route_failures=$((route_failures+1))
     ((route_failures==0)) || exit 1
     exit 0
 fi
@@ -353,7 +362,7 @@ else
     [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
-((WORKLETS_PER_OWNER==0)) || markers+=("mesh_worklets_v1" "--worklets-per-owner" "--worklet-policy")
+((WORKLETS_PER_OWNER==0)) || markers+=("mesh_worklets_v1" "--worklets-per-owner" "--worklet-policy" "worklet_failure_v1")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || markers+=("deferred_pair_v1" "--deferred-global-ids")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
@@ -585,6 +594,9 @@ SIGNATURE
                 exec 9>&-;continue
             fi
             rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json"
+            if [[ -f "${out}/failure_reason.txt" ]]; then cp "${out}/failure_reason.txt" "${out}/previous_failure_reason.txt";fi
+            rm -f "${out}/failure_reason.txt" "${out}"/failure_rank_*.txt
+            export MESH_FAILURE_DIR="${out}"
             touch "${out}/RUNNING"
             args=("${common[@]}" --algorithm "${a}" --partition-seed "${seed}" --rank-shift "${rank_shift}"
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
@@ -594,7 +606,7 @@ SIGNATURE
                 args+=(--validate-volume)
                 [[ "$a" != sparse ]] || args+=(--verify-faces)
             fi
-            rc=0
+            rc=0;finalize_error=""
             timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
             rm -f "${out}/RUNNING"
             exec 9>&-
@@ -607,6 +619,21 @@ SIGNATURE
             fi
             if ((rc!=0)); then
                 failures=$((failures+1))
+                python3 - "$out" "$rc" "${finalize_error:-}" <<'FAILURE'
+from pathlib import Path
+import sys
+folder=Path(sys.argv[1]);reason=folder/'failure_reason.txt'
+if not reason.exists():
+    log=folder/'run.log'
+    tail=b''
+    if log.exists():
+        with log.open('rb') as stream:
+            stream.seek(max(0,log.stat().st_size-8192));tail=stream.read(8192)
+    reason.write_text('launcher_or_uninstrumented_failure\nexit_code='+sys.argv[2]+'\n'+
+        'finalization_error='+sys.argv[3][:2048]+'\nlog_tail:\n'+tail.decode('utf8',errors='replace'))
+with (folder.parents[1]/'FAILURE_SUMMARY.txt').open('a') as stream:
+    stream.write(str(folder)+'\n'+reason.read_text(errors='replace')[:12000]+'\n')
+FAILURE
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"
         done

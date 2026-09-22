@@ -58,6 +58,7 @@ def main():
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
         assert routes.analyze(root,2)
+        assert routes.analyze(root,2,['a_static'])
         path=root/'route_c_deferred/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original=path.read_text();changed=fixture('c_deferred',0);changed[1]['metrics']['quality_numbering_lo']+=1
         path.write_text(''.join(json.dumps(r)+'\n' for r in changed))
@@ -71,7 +72,9 @@ def main():
         except ValueError as e:assert 'return was not verified' in str(e)
         path.write_text(original)
         (path.parent/'SUCCESS').unlink()
+        (path.parent/'failure_reason.txt').write_text('stage=owner_merge\nreason=fixture original exception\n')
         assert not routes.analyze(root,2)
+        assert 'fixture original exception' in (root/'p2/route_issues.txt').read_text()
         # An eager collective must not silently creep into the deferred branch.
         bad=fixture('c_deferred',1);bad[0]['stages']['element_count_allgather']=dict(seconds=.1,calls=1)
         path=root/'bad.jsonl';path.write_text(''.join(json.dumps(r)+'\n' for r in bad))

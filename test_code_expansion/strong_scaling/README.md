@@ -1,4 +1,4 @@
-# 当前默认：固定归属负载均衡 A1/B1/C1
+# 当前默认：A1 静态路线故障定位
 
 `run_experiments.sh` 默认使用 `worklets` 预设。重编译后直接运行：
 
@@ -6,9 +6,13 @@
 bash run_experiments.sh
 ```
 
-一次提交 128/256 ranks 的六组对照：原分区参考、静态任务、动态任务、剩余工作量、同步关键性、延迟编号。
+20260922-154026 的 A/B 共同路径失败，尚无原始异常支持具体根因判断。
+本轮默认只提交 128/256 ranks 的静态任务路线，不修改调度策略或 C 的编号实现。
 各规模作业并行申请、统一延时启动；每组 natural/split、一次质量预热、三次正式重复。
-详细方案、实现边界和正确性要求见 [A/B/C 首轮说明](../docs/experiments/20260921_worklet_abc_pilot.md)。
+失败首先看每个运行目录的 `failure_reason.txt`，以及 `route_a_static/pN/FAILURE_SUMMARY.txt`。
+记录包含原始异常、rank、task、owner、executor、当前阶段及生成返回码；每个异常 rank 还保留独立文件。
+调试说明见 [静态故障定位](../docs/experiments/20260922_worklet_failure_diagnostics.md)。
+原方案见 [A/B/C 首轮说明](../docs/experiments/20260921_worklet_abc_pilot.md)。
 结果首先看根目录下 `p128/ROUTE_SUMMARY.txt` 和 `p256/ROUTE_SUMMARY.txt`。
 以下旧预设说明仅供显式选择对应历史实验。
 

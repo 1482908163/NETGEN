@@ -2,6 +2,7 @@
 #include "mesh_mpi_types.h"
 #include "task_schedule.h"
 #include "worklet_schedule.h"
+#include "worklet_failure.h"
 #include "scaling_profiler.h"
 #include "sparse_face_exchange.h"
 #include <climits>
@@ -180,7 +181,9 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
     const bool fixed=options().worklets();
     if(p<2 || (!fixed && (tasks<p-1 || tasks>ne)))protocol_error(MPI_COMM_WORLD,"任务数须在进程数减一与粗单元数之间");
     double local_mesh_seconds=0;
+    WorkletFailure failure;failure.rank=rank;
     try {
+        failure.stage="partition";
         std::vector<int> labels(ne),fixed_owner;
         {
             scaling::StageScope stage("metis_partition","compute");
@@ -198,6 +201,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                     }
                 }
                 for(auto &a:adjacency)std::sort(a.begin(),a.end());
+                failure.stage="split_worklets";
                 auto divided=split_worklets(original,adjacency,p,options().worklets_per_owner);
                 labels=std::move(divided.labels);fixed_owner=std::move(divided.owners);tasks=static_cast<int>(fixed_owner.size());
                 std::uint64_t signature=1469598103934665603ULL;
@@ -216,6 +220,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             if(!fixed)check_mpi(MPI_Bcast(labels.data(),ne,MPI_INT,0,MPI_COMM_WORLD),MPI_COMM_WORLD);
         }
         std::vector<int> home(tasks),owner(tasks),executor(tasks),node(p),cell_counts(tasks);std::vector<double> weight(tasks,1.);
+        failure.stage="node_topology";
         MPI_Comm shared;check_mpi(MPI_Comm_split_type(MPI_COMM_WORLD,MPI_COMM_TYPE_SHARED,rank,MPI_INFO_NULL,&shared),MPI_COMM_WORLD);
         int leader=rank;check_mpi(MPI_Allreduce(MPI_IN_PLACE,&leader,1,MPI_INT,MPI_MIN,shared),shared);
         check_mpi(MPI_Allgather(&leader,1,MPI_INT,node.data(),1,MPI_INT,MPI_COMM_WORLD),MPI_COMM_WORLD);
@@ -232,12 +237,15 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
         std::vector<std::map<int,xdMeshFaceInfo>> task_faces(tasks);
         std::vector<std::map<int,int>> dependencies(tasks);
         {
+            failure.stage="task_geometry";
             scaling::StageScope stage("task_geometry_setup","compute");bool update=true;
             for(int i=1;i<=ne;++i) {
                 int fids[4],orient[4],v[4],domain;
                 nglib::My_Ng_GetElement_Faces(coarse,i,fids,orient,update);update=false;
                 nglib::Ng_GetVolumeElement(coarse,i,v,domain);
-                const int t=labels[i-1];if(t<0 || t>=tasks)throw std::runtime_error("invalid task partition");
+                const int t=labels[i-1];failure.task=t;
+                failure.owner=fixed && t>=0 && t<tasks?owner[t]:-1;
+                if(t<0 || t>=tasks)throw std::runtime_error("invalid task partition");
                 for(int f=0;f<4;++f) {
                     fid_xdMeshFaceInfo record;ExtractSurfaceMesh(coarse,fids[f],t,v,&record,0,domain);
                     auto inserted=all.emplace(fids[f],record.mfi);
@@ -263,6 +271,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
         MPI_Comm queue;check_mpi(MPI_Comm_dup(MPI_COMM_WORLD,&queue),MPI_COMM_WORLD);
         constexpr int request_tag=10,reply_tag=11;
         if(rank==0) {
+            failure.stage="scheduler";failure.task=-1;failure.owner=-1;
             scaling::StageScope service("task_scheduler_service","scheduling");
             std::unique_ptr<TaskSchedule> legacy;
             std::unique_ptr<WorkletSchedule> worklets;
@@ -273,6 +282,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                 double done[6];MPI_Status status;
                 check_mpi(MPI_Recv(done,6,MPI_DOUBLE,MPI_ANY_SOURCE,request_tag,queue,&status),queue);
                 const int worker=status.MPI_SOURCE,t=static_cast<int>(done[0]);
+                failure.task=t;failure.executor=worker;failure.owner=fixed && t>=0 && t<tasks?owner[t]:-1;
                 if(t!=running[worker])throw std::runtime_error("task completion does not match assignment");
                 if(t>=0) {
                     if(done[1]<0 || !std::isfinite(done[1]) || done[2]<=0)throw std::runtime_error("invalid completed task");
@@ -306,18 +316,24 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                 }
                 profile.add_communication("task_dispatch",1,1,6*sizeof(double),sizeof(int));
                 if(t<0)break;
+                failure.task=t;failure.owner=fixed?owner[t]:-1;failure.executor=rank;
+                failure.status=-1;failure.final_illegal=-1;failure.stage="task_surface";
                 const double start=MPI_Wtime();std::unique_ptr<TaskMesh> task(new TaskMesh(t));NewSubmesh(coarse,task->mesh);
                 std::map<IntPair,int,IntPairCompare> edges;
                 {scaling::StageScope stage("part_face_create","compute");PartFaceCreate(coarse,t,task_faces[t],maxbarycoord,task->mesh,task->g2l,task->bary,task->faces);}
+                failure.stage="surface_refine";
                 {scaling::StageScope stage("surface_refine","compute");Refine(task->mesh,levels,t,task->faces,task->bary,edges);}
                 const double mesh_start=MPI_Wtime();
+                failure.stage="volume_generation";
                 {scaling::StageScope stage("local_volume_mesh","compute");nglib::Ng_Meshing_Parameters parameters;parameters.fineness=1;
                  double seconds[3]={},details[12]={};
                  const auto result=options().kernel_threads>0?nglib::Ng_GenerateVolumeMeshRepair(task->mesh,&parameters,options().kernel_threads,2,seconds,details):nglib::Ng_GenerateVolumeMesh(task->mesh,&parameters);
+                 failure.status=static_cast<int>(result);failure.final_illegal=details[11];
                  for(int k=0;k<3;++k)kernel_total[k]+=seconds[k];
                  for(int k=0;k<12;++k)detail_total[k]+=details[k];
                  if(result!=nglib::NG_OK || details[11]!=0)throw std::runtime_error("封闭子域体网格生成或修复失败");}
                 local_mesh_seconds+=MPI_Wtime()-mesh_start;
+                failure.stage="task_fingerprint";
                 const auto h=fixed?task_fingerprint(*task):fingerprint(task->mesh);
                 done[0]=t;done[1]=MPI_Wtime()-start;done[2]=nglib::Ng_GetNE(task->mesh);done[3]=nglib::Ng_GetNP(task->mesh);
                 done[4]=static_cast<double>(h>>32);done[5]=static_cast<double>(h&0xffffffffULL);
@@ -332,6 +348,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             for(int k=0;k<3;++k){profile.set_metric(std::string("kernel_team_")+team[k],team_after[k]-team_before[k]);profile.set_metric(std::string("kernel_")+phase[k]+"_seconds",kernel_total[k]);}
             for(int k=0;k<12;++k)profile.set_metric(std::string("kernel_")+details[k],detail_total[k]);
         }
+        failure.stage="completion_metadata";failure.task=-1;failure.owner=-1;failure.executor=-1;
         {scaling::StageScope wait("task_completion_wait","synchronization");
          check_mpi(MPI_Bcast(owner.data(),tasks,MPI_INT,0,queue),queue);
          if(fixed)check_mpi(MPI_Bcast(executor.data(),tasks,MPI_INT,0,queue),queue);
@@ -344,9 +361,11 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             for(auto &task:local)by_id[task->task]=std::move(task);
             local.clear();
             for(int t=0;t<tasks;++t) {
+                failure.stage="worklet_return";failure.task=t;failure.owner=owner[t];failure.executor=executor[t];
                 if(owner[t]!=fixed_owner[t])throw std::runtime_error("logical task owner changed");
                 if(executor[t]!=owner[t])return_task(by_id[t],t,executor[t],owner[t],rank,coarse,queue);
                 if(owner[t]==rank) {
+                    failure.stage="return_verification";
                     if(!by_id[t] || task_fingerprint(*by_id[t])!=hashes[t] || nglib::Ng_GetNE(by_id[t]->mesh)!=counts[t])
                         throw std::runtime_error("returned task fingerprint/count mismatch");
                     local.push_back(std::move(by_id[t]));
@@ -365,6 +384,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
         profile.set_metric("task_generated_elements_global",static_cast<double>(total));
         profile.set_metric("task_count",tasks);
         std::vector<idx_t> physical(ne);for(int i=0;i<ne;++i)physical[i]=owner[labels[i]];
+        failure.stage="owner_face_map";failure.task=-1;failure.owner=rank;failure.executor=-1;
         {scaling::StageScope stage("face_pipeline_total","algorithm");ExtractPartitionSurfaceMesh(coarse,physical.data(),facemap,nullptr);}
         profile.mark_elapsed("face_complete_elapsed");
         // 覆盖逐任务 PartFaceCreate 的最后一次局部计数，报告最终物理分区的面。
@@ -380,7 +400,9 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
         profile.set_metric("facemap_entries",facemap.size());
         {scaling::StageScope stage("task_merge","compute");
          std::sort(local.begin(),local.end(),[](const std::unique_ptr<TaskMesh> &a,const std::unique_ptr<TaskMesh> &b){return a->task<b->task;});
-         for(auto &task:local){append(*task,merged,parents,owner,rank,nglib::Ng_GetNFD(coarse),g2l,bary,faces);task.reset();}}
-    } catch(const std::exception &e){protocol_error(MPI_COMM_WORLD,e.what());}
+         for(auto &task:local){failure.stage="owner_merge";failure.task=task->task;failure.owner=rank;failure.executor=fixed?executor[task->task]:rank;
+             append(*task,merged,parents,owner,rank,nglib::Ng_GetNFD(coarse),g2l,bary,faces);task.reset();}}
+    } catch(const std::exception &e){failure.write(e.what());protocol_error(MPI_COMM_WORLD,e.what());}
+      catch(...){failure.write("non-std exception");protocol_error(MPI_COMM_WORLD,"non-std exception in task pipeline");}
     return local_mesh_seconds;
 }

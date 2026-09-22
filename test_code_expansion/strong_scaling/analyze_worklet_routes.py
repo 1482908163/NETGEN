@@ -11,9 +11,9 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'))
 
-def analyze(root,ranks):
+def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
-    for route in ROUTES:
+    for route in selected:
         folder=root/('route_'+route)/f'p{ranks}'
         try:
             plan=json.loads((folder/'plan.json').read_text());plans[route]=plan
@@ -27,7 +27,10 @@ def analyze(root,ranks):
                         for repeat in repeats:
                             directory=folder/stem/f'repeat_{repeat}'
                             try:
-                                if not (directory/'SUCCESS').is_file():raise ValueError('not successfully finalized')
+                                if not (directory/'SUCCESS').is_file():
+                                    failure=directory/'failure_reason.txt'
+                                    detail=failure.read_text(errors='replace')[:4096] if failure.exists() else 'failure_reason.txt missing'
+                                    raise ValueError('not successfully finalized: '+detail)
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
@@ -86,4 +89,5 @@ def analyze(root,ranks):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root',type=Path);parser.add_argument('--ranks',type=int,required=True)
-    args=parser.parse_args();raise SystemExit(0 if analyze(args.root,args.ranks) else 1)
+    parser.add_argument('--routes',nargs='+',choices=ROUTES,default=list(ROUTES))
+    args=parser.parse_args();raise SystemExit(0 if analyze(args.root,args.ranks,args.routes) else 1)
