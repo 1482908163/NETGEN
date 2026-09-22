@@ -1,0 +1,20 @@
+A1/B1/C1: 36 measured runs; 14 issues.
+A1/B1 use a reserved dispatcher, immutable ownership, and ordered result return.
+C1 overlaps fused global counts with neighbor IDs; it does not remove all global synchronization.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference -> a_static natural: -48.97% reduction; validated=False
+reference -> a_static split: -46.68% reduction; validated=False
+a_static -> a_dynamic natural: 23.59% reduction; validated=False
+a_static -> a_dynamic split: 26.08% reduction; validated=False
+a_dynamic -> b_remaining natural: 0.97% reduction; validated=False
+a_dynamic -> b_remaining split: -0.69% reduction; validated=False
+b_remaining -> b_critical natural: 0.29% reduction; validated=False
+b_remaining -> b_critical split: -1.27% reduction; validated=False
+reference -> c_deferred natural: 2.12% reduction; validated=True
+reference -> c_deferred split: -2.43% reduction; validated=True
+reference -> a_dynamic natural: -12.65% reduction; validated=False
+reference -> a_dynamic split: -11.79% reduction; validated=False
+reference -> b_remaining natural: -11.55% reduction; validated=False
+reference -> b_remaining split: -10.96% reduction; validated=False
+reference -> b_critical natural: -12.25% reduction; validated=False
+reference -> b_critical split: -12.37% reduction; validated=False

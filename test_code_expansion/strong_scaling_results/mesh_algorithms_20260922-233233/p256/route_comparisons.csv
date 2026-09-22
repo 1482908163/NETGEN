@@ -1,0 +1,17 @@
+control,candidate,contribution,algorithm,seed,timing,paired_count,paired_wins,control_seconds,candidate_seconds,paired_reduction_pct,validated,ownership_equal,task_mesh_equal,quality_pass,quality_issues,same_volume_fingerprint
+reference,a_static,decomposition,sparse,-1,natural,3,0,3.3672750929999893,4.146513531999972,-25.047351247105397,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,a_static,decomposition,sparse,-1,split,3,0,3.5421553490000406,4.142242032000013,-18.594390141179762,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+a_static,a_dynamic,execution_balance,sparse,-1,natural,3,3,4.146513531999972,3.8670850879998397,8.160262633054982,False,True,False,True,,True
+a_static,a_dynamic,execution_balance,sparse,-1,split,3,3,4.142242032000013,3.8665060609996544,6.656684203149377,False,True,False,True,,True
+a_dynamic,b_remaining,remaining_work,sparse,-1,natural,3,2,3.8670850879998397,3.8228098970002975,1.1449241480859795,False,True,False,True,,True
+a_dynamic,b_remaining,remaining_work,sparse,-1,split,3,1,3.8665060609996544,3.8934085139999297,-0.6957819947997157,False,True,False,True,,True
+b_remaining,b_critical,sync_criticality,sparse,-1,natural,3,1,3.8228098970002975,3.893270838999797,-2.111554215814837,False,True,False,True,,True
+b_remaining,b_critical,sync_criticality,sparse,-1,split,3,2,3.8934085139999297,3.7898208599999634,2.660590421669995,False,True,False,True,,True
+reference,c_deferred,deferred_numbering,sparse,-1,natural,3,2,3.3672750929999893,3.298790657000154,2.7357902650988253,True,,,True,,True
+reference,c_deferred,deferred_numbering,sparse,-1,split,3,2,3.5421553490000406,3.418792898999982,2.8839448848213323,True,,,True,,True
+reference,a_dynamic,end_to_end,sparse,-1,natural,3,0,3.3672750929999893,3.8670850879998397,-15.273350517472206,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,a_dynamic,end_to_end,sparse,-1,split,3,0,3.5421553490000406,3.8665060609996544,-11.308213433178715,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,b_remaining,end_to_end,sparse,-1,natural,3,0,3.3672750929999893,3.8228098970002975,-13.528291910194401,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,b_remaining,end_to_end,sparse,-1,split,3,0,3.5421553490000406,3.8934085139999297,-7.023041636789018,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,b_critical,end_to_end,sparse,-1,natural,3,0,3.3672750929999893,3.893270838999797,-14.756449951619533,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
+reference,b_critical,end_to_end,sparse,-1,split,3,0,3.5421553490000406,3.7898208599999634,-7.756868627386071,False,,,False,points_changed;elements_changed;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse,False
