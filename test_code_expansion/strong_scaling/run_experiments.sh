@@ -40,6 +40,8 @@ WORKLET_FACTOR="${WORKLET_FACTOR:-1}" # 先保留原分区，隔离额外切面�
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
 WORKLET_ROUTES="${WORKLET_ROUTES:-reference a_static a_dynamic b_remaining b_critical c_deferred}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
+WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
+export WORKLET_FACTORS
 DEFERRED_GLOBAL_IDS="${DEFERRED_GLOBAL_IDS:-0}"
 export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
@@ -231,6 +233,30 @@ if [[ "${MESH_EXPERIMENT_WORKER:-0}" != 1 ]]; then
 fi
 
 if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
+    if [[ "${WORKLET_FACTOR_SWEEP_DONE:-0}" != 1 ]]; then
+        sweep_root="${RUN_ROOT:?}";sweep_failures=0
+        read -r -a factors <<< "${WORKLET_FACTORS}"
+        ((${#factors[@]}>0)) || exit 2
+        declare -A seen_factors=()
+        for factor in "${factors[@]}"; do
+            [[ "$factor" =~ ^[1-9][0-9]*$ ]] && ((factor<=64)) || exit 2
+            [[ -z "${seen_factors[$factor]:-}" ]] || { echo "重复任务因子: $factor" >&2;exit 2; }
+            seen_factors[$factor]=1
+        done
+        mkdir -p "${sweep_root}/p${PROCESS_COUNT:?}"
+        sweep_summary="${sweep_root}/p${PROCESS_COUNT}/FACTOR_SUMMARY.txt"
+        : > "$sweep_summary"
+        for factor in "${factors[@]}"; do
+            rc=0
+            WORKLET_FACTOR_SWEEP_DONE=1 WORKLET_FACTOR="$factor" RUN_ROOT="${sweep_root}/factor_${factor}" \
+                bash "${SCRIPT_DIR}/run_experiments.sh" || rc=$?
+            printf '每分区任务因子=%s，退出码=%s，结果=factor_%s/p%s/ROUTE_SUMMARY.txt\n' \
+                "$factor" "$rc" "$factor" "$PROCESS_COUNT" >> "$sweep_summary"
+            ((rc==0)) || sweep_failures=$((sweep_failures+1))
+        done
+        ((sweep_failures==0)) || exit 1
+        exit 0
+    fi
     route_root="${RUN_ROOT:?}";route_failures=0
     read -r -a routes <<< "${WORKLET_ROUTES}"
     ((${#routes[@]}>0)) || exit 2

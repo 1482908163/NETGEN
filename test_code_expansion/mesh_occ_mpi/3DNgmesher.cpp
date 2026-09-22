@@ -1602,6 +1602,22 @@ GlobalId *com_barycoords(
 		"vertex_num_s", static_cast<double>(num_s));
 	scaling::Profiler::instance().set_metric(
 		"vertex_num_r", static_cast<double>(num_r));
+	// Resolve remote keys while the count collective is still in flight.
+	// Offsets and receive buffers are not touched until their respective waits.
+	std::vector<std::vector<int>> remote_local_ids;
+	if(deferred) {
+		scaling::StageScope stage("vertex_exchange_unpack","compute");
+		remote_local_ids.resize(num_r);
+		for(int r=0;r<num_r;++r) {
+			remote_local_ids[r].reserve(r_length[r]);
+			for(int k=0;k<r_length[r];++k) {
+				const auto found=baryc2locvrtxmap.find(r_data[r][k]);
+				if(found==baryc2locvrtxmap.end() || found->second<1 || found->second>numverts)
+					netgen_mpi_check(comm,MPI_ERR_OTHER,"invalid remote vertex key");
+				remote_local_ids[r].push_back(found->second);
+			}
+		}
+	}
 	if(deferred) {
 		{
 			scaling::StageScope stage("id_count_commit_wait","communication");
@@ -1622,12 +1638,16 @@ GlobalId *com_barycoords(
 		{
 			for (j = 0; j < r_length[i]; j++)
 			{
-				const auto found=baryc2locvrtxmap.find(r_data[i][j]);
-				if(found==baryc2locvrtxmap.end() || found->second<1 || found->second>numverts ||
-				   newgid[found->second]!=-1 || r_data[i][j].newgid<1 ||
+				if(deferred)locid=remote_local_ids[i][j];
+				else {
+					const auto found=baryc2locvrtxmap.find(r_data[i][j]);
+					if(found==baryc2locvrtxmap.end() || found->second<1 || found->second>numverts)
+						netgen_mpi_check(comm,MPI_ERR_OTHER,"invalid remote vertex key");
+					locid=found->second;
+				}
+				if(newgid[locid]!=-1 || r_data[i][j].newgid<1 ||
 				   r_data[i][j].newgid>globoffsets[src[i]+1]-globoffsets[src[i]])
 					netgen_mpi_check(comm,MPI_ERR_OTHER,"invalid remote owner-local vertex ID");
-				locid = found->second;
 				newgid[locid] = (r_data[i][j].newgid + globoffsets[src[i]]);
 			}
 		}

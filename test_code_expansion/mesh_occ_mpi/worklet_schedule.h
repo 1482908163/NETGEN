@@ -53,18 +53,21 @@ inline WorkletPartition split_worklets(const std::vector<int> &owners,
 }
 
 // A1/B1 reference dispatcher. Ownership is immutable; only execution moves.
-// Tier order is common to all dynamic policies: node, adjacent owner, global.
+// Tier order is common to all dynamic policies: owner, node, adjacent owner, global.
 // Rank zero is a dispatcher; static execution of owner zero uses worker one.
 class WorkletSchedule {
     std::vector<int> owner_,node_,executor_,state_;
     std::vector<double> weight_,start_;
     std::vector<std::set<int>> neighbors_;
+    std::vector<std::map<int,double>> boundary_;
+    std::vector<double> owner_seconds_,owner_weight_;
     double seconds_per_weight_=1.;bool observed_=false;
 public:
     WorkletSchedule(std::vector<int> owner,std::vector<int> node,
         const std::vector<std::map<int,int>> &edges,std::vector<double> weight)
         :owner_(std::move(owner)),node_(std::move(node)),executor_(owner_.size(),-1),
-         state_(owner_.size(),0),weight_(std::move(weight)),start_(owner_.size(),0),neighbors_(node_.size()) {
+         state_(owner_.size(),0),weight_(std::move(weight)),start_(owner_.size(),0),neighbors_(node_.size()),
+         boundary_(node_.size()),owner_seconds_(node_.size(),0.),owner_weight_(node_.size(),0.) {
         if(node_.size()<2 || owner_.empty() || edges.size()!=owner_.size() || weight_.size()!=owner_.size())
             throw std::runtime_error("invalid worklet schedule");
         for(std::size_t t=0;t<owner_.size();++t) {
@@ -74,13 +77,18 @@ public:
         for(std::size_t t=0;t<owner_.size();++t)for(const auto &e:edges[t]) {
             if(e.first<0 || e.first>=static_cast<int>(owner_.size()) || e.second<=0)
                 throw std::runtime_error("invalid worklet edge");
-            if(owner_[t]!=owner_[e.first])neighbors_[owner_[t]].insert(owner_[e.first]);
+            if(owner_[t]!=owner_[e.first]) {
+                neighbors_[owner_[t]].insert(owner_[e.first]);
+                boundary_[owner_[t]][owner_[e.first]]+=e.second;
+            }
         }
     }
     void complete(int t,int worker,double seconds) {
         if(t<0 || t>=static_cast<int>(owner_.size()) || state_[t]!=1 || executor_[t]!=worker ||
            seconds<0 || !std::isfinite(seconds))throw std::runtime_error("invalid worklet completion");
         state_[t]=2;
+        owner_seconds_[owner_[t]]+=std::max(seconds,1e-9);
+        owner_weight_[owner_[t]]+=weight_[t];
         const double sample=std::max(seconds,1e-9)/weight_[t];
         seconds_per_weight_=observed_?.8*seconds_per_weight_+.2*sample:sample;observed_=true;
     }
@@ -89,23 +97,31 @@ public:
            (policy!="static" && policy!="dynamic" && policy!="remaining" && policy!="critical"))
             throw std::runtime_error("invalid worklet claim");
         std::vector<double> remaining(node_.size(),0.);
+        if(policy=="remaining" || policy=="critical")
         for(std::size_t t=0;t<owner_.size();++t)if(state_[t]!=2) {
-            const double estimate=weight_[t]*seconds_per_weight_;
+            // One task-weight of global prior regularizes sparse owner observations.
+            const int home=owner_[t];
+            const double unit=(owner_seconds_[home]+weight_[t]*seconds_per_weight_)/
+                              (owner_weight_[home]+weight_[t]);
+            const double estimate=weight_[t]*unit;
             remaining[owner_[t]]+=state_[t]==0?estimate:std::max(.05*estimate,estimate-std::max(0.,now-start_[t]));
         }
-        int best=-1,best_tier=4;double best_score=-1.;
+        int best=-1,best_tier=5;double best_score=-1.;
         for(int t=0;t<static_cast<int>(owner_.size());++t)if(state_[t]==0) {
             const int home=owner_[t];
             if(policy=="static" && (home==0?1:home)!=worker)continue;
-            const int tier=policy=="static"?0:node_[home]==node_[worker]?0:neighbors_[worker].count(home)?1:2;
+            const int tier=policy=="static"?0:home==worker?0:node_[home]==node_[worker]?1:neighbors_[worker].count(home)?2:3;
             double score=weight_[t];
             if(policy=="remaining" || policy=="critical")score=remaining[home];
             if(policy=="critical" && !neighbors_[home].empty()) {
-                double next=std::numeric_limits<double>::max();
-                for(int n:neighbors_[home])next=std::min(next,remaining[n]);
-                // Negative neighbor slack estimates the next synchronization's
-                // blocker. This is a proxy, not a measured pipeline deadline.
-                score+=std::max(0.,remaining[home]-next);
+                double slack=0.,total=0.;
+                for(const auto &edge:boundary_[home]) {
+                    slack+=edge.second*std::max(0.,remaining[home]-remaining[edge.first]);
+                    total+=edge.second;
+                }
+                // Boundary-weighted predicted neighbor wait, not a measured deadline.
+                // A tiny fast neighbor no longer dominates the whole partition.
+                if(total>0)score+=slack/total;
             }
             if(tier<best_tier || (tier==best_tier && (score>best_score ||
                (score==best_score && (best<0 || weight_[t]>weight_[best]))))) {

@@ -31,20 +31,35 @@ int main() {
         }
     }
     // Completion feedback and in-flight work are included in remaining work.
-    WorkletSchedule s({0,0,1,2},{0,0,0},{{},{},{},{}},{10,3,2,1});
-    const int a=s.claim(1,"remaining",0);assert(a==0);
-    const int b=s.claim(2,"remaining",.1);assert(b==1);
-    s.complete(a,1,1);s.complete(b,2,.3);
-    try{s.complete(a,1,1);assert(false);}catch(const std::runtime_error &){}
+    WorkletSchedule s({0,0,1,2},{0,0,0,0,0},{{},{},{},{}},{10,3,2,1});
+    const int a=s.claim(3,"remaining",0);assert(a==0);
+    const int b=s.claim(4,"remaining",.1);assert(b==1);
+    s.complete(a,3,1);s.complete(b,4,.3);
+    try{s.complete(a,3,1);assert(false);}catch(const std::runtime_error &){}
     try{s.claim(0,"dynamic",0);assert(false);}catch(const std::runtime_error &){}
     try{s.claim(1,"unknown",0);assert(false);}catch(const std::runtime_error &){}
     try{split_worklets({0},{{}},2,4);assert(false);}catch(const std::runtime_error &){}
     try{split_worklets({0,1},{{2},{}},2,4);assert(false);}catch(const std::runtime_error &){}
     // Same topology/weights: criticality changes the choice, not the split.
     std::vector<std::map<int,int>> edges={{},{ {2,1} },{ {1,1} },{}};
-    WorkletSchedule remaining({0,1,2,3},{0,0,0,0},edges,{10,9,1,1});
-    WorkletSchedule critical({0,1,2,3},{0,0,0,0},edges,{10,9,1,1});
-    assert(remaining.claim(1,"remaining",0)==0);
-    assert(critical.claim(1,"critical",0)==1);
+    WorkletSchedule remaining({0,1,2,3},{0,0,0,0,0},edges,{10,9,1,1});
+    WorkletSchedule critical({0,1,2,3},{0,0,0,0,0},edges,{10,9,1,1});
+    assert(remaining.claim(4,"remaining",0)==0);
+    assert(critical.claim(4,"critical",0)==1);
+    // Avoid returning a neighbor's task while an owned task is available.
+    for(const char *policy:{"dynamic","remaining","critical"}) {
+        WorkletSchedule own({0,1,2},{0,0,0},{{},{},{}},{100,1,10});
+        assert(own.claim(1,policy,0)==1);
+    }
+    // A tiny boundary to a fast neighbor must not dominate weighted criticality.
+    std::vector<std::map<int,int>> weighted_edges={{},{{2,99},{3,1}},{{1,99}},{{1,1}}};
+    WorkletSchedule weighted({0,1,2,3},{0,0,0,0,0},weighted_edges,{10,9,8.9,.1});
+    assert(weighted.claim(4,"critical",0)==0);
+    // Completed owner samples affect its pending work, not every owner equally.
+    WorkletSchedule learned({0,0,1,1},{0,0,0},{{},{},{},{}},{20,2,10,3});
+    int owner1=learned.claim(1,"remaining",0);assert(owner1==2);
+    int owner0=learned.claim(2,"remaining",0);assert(owner0==0);
+    learned.complete(owner0,2,200);learned.complete(owner1,1,1);
+    assert(learned.claim(2,"remaining",100)==1); // Smaller but empirically slower owner's task.
     std::cout<<"worklet partition/scheduler tests passed\n";
 }
