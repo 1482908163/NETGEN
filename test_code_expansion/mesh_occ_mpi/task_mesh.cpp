@@ -331,7 +331,9 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                  failure.status=static_cast<int>(result);failure.final_illegal=details[11];
                  for(int k=0;k<3;++k)kernel_total[k]+=seconds[k];
                  for(int k=0;k<12;++k)detail_total[k]+=details[k];
-                 if(result!=nglib::NG_OK || details[11]!=0)throw std::runtime_error("封闭子域体网格生成或修复失败");}
+                 // 与参考路径一致：final_illegal 是 MarkIllegalElements 的诊断计数，
+                 // 不是 Ng_Result。保留计数，由完整 volume_audit 判断网格结构正确性。
+                 if(result!=nglib::NG_OK)throw std::runtime_error("封闭子域体网格生成或修复失败");}
                 local_mesh_seconds+=MPI_Wtime()-mesh_start;
                 failure.stage="task_fingerprint";
                 const auto h=fixed?task_fingerprint(*task):fingerprint(task->mesh);

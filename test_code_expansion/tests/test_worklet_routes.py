@@ -3,6 +3,7 @@
 import copy
 import json
 import sys
+import subprocess
 import tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -15,7 +16,7 @@ def fixture(route,repeat,mode='natural'):
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
-        kernel_scheduler='repair',kernel_threads='1',cost_model='none',balance_method='none',
+        kernel_scheduler='repair',kernel_threads='1',kernel_diagnostics='repair_v2',cost_model='none',balance_method='none',
         mesh_tasks='2' if worklet else '0',active_workers='1' if worklet else '2',
         global_numbering='deferred_pair_v1' if deferred else 'eager_v1')
     if worklet:meta.update(worklet_policy=route.split('_')[1],worklets_per_owner='1',
@@ -26,6 +27,11 @@ def fixture(route,repeat,mode='natural'):
         m=dict(core_seconds=1.,local_points_before_adjacency=4,
             local_volume_elements_before_adjacency=1,local_surface_elements_before_adjacency=4,
             kernel_generation_seconds=.1,kernel_repair_seconds=.1,kernel_optimization_seconds=.1)
+        for name in ('delaunay_seconds','front_seconds','domain_repair_seconds','repair_mark_seconds',
+                     'repair_split_seconds','repair_swap_seconds','repair_swap2_seconds',
+                     'repair_rounds','repair_candidates_total','repair_candidates_active','repair_fallbacks'):
+            m['kernel_'+name]=0
+        m['kernel_final_illegal']=187
         stages={s:dict(seconds=.1,calls=1) for s in profiles.COMPUTE}
         if worklet:
             k=0 if rank==0 else 2
@@ -59,6 +65,25 @@ def main():
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
         assert routes.analyze(root,2)
         assert routes.analyze(root,2,['a_static'])
+        # Positive kernel diagnostics must survive without bypassing the structural audit.
+        check=root/'diagnostic_audit';check.mkdir()
+        path=check/'rank_profiles.jsonl'
+        rows=fixture('a_static',0)
+        path.write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        result,_=profiles.inspect(path)
+        assert result['kernel_final_illegal']==374
+        command=[sys.executable,str(ROOT/'strong_scaling/analyze_results.py'),str(check),
+                 '--finish-run','--keep-artifacts']
+        assert subprocess.run(command,capture_output=True).returncode==0
+        assert (check/'SUCCESS').exists()
+        (check/'SUCCESS').unlink()
+        rows[0]['metrics']['quality_missing_surface']=1
+        rows[0]['metrics']['quality_hard_errors']=1
+        path.write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        failed=subprocess.run(command,capture_output=True,text=True)
+        assert failed.returncode!=0 and 'volume quality audit failed' in failed.stderr
+        assert not (check/'SUCCESS').exists()
+        assert not json.loads((check/'quality_summary.json').read_text())['structural_pass']
         path=root/'route_c_deferred/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original=path.read_text();changed=fixture('c_deferred',0);changed[1]['metrics']['quality_numbering_lo']+=1
         path.write_text(''.join(json.dumps(r)+'\n' for r in changed))
