@@ -1,20 +1,22 @@
-# 当前默认：A1 静态路线故障定位
+# 当前默认：A/B/C 同批次完整对照
 
-`run_experiments.sh` 默认使用 `worklets` 预设。重编译后直接运行：
+20260922-225844 的静态路径在 128/256 进程通过完整结构审计，已恢复六路线默认矩阵。
+更新并按原流程编译后，在本目录运行：
 
 ```bash
 bash run_experiments.sh
 ```
 
-20260922-154026 的 A/B 共同路径失败，尚无原始异常支持具体根因判断。
-本轮默认只提交 128/256 ranks 的静态任务路线，不修改调度策略或 C 的编号实现。
-各规模作业并行申请、统一延时启动；每组 natural/split、一次质量预热、三次正式重复。
-失败首先看每个运行目录的 `failure_reason.txt`，以及 `route_a_static/pN/FAILURE_SUMMARY.txt`。
-记录包含原始异常、rank、task、owner、executor、当前阶段及生成返回码；每个异常 rank 还保留独立文件。
-调试说明见 [静态故障定位](../docs/experiments/20260922_worklet_failure_diagnostics.md)。
-原方案见 [A/B/C 首轮说明](../docs/experiments/20260921_worklet_abc_pilot.md)。
-结果首先看根目录下 `p128/ROUTE_SUMMARY.txt` 和 `p256/ROUTE_SUMMARY.txt`。
-以下旧预设说明仅供显式选择对应历史实验。
+参考、静态任务、动态任务、剩余工作量、同步关键性、延迟编号六条路线均运行。
+各规模作业并行申请、统一延时启动；路线按重复轮交错，保留正常/拆分计时、质量预热和三次正式重复。
+统一配置区的 WORKLET_ROUTES 仍可选择子集；失败继续后续运行。
+
+先看 p128/ROUTE_SUMMARY.txt、p256/ROUTE_SUMMARY.txt 及 route_comparisons.csv。
+新增参考路径到三种动态策略的直接对照，防止仅胜过静态任务路径就宣称整体加速。
+所有对照保留质量门槛；任务调度之间还必须保持所有权及任务网格指纹一致。
+静态方案让进程 1 额外执行进程 0 的任务，其性能不能替代原参考路径作为唯一基准。
+失败查看对应运行的 failure_reason.txt 和路线内 FAILURE_SUMMARY.txt。
+本轮依据见 [静态验证与完整对照](../docs/experiments/20260922_worklet_static_pass.md)。
 
 # 两个瓶颈的算法实验（历史记录）
 

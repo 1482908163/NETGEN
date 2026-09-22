@@ -9,7 +9,9 @@ from analyze_results import inspect, profile_path, compare_quality, write_csv
 ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
-       ('reference','c_deferred','deferred_numbering'))
+       ('reference','c_deferred','deferred_numbering'),
+       ('reference','a_dynamic','end_to_end'),('reference','b_remaining','end_to_end'),
+       ('reference','b_critical','end_to_end'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -63,7 +65,7 @@ def analyze(root,ranks,selected=ROUTES):
                     ownership=all(a.get('ownership_signature')==b.get('ownership_signature') for a,b in pairs)
                     deterministic=all(a.get('task_signature')==b.get('task_signature') for a,b in pairs)
                     # reference -> static intentionally changes decomposition.
-                    schedule_pair=contribution not in ('decomposition','deferred_numbering')
+                    schedule_pair=contribution not in ('decomposition','deferred_numbering','end_to_end')
                     valid=gate['quality_pass'] and len(pairs)==plan['repeats'] and (not schedule_pair or (ownership and deterministic))
                     if not valid:errors.append(f'{control}/{candidate}/{algorithm}/{seed}/{mode}: comparison not validated ({gate["quality_issues"]}); ownership={ownership}, deterministic={deterministic}')
                     changes=[100*(1-b['core_seconds']/a['core_seconds']) for a,b in pairs]

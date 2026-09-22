@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Synthetic profiles test validation, pairing, missing runs and numbering drift."""
 import copy
+import csv
 import json
 import sys
 import subprocess
@@ -64,6 +65,11 @@ def main():
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
         assert routes.analyze(root,2)
+        comparisons=list(csv.DictReader((root/'p2/route_comparisons.csv').open()))
+        direct=[r for r in comparisons if r['contribution']=='end_to_end']
+        assert len(direct)==6
+        assert {r['candidate'] for r in direct}=={'a_dynamic','b_remaining','b_critical'}
+        assert all(r['control']=='reference' and r['validated']=='True' for r in direct)
         assert routes.analyze(root,2,['a_static'])
         # Positive kernel diagnostics must survive without bypassing the structural audit.
         check=root/'diagnostic_audit';check.mkdir()
