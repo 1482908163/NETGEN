@@ -1,0 +1,4 @@
+A1/B1/C1: 6 measured runs; 0 issues.
+A1/B1 use a reserved dispatcher, immutable ownership, and ordered result return.
+C1 overlaps fused global counts with neighbor IDs; it does not remove all global synchronization.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
