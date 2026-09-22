@@ -623,7 +623,7 @@ void PartFaceCreate(void *mesh, int belongNumberPartition, std::map<int, xdMeshF
 	std::map<int, int>::iterator itv;
 	int fid;
 	xdMeshFaceInfo finfo;
-	xdFace f;
+	xdFace f{};
 	int lsvrtx[3];
 	int pid;
 	double xyz[3];
@@ -737,7 +737,7 @@ void Refine(void *submesh, int numlevels, int belongNumberPartition, std::list<x
 	int v[3];
 	std::list<xdFace>::iterator li;
 	std::map<IntPair, int>::iterator ei;
-	xdFace f;
+	xdFace f{};
 	double vxyz[3][3];
 	double uxyz[3][3];
 	int listsize;
@@ -810,6 +810,7 @@ void Refine(void *submesh, int numlevels, int belongNumberPartition, std::list<x
 				f.lsvrtx[2] = u[(k + 2) % 3];
 				f.barycv[2] = ubarycv[(k + 2) % 3];
 				f.geoboundary = (*li).geoboundary;
+				f.outw = (*li).outw;
 				newfaces.push_back(f);
 			}
 			// interior triangle
@@ -820,6 +821,7 @@ void Refine(void *submesh, int numlevels, int belongNumberPartition, std::list<x
 			f.lsvrtx[2] = u[2];
 			f.barycv[2] = ubarycv[2];
 			f.geoboundary = (*li).geoboundary;
+			f.outw = (*li).outw;
 			newfaces.push_back(f);
 			li = newfaces.erase(li);
 		}
@@ -918,7 +920,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 	int u[3];
 	std::list<xdFace>::iterator li;
 	std::map<IntPair, int>::iterator ei;
-	xdFace f;
+	xdFace f{};
 	double vxyz[3][3];
 	double uxyz[3][3];
 	int listsize;
@@ -986,6 +988,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 			f.lsvrtx[2] = u[(k + 2) % 3];
 			f.barycv[2] = ubarycv[(k + 2) % 3];
 			f.geoboundary = (*li).geoboundary;
+			f.outw = (*li).outw;
 			newfaces.push_back(f);
 		}
 		// Ng_ AddSurfaceElement ((nglib::Ng_ Mesh*) submesh, nglib::NG TRIG,f. lsvrtx);
@@ -997,6 +1000,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 		f.lsvrtx[2] = u[2];
 		f.barycv[2] = ubarycv[2];
 		f.geoboundary = (*li).geoboundary;
+		f.outw = (*li).outw;
 		newfaces.push_back(f);
 		li = newfaces.erase(li);
 	}

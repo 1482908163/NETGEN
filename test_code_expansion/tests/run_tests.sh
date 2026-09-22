@@ -28,3 +28,4 @@ for p in ${TEST_PROCESS_COUNTS}; do
 done
 python3 "${ROOT}/tests/test_runner.py"
 python3 "${ROOT}/tests/test_worklet_routes.py"
+python3 "${ROOT}/tests/test_refine_orientation.py"

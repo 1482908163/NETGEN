@@ -36,7 +36,7 @@ default_threads=0;default_scheduler=static
 KERNEL_THREADS="${KERNEL_THREADS:-${default_threads}}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-${default_scheduler}}"
 WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
-WORKLET_FACTOR="${WORKLET_FACTOR:-4}"
+WORKLET_FACTOR="${WORKLET_FACTOR:-1}" # 先保留原分区，隔离额外切面带来的网格变化。
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
 WORKLET_ROUTES="${WORKLET_ROUTES:-reference a_static a_dynamic b_remaining b_critical c_deferred}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
