@@ -1,0 +1,20 @@
+A1/B1/C1: 72 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+C1 overlaps fused global counts with neighbor IDs; it does not remove all global synchronization.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference -> c_deferred natural: 0.27% reduction; wins=3/6; validated=True
+reference -> c_deferred split: 2.37% reduction; wins=5/6; validated=True
+reference -> a_fixed natural: -16.49% reduction; wins=0/6; validated=True
+reference -> a_fixed split: -10.95% reduction; wins=1/6; validated=True
+a_fixed -> a_window natural: 11.04% reduction; wins=6/6; validated=True
+a_fixed -> a_window split: 6.64% reduction; wins=4/6; validated=True
+a_window -> b_window natural: -0.25% reduction; wins=2/6; validated=True
+a_window -> b_window split: 2.14% reduction; wins=4/6; validated=True
+reference -> a_window natural: -7.42% reduction; wins=1/6; validated=True
+reference -> a_window split: -6.54% reduction; wins=1/6; validated=True
+reference -> b_window natural: -7.01% reduction; wins=1/6; validated=True
+reference -> b_window split: -5.77% reduction; wins=2/6; validated=True
+reference -> c_fused natural: 1.84% reduction; wins=5/6; validated=True
+reference -> c_fused split: 3.68% reduction; wins=5/6; validated=True
+c_fused -> c_deferred natural: -2.95% reduction; wins=2/6; validated=True
+c_fused -> c_deferred split: 1.78% reduction; wins=4/6; validated=True
