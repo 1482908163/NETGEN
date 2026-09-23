@@ -1,0 +1,17 @@
+control,candidate,contribution,algorithm,seed,timing,paired_count,paired_wins,control_seconds,candidate_seconds,paired_reduction_pct,validated,ownership_equal,task_mesh_equal,quality_pass,quality_issues,same_volume_fingerprint
+reference,a_static,decomposition,sparse,-1,natural,3,0,3.336175882000134,3.591322366999975,-7.647872714878368,True,,,True,,True
+reference,a_static,decomposition,sparse,-1,split,3,0,3.3409559550000267,3.649687171000096,-9.03824178404966,True,,,True,,True
+a_static,a_dynamic,execution_balance,sparse,-1,natural,3,1,3.591322366999975,3.6926820230000885,-4.120291454486691,True,True,True,True,,True
+a_static,a_dynamic,execution_balance,sparse,-1,split,3,1,3.649687171000096,3.6620155759997033,-0.962284864025098,True,True,True,True,,True
+a_dynamic,b_remaining,remaining_work,sparse,-1,natural,3,1,3.6926820230000885,3.6791349619998073,-4.771408935779142,True,True,True,True,,True
+a_dynamic,b_remaining,remaining_work,sparse,-1,split,3,0,3.6620155759997033,3.735681913999997,-0.23370189455111934,True,True,True,True,,True
+b_remaining,b_critical,sync_criticality,sparse,-1,natural,3,2,3.6791349619998073,3.705450133999875,2.8573470961441916,True,True,True,True,,True
+b_remaining,b_critical,sync_criticality,sparse,-1,split,3,1,3.735681913999997,3.8048146999999517,-0.25130534834008067,True,True,True,True,,True
+reference,c_deferred,deferred_numbering,sparse,-1,natural,3,1,3.336175882000134,3.374520083999869,-2.564834919572734,True,,,True,,True
+reference,c_deferred,deferred_numbering,sparse,-1,split,3,2,3.3409559550000267,3.2405689809997966,2.1211624212878033,True,,,True,,True
+reference,a_dynamic,end_to_end,sparse,-1,natural,3,0,3.336175882000134,3.6926820230000885,-5.727356912798087,True,,,True,,True
+reference,a_dynamic,end_to_end,sparse,-1,split,3,0,3.3409559550000267,3.6620155759997033,-10.087500280736661,True,,,True,,True
+reference,b_remaining,end_to_end,sparse,-1,natural,3,0,3.336175882000134,3.6791349619998073,-10.856685543200385,True,,,True,,True
+reference,b_remaining,end_to_end,sparse,-1,split,3,0,3.3409559550000267,3.735681913999997,-12.833334346528247,True,,,True,,True
+reference,b_critical,end_to_end,sparse,-1,natural,3,0,3.336175882000134,3.705450133999875,-7.1289234264579004,True,,,True,,True
+reference,b_critical,end_to_end,sparse,-1,split,3,0,3.3409559550000267,3.8048146999999517,-12.682001490453798,True,,,True,,True
