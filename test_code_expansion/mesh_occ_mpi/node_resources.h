@@ -75,6 +75,7 @@ class NodeResources {
     double work_checks=0,work_unknown=0,work_short=0,work_cost=0,work_deferred=0;
     double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
     double work_gain_estimate=0,work_restart_estimate=0,work_net_gain_estimate=0;
+    double work_competition_checks=0,work_shared_grants=0,work_unreserved_cores=0;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -138,12 +139,12 @@ class NodeResources {
     };
     PhaseStats phase_stats[phases];
     bool protected_base() const { return mode>=2; }
-    bool work_policy() const { return mode==5 || mode==6 || mode==13 || mode==14; }
+    bool work_policy() const { return mode==5 || mode==6 || mode==13 || mode==14 || mode==15; }
     bool work_eligible(const RankState &r,int extra,double stamp) const {
         if(!r.active || r.done || r.phase!=6 || r.work_granted || r.remaining<2 || r.last_operation<=0) return false;
         // A stale peer observation must not reserve the queue indefinitely.
         if(stamp-r.progress_time>std::max(.05,4*r.last_operation)) return false;
-        if(mode==13 || mode==14) return window_net_gain(r.threads,extra,r.remaining,r.last_operation,r.restart_cost)>0;
+        if(mode==13 || mode==14 || mode==15) return window_net_gain(r.threads,extra,r.remaining,r.last_operation,r.restart_cost)>0;
         double gain=r.last_operation*r.remaining*extra/(r.threads+extra);
         return gain>2*std::max(.001,r.restart_cost)+.005;
     }
@@ -385,7 +386,7 @@ public:
             fail_errno("删除POSIX共享内存名称失败");
         MPI_Barrier(node);
         node_leader=shared->leader_world;
-        live=true;setup=now()-start;
+        live=true;
         if(me==0) for(int r=0;r<size;++r) {
             const auto layout=std::string("node_coop_v2_layout: leader_world_rank=")+std::to_string(world_rank)+
                 " local_rank="+std::to_string(r)+" pool="+mask_text(total)+" home="+mask_text(masks[r]);
@@ -396,6 +397,8 @@ public:
                      <<" shared_state=posix_shm"
                      <<" affinity_layout="<<(shared_pool?"shared_pool":"disjoint")
                      <<" node_ranks="<<size<<" node_cpus="<<shared->cpus<<" home_cpus="<<base<<std::endl;
+        // Include layout output: it executes inside the measured setup stage.
+        setup=now()-start;
     }
 
     NodeResources(const NodeResources&)=delete;
@@ -446,18 +449,35 @@ public:
                 double candidate=mode==14?window_net_gain(peer.threads,extra,peer.remaining,peer.last_operation,peer.restart_cost):peer.work*peer.remaining/peer.threads;
                 if(candidate>score || (candidate==score && i<winner)) {winner=i;score=candidate;}
             }
-            if(winner!=me) ++work_deferred;
+            if(mode==15) {
+                std::vector<WindowDemand> peers(size);int candidates=0;const int capacity=extra;
+                for(int i=0;i<size;++i) {
+                    const auto &peer=shared->rank[i];
+                    if(work_eligible(peer,extra,stamp)) {
+                        peers[i]={peer.threads,peer.remaining,peer.last_operation,
+                                  peer.restart_cost,std::max(0.,stamp-peer.progress_time)};
+                        candidates+=peers[i].gain(extra)>0;
+                    }
+                }
+                extra=window_tail_allocation(peers,extra)[me];
+                if(candidates>1) ++work_competition_checks;
+                if(extra && extra<capacity) {++work_shared_grants;work_unreserved_cores+=capacity-extra;}
+            }
+            if(winner!=me || !extra) ++work_deferred;
             else {
                 // Reserve before stopping workers: another claimant cannot consume
                 // the selected cores in the release/acquire gap.
-                for(int c=0;c<shared->cpus;++c)
-                    if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done)
-                        shared->reserved[c]=me+1;
+                int reserved=0;
+                for(int c=0;c<shared->cpus && reserved<extra;++c)
+                    if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) {
+                        shared->reserved[c]=me+1;++reserved;
+                    }
+                if(reserved!=extra) fail("尾部借核预留数不一致");
                 r.work_granted=1;checkpoint_old_threads=r.threads;
                 ++checkpoint_restarts;++work_grants;work_reserved+=extra;
                 work_gain_estimate+=last*remaining*extra/(r.threads+extra);
                 work_restart_estimate+=restart;
-                if(mode==13 || mode==14)work_net_gain_estimate+=window_net_gain(r.threads,extra,remaining,last,restart);
+                if(mode==13 || mode==14 || mode==15)work_net_gain_estimate+=window_net_gain(r.threads,extra,remaining,last,restart);
                 grant=true;
             }
         }
@@ -663,6 +683,9 @@ public:
         p.set_metric("coop_checkpoint_grants",checkpoint_grants);
         p.set_metric("coop_checkpoint_seconds",checkpoint_seconds);
         p.set_metric("coop_work_net_gain_estimate_seconds",work_net_gain_estimate);
+        p.set_metric("coop_work_competition_checks",work_competition_checks);
+        p.set_metric("coop_work_shared_grants",work_shared_grants);
+        p.set_metric("coop_work_unreserved_cores",work_unreserved_cores);
         const char *work_names[]={"checks","unknown","short","cost","deferred","no_capacity",
                                   "grants","reserved_cores","already","gain_estimate_seconds","restart_estimate_seconds"};
         const double work_values[]={work_checks,work_unknown,work_short,work_cost,work_deferred,work_no_capacity,

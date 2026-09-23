@@ -13,21 +13,21 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
-    worklet=route in ('a_static','a_dynamic','b_remaining','b_critical');deferred=route in ('c_deferred','c_fused')
-    scheduler={'a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority'}.get(route,'repair')
+    worklet=route in ('a_static','a_dynamic','b_remaining','b_critical');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
+    scheduler={'a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
         kernel_scheduler=scheduler,kernel_threads='1',kernel_diagnostics='repair_v2',cost_model='none',balance_method='none',
         mesh_tasks='2' if worklet else '0',active_workers='1' if worklet else '2',
-        global_numbering='fused_pair_v1' if route=='c_fused' else 'deferred_pair_v1' if deferred else 'eager_v1')
+        global_numbering='fused_pair_v1' if route in ('c_fused','a_fused','b_fused') else 'deferred_pair_v1' if deferred else 'eager_v1')
     if worklet:meta.update(worklet_policy=route.split('_')[1],worklets_per_owner='1',
         task_mesh_signature='1234',worklet_ownership_signature='abcd')
     if repeat==0:meta.update(mesh_quality='volume_audit_v1',quality_face_reference='allgather')
     if scheduler.startswith('node_'):
         meta['node_resources']='node_coop_v2'
-        if route!='a_fixed':
-            meta.update(node_checkpoints='node_work_v1',node_work_policy='net_window_v2' if route=='a_window' else 'net_priority_v2')
+        if scheduler in ('node_window','node_window_priority','node_window_balanced'):
+            meta.update(node_checkpoints='node_work_v1',node_work_policy={'node_window':'net_window_v2','node_window_priority':'net_priority_v2','node_window_balanced':'tail_share_v3'}[scheduler])
     rows=[]
     for rank in range(2):
         m=dict(core_seconds=1.,local_points_before_adjacency=4,
@@ -50,6 +50,7 @@ def fixture(route,repeat,mode='natural'):
                          'leased_core_seconds','phase_seconds','peak_threads','model_decisions','model_rejections',
                          'cold_decisions','node_ranks','node_cpus'):
                 m['coop_'+name]=0
+            m.update(coop_work_competition_checks=0,coop_work_shared_grants=0,coop_work_unreserved_cores=0)
             m.update(coop_peak_threads=1,coop_node_ranks=2,coop_node_cpus=2,coop_work_net_gain_estimate_seconds=0)
             for phase in range(8):
                 for name in ('epochs','seconds','core_seconds','borrowed_core_seconds','below_base_epochs','min_threads','max_threads'):
@@ -84,8 +85,8 @@ def main():
         assert routes.analyze(root,2)
         comparisons=list(csv.DictReader((root/'p2/route_comparisons.csv').open()))
         direct=[r for r in comparisons if r['contribution']=='end_to_end']
-        assert len(direct)==10
-        assert {r['candidate'] for r in direct}=={'a_dynamic','b_remaining','b_critical','a_window','b_window'}
+        assert len(direct)==16
+        assert {r['candidate'] for r in direct}=={'a_dynamic','b_remaining','b_critical','a_window','b_window','b_balanced','a_fused','b_fused'}
         assert all(r['control']=='reference' and r['validated']=='True' for r in direct)
         assert routes.analyze(root,2,['a_static'])
         misplaced=root/'route_a_window/p2/sparse_natural/repeat_1/rank_profiles.jsonl'
@@ -94,6 +95,18 @@ def main():
         assert not routes.analyze(root,2,['reference','a_fixed','a_window','b_window','c_fused','c_deferred'])
         assert 'route kernel scheduler mismatch' in (root/'p2/route_issues.txt').read_text()
         misplaced.write_text(saved)
+        # Joint routes must validate BOTH scheduling and numbering, not directory names.
+        misplaced=root/'route_b_fused/p2/sparse_natural/repeat_1/rank_profiles.jsonl'
+        saved=misplaced.read_text()
+        for wrong,reason in [('b_balanced','route numbering mismatch'),('a_fused','route kernel scheduler mismatch')]:
+            misplaced.write_text(''.join(json.dumps(r)+'\n' for r in fixture(wrong,1)))
+            assert not routes.analyze(root,2)
+            assert reason in (root/'p2/route_issues.txt').read_text()
+        misplaced.write_text(saved)
+        bad=fixture('b_balanced',1);bad[0]['metrics']['coop_work_shared_grants']=1
+        invalid=root/'bad_tail.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
+        try:profiles.inspect(invalid);assert False
+        except ValueError as e:assert 'tail allocation diagnostics' in str(e)
         # Positive kernel diagnostics must survive without bypassing the structural audit.
         check=root/'diagnostic_audit';check.mkdir()
         path=check/'rank_profiles.jsonl'

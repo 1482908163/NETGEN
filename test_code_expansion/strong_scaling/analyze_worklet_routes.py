@@ -6,7 +6,7 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
@@ -15,7 +15,13 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('reference','a_fixed','resource_setup'),('a_fixed','a_window','window_borrowing'),
        ('a_window','b_window','net_priority'),('reference','a_window','end_to_end'),
        ('reference','b_window','end_to_end'),('reference','c_fused','count_fusion'),
-       ('c_fused','c_deferred','count_overlap'))
+       ('c_fused','c_deferred','count_overlap'),
+       ('reference','a_native','affinity_and_setup'),('a_native','a_fixed','grouped_lifecycle'),
+       ('a_window','b_balanced','tail_allocation'),('b_window','b_balanced','priority_vs_tail'),
+       ('reference','b_balanced','end_to_end'),
+       ('a_window','a_fused','fusion_on_a'),('b_balanced','b_fused','fusion_on_b'),
+       ('c_fused','a_fused','a_on_fusion'),('a_fused','b_fused','tail_on_fusion'),
+       ('reference','a_fused','end_to_end'),('reference','b_fused','end_to_end'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -40,10 +46,12 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
-                                expected={'a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority'}.get(route)
+                                expected={'a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
+                                          'b_window':'node_window_priority','b_balanced':'node_window_balanced',
+                                          'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
                                 if expected and run.get('kernel_scheduler')!=expected:
                                     raise ValueError('route kernel scheduler mismatch')
-                                numbering={'c_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route)
+                                numbering={'c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route,'eager_v1')
                                 if numbering and run.get('global_numbering')!=numbering:
                                     raise ValueError('route numbering mismatch')
                                 if repeat==0:
@@ -92,7 +100,7 @@ def analyze(root,ranks,selected=ROUTES):
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
-           'C1 overlaps fused global counts with neighbor IDs; it does not remove all global synchronization.',
+           'C fusion combines counts; optional deferred numbering also overlaps neighbor IDs. Neither removes all global synchronization.',
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     (out/'ROUTE_SUMMARY.txt').write_text('\n'.join(lines)+'\n')

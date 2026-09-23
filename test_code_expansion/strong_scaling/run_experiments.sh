@@ -40,7 +40,7 @@ WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
 WORKLET_FACTOR="${WORKLET_FACTOR:-1}" # 先保留原分区，隔离额外切面带来的网格变化。
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
 default_routes="reference a_static a_dynamic b_remaining b_critical c_deferred"
-[[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_fixed a_window b_window c_fused c_deferred"
+[[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_native a_fixed a_window b_balanced c_fused a_fused b_fused"
 WORKLET_ROUTES="${WORKLET_ROUTES:-${default_routes}}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
 WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
@@ -88,7 +88,7 @@ case "${EXPERIMENT_PRESET}" in
         default_tasks=0;default_process_counts="128 256"
         default_levels=2;default_refines=2;default_verify_faces=0
         default_algorithms="sparse";default_timings="natural split";default_repeats=3
-        [[ "${EXPERIMENT_PRESET}" != inplace ]] || default_repeats=6
+        [[ "${EXPERIMENT_PRESET}" != inplace ]] || default_repeats=8
         ;;
     kernel|cooperate)
         default_tasks=0
@@ -272,7 +272,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_window|b_window|c_fused) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -289,7 +289,11 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 b_critical) factor="$WORKLET_FACTOR";policy=critical ;;
                 c_deferred) deferred=1 ;;
                 c_fused) fused=1 ;;
+                a_native) scheduler=node_native ;;
                 a_fixed) scheduler=node_fixed ;;
+                b_balanced) scheduler=node_window_balanced ;;
+                a_fused) scheduler=node_window;fused=1 ;;
+                b_fused) scheduler=node_window_balanced;fused=1 ;;
                 a_window) scheduler=node_window ;;
                 b_window) scheduler=node_window_priority ;;
             esac
@@ -409,8 +413,9 @@ fi
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
 [[ "${KERNEL_SCHEDULER}" != node_window ]] || markers+=("net_window_v2")
 [[ "${KERNEL_SCHEDULER}" != node_window_priority ]] || markers+=("net_priority_v2")
+[[ "${KERNEL_SCHEDULER}" != node_window_balanced ]] || markers+=("tail_share_v3")
 [[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
-[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority && "${KERNEL_SCHEDULER}" != node_window && "${KERNEL_SCHEDULER}" != node_window_priority ]] || markers+=("node_work_v1")
+[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority && "${KERNEL_SCHEDULER}" != node_window && "${KERNEL_SCHEDULER}" != node_window_priority && "${KERNEL_SCHEDULER}" != node_window_balanced ]] || markers+=("node_work_v1")
 [[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
 [[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")

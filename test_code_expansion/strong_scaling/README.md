@@ -1,22 +1,21 @@
-# 当前默认：保留原生成域的 A/B/C 完整对照
+# 当前默认：节点尾部分配与 A/B/C 组合验证
 
-默认 EXPERIMENT_PRESET=inplace，停止额外切分原分区。
-A 测剩余窗口足以覆盖重建成本时的节点内借核，B 测同一条件下的净收益优先分配，C 分别测试阻塞计数融合和非阻塞重叠。
-复用已有借核与内核接口，尚无本轮集群收益结论。
+默认 `EXPERIMENT_PRESET=inplace`，保留原生成域。上一批 A 借核优于固定协作路径，但整体收益受固定路径成本抵消；C 阻塞计数融合较有希望，组合收益尚待验证。
+本轮增加相同绑核布局的原内核对照，B 按预计节点尾部计算核份额，并测试 A+C、B+C。
 
-按原流程重新编译后，在本目录执行：
+更新研究分支、重新执行 `test_code_expansion/build_project.sh` 后，在本目录执行：
 
 ```bash
 bash run_experiments.sh
 ```
 
-默认六路线：reference、a_fixed、a_window、b_window、c_fused、c_deferred。
-128/256 进程，每节点 4 进程、每进程 4 核；一次质量预热，六次正式重复，正常/拆分计时。
-各规模作业并行申请并统一延时启动，六路线轮换运行位置，失败继续。正式运行量与上一批相同。
+默认八路线：`reference a_native a_fixed a_window b_balanced c_fused a_fused b_fused`。
+128/256 进程，每节点 4 进程、每进程 4 核；一次质量预热，八次正式重复，正常/拆分计时。
+各规模作业并行申请并统一延时启动，路线循环轮换位置，失败继续。正式运行共 **256 次**，上一批为 144 次。
+旧 `b_window` 和 `c_deferred` 保留可显式选择；原质量门槛保持。
 
-先看 p128/ROUTE_SUMMARY.txt、p256/ROUTE_SUMMARY.txt，再看 route_comparisons.csv 中的质量门槛、配对胜出次数和变化范围。
-本预设不产生默认粒度目录。历史双粒度方案可将 EXPERIMENT_PRESET 改回 worklets 复现。
-详情及局限见 [本轮设计](../docs/experiments/20260923_inplace_abc.md)。
+先看 `p128/ROUTE_SUMMARY.txt`、`p256/ROUTE_SUMMARY.txt`，再看 `route_comparisons.csv` 中的质量门槛、配对胜出次数和变化范围。
+详情、旧结果依据、额外运行量和验证局限见 [本轮设计](../docs/experiments/20260923_tail_share_joint.md)。
 
 # 两个瓶颈的算法实验（历史记录）
 
