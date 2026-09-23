@@ -1,0 +1,32 @@
+A1/B1/C1: 128 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+C fusion combines counts; optional deferred numbering also overlaps neighbor IDs. Neither removes all global synchronization.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference -> a_fixed natural: -14.81% reduction; wins=0/8; validated=True
+reference -> a_fixed split: -17.49% reduction; wins=0/8; validated=True
+a_fixed -> a_window natural: 9.28% reduction; wins=8/8; validated=True
+a_fixed -> a_window split: 9.09% reduction; wins=8/8; validated=True
+reference -> a_window natural: -0.39% reduction; wins=4/8; validated=True
+reference -> a_window split: -6.05% reduction; wins=2/8; validated=True
+reference -> c_fused natural: 2.35% reduction; wins=5/8; validated=True
+reference -> c_fused split: -1.27% reduction; wins=3/8; validated=True
+reference -> a_native natural: -12.89% reduction; wins=0/8; validated=True
+reference -> a_native split: -15.51% reduction; wins=0/8; validated=True
+a_native -> a_fixed natural: -0.80% reduction; wins=3/8; validated=True
+a_native -> a_fixed split: -1.35% reduction; wins=2/8; validated=True
+a_window -> b_balanced natural: 0.07% reduction; wins=4/8; validated=True
+a_window -> b_balanced split: -4.09% reduction; wins=3/8; validated=True
+reference -> b_balanced natural: -6.69% reduction; wins=3/8; validated=True
+reference -> b_balanced split: -6.92% reduction; wins=1/8; validated=True
+a_window -> a_fused natural: -0.86% reduction; wins=4/8; validated=True
+a_window -> a_fused split: -3.67% reduction; wins=1/8; validated=True
+b_balanced -> b_fused natural: 1.27% reduction; wins=5/8; validated=True
+b_balanced -> b_fused split: 2.64% reduction; wins=6/8; validated=True
+c_fused -> a_fused natural: -8.30% reduction; wins=3/8; validated=True
+c_fused -> a_fused split: -8.19% reduction; wins=0/8; validated=True
+a_fused -> b_fused natural: 0.11% reduction; wins=4/8; validated=True
+a_fused -> b_fused split: 2.85% reduction; wins=6/8; validated=True
+reference -> a_fused natural: -4.59% reduction; wins=1/8; validated=True
+reference -> a_fused split: -8.07% reduction; wins=1/8; validated=True
+reference -> b_fused natural: -6.35% reduction; wins=2/8; validated=True
+reference -> b_fused split: -5.50% reduction; wins=2/8; validated=True
