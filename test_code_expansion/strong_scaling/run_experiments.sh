@@ -15,15 +15,16 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
+#   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   worklets   : 128/256 ranks，A/B/C 独立对照，质量预热 + 3 次正式重复
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-worklets}"
-# 默认沿负载均衡主线比较固定归属任务、关键性调度和延迟编号。
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+# 默认保留原生成域，比较受限借核、净收益分配和计数融合/重叠。
 # boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
 default_stage=communication
 [[ "${EXPERIMENT_PRESET}" != kernel && "${EXPERIMENT_PRESET}" != cooperate ]] || default_stage=kernel
-[[ "${EXPERIMENT_PRESET}" != worklets ]] || default_stage=routes
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace ]] || default_stage=routes
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
@@ -32,22 +33,26 @@ KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
 default_threads=0;default_scheduler=static
-[[ "${EXPERIMENT_PRESET}" != worklets ]] || { default_threads=4;default_scheduler=repair; }
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace ]] || { default_threads=4;default_scheduler=repair; }
 KERNEL_THREADS="${KERNEL_THREADS:-${default_threads}}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-${default_scheduler}}"
 WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
 WORKLET_FACTOR="${WORKLET_FACTOR:-1}" # 先保留原分区，隔离额外切面带来的网格变化。
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
-WORKLET_ROUTES="${WORKLET_ROUTES:-reference a_static a_dynamic b_remaining b_critical c_deferred}" # 静态审计已通过，恢复同批次完整对照。
+default_routes="reference a_static a_dynamic b_remaining b_critical c_deferred"
+[[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_fixed a_window b_window c_fused c_deferred"
+WORKLET_ROUTES="${WORKLET_ROUTES:-${default_routes}}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
 WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
 export WORKLET_FACTORS
 DEFERRED_GLOBAL_IDS="${DEFERRED_GLOBAL_IDS:-0}"
+FUSED_GLOBAL_IDS="${FUSED_GLOBAL_IDS:-0}"
+export FUSED_GLOBAL_IDS
 export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_cpus=4;default_rpn=4; }
-[[ "${EXPERIMENT_PRESET}" != worklets ]] || { default_cpus=4;default_rpn=4; }
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace ]] || { default_cpus=4;default_rpn=4; }
 CPUS_PER_TASK="${CPUS_PER_TASK:-${default_cpus}}"
 export CPUS_PER_TASK KERNEL_THREADS KERNEL_SCHEDULER KERNEL_THREAD_COUNTS KERNEL_SCHEDULERS
 BALANCE_METHOD="${BALANCE_METHOD:-none}"
@@ -79,10 +84,11 @@ case "${EXPERIMENT_STAGE}" in
     *) echo "EXPERIMENT_STAGE must be routes, kernel, communication, calibration, evaluation or legacy" >&2; exit 2 ;;
 esac
 case "${EXPERIMENT_PRESET}" in
-    worklets)
+    worklets|inplace)
         default_tasks=0;default_process_counts="128 256"
         default_levels=2;default_refines=2;default_verify_faces=0
         default_algorithms="sparse";default_timings="natural split";default_repeats=3
+        [[ "${EXPERIMENT_PRESET}" != inplace ]] || default_repeats=6
         ;;
     kernel|cooperate)
         default_tasks=0
@@ -146,7 +152,7 @@ VERIFY_FACES="${VERIFY_FACES:-${default_verify_faces}}"
 # 全量质量审计只占用自然计时的 repeat_0，不混入正式测量。
 default_final_validation=0
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_final_validation=1
-[[ "${EXPERIMENT_PRESET}" != worklets ]] || default_final_validation=1
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace ]] || default_final_validation=1
 QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
 COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
 export QUALITY_WARMUP COMMUNICATION_ABLATION
@@ -168,7 +174,7 @@ PARTITION="${PARTITION:-mt_module}"
 SBATCH_COMMAND="${SBATCH_COMMAND:-yhbatch}"
 SBATCH_EXTRA_ARGS="${SBATCH_EXTRA_ARGS:-}"
 default_launcher=yhrun
-[[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_launcher="${SCRIPT_DIR}/node_affinity_yhrun.sh"
+[[ "${EXPERIMENT_PRESET}" != cooperate && "${EXPERIMENT_PRESET}" != inplace ]] || default_launcher="${SCRIPT_DIR}/node_affinity_yhrun.sh"
 MPI_LAUNCHER="${MPI_LAUNCHER:-${default_launcher}}"
 MPI_EXTRA_ARGS="${MPI_EXTRA_ARGS:---mpi=pmix}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -183,12 +189,16 @@ export PARTITION_SEEDS SEARCH_SECONDS
 [[ "${CPUS_PER_TASK}" =~ ^[1-9][0-9]*$ && "${KERNEL_THREADS}" =~ ^[0-9]+$ ]] || exit 2
 (( KERNEL_THREADS<=CPUS_PER_TASK )) || { echo "内核线程数超过每进程预留核数。" >&2;exit 2; }
 [[ "${WORKLETS_PER_OWNER}" =~ ^[0-9]+$ && "${WORKLET_FACTOR}" =~ ^[1-9][0-9]*$ &&
-   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ ]] || exit 2
+   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ && "${FUSED_GLOBAL_IDS}" =~ ^[01]$ ]] || exit 2
 (( WORKLETS_PER_OWNER<=64 && WORKLET_FACTOR<=64 )) || exit 2
 [[ "$WORKLET_POLICY" == static || "$WORKLET_POLICY" == dynamic || "$WORKLET_POLICY" == remaining || "$WORKLET_POLICY" == critical ]] || exit 2
 if [[ "$EXPERIMENT_STAGE" == routes ]] || (( WORKLETS_PER_OWNER>0 )); then
     [[ "$KERNEL_SCHEDULER" == repair && "$BALANCE_METHOD" == none && "$QUALITY_WARMUP" == 1 ]] &&
         (( KERNEL_THREADS>0 )) || { echo "Worklet suite requires parallel repair and quality warmup." >&2;exit 2; }
+fi
+if [[ "${EXPERIMENT_PRESET}" == inplace ]]; then
+    ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2 && KERNEL_THREADS==CPUS_PER_TASK)) || exit 2
+    for count in ${PROCESS_COUNTS}; do ((count>=RANKS_PER_NODE && count%RANKS_PER_NODE==0)) || exit 2;done
 fi
 if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
     for threads in ${KERNEL_THREAD_COUNTS}; do
@@ -233,7 +243,7 @@ if [[ "${MESH_EXPERIMENT_WORKER:-0}" != 1 ]]; then
 fi
 
 if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
-    if [[ "${WORKLET_FACTOR_SWEEP_DONE:-0}" != 1 ]]; then
+    if [[ "${WORKLET_FACTOR_SWEEP_DONE:-0}" != 1 && "${EXPERIMENT_PRESET}" != inplace ]]; then
         sweep_root="${RUN_ROOT:?}";sweep_failures=0
         read -r -a factors <<< "${WORKLET_FACTORS}"
         ((${#factors[@]}>0)) || exit 2
@@ -262,7 +272,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_window|b_window|c_fused) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -271,16 +281,20 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     for ((rr=1-WARMUPS;rr<=REPEATS;++rr)); do
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
-            factor=0;policy=static;deferred=0
+            factor=0;policy=static;deferred=0;fused=0;scheduler=repair
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
                 b_remaining) factor="$WORKLET_FACTOR";policy=remaining ;;
                 b_critical) factor="$WORKLET_FACTOR";policy=critical ;;
                 c_deferred) deferred=1 ;;
+                c_fused) fused=1 ;;
+                a_fixed) scheduler=node_fixed ;;
+                a_window) scheduler=node_window ;;
+                b_window) scheduler=node_window_priority ;;
             esac
             if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" \
-                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" \
+                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh"; then route_failures=$((route_failures+1));fi
         done
     done
@@ -389,11 +403,14 @@ else
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
 ((WORKLETS_PER_OWNER==0)) || markers+=("mesh_worklets_v1" "--worklets-per-owner" "--worklet-policy" "worklet_failure_v1")
+[[ "$FUSED_GLOBAL_IDS" == 0 ]] || markers+=("fused_pair_v1" "--fused-global-ids")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || markers+=("deferred_pair_v1" "--deferred-global-ids")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
+[[ "${KERNEL_SCHEDULER}" != node_window ]] || markers+=("net_window_v2")
+[[ "${KERNEL_SCHEDULER}" != node_window_priority ]] || markers+=("net_priority_v2")
 [[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
-[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority ]] || markers+=("node_work_v1")
+[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority && "${KERNEL_SCHEDULER}" != node_window && "${KERNEL_SCHEDULER}" != node_window_priority ]] || markers+=("node_work_v1")
 [[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
 [[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")
@@ -480,6 +497,7 @@ fi
 if ((KERNEL_THREADS>0)); then
     common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
 fi
+[[ "$FUSED_GLOBAL_IDS" == 0 ]] || common+=(--fused-global-ids)
 ((WORKLETS_PER_OWNER==0)) || common+=(--worklets-per-owner "$WORKLETS_PER_OWNER" --worklet-policy "$WORKLET_POLICY")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || common+=(--deferred-global-ids)
 if [[ "${BALANCE_METHOD}" == task_queue ]]; then

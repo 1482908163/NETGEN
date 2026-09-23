@@ -1,7 +1,8 @@
-# 当前默认：A/B/C 联合迭代，双粒度完整对照
+# 当前默认：保留原生成域的 A/B/C 完整对照
 
-本轮同时改进所有者优先领取、分区成本反馈和边界加权关键性、全局编号查找与计数重叠。
-尚未有本轮集群性能结果，质量及任务指纹门槛保留。
+默认 EXPERIMENT_PRESET=inplace，停止额外切分原分区。
+A 测剩余窗口足以覆盖重建成本时的节点内借核，B 测同一条件下的净收益优先分配，C 分别测试阻塞计数融合和非阻塞重叠。
+复用已有借核与内核接口，尚无本轮集群收益结论。
 
 按原流程重新编译后，在本目录执行：
 
@@ -9,15 +10,13 @@
 bash run_experiments.sh
 ```
 
-统一配置区 WORKLET_FACTORS 默认 "1 2"：每分区 1 个、2 个任务分别运行六路线。
-保持 128/256 进程、质量预热、正常/拆分计时及三次正式重复；各规模作业并行申请并统一延时启动。
-同一作业内两种粒度依次运行，路线交错，失败继续；本轮运行量为上一轮的两倍。
-需要子集时直接编辑 WORKLET_FACTORS 和 WORKLET_ROUTES。
+默认六路线：reference、a_fixed、a_window、b_window、c_fused、c_deferred。
+128/256 进程，每节点 4 进程、每进程 4 核；一次质量预热，六次正式重复，正常/拆分计时。
+各规模作业并行申请并统一延时启动，六路线轮换运行位置，失败继续。正式运行量与上一批相同。
 
-先看 p128/FACTOR_SUMMARY.txt、p256/FACTOR_SUMMARY.txt，再看 factor_1、factor_2 内各 pN 的 ROUTE_SUMMARY.txt 和 route_comparisons.csv。
-两种粒度独立比较，不混合统计；每组保留原参考路径的直接对照。
-因子 2 可能仍产生网格质量退化，报告不会因此自动放宽通过条件。
-本轮设计和边界见 [联合迭代说明](../docs/experiments/20260922_abc_joint_iteration.md)。
+先看 p128/ROUTE_SUMMARY.txt、p256/ROUTE_SUMMARY.txt，再看 route_comparisons.csv 中的质量门槛、配对胜出次数和变化范围。
+本预设不产生默认粒度目录。历史双粒度方案可将 EXPERIMENT_PRESET 改回 worklets 复现。
+详情及局限见 [本轮设计](../docs/experiments/20260923_inplace_abc.md)。
 
 # 两个瓶颈的算法实验（历史记录）
 

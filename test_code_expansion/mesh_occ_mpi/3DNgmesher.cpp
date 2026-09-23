@@ -1487,8 +1487,11 @@ GlobalId *com_barycoords(
 		// on global offsets. Keep both collective buffers alive through Wait.
 		ProfileCollectiveArrivalWait("id_count_pre_collective_wait",comm);
 		scaling::StageScope stage("id_count_begin","communication");
-		netgen_mpi_check(comm,MPI_Iallgather(local_pair,2,MPI_INT64_T,count_pairs.data(),2,
-		    MPI_INT64_T,comm,&count_request),"id_count/Iallgather");
+		if(mesh_research::options().overlap_global_ids)
+			netgen_mpi_check(comm,MPI_Iallgather(local_pair,2,MPI_INT64_T,count_pairs.data(),2,
+			    MPI_INT64_T,comm,&count_request),"id_count/Iallgather");
+		else netgen_mpi_check(comm,MPI_Allgather(local_pair,2,MPI_INT64_T,count_pairs.data(),2,
+		    MPI_INT64_T,comm),"id_count/fused_Allgather");
 		scaling::Profiler::instance().add_communication("id_count_begin",1,1,
 		    static_cast<std::uint64_t>(numprocs-1)*2*sizeof(GlobalCount),
 		    static_cast<std::uint64_t>(numprocs-1)*2*sizeof(GlobalCount));

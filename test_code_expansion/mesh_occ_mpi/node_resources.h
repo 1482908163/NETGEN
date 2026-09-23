@@ -1,5 +1,6 @@
 #ifndef NETGEN_NODE_RESOURCES_H
 #define NETGEN_NODE_RESOURCES_H
+#include "node_window_policy.h"
 // Linux node-local, non-preemptive CPU leases. No mesh pointers cross processes.
 #include <mpi.h>
 #include <pthread.h>
@@ -73,7 +74,7 @@ class NodeResources {
     double checkpoint_checks=0,checkpoint_restarts=0,checkpoint_grants=0,checkpoint_seconds=0;
     double work_checks=0,work_unknown=0,work_short=0,work_cost=0,work_deferred=0;
     double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
-    double work_gain_estimate=0,work_restart_estimate=0;
+    double work_gain_estimate=0,work_restart_estimate=0,work_net_gain_estimate=0;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -137,11 +138,12 @@ class NodeResources {
     };
     PhaseStats phase_stats[phases];
     bool protected_base() const { return mode>=2; }
-    bool work_policy() const { return mode==5 || mode==6; }
+    bool work_policy() const { return mode==5 || mode==6 || mode==13 || mode==14; }
     bool work_eligible(const RankState &r,int extra,double stamp) const {
         if(!r.active || r.done || r.phase!=6 || r.work_granted || r.remaining<2 || r.last_operation<=0) return false;
         // A stale peer observation must not reserve the queue indefinitely.
         if(stamp-r.progress_time>std::max(.05,4*r.last_operation)) return false;
+        if(mode==13 || mode==14) return window_net_gain(r.threads,extra,r.remaining,r.last_operation,r.restart_cost)>0;
         double gain=r.last_operation*r.remaining*extra/(r.threads+extra);
         return gain>2*std::max(.001,r.restart_cost)+.005;
     }
@@ -437,11 +439,11 @@ public:
         else if(!extra) ++work_no_capacity;
         else if(!work_eligible(r,extra,stamp)) ++work_cost;
         else {
-            int winner=me;double score=work*remaining/r.threads;
-            if(mode==6) for(int i=0;i<size;++i) {
+            int winner=me;double score=mode==14?window_net_gain(r.threads,extra,remaining,last,restart):work*remaining/r.threads;
+            if(mode==6 || mode==14) for(int i=0;i<size;++i) {
                 const auto &peer=shared->rank[i];
                 if(!work_eligible(peer,extra,stamp)) continue;
-                double candidate=peer.work*peer.remaining/peer.threads;
+                double candidate=mode==14?window_net_gain(peer.threads,extra,peer.remaining,peer.last_operation,peer.restart_cost):peer.work*peer.remaining/peer.threads;
                 if(candidate>score || (candidate==score && i<winner)) {winner=i;score=candidate;}
             }
             if(winner!=me) ++work_deferred;
@@ -454,7 +456,9 @@ public:
                 r.work_granted=1;checkpoint_old_threads=r.threads;
                 ++checkpoint_restarts;++work_grants;work_reserved+=extra;
                 work_gain_estimate+=last*remaining*extra/(r.threads+extra);
-                work_restart_estimate+=restart;grant=true;
+                work_restart_estimate+=restart;
+                if(mode==13 || mode==14)work_net_gain_estimate+=window_net_gain(r.threads,extra,remaining,last,restart);
+                grant=true;
             }
         }
         unlock();checkpoint_seconds+=now()-stamp;return grant?1:0;
@@ -658,6 +662,7 @@ public:
         p.set_metric("coop_checkpoint_restarts",checkpoint_restarts);
         p.set_metric("coop_checkpoint_grants",checkpoint_grants);
         p.set_metric("coop_checkpoint_seconds",checkpoint_seconds);
+        p.set_metric("coop_work_net_gain_estimate_seconds",work_net_gain_estimate);
         const char *work_names[]={"checks","unknown","short","cost","deferred","no_capacity",
                                   "grants","reserved_cores","already","gain_estimate_seconds","restart_estimate_seconds"};
         const double work_values[]={work_checks,work_unknown,work_short,work_cost,work_deferred,work_no_capacity,
@@ -698,3 +703,4 @@ public:
 };
 }
 #endif
+

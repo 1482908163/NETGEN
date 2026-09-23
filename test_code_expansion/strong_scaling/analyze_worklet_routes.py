@@ -6,12 +6,16 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
        ('reference','a_dynamic','end_to_end'),('reference','b_remaining','end_to_end'),
-       ('reference','b_critical','end_to_end'))
+       ('reference','b_critical','end_to_end'),
+       ('reference','a_fixed','resource_setup'),('a_fixed','a_window','window_borrowing'),
+       ('a_window','b_window','net_priority'),('reference','a_window','end_to_end'),
+       ('reference','b_window','end_to_end'),('reference','c_fused','count_fusion'),
+       ('c_fused','c_deferred','count_overlap'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -36,6 +40,12 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
+                                expected={'a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority'}.get(route)
+                                if expected and run.get('kernel_scheduler')!=expected:
+                                    raise ValueError('route kernel scheduler mismatch')
+                                numbering={'c_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route)
+                                if numbering and run.get('global_numbering')!=numbering:
+                                    raise ValueError('route numbering mismatch')
                                 if repeat==0:
                                     q=run['mesh_quality'];qualities[route,algorithm,seed]=q
                                     if not q['structural_pass']:raise ValueError('mesh structural audit failed')
@@ -65,7 +75,7 @@ def analyze(root,ranks,selected=ROUTES):
                     ownership=all(a.get('ownership_signature')==b.get('ownership_signature') for a,b in pairs)
                     deterministic=all(a.get('task_signature')==b.get('task_signature') for a,b in pairs)
                     # reference -> static intentionally changes decomposition.
-                    schedule_pair=contribution not in ('decomposition','deferred_numbering','end_to_end')
+                    schedule_pair=control in ('a_static','a_dynamic','b_remaining') and candidate in ('a_dynamic','b_remaining','b_critical')
                     valid=gate['quality_pass'] and len(pairs)==plan['repeats'] and (not schedule_pair or (ownership and deterministic))
                     if not valid:errors.append(f'{control}/{candidate}/{algorithm}/{seed}/{mode}: comparison not validated ({gate["quality_issues"]}); ownership={ownership}, deterministic={deterministic}')
                     changes=[100*(1-b['core_seconds']/a['core_seconds']) for a,b in pairs]
@@ -73,7 +83,7 @@ def analyze(root,ranks,selected=ROUTES):
                         seed=seed,timing=mode,paired_count=len(pairs),paired_wins=sum(x>0 for x in changes),
                         control_seconds=st.median(a['core_seconds'] for a,b in pairs),
                         candidate_seconds=st.median(b['core_seconds'] for a,b in pairs),
-                        paired_reduction_pct=st.median(changes),validated=valid,
+                        paired_reduction_pct=st.median(changes),paired_min_pct=min(changes),paired_max_pct=max(changes),validated=valid,
                         ownership_equal=ownership if schedule_pair else None,
                         task_mesh_equal=deterministic if schedule_pair else None,**gate))
     out=root/f'p{ranks}';out.mkdir(parents=True,exist_ok=True)
@@ -81,10 +91,10 @@ def analyze(root,ranks,selected=ROUTES):
         (out/name).write_text('');write_csv(out/name,data)
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
-           'A1/B1 use a reserved dispatcher, immutable ownership, and ordered result return.',
+           'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
            'C1 overlaps fused global counts with neighbor IDs; it does not remove all global synchronization.',
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
-    lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; validated={r["validated"]}' for r in comparisons)
+    lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     (out/'ROUTE_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
     print(lines[0]);return not errors
 
