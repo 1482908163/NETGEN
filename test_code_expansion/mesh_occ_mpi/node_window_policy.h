@@ -13,6 +13,11 @@ inline double window_net_gain(int threads,int extra,int remaining,double last,do
     return std::max(0.,.5*ideal-2*std::max(.001,restart)-.005);
 }
 
+// A later lease requires a new donor completion, and is bounded to two grants.
+inline bool window_grant_allowed(int grants,int generation,int last_generation,bool repeat) {
+    return grants==0 || (repeat && grants==1 && generation>last_generation);
+}
+
 struct WindowDemand {
     int threads=0,remaining=0;
     double last=0,restart=0,age=0;

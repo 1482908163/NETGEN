@@ -41,11 +41,11 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic/node_window/node_window_priority/node_window_balanced内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic/node_window/node_window_priority/node_window_balanced/node_window_repeat内核策略" << endl <<
          "--communication-only : 固定原分区、禁用历史均衡模型；可显式启用 worklets" << endl <<
          "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
          "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
-         "--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠" << endl <<
+         "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
          "--cost-weights <a,b,c,d> : 四阶段代价权重，默认1,1,1,1" << endl <<
@@ -187,6 +187,11 @@ int main(int argc, char **argv) {
         }
         else if(!strcmp(argv[i],"--validate-volume")) {
             validate_volume = true;
+        }
+        else if(!strcmp(argv[i],"--prefix-global-ids")) {
+            mesh_research::options().prefix_global_ids = true;
+            mesh_research::options().deferred_global_ids = true;
+            mesh_research::options().overlap_global_ids = false;
         }
         else if(!strcmp(argv[i],"--fused-global-ids")) {
             mesh_research::options().deferred_global_ids = true;
@@ -331,7 +336,7 @@ int main(int argc, char **argv) {
     const bool node_cooperative=research.kernel_scheduler=="node_original" ||
         research.kernel_scheduler=="node_native" ||
         research.kernel_scheduler=="node_fixed" ||
-        research.kernel_scheduler=="node_elastic" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced";
+        research.kernel_scheduler=="node_elastic" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced" || research.kernel_scheduler=="node_window_repeat";
     if((research.worklets() && (!research.communication_only || research.mesh_tasks>0 || p<2 ||
         research.kernel_threads<1 || research.kernel_scheduler!="repair")) ||
        (research.worklet_policy!="static" && research.worklet_policy!="dynamic" && research.worklet_policy!="remaining" && research.worklet_policy!="critical") ||
@@ -417,6 +422,7 @@ int main(int argc, char **argv) {
     auto &profiler = scaling::Profiler::instance();
     profiler.configure(MPI_COMM_WORLD, profile_config);
     profiler.add_metadata("global_id_bits", "64");
+    profiler.add_metadata("node_cpu_bind",node_cooperative?(std::getenv("NODE_CPU_BIND")?std::getenv("NODE_CPU_BIND"):"none"):"cores");
     profiler.add_metadata("local_index_bits", "32");
 
     std::ostringstream command_line;
@@ -437,7 +443,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("feature_schema", research.worklets()?"mesh_worklets_v1":research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
-    profiler.add_metadata("global_numbering",research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
+    profiler.add_metadata("global_numbering",research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
@@ -450,9 +456,9 @@ int main(int argc, char **argv) {
     if(research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
         profiler.add_metadata("node_checkpoints","node_atomic_v1");
     if(research.kernel_scheduler=="node_tail") profiler.add_metadata("node_checkpoints","node_tail_v1");
-    if(research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced") {
+    if(research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced" || research.kernel_scheduler=="node_window_repeat") {
         profiler.add_metadata("node_checkpoints","node_work_v1");
-        profiler.add_metadata("node_work_policy",research.kernel_scheduler=="node_window_balanced"?"tail_share_v3":research.kernel_scheduler=="node_window_priority"?"net_priority_v2":research.kernel_scheduler=="node_window"?"net_window_v2":research.kernel_scheduler=="node_priority"?"remaining_priority":"arrival_gate");
+        profiler.add_metadata("node_work_policy",research.kernel_scheduler=="node_window_repeat"?"tail_repeat_v4":research.kernel_scheduler=="node_window_balanced"?"tail_share_v3":research.kernel_scheduler=="node_window_priority"?"net_priority_v2":research.kernel_scheduler=="node_window"?"net_window_v2":research.kernel_scheduler=="node_priority"?"remaining_priority":"arrival_gate");
     }
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
@@ -711,7 +717,7 @@ int main(int argc, char **argv) {
         scaling::StageScope setup("node_resource_setup","compute");
         node_resources.reset(new mesh_node::NodeResources(
             MPI_COMM_WORLD,research.kernel_threads,
-            research.kernel_scheduler=="node_window_balanced"?15:research.kernel_scheduler=="node_window_priority"?14:research.kernel_scheduler=="node_window"?13:research.kernel_scheduler=="node_elastic"?8:0));
+            research.kernel_scheduler=="node_window_repeat"?16:research.kernel_scheduler=="node_window_balanced"?15:research.kernel_scheduler=="node_window_priority"?14:research.kernel_scheduler=="node_window"?13:research.kernel_scheduler=="node_elastic"?8:0));
     }
     double Coarse_Time = (double)(Coarse_endTime - startTime);
 
@@ -837,7 +843,7 @@ int main(int argc, char **argv) {
                    research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeStages(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_callback,research.kernel_scheduler=="node_reclaim",kernel_seconds,kernel_details)
-                    : research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced"
+                    : research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" || research.kernel_scheduler=="node_window" || research.kernel_scheduler=="node_window_priority" || research.kernel_scheduler=="node_window_balanced" || research.kernel_scheduler=="node_window_repeat"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeWorkAware(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_work_callback,kernel_seconds,kernel_details)
                     : (research.kernel_scheduler=="node_tail" || research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")

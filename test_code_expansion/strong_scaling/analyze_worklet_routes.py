@@ -6,7 +6,7 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
@@ -21,7 +21,14 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('reference','b_balanced','end_to_end'),
        ('a_window','a_fused','fusion_on_a'),('b_balanced','b_fused','fusion_on_b'),
        ('c_fused','a_fused','a_on_fusion'),('a_fused','b_fused','tail_on_fusion'),
-       ('reference','a_fused','end_to_end'),('reference','b_fused','end_to_end'))
+       ('reference','a_fused','end_to_end'),('reference','b_fused','end_to_end'),
+       ('a_window','a_bound','startup_affinity'),('a_bound','b_bound','bound_tail_share'),
+       ('b_bound','b_repeat','second_donor'),('c_fused','c_prefix','distributed_prefix'),
+       ('b_repeat','b_prefix','prefix_on_b'),('c_prefix','b_prefix','b_on_prefix'),
+       ('a_bound','a_prefix','prefix_on_a'),('a_prefix','b_prefix','b_on_a_prefix'),
+       ('reference','a_bound','end_to_end'),('reference','b_bound','end_to_end'),
+       ('reference','b_repeat','end_to_end'),('reference','c_prefix','end_to_end'),
+       ('reference','a_prefix','end_to_end'),('reference','b_prefix','end_to_end'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -46,14 +53,17 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
-                                expected={'a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
+                                expected={'a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
                                           'b_window':'node_window_priority','b_balanced':'node_window_balanced',
                                           'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
                                 if expected and run.get('kernel_scheduler')!=expected:
                                     raise ValueError('route kernel scheduler mismatch')
-                                numbering={'c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route,'eager_v1')
+                                numbering={'c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route,'eager_v1')
                                 if numbering and run.get('global_numbering')!=numbering:
                                     raise ValueError('route numbering mismatch')
+                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix'):
+                                    if run.get('node_cpu_bind')!='cores' or run.get('node_affinity_layout')!='disjoint':
+                                        raise ValueError('bound route lacks verified disjoint startup affinity')
                                 if repeat==0:
                                     q=run['mesh_quality'];qualities[route,algorithm,seed]=q
                                     if not q['structural_pass']:raise ValueError('mesh structural audit failed')
@@ -100,7 +110,7 @@ def analyze(root,ranks,selected=ROUTES):
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
-           'C fusion combines counts; optional deferred numbering also overlaps neighbor IDs. Neither removes all global synchronization.',
+           'C compares fused counts with prefix scans plus neighbor offsets; global synchronization remains.',
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     (out/'ROUTE_SUMMARY.txt').write_text('\n'.join(lines)+'\n')

@@ -16,9 +16,12 @@ REAL_YHRUN="${REAL_YHRUN:-$(command -v yhrun)}"
 nodes=$(( (PROCESS_COUNT + RANKS_PER_NODE - 1) / RANKS_PER_NODE ))
 cpu_bind=cores
 case "${KERNEL_SCHEDULER:-static}" in
-    node_window|node_window_priority|node_window_balanced|node_original|node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model|node_tail|node_budget|node_priority|node_reserved|node_elastic|node_stage|node_reclaim|node_selective|node_once) cpu_bind=none ;;
+    node_window|node_window_priority|node_window_balanced|node_window_repeat|node_original|node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model|node_tail|node_budget|node_priority|node_reserved|node_elastic|node_stage|node_reclaim|node_selective|node_once) cpu_bind="${NODE_CPU_BIND:-none}" ;;
 esac
 
+[[ "$cpu_bind" == cores || "$cpu_bind" == none ]] || { echo "Invalid NODE_CPU_BIND" >&2;exit 2; }
+# cores preserves launcher placement from process startup, including first-touch
+# allocations. NodeResources validates disjoint home masks before any borrowing.
 # run_experiments.sh already passes -n PROCESS_COUNT in "$@". Do not add a
 # second -n here. Extract --profile-dir so failures always leave a small,
 # Git-friendly diagnostic text file in the run directory.

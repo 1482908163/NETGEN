@@ -40,14 +40,16 @@ WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
 WORKLET_FACTOR="${WORKLET_FACTOR:-1}" # 先保留原分区，隔离额外切面带来的网格变化。
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
 default_routes="reference a_static a_dynamic b_remaining b_critical c_deferred"
-[[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_native a_fixed a_window b_balanced c_fused a_fused b_fused"
+[[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_window a_bound b_bound b_repeat c_fused c_prefix b_prefix"
 WORKLET_ROUTES="${WORKLET_ROUTES:-${default_routes}}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
 WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
 export WORKLET_FACTORS
 DEFERRED_GLOBAL_IDS="${DEFERRED_GLOBAL_IDS:-0}"
 FUSED_GLOBAL_IDS="${FUSED_GLOBAL_IDS:-0}"
-export FUSED_GLOBAL_IDS
+PREFIX_GLOBAL_IDS="${PREFIX_GLOBAL_IDS:-0}"
+NODE_CPU_BIND="${NODE_CPU_BIND:-none}"
+export FUSED_GLOBAL_IDS PREFIX_GLOBAL_IDS NODE_CPU_BIND
 export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
@@ -189,7 +191,7 @@ export PARTITION_SEEDS SEARCH_SECONDS
 [[ "${CPUS_PER_TASK}" =~ ^[1-9][0-9]*$ && "${KERNEL_THREADS}" =~ ^[0-9]+$ ]] || exit 2
 (( KERNEL_THREADS<=CPUS_PER_TASK )) || { echo "内核线程数超过每进程预留核数。" >&2;exit 2; }
 [[ "${WORKLETS_PER_OWNER}" =~ ^[0-9]+$ && "${WORKLET_FACTOR}" =~ ^[1-9][0-9]*$ &&
-   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ && "${FUSED_GLOBAL_IDS}" =~ ^[01]$ ]] || exit 2
+   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ && "${FUSED_GLOBAL_IDS}" =~ ^[01]$ && "${PREFIX_GLOBAL_IDS}" =~ ^[01]$ && "${NODE_CPU_BIND}" =~ ^(none|cores)$ ]] || exit 2
 (( WORKLETS_PER_OWNER<=64 && WORKLET_FACTOR<=64 )) || exit 2
 [[ "$WORKLET_POLICY" == static || "$WORKLET_POLICY" == dynamic || "$WORKLET_POLICY" == remaining || "$WORKLET_POLICY" == critical ]] || exit 2
 if [[ "$EXPERIMENT_STAGE" == routes ]] || (( WORKLETS_PER_OWNER>0 )); then
@@ -272,7 +274,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -281,7 +283,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     for ((rr=1-WARMUPS;rr<=REPEATS;++rr)); do
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
-            factor=0;policy=static;deferred=0;fused=0;scheduler=repair
+            factor=0;policy=static;deferred=0;fused=0;prefix=0;binding=none;scheduler=repair
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -289,6 +291,12 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 b_critical) factor="$WORKLET_FACTOR";policy=critical ;;
                 c_deferred) deferred=1 ;;
                 c_fused) fused=1 ;;
+                a_bound) scheduler=node_window;binding=cores ;;
+                b_bound) scheduler=node_window_balanced;binding=cores ;;
+                b_repeat) scheduler=node_window_repeat;binding=cores ;;
+                c_prefix) prefix=1 ;;
+                a_prefix) scheduler=node_window;binding=cores;prefix=1 ;;
+                b_prefix) scheduler=node_window_repeat;binding=cores;prefix=1 ;;
                 a_native) scheduler=node_native ;;
                 a_fixed) scheduler=node_fixed ;;
                 b_balanced) scheduler=node_window_balanced ;;
@@ -298,7 +306,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 b_window) scheduler=node_window_priority ;;
             esac
             if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" \
-                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" KERNEL_SCHEDULER="$scheduler" \
+                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh"; then route_failures=$((route_failures+1));fi
         done
     done
@@ -407,15 +415,18 @@ else
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
 ((WORKLETS_PER_OWNER==0)) || markers+=("mesh_worklets_v1" "--worklets-per-owner" "--worklet-policy" "worklet_failure_v1")
+[[ "$PREFIX_GLOBAL_IDS" == 0 ]] || markers+=("prefix_neighbor_v1" "--prefix-global-ids")
+[[ "$NODE_CPU_BIND" != cores ]] || markers+=("node_affinity_layout" "node_cpu_bind")
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || markers+=("fused_pair_v1" "--fused-global-ids")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || markers+=("deferred_pair_v1" "--deferred-global-ids")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
 [[ "${KERNEL_SCHEDULER}" != node_window ]] || markers+=("net_window_v2")
 [[ "${KERNEL_SCHEDULER}" != node_window_priority ]] || markers+=("net_priority_v2")
+[[ "${KERNEL_SCHEDULER}" != node_window_repeat ]] || markers+=("tail_repeat_v4")
 [[ "${KERNEL_SCHEDULER}" != node_window_balanced ]] || markers+=("tail_share_v3")
 [[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
-[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority && "${KERNEL_SCHEDULER}" != node_window && "${KERNEL_SCHEDULER}" != node_window_priority && "${KERNEL_SCHEDULER}" != node_window_balanced ]] || markers+=("node_work_v1")
+[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority && "${KERNEL_SCHEDULER}" != node_window && "${KERNEL_SCHEDULER}" != node_window_priority && "${KERNEL_SCHEDULER}" != node_window_balanced && "${KERNEL_SCHEDULER}" != node_window_repeat ]] || markers+=("node_work_v1")
 [[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
 [[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")
@@ -502,6 +513,7 @@ fi
 if ((KERNEL_THREADS>0)); then
     common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
 fi
+[[ "$PREFIX_GLOBAL_IDS" == 0 ]] || common+=(--prefix-global-ids)
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || common+=(--fused-global-ids)
 ((WORKLETS_PER_OWNER==0)) || common+=(--worklets-per-owner "$WORKLETS_PER_OWNER" --worklet-policy "$WORKLET_POLICY")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || common+=(--deferred-global-ids)
@@ -509,7 +521,7 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "NODE_CPU_BIND=${NODE_CPU_BIND}" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2

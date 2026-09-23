@@ -18,6 +18,11 @@ int main(int argc, char **argv)
     require(offsets.back() == total);
     require(offsets[rank] == rank * (total / size) + std::min<GlobalCount>(rank, total % size));
 
+    const GlobalCount pair[2]={total/size+(rank<total%size),rank%2?0:3000000000LL};
+    const auto prefix=prefix_id_pair(pair,MPI_COMM_WORLD);
+    const auto element_offsets=gather_id_offsets(pair[1],MPI_COMM_WORLD);
+    require(prefix[0]==offsets[rank] && prefix[1]==element_offsets[rank]);
+
     const std::array<GlobalId, 6> values{{2147483647LL, 2147483648LL, 4294967295LL,
                                        4294967296LL, 10000000000LL, -1}};
     std::array<Barycentric, 6> vertices{}, received_vertices{};

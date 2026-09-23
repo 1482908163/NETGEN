@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <limits>
@@ -23,6 +24,10 @@
 
 namespace mesh_node {
 class NodeResources {
+#ifdef NETGEN_NODE_RESOURCES_TEST
+    friend struct NodeResourcesTest;
+    NodeResources()=default;
+#endif
     static constexpr int max_ranks=128, phases=8;
     struct Model {
         double n=0,sx=0,sy=0,sxx=0,sxy=0,error=0;
@@ -45,7 +50,7 @@ class NodeResources {
     struct RankState {
         int active=0,done=0,prepared=0,phase=0,threads=1,requesting=0;
         double work=1,start=0;
-        int remaining=-1,work_granted=0;
+        int remaining=-1,work_granted=0,grant_generation=-1;
         double progress_time=0,last_operation=0,restart_cost=0;
         Model model[phases];
     };
@@ -75,7 +80,7 @@ class NodeResources {
     double work_checks=0,work_unknown=0,work_short=0,work_cost=0,work_deferred=0;
     double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
     double work_gain_estimate=0,work_restart_estimate=0,work_net_gain_estimate=0;
-    double work_competition_checks=0,work_shared_grants=0,work_unreserved_cores=0;
+    double work_competition_checks=0,work_shared_grants=0,work_unreserved_cores=0,work_repeat_grants=0;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -139,12 +144,12 @@ class NodeResources {
     };
     PhaseStats phase_stats[phases];
     bool protected_base() const { return mode>=2; }
-    bool work_policy() const { return mode==5 || mode==6 || mode==13 || mode==14 || mode==15; }
+    bool work_policy() const { return mode==5 || mode==6 || mode==13 || mode==14 || mode==15 || mode==16; }
     bool work_eligible(const RankState &r,int extra,double stamp) const {
-        if(!r.active || r.done || r.phase!=6 || r.work_granted || r.remaining<2 || r.last_operation<=0) return false;
+        if(!r.active || r.done || r.phase!=6 || !window_grant_allowed(r.work_granted,shared->completion_generation,r.grant_generation,mode==16) || r.remaining<2 || r.last_operation<=0) return false;
         // A stale peer observation must not reserve the queue indefinitely.
         if(stamp-r.progress_time>std::max(.05,4*r.last_operation)) return false;
-        if(mode==13 || mode==14 || mode==15) return window_net_gain(r.threads,extra,r.remaining,r.last_operation,r.restart_cost)>0;
+        if(mode==13 || mode==14 || mode==15 || mode==16) return window_net_gain(r.threads,extra,r.remaining,r.last_operation,r.restart_cost)>0;
         double gain=r.last_operation*r.remaining*extra/(r.threads+extra);
         return gain>2*std::max(.001,r.restart_cost)+.005;
     }
@@ -322,6 +327,9 @@ public:
         shared_pool=true;
         for(int r=1;r<size;++r) if(!CPU_EQUAL(&masks[0],&masks[r])) { shared_pool=false;break; }
 
+        if(const char *binding=std::getenv("NODE_CPU_BIND"))
+            if(std::strcmp(binding,"cores")==0 && shared_pool)
+                fail("请求固定绑核，但启动器未提供互斥核集合");
         cpu_set_t total;CPU_ZERO(&total);
         if(shared_pool) {
             const int required=size*base;
@@ -436,7 +444,7 @@ public:
         for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) ++extra;
         bool grant=false;
-        if(r.work_granted) ++work_already;
+        if(!window_grant_allowed(r.work_granted,shared->completion_generation,r.grant_generation,mode==16)) ++work_already;
         else if(r.phase!=6 || remaining<0 || last<=0) ++work_unknown;
         else if(remaining<2) ++work_short;
         else if(!extra) ++work_no_capacity;
@@ -449,7 +457,7 @@ public:
                 double candidate=mode==14?window_net_gain(peer.threads,extra,peer.remaining,peer.last_operation,peer.restart_cost):peer.work*peer.remaining/peer.threads;
                 if(candidate>score || (candidate==score && i<winner)) {winner=i;score=candidate;}
             }
-            if(mode==15) {
+            if(mode==15 || mode==16) {
                 std::vector<WindowDemand> peers(size);int candidates=0;const int capacity=extra;
                 for(int i=0;i<size;++i) {
                     const auto &peer=shared->rank[i];
@@ -473,11 +481,15 @@ public:
                         shared->reserved[c]=me+1;++reserved;
                     }
                 if(reserved!=extra) fail("尾部借核预留数不一致");
-                r.work_granted=1;checkpoint_old_threads=r.threads;
+                // Existing borrowed CPUs must survive the release/acquire gap as well.
+                for(int c=0;c<shared->cpus;++c)
+                    if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
+                if(r.work_granted) ++work_repeat_grants;
+                ++r.work_granted;r.grant_generation=shared->completion_generation;checkpoint_old_threads=r.threads;
                 ++checkpoint_restarts;++work_grants;work_reserved+=extra;
                 work_gain_estimate+=last*remaining*extra/(r.threads+extra);
                 work_restart_estimate+=restart;
-                if(mode==13 || mode==14 || mode==15)work_net_gain_estimate+=window_net_gain(r.threads,extra,remaining,last,restart);
+                if(mode==13 || mode==14 || mode==15 || mode==16)work_net_gain_estimate+=window_net_gain(r.threads,extra,remaining,last,restart);
                 grant=true;
             }
         }
@@ -662,6 +674,7 @@ public:
         pthread_cond_broadcast(&shared->changed);unlock();
     }
     template<class Profiler> void report(Profiler &p,bool include_stage=true) const {
+        p.add_metadata("node_affinity_layout",shared_pool?"shared_pool":"disjoint");
         const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};
         const double stage_values[]={stage_waits,stage_wait_seconds,stage_early_epochs,stage_early_cores,stage_reclaims,stage_shrinks,stage_unchanged,stage_no_change,node_phase_idle,node_early_loan};
         if(include_stage) for(int i=0;i<10;++i) p.set_metric(std::string("coop_stage_")+stage_names[i],stage_values[i]);
@@ -685,6 +698,7 @@ public:
         p.set_metric("coop_work_net_gain_estimate_seconds",work_net_gain_estimate);
         p.set_metric("coop_work_competition_checks",work_competition_checks);
         p.set_metric("coop_work_shared_grants",work_shared_grants);
+        p.set_metric("coop_work_repeat_grants",work_repeat_grants);
         p.set_metric("coop_work_unreserved_cores",work_unreserved_cores);
         const char *work_names[]={"checks","unknown","short","cost","deferred","no_capacity",
                                   "grants","reserved_cores","already","gain_estimate_seconds","restart_estimate_seconds"};

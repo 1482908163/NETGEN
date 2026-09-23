@@ -1380,7 +1380,7 @@ GlobalId *com_barycoords(
 	std::vector<int> holders;
 	int numverts, numNEs;
 	std::vector<GlobalId> globoffsets, globoffsetsVE;
-	std::vector<GlobalCount> gathered_counts(numprocs);
+	std::vector<GlobalCount> gathered_counts(mesh_research::options().prefix_global_ids?0:numprocs);
 	std::map<int, BarycVector *> pidmap;
 	std::map<int, int> srcmap; // new
 	GlobalCount newglobalnocounter = 0;
@@ -1478,11 +1478,20 @@ GlobalId *com_barycoords(
 	scaling::Profiler::instance().set_metric(
 		"adjacent_processes", static_cast<double>(neighbor_pids.size()));
 	scaling::Profiler::instance().mark_elapsed("vertex_arrival_elapsed");
+	const bool prefix=mesh_research::options().prefix_global_ids;
 	const bool deferred=mesh_research::options().deferred_global_ids;
+	std::array<GlobalId,2> local_offsets{};
+	std::vector<std::array<GlobalCount,2>> remote_ranges;
 	MPI_Request count_request=MPI_REQUEST_NULL;
 	const GlobalCount local_pair[2]={newglobalnocounter,numNEs};
-	std::vector<GlobalCount> count_pairs(deferred?2*static_cast<std::size_t>(numprocs):0);
-	if(deferred) {
+	std::vector<GlobalCount> count_pairs(deferred && !prefix?2*static_cast<std::size_t>(numprocs):0);
+	if(prefix) {
+		ProfileCollectiveArrivalWait("id_prefix_pre_collective_wait",comm);
+		scaling::StageScope stage("id_prefix_scan","communication");
+		local_offsets=prefix_id_pair(local_pair,comm);
+		// Buffer size, not a claim about physical MPI transfer volume.
+		scaling::Profiler::instance().set_metric("id_prefix_buffer_bytes",4*sizeof(GlobalCount));
+	} else if(deferred) {
 		// Payloads below contain owner-local int64 IDs, so they do not depend
 		// on global offsets. Keep both collective buffers alive through Wait.
 		ProfileCollectiveArrivalWait("id_count_pre_collective_wait",comm);
@@ -1586,6 +1595,23 @@ GlobalId *com_barycoords(
 			MYCALLOC(r_data[i], Barycentric *, r_length[i], sizeof(Barycentric));
 		}
 	}
+	if(prefix) {
+		scaling::StageScope stage("id_neighbor_offsets","communication");
+		remote_ranges.resize(num_r);
+		const GlobalCount owned_range[2]={local_offsets[0],newglobalnocounter};
+		std::vector<MPI_Request> requests(num_r+num_s,MPI_REQUEST_NULL);
+		// Receives precede sends; each owner transmits only to its vertex recipients.
+		for(int r=0;r<num_r;++r)
+			netgen_mpi_check(comm,MPI_Irecv(remote_ranges[r].data(),2,MPI_INT64_T,src[r],3819,comm,&requests[r]),"id_prefix/offset_recv");
+		for(int d=0;d<num_s;++d)
+			netgen_mpi_check(comm,MPI_Isend(owned_range,2,MPI_INT64_T,dest[d],3819,comm,&requests[num_r+d]),"id_prefix/offset_send");
+		netgen_mpi_check(comm,MPI_Waitall(static_cast<int>(requests.size()),requests.data(),MPI_STATUSES_IGNORE),"id_prefix/offset_wait");
+		for(const auto &range:remote_ranges)
+			if(checked_count_sum(range[0],range[1])<0)
+				netgen_mpi_check(comm,MPI_ERR_COUNT,"id_prefix/invalid_remote_range");
+		scaling::Profiler::instance().add_communication("id_neighbor_offsets",num_s,num_r,
+			static_cast<std::uint64_t>(num_s)*2*sizeof(GlobalCount),static_cast<std::uint64_t>(num_r)*2*sizeof(GlobalCount));
+	}
 	int barycentric_type_bytes = 0;
 	MPI_Type_size(mpibaryctype, &barycentric_type_bytes);
 	{
@@ -1608,7 +1634,7 @@ GlobalId *com_barycoords(
 	// Resolve remote keys while the count collective is still in flight.
 	// Offsets and receive buffers are not touched until their respective waits.
 	std::vector<std::vector<int>> remote_local_ids;
-	if(deferred) {
+	if(deferred && !prefix) {
 		scaling::StageScope stage("vertex_exchange_unpack","compute");
 		remote_local_ids.resize(num_r);
 		for(int r=0;r<num_r;++r) {
@@ -1621,7 +1647,11 @@ GlobalId *com_barycoords(
 			}
 		}
 	}
-	if(deferred) {
+	if(prefix) {
+		scaling::StageScope stage("id_compaction","compute");
+		for(int v=1;v<=numverts;++v)if(newgid[v]!=-1)newgid[v]+=local_offsets[0];
+		for(int e=1;e<=numNEs;++e)newgVEid[e]=local_offsets[1]+e;
+	} else if(deferred) {
 		{
 			scaling::StageScope stage("id_count_commit_wait","communication");
 			netgen_mpi_check(comm,MPI_Wait(&count_request,MPI_STATUS_IGNORE),"id_count/Wait");
@@ -1641,17 +1671,19 @@ GlobalId *com_barycoords(
 		{
 			for (j = 0; j < r_length[i]; j++)
 			{
-				if(deferred)locid=remote_local_ids[i][j];
+				if(deferred && !prefix)locid=remote_local_ids[i][j];
 				else {
 					const auto found=baryc2locvrtxmap.find(r_data[i][j]);
 					if(found==baryc2locvrtxmap.end() || found->second<1 || found->second>numverts)
 						netgen_mpi_check(comm,MPI_ERR_OTHER,"invalid remote vertex key");
 					locid=found->second;
 				}
+				const GlobalId owner_offset=prefix?remote_ranges[i][0]:globoffsets[src[i]];
+				const GlobalCount owner_count=prefix?remote_ranges[i][1]:globoffsets[src[i]+1]-globoffsets[src[i]];
 				if(newgid[locid]!=-1 || r_data[i][j].newgid<1 ||
-				   r_data[i][j].newgid>globoffsets[src[i]+1]-globoffsets[src[i]])
+				   r_data[i][j].newgid>owner_count)
 					netgen_mpi_check(comm,MPI_ERR_OTHER,"invalid remote owner-local vertex ID");
-				newgid[locid] = (r_data[i][j].newgid + globoffsets[src[i]]);
+				newgid[locid] = (r_data[i][j].newgid + owner_offset);
 			}
 		}
 		for (i = 0; i < num_r; i++)

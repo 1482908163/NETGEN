@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-ROUTES=['reference','a_native','a_fixed','a_window','b_balanced','c_fused','a_fused','b_fused']
+ROUTES=['reference','a_window','a_bound','b_bound','b_repeat','c_fused','c_prefix','b_prefix']
 with tempfile.TemporaryDirectory() as directory:
     tmp=Path(directory)
     launcher=tmp/'launcher'
@@ -17,6 +17,7 @@ with tempfile.TemporaryDirectory() as directory:
 # --profile-core-only --algorithm research_1 global_id_bits mesh_phase_v3
 # mesh_comm_v1 --communication-only --kernel-threads --kernel-scheduler repair_v2
 # volume_audit_v1 node_coop_v2 node_work_v1 node_stage_metrics_v1 node_timeline_v1
+# node_cpu_bind node_affinity_layout tail_repeat_v4 prefix_neighbor_v1 --prefix-global-ids
 # net_window_v2 tail_share_v3 fused_pair_v1 --fused-global-ids
 import os,sys,json
 from pathlib import Path
@@ -24,7 +25,10 @@ sys.path.insert(0,os.environ['MOCK_FIXTURES'])
 from test_worklet_routes import fixture
 value=lambda key:sys.argv[sys.argv.index(key)+1]
 route={'node_native':'a_native','node_fixed':'a_fixed','node_window':'a_window',
-       'node_window_balanced':'b_balanced'}.get(value('--kernel-scheduler'),'reference')
+       'node_window_repeat':'b_repeat','node_window_balanced':'b_balanced'}.get(value('--kernel-scheduler'),'reference')
+if os.environ.get('NODE_CPU_BIND')=='cores':route={'a_window':'a_bound','b_balanced':'b_bound'}.get(route,route)
+if '--prefix-global-ids' in sys.argv:
+    route={'a_bound':'a_prefix','b_repeat':'b_prefix'}.get(route,'c_prefix')
 if '--fused-global-ids' in sys.argv:
     route={'a_window':'a_fused','b_balanced':'b_fused'}.get(route,'c_fused')
 mode='natural' if '--profile-natural' in sys.argv else 'split'
@@ -65,7 +69,7 @@ if mode=='split':
             bad=out/'route_a_window/p2/sparse_natural/repeat_1'
             assert not (bad/'SUCCESS').exists()
             assert 'exit_code=7' in (bad/'failure_reason.txt').read_text()
-            assert (out/'route_b_fused/p2/sparse_split/repeat_2/SUCCESS').exists()
+            assert (out/'route_b_prefix/p2/sparse_split/repeat_2/SUCCESS').exists()
             assert (out/'p2/route_issues.txt').read_text().strip()
         else:
             measured=list(csv.DictReader((out/'p2/route_runs.csv').open()))

@@ -61,6 +61,12 @@ static void test_tail_allocation() {
 }
 int main(){
  test_tail_allocation();
+ using mesh_node::window_grant_allowed;
+ assert(window_grant_allowed(0,1,-1,true));
+ assert(!window_grant_allowed(1,1,1,true));
+ assert(window_grant_allowed(1,2,1,true));
+ assert(!window_grant_allowed(2,3,2,true));
+ assert(!window_grant_allowed(1,2,1,false));
  using mesh_node::window_net_gain;
  assert(window_net_gain(4,4,10,.02,.001)>0);
  assert(window_net_gain(4,4,1,1.,0)==0);

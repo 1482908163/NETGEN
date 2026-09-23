@@ -10,6 +10,13 @@ using GlobalId = std::int64_t;
 using GlobalCount = std::int64_t;
 static_assert(sizeof(GlobalId) == 8, "64-bit global mesh IDs required");
 
+// Associative, commutative sum on nonnegative counts with -1 absorbing errors.
+// A user-defined MPI reduction avoids signed overflow inside MPI_SUM itself.
+inline GlobalCount checked_count_sum(GlobalCount a,GlobalCount b) {
+    if(a<0 || b<0 || b>std::numeric_limits<GlobalCount>::max()-a) return -1;
+    return a+b;
+}
+
 // Exclusive offsets; rank r owns (offset[r], offset[r+1]]. Empty ranks
 // are valid. Checking before addition avoids signed overflow at INT64_MAX.
 inline std::vector<GlobalId> make_id_offsets(const std::vector<GlobalCount> &counts)

@@ -6,6 +6,14 @@
 
 int main()
 {
+    const auto maximum=std::numeric_limits<GlobalCount>::max();
+    for(GlobalCount a:{GlobalCount(-1),GlobalCount(0),GlobalCount(2),maximum-1,maximum})
+      for(GlobalCount b:{GlobalCount(-1),GlobalCount(0),GlobalCount(3),maximum})
+        for(GlobalCount c:{GlobalCount(0),GlobalCount(1),maximum}) {
+          assert(checked_count_sum(a,b)==checked_count_sum(b,a));
+          assert(checked_count_sum(checked_count_sum(a,b),c)==checked_count_sum(a,checked_count_sum(b,c)));
+        }
+    assert(checked_count_sum(maximum,1)==-1 && checked_count_sum(maximum,0)==maximum);
     constexpr GlobalCount total = 10000000000LL;
     for (int p : {1, 2, 3, 16, 1024, 8192}) {
         std::vector<GlobalCount> counts(p, total / p);

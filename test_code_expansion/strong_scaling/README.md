@@ -1,7 +1,7 @@
-# 当前默认：节点尾部分配与 A/B/C 组合验证
+# 当前默认：启动绑核、二次增核与前缀编号
 
-默认 `EXPERIMENT_PRESET=inplace`，保留原生成域。上一批 A 借核优于固定协作路径，但整体收益受固定路径成本抵消；C 阻塞计数融合较有希望，组合收益尚待验证。
-本轮增加相同绑核布局的原内核对照，B 按预计节点尾部计算核份额，并测试 A+C、B+C。
+默认 `EXPERIMENT_PRESET=inplace`，保留原生成域和质量门槛。
+A 对比启动时固定绑核与旧共享核池；B 在新供体完成后允许第二次受成本约束的增核；C 对比计数融合与前缀计算加邻居偏移交换，并测试 B+C。
 
 更新研究分支、重新执行 `test_code_expansion/build_project.sh` 后，在本目录执行：
 
@@ -9,13 +9,13 @@
 bash run_experiments.sh
 ```
 
-默认八路线：`reference a_native a_fixed a_window b_balanced c_fused a_fused b_fused`。
-128/256 进程，每节点 4 进程、每进程 4 核；一次质量预热，八次正式重复，正常/拆分计时。
-各规模作业并行申请并统一延时启动，路线循环轮换位置，失败继续。正式运行共 **256 次**，上一批为 144 次。
-旧 `b_window` 和 `c_deferred` 保留可显式选择；原质量门槛保持。
+默认八路线：`reference a_window a_bound b_bound b_repeat c_fused c_prefix b_prefix`。
+128/256 进程，每节点 4 进程、每进程 4 核；一次质量预热，八次正式重复，正常/拆分计时。正式运行仍为 **256 次**。
+各规模作业并行申请、统一延时启动，同一作业内轮换路线，失败继续。旧路线保留可显式选择。
 
-先看 `p128/ROUTE_SUMMARY.txt`、`p256/ROUTE_SUMMARY.txt`，再看 `route_comparisons.csv` 中的质量门槛、配对胜出次数和变化范围。
-详情、旧结果依据、额外运行量和验证局限见 [本轮设计](../docs/experiments/20260923_tail_share_joint.md)。
+先看 `p128/ROUTE_SUMMARY.txt`、`p256/ROUTE_SUMMARY.txt`，再看质量门槛、配对胜出次数、实际二次借核及阶段数据。
+固定绑核路线必须实际提供互斥核集合；不能调整作业内核亲和性时保留失败，不静默改配置。
+设计、上批依据、复现与验证边界见 [本轮说明](../docs/experiments/20260923_bound_repeat_prefix.md)。
 
 # 两个瓶颈的算法实验（历史记录）
 

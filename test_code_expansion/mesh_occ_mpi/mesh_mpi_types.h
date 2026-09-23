@@ -2,6 +2,29 @@
 #include "parallelMeshData.h"
 #include "mpi_debug.h"
 #include <type_traits>
+#include <array>
+
+inline void mesh_count_sum(void *input,void *output,int *length,MPI_Datatype *) {
+    const auto *a=static_cast<const GlobalCount*>(input);
+    auto *b=static_cast<GlobalCount*>(output);
+    for(int i=0;i<*length;++i) b[i]=checked_count_sum(a[i],b[i]);
+}
+
+// Inclusive scan gives rank zero a defined result, unlike Exscan. The last
+// rank also checks global overflow; Abort prevents a partially valid mesh.
+inline std::array<GlobalId,2> prefix_id_pair(const GlobalCount (&local)[2],MPI_Comm comm) {
+    std::array<GlobalCount,2> inclusive{};
+    MPI_Op sum;
+    netgen_mpi_check(comm,MPI_Op_create(mesh_count_sum,1,&sum),"id_prefix/op_create");
+    netgen_mpi_check(comm,MPI_Scan(local,inclusive.data(),2,MPI_INT64_T,sum,comm),"id_prefix/Scan");
+    netgen_mpi_check(comm,MPI_Op_free(&sum),"id_prefix/op_free");
+    for(int i=0;i<2;++i) {
+        if(local[i]<0 || inclusive[i]<local[i])
+            netgen_mpi_check(comm,MPI_ERR_COUNT,"id_prefix/overflow");
+        inclusive[i]-=local[i];
+    }
+    return inclusive;
+}
 
 // Set the array stride explicitly: mixed 32/64-bit fields introduce padding.
 template<class Record, std::size_t N>

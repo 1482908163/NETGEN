@@ -14,20 +14,24 @@ import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
     worklet=route in ('a_static','a_dynamic','b_remaining','b_critical');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
-    scheduler={'a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
+    scheduler={'a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
         kernel_scheduler=scheduler,kernel_threads='1',kernel_diagnostics='repair_v2',cost_model='none',balance_method='none',
         mesh_tasks='2' if worklet else '0',active_workers='1' if worklet else '2',
         global_numbering='fused_pair_v1' if route in ('c_fused','a_fused','b_fused') else 'deferred_pair_v1' if deferred else 'eager_v1')
+    prefix=route in ('c_prefix','a_prefix','b_prefix')
+    if prefix:meta['global_numbering']='prefix_neighbor_v1'
+    meta['node_cpu_bind']='cores' if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix') or not scheduler.startswith('node_') else 'none'
+    if scheduler.startswith('node_'):meta['node_affinity_layout']='disjoint' if meta['node_cpu_bind']=='cores' else 'shared_pool'
     if worklet:meta.update(worklet_policy=route.split('_')[1],worklets_per_owner='1',
         task_mesh_signature='1234',worklet_ownership_signature='abcd')
     if repeat==0:meta.update(mesh_quality='volume_audit_v1',quality_face_reference='allgather')
     if scheduler.startswith('node_'):
         meta['node_resources']='node_coop_v2'
-        if scheduler in ('node_window','node_window_priority','node_window_balanced'):
-            meta.update(node_checkpoints='node_work_v1',node_work_policy={'node_window':'net_window_v2','node_window_priority':'net_priority_v2','node_window_balanced':'tail_share_v3'}[scheduler])
+        if scheduler in ('node_window','node_window_priority','node_window_balanced','node_window_repeat'):
+            meta.update(node_checkpoints='node_work_v1',node_work_policy={'node_window_repeat':'tail_repeat_v4','node_window':'net_window_v2','node_window_priority':'net_priority_v2','node_window_balanced':'tail_share_v3'}[scheduler])
     rows=[]
     for rank in range(2):
         m=dict(core_seconds=1.,local_points_before_adjacency=4,
@@ -50,7 +54,7 @@ def fixture(route,repeat,mode='natural'):
                          'leased_core_seconds','phase_seconds','peak_threads','model_decisions','model_rejections',
                          'cold_decisions','node_ranks','node_cpus'):
                 m['coop_'+name]=0
-            m.update(coop_work_competition_checks=0,coop_work_shared_grants=0,coop_work_unreserved_cores=0)
+            m.update(coop_work_repeat_grants=0,coop_work_competition_checks=0,coop_work_shared_grants=0,coop_work_unreserved_cores=0)
             m.update(coop_peak_threads=1,coop_node_ranks=2,coop_node_cpus=2,coop_work_net_gain_estimate_seconds=0)
             for phase in range(8):
                 for name in ('epochs','seconds','core_seconds','borrowed_core_seconds','below_base_epochs','min_threads','max_threads'):
@@ -60,6 +64,9 @@ def fixture(route,repeat,mode='natural'):
                 m['coop_work_'+name]=0
         if deferred:
             for s in ('id_count_begin','id_count_commit_wait','id_compaction'):stages[s]=dict(seconds=.01,calls=1)
+        if prefix:
+            m['id_prefix_buffer_bytes']=32
+            for name in ('id_prefix_scan','id_neighbor_offsets','id_compaction'):stages[name]=dict(seconds=.01,calls=1)
         if repeat==0:
             for k in profiles.QUALITY_COUNTS:m['quality_'+k]=0
             m.update(quality_points=4,quality_elements=1,quality_surfaces=4,quality_checked=1,
@@ -85,8 +92,8 @@ def main():
         assert routes.analyze(root,2)
         comparisons=list(csv.DictReader((root/'p2/route_comparisons.csv').open()))
         direct=[r for r in comparisons if r['contribution']=='end_to_end']
-        assert len(direct)==16
-        assert {r['candidate'] for r in direct}=={'a_dynamic','b_remaining','b_critical','a_window','b_window','b_balanced','a_fused','b_fused'}
+        assert len(direct)==28
+        assert {r['candidate'] for r in direct}=={'a_dynamic','b_remaining','b_critical','a_window','b_window','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix'}
         assert all(r['control']=='reference' and r['validated']=='True' for r in direct)
         assert routes.analyze(root,2,['a_static'])
         misplaced=root/'route_a_window/p2/sparse_natural/repeat_1/rank_profiles.jsonl'
@@ -107,6 +114,23 @@ def main():
         invalid=root/'bad_tail.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
         try:profiles.inspect(invalid);assert False
         except ValueError as e:assert 'tail allocation diagnostics' in str(e)
+        bound=root/'route_a_bound/p2/sparse_natural/repeat_1/rank_profiles.jsonl'
+        saved=bound.read_text();wrong=fixture('a_bound',1)
+        for row in wrong:row['metadata']['node_affinity_layout']='shared_pool'
+        bound.write_text(''.join(json.dumps(r)+'\n' for r in wrong))
+        assert not routes.analyze(root,2)
+        assert 'verified disjoint startup affinity' in (root/'p2/route_issues.txt').read_text()
+        bound.write_text(saved)
+        for route,metric,value,error in [('b_repeat','coop_work_repeat_grants',1,'repeat grants'),
+                                         ('c_prefix','id_prefix_buffer_bytes',0,'prefix count buffer')]:
+            bad=fixture(route,1);bad[0]['metrics'][metric]=value
+            invalid=root/'bad_new.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
+            try:profiles.inspect(invalid);assert False
+            except ValueError as e:assert error in str(e),str(e)
+        bad=fixture('c_prefix',1);bad[0]['stages']['id_count_begin']=dict(seconds=.1,calls=1)
+        invalid=root/'bad_prefix.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
+        try:profiles.inspect(invalid);assert False
+        except ValueError as e:assert 'global count gather' in str(e)
         # Positive kernel diagnostics must survive without bypassing the structural audit.
         check=root/'diagnostic_audit';check.mkdir()
         path=check/'rank_profiles.jsonl'
