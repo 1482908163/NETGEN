@@ -1,0 +1,30 @@
+A1/B1/C1: 128 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+C compares fused counts with prefix scans plus neighbor offsets; global synchronization remains.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference -> a_window natural: 3.53% reduction; wins=6/8; validated=True
+reference -> a_window split: -0.03% reduction; wins=4/8; validated=True
+reference -> c_fused natural: 0.31% reduction; wins=5/8; validated=True
+reference -> c_fused split: 1.59% reduction; wins=5/8; validated=True
+a_window -> a_bound natural: 7.36% reduction; wins=8/8; validated=True
+a_window -> a_bound split: 6.93% reduction; wins=8/8; validated=True
+a_bound -> b_bound natural: -0.59% reduction; wins=3/8; validated=True
+a_bound -> b_bound split: -0.44% reduction; wins=4/8; validated=True
+b_bound -> b_repeat natural: -1.64% reduction; wins=3/8; validated=True
+b_bound -> b_repeat split: -1.28% reduction; wins=4/8; validated=True
+c_fused -> c_prefix natural: -1.61% reduction; wins=3/8; validated=True
+c_fused -> c_prefix split: -1.88% reduction; wins=3/8; validated=True
+b_repeat -> b_prefix natural: 1.03% reduction; wins=5/8; validated=True
+b_repeat -> b_prefix split: 0.23% reduction; wins=4/8; validated=True
+c_prefix -> b_prefix natural: 11.20% reduction; wins=8/8; validated=True
+c_prefix -> b_prefix split: 10.02% reduction; wins=8/8; validated=True
+reference -> a_bound natural: 10.97% reduction; wins=8/8; validated=True
+reference -> a_bound split: 8.43% reduction; wins=7/8; validated=True
+reference -> b_bound natural: 10.96% reduction; wins=8/8; validated=True
+reference -> b_bound split: 8.03% reduction; wins=8/8; validated=True
+reference -> b_repeat natural: 8.98% reduction; wins=8/8; validated=True
+reference -> b_repeat split: 8.23% reduction; wins=8/8; validated=True
+reference -> c_prefix natural: -1.34% reduction; wins=3/8; validated=True
+reference -> c_prefix split: -0.40% reduction; wins=2/8; validated=True
+reference -> b_prefix natural: 10.49% reduction; wins=8/8; validated=True
+reference -> b_prefix split: 8.61% reduction; wins=7/8; validated=True
