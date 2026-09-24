@@ -1832,23 +1832,47 @@ GlobalId *com_baryVolumeElements(
 	}
 
 	netgen_mpi_checkpoint(
-		comm, "com_baryVolumeElements.alltoall.begin",
+		comm, "com_baryVolumeElements.size_exchange.begin",
 		static_cast<long>(pidmap.size()), comm_size);
-	ProfileCollectiveArrivalWait("volume_size_exchange_pre_collective_wait", comm);
-	{
-		scaling::StageScope profile_stage("volume_size_exchange", "communication");
-		netgen_mpi_check(
-			comm,
-			MPI_Alltoall(send_counts.data(), 1, MPI_INT,
-					 recv_counts.data(), 1, MPI_INT, comm),
-			"com_baryVolumeElements/MPI_Alltoall");
+	if(mesh_research::options().async_global_ids) {
+		std::set<int> peers;
+		for(const auto &entry:barycvrtx2adjprocsmap)
+			for(int peer:entry.second)if(peer>=0 && peer<comm_size && peer!=mypid)peers.insert(peer);
+		for(const auto &entry:pidmap)if(!peers.count(entry.first))
+			netgen_mpi_check(comm,MPI_ERR_RANK,"volume neighbor graph missing send peer");
+		std::vector<MPI_Request> requests(2*peers.size(),MPI_REQUEST_NULL);
+		std::size_t q=0;
+		{
+			scaling::StageScope profile_stage("volume_neighbor_size_exchange","communication");
+			for(int peer:peers)
+				netgen_mpi_check(comm,MPI_Irecv(&recv_counts[peer],1,MPI_INT,peer,4821,comm,&requests[q++]),"volume_size/Irecv");
+			for(int peer:peers)
+				netgen_mpi_check(comm,MPI_Isend(&send_counts[peer],1,MPI_INT,peer,4821,comm,&requests[q++]),"volume_size/Isend");
+			if(!requests.empty())
+				netgen_mpi_check(comm,MPI_Waitall(static_cast<int>(requests.size()),requests.data(),MPI_STATUSES_IGNORE),"volume_size/Waitall");
+		}
+		scaling::Profiler::instance().add_communication(
+			"volume_neighbor_size_exchange",peers.size(),peers.size(),
+			static_cast<std::uint64_t>(peers.size())*sizeof(int),
+			static_cast<std::uint64_t>(peers.size())*sizeof(int));
+		scaling::Profiler::instance().set_metric("volume_count_peers",static_cast<double>(peers.size()));
+	} else {
+		ProfileCollectiveArrivalWait("volume_size_exchange_pre_collective_wait", comm);
+		{
+			scaling::StageScope profile_stage("volume_size_exchange", "communication");
+			netgen_mpi_check(
+				comm,
+				MPI_Alltoall(send_counts.data(), 1, MPI_INT,
+						 recv_counts.data(), 1, MPI_INT, comm),
+				"com_baryVolumeElements/MPI_Alltoall");
+		}
+		scaling::Profiler::instance().add_communication(
+			"volume_size_exchange",
+			static_cast<std::uint64_t>(comm_size-1),
+			static_cast<std::uint64_t>(comm_size-1),
+			static_cast<std::uint64_t>(comm_size-1) * sizeof(int),
+			static_cast<std::uint64_t>(comm_size-1) * sizeof(int));
 	}
-	scaling::Profiler::instance().add_communication(
-		"volume_size_exchange",
-		static_cast<std::uint64_t>(comm_size-1),
-		static_cast<std::uint64_t>(comm_size-1),
-		static_cast<std::uint64_t>(comm_size-1) * sizeof(int),
-		static_cast<std::uint64_t>(comm_size-1) * sizeof(int));
 
 	std::vector<int> dest;
 	std::vector<int> src;
@@ -1899,7 +1923,7 @@ GlobalId *com_baryVolumeElements(
 	const int num_s = static_cast<int>(dest.size());
 	const int num_r = static_cast<int>(src.size());
 	netgen_mpi_checkpoint(
-		comm, "com_baryVolumeElements.alltoall.end", num_s, num_r);
+		comm, "com_baryVolumeElements.size_exchange.end", num_s, num_r);
 	netgen_mpi_checkpoint(
 		comm, "com_baryVolumeElements.payload.begin", num_s, num_r);
 	int volume_element_type_bytes = 0;

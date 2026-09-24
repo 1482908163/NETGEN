@@ -11,11 +11,12 @@
 namespace mesh_research {
 struct WorkletPartition {
     std::vector<int> labels, owners;
+    int split_owners=0,max_factor=1;
 };
 // Constrained, deterministic BFS chunks: never move a coarse cell out of its
 // original rank partition. Disconnected pieces are allowed, as in METIS.
 inline WorkletPartition split_worklets(const std::vector<int> &owners,
-    const std::vector<std::vector<int>> &adj, int ranks, int factor) {
+    const std::vector<std::vector<int>> &adj, int ranks, int factor, bool adaptive=false) {
     if(ranks<2 || factor<1 || owners.size()!=adj.size())
         throw std::runtime_error("invalid worklet partition input");
     WorkletPartition out;out.labels.assign(owners.size(),-1);
@@ -26,10 +27,26 @@ inline WorkletPartition split_worklets(const std::vector<int> &owners,
         for(int n:adj[c])if(n<0 || n>=static_cast<int>(owners.size()))
             throw std::runtime_error("invalid coarse adjacency");
     }
-    std::vector<char> queued(owners.size(),false);
+    std::vector<int> populations;
+    populations.reserve(ranks);
     for(int r=0;r<ranks;++r) {
         if(cells[r].empty())throw std::runtime_error("empty original partition");
-        const int k=std::min(factor,static_cast<int>(cells[r].size()));
+        populations.push_back(static_cast<int>(cells[r].size()));
+    }
+    std::sort(populations.begin(),populations.end());
+    const int q75=populations[std::min<std::size_t>(populations.size()-1,3*populations.size()/4)];
+    const int q90=populations[std::min<std::size_t>(populations.size()-1,9*populations.size()/10)];
+    std::vector<char> queued(owners.size(),false);
+    for(int r=0;r<ranks;++r) {
+        int requested=factor;
+        if(adaptive && factor>1) {
+            requested=1;
+            if(static_cast<int>(cells[r].size())>=q75) requested=std::min(2,factor);
+            if(factor>=4 && static_cast<int>(cells[r].size())>=q90) requested=std::min(4,factor);
+        }
+        const int k=std::min(requested,static_cast<int>(cells[r].size()));
+        if(k>1)++out.split_owners;
+        out.max_factor=std::max(out.max_factor,k);
         std::size_t seed=0;int remaining=static_cast<int>(cells[r].size());
         for(int j=0;j<k;++j) {
             const int t=static_cast<int>(out.owners.size());out.owners.push_back(r);
@@ -62,6 +79,7 @@ class WorkletSchedule {
     std::vector<std::map<int,double>> boundary_;
     std::vector<double> owner_seconds_,owner_weight_;
     double seconds_per_weight_=1.;bool observed_=false;
+    int remote_claims_=0,remote_budget_=1;
 public:
     WorkletSchedule(std::vector<int> owner,std::vector<int> node,
         const std::vector<std::map<int,int>> &edges,std::vector<double> weight)
@@ -70,6 +88,7 @@ public:
          boundary_(node_.size()),owner_seconds_(node_.size(),0.),owner_weight_(node_.size(),0.) {
         if(node_.size()<2 || owner_.empty() || edges.size()!=owner_.size() || weight_.size()!=owner_.size())
             throw std::runtime_error("invalid worklet schedule");
+        remote_budget_=std::max(1,static_cast<int>(owner_.size()/8));
         for(std::size_t t=0;t<owner_.size();++t) {
             if(owner_[t]<0 || owner_[t]>=static_cast<int>(node_.size()) || !(weight_[t]>0) || !std::isfinite(weight_[t]))
                 throw std::runtime_error("invalid worklet owner/weight");
@@ -121,6 +140,9 @@ public:
             const int home=owner_[t];
             if(policy=="static" && (home==0?1:home)!=worker)continue;
             const int tier=policy=="static"?0:home==worker?0:node_[home]==node_[worker]?1:neighbors_[worker].count(home)?2:3;
+            const bool remote=node_[home]!=node_[worker];
+            // B3: never spray critical work globally; cap neighbor-node steals.
+            if(policy=="critical" && remote && (tier>=3 || remote_claims_>=remote_budget_))continue;
             double score=weight_[t];
             if(policy=="remaining" || policy=="critical")score=remaining[home];
             if(policy=="critical") {
@@ -131,8 +153,10 @@ public:
                 }
                 if(total>0)neighbor_wait/=total;
                 const double critical_slack=std::max(0.,remaining[home]-median_remaining);
-                const double locality=tier==0?1.0:tier==1?.98:tier==2?.90:.75;
-                score=(critical_slack+neighbor_wait+.05*remaining[home])*locality;
+                const double task_seconds=std::max(1e-9,weight_[t]*seconds_per_weight_);
+                const double transfer_cost=remote?(.002+.15*task_seconds):0.;
+                const double locality=tier==0?1.0:tier==1?.96:.45;
+                score=(critical_slack+neighbor_wait+.05*remaining[home]-transfer_cost)*locality;
             }
             const bool better = policy=="critical"
                 ? (score>best_score || (score==best_score && (tier<best_tier ||
@@ -141,11 +165,16 @@ public:
                    (score==best_score && (best<0 || weight_[t]>weight_[best])))));
             if(better) {best=t;best_tier=tier;best_score=score;}
         }
-        if(best>=0){state_[best]=1;executor_[best]=worker;start_[best]=now;}
+        if(best>=0){
+            if(policy=="critical" && node_[owner_[best]]!=node_[worker])++remote_claims_;
+            state_[best]=1;executor_[best]=worker;start_[best]=now;
+        }
         return best;
     }
     bool complete() const {return std::all_of(state_.begin(),state_.end(),[](int s){return s==2;});}
     const std::vector<int> &executors() const {return executor_;}
     const std::vector<int> &owners() const {return owner_;}
+    int remote_claims() const {return remote_claims_;}
+    int remote_budget() const {return remote_budget_;}
 };
 }

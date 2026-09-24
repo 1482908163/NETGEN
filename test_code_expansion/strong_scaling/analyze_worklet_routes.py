@@ -115,7 +115,7 @@ def analyze(root,ranks,selected=ROUTES):
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
-           'C compares fused counts with prefix scans plus neighbor offsets; global synchronization remains.',
+           'ABC3: A selectively overdecomposes heavy owners; B adds communication-budgeted criticality; C removes global ID counts and volume-size Alltoall from the core path.',
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     (out/'ROUTE_SUMMARY.txt').write_text('\n'.join(lines)+'\n')

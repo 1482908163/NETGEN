@@ -202,7 +202,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                 }
                 for(auto &a:adjacency)std::sort(a.begin(),a.end());
                 failure.stage="split_worklets";
-                auto divided=split_worklets(original,adjacency,p,options().worklets_per_owner);
+                auto divided=split_worklets(original,adjacency,p,options().worklets_per_owner,options().adaptive_worklets);
                 labels=std::move(divided.labels);fixed_owner=std::move(divided.owners);tasks=static_cast<int>(fixed_owner.size());
                 std::uint64_t signature=1469598103934665603ULL;
                 for(int i=0;i<ne;++i) {
@@ -211,6 +211,9 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                 }
                 std::ostringstream sig;sig<<std::hex<<signature;profile.add_metadata("worklet_ownership_signature",sig.str());
                 profile.add_metadata("mesh_tasks",std::to_string(tasks));
+                profile.add_metadata("worklet_decomposition",options().adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1");
+                profile.set_metric("worklet_split_owners",divided.split_owners);
+                profile.set_metric("worklet_max_factor",divided.max_factor);
                 profile.set_metric("logical_partition",rank);
             } else if(rank==0) {
                 idx_t *part=PartitionMesh(coarse,tasks);
@@ -322,6 +325,10 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             profile.set_metric("worklets_neighbor_stolen",neighbor_steal);
             profile.set_metric("worklets_remote_stolen",remote_steal);
             profile.set_metric("worklet_logical_ownership_changes",0);
+            if(fixed) {
+                profile.set_metric("worklet_remote_claims",worklets->remote_claims());
+                profile.set_metric("worklet_remote_budget",worklets->remote_budget());
+            }
             profile.add_communication("task_dispatch",tasks+p-1,tasks+p-1,
                 static_cast<std::uint64_t>(tasks+p-1)*sizeof(int),static_cast<std::uint64_t>(tasks+p-1)*6*sizeof(double));
         } else {

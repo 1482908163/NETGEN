@@ -52,8 +52,9 @@ DEFERRED_GLOBAL_IDS="${DEFERRED_GLOBAL_IDS:-0}"
 FUSED_GLOBAL_IDS="${FUSED_GLOBAL_IDS:-0}"
 PREFIX_GLOBAL_IDS="${PREFIX_GLOBAL_IDS:-0}"
 ASYNC_GLOBAL_IDS="${ASYNC_GLOBAL_IDS:-0}"
+ADAPTIVE_WORKLETS="${ADAPTIVE_WORKLETS:-0}"
 NODE_CPU_BIND="${NODE_CPU_BIND:-none}"
-export FUSED_GLOBAL_IDS PREFIX_GLOBAL_IDS ASYNC_GLOBAL_IDS NODE_CPU_BIND
+export FUSED_GLOBAL_IDS PREFIX_GLOBAL_IDS ASYNC_GLOBAL_IDS ADAPTIVE_WORKLETS NODE_CPU_BIND
 export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
@@ -196,7 +197,7 @@ export PARTITION_SEEDS SEARCH_SECONDS
 [[ "${CPUS_PER_TASK}" =~ ^[1-9][0-9]*$ && "${KERNEL_THREADS}" =~ ^[0-9]+$ ]] || exit 2
 (( KERNEL_THREADS<=CPUS_PER_TASK )) || { echo "内核线程数超过每进程预留核数。" >&2;exit 2; }
 [[ "${WORKLETS_PER_OWNER}" =~ ^[0-9]+$ && "${WORKLET_FACTOR}" =~ ^[1-9][0-9]*$ &&
-   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ && "${FUSED_GLOBAL_IDS}" =~ ^[01]$ && "${PREFIX_GLOBAL_IDS}" =~ ^[01]$ && "${ASYNC_GLOBAL_IDS}" =~ ^[01]$ && "${NODE_CPU_BIND}" =~ ^(none|cores)$ ]] || exit 2
+   "${DEFERRED_GLOBAL_IDS}" =~ ^[01]$ && "${FUSED_GLOBAL_IDS}" =~ ^[01]$ && "${PREFIX_GLOBAL_IDS}" =~ ^[01]$ && "${ASYNC_GLOBAL_IDS}" =~ ^[01]$ && "${ADAPTIVE_WORKLETS}" =~ ^[01]$ && "${NODE_CPU_BIND}" =~ ^(none|cores)$ ]] || exit 2
 (( WORKLETS_PER_OWNER<=64 && WORKLET_FACTOR<=64 )) || exit 2
 [[ "$WORKLET_POLICY" == static || "$WORKLET_POLICY" == dynamic || "$WORKLET_POLICY" == remaining || "$WORKLET_POLICY" == critical ]] || exit 2
 if [[ "$EXPERIMENT_STAGE" == routes ]] || (( WORKLETS_PER_OWNER>0 )); then
@@ -288,7 +289,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     for ((rr=1-WARMUPS;rr<=REPEATS;++rr)); do
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
-            factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;binding=none;scheduler=repair
+            factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;adaptive_worklets=0;binding=none;scheduler=repair
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -310,12 +311,12 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 a_window) scheduler=node_window ;;
                 b_window) scheduler=node_window_priority ;;
                 reference_bound) binding=cores ;;
-                worklet_owner_fixed) factor="${WORKLET_FACTOR:-4}";policy=dynamic;binding=cores ;;
-                critical_worklet) factor="${WORKLET_FACTOR:-4}";policy=critical;binding=cores ;;
+                worklet_owner_fixed) factor="${WORKLET_FACTOR:-4}";policy=dynamic;adaptive_worklets=1;binding=cores ;;
+                critical_worklet) factor="${WORKLET_FACTOR:-4}";policy=critical;adaptive_worklets=1;binding=cores ;;
                 async_global) async_ids=1;binding=cores ;;
             esac
             if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" \
-                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
+                 WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh"; then route_failures=$((route_failures+1));fi
         done
     done
@@ -424,6 +425,7 @@ else
 fi
 [[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
 ((WORKLETS_PER_OWNER==0)) || markers+=("mesh_worklets_v1" "--worklets-per-owner" "--worklet-policy" "worklet_failure_v1")
+[[ "$ADAPTIVE_WORKLETS" == 0 ]] || markers+=("heavy_q75_q90_v1" "--adaptive-worklets")
 [[ "$PREFIX_GLOBAL_IDS" == 0 ]] || markers+=("prefix_neighbor_v1" "--prefix-global-ids")
 [[ "$NODE_CPU_BIND" != cores ]] || markers+=("node_affinity_layout" "node_cpu_bind")
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || markers+=("fused_pair_v1" "--fused-global-ids")
@@ -526,6 +528,7 @@ fi
 [[ "$PREFIX_GLOBAL_IDS" == 0 ]] || common+=(--prefix-global-ids)
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || common+=(--fused-global-ids)
 ((WORKLETS_PER_OWNER==0)) || common+=(--worklets-per-owner "$WORKLETS_PER_OWNER" --worklet-policy "$WORKLET_POLICY")
+[[ "$ADAPTIVE_WORKLETS" == 0 ]] || common+=(--adaptive-worklets)
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || common+=(--deferred-global-ids)
 [[ "$ASYNC_GLOBAL_IDS" == 0 ]] || common+=(--async-global-ids)
 if [[ "${BALANCE_METHOD}" == task_queue ]]; then

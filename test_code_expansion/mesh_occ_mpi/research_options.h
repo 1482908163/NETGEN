@@ -17,6 +17,7 @@ struct ResearchOptions {
     int rank_shift = 0, preflight_parts = 0;
     int mesh_tasks = 0; // 0 保留历史单分区路径。
     int worklets_per_owner = 0; // A1: subdivide each ORIGINAL partition, preserve ownership.
+    bool adaptive_worklets = false; // A3: only overdecompose heavy original partitions.
     std::string worklet_policy = "static"; // static / dynamic / remaining / critical
     bool prefix_global_ids = false; // Scan paired counts, exchange only neighbor offsets.
     bool overlap_global_ids = true; // false: blocking fused-count control.

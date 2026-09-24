@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <cstdlib>
 #include <sstream>
+#include <sched.h>
 
 using namespace std;
 
@@ -44,6 +45,7 @@ void print_help() {
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic/node_window/node_window_priority/node_window_balanced/node_window_repeat内核策略" << endl <<
          "--communication-only : 固定原分区、禁用历史均衡模型；可显式启用 worklets" << endl <<
          "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
+         "--adaptive-worklets : 仅对粗负载上四分位的重分区增加worklet粒度" << endl <<
          "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
          "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠\n--async-global-ids : owner-local 临时ID，核心路径取消全局count collective" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
@@ -184,6 +186,9 @@ int main(int argc, char **argv) {
         }
         else if(!strcmp(argv[i],"--communication-only")) {
             mesh_research::options().communication_only = true;
+        }
+        else if(!strcmp(argv[i],"--adaptive-worklets")) {
+            mesh_research::options().adaptive_worklets = true;
         }
         else if(!strcmp(argv[i],"--validate-volume")) {
             validate_volume = true;
@@ -345,7 +350,8 @@ int main(int argc, char **argv) {
        (research.worklet_policy!="static" && research.worklet_policy!="dynamic" && research.worklet_policy!="remaining" && research.worklet_policy!="critical") ||
        (!research.worklets() && research.worklet_policy!="static") ||
        ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
-       (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids))) {
+       (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids)) ||
+       (research.adaptive_worklets && !research.worklets())) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
@@ -427,6 +433,37 @@ int main(int argc, char **argv) {
     profiler.configure(MPI_COMM_WORLD, profile_config);
     profiler.add_metadata("global_id_bits", "64");
     profiler.add_metadata("node_cpu_bind",node_cooperative?(std::getenv("NODE_CPU_BIND")?std::getenv("NODE_CPU_BIND"):"none"):"cores");
+    std::string affinity_layout="unknown";
+    {
+        cpu_set_t local_mask;CPU_ZERO(&local_mask);
+        if(sched_getaffinity(0,sizeof(local_mask),&local_mask)==0) {
+            MPI_Comm node=MPI_COMM_NULL;
+            MPI_Comm_split_type(MPI_COMM_WORLD,MPI_COMM_TYPE_SHARED,0,MPI_INFO_NULL,&node);
+            int local_size=0;if(node!=MPI_COMM_NULL)MPI_Comm_size(node,&local_size);
+            if(local_size==1 && p>1) {
+                MPI_Comm_free(&node);
+                char host[MPI_MAX_PROCESSOR_NAME]={};int host_len=0;MPI_Get_processor_name(host,&host_len);
+                std::uint32_t hash=2166136261u;
+                for(int k=0;k<host_len;++k){hash^=static_cast<unsigned char>(host[k]);hash*=16777619u;}
+                MPI_Comm_split(MPI_COMM_WORLD,static_cast<int>(hash&0x7fffffffU),id,&node);
+            }
+            if(node!=MPI_COMM_NULL) {
+                MPI_Comm_size(node,&local_size);
+                std::vector<cpu_set_t> masks(local_size);
+                MPI_Allgather(&local_mask,sizeof(local_mask),MPI_BYTE,masks.data(),sizeof(local_mask),MPI_BYTE,node);
+                bool disjoint=CPU_COUNT(&local_mask)>0;
+                const int expected=std::getenv("CPUS_PER_TASK")?std::atoi(std::getenv("CPUS_PER_TASK")):0;
+                for(const auto &m:masks)if(expected>0 && CPU_COUNT(&m)!=expected)disjoint=false;
+                for(int a=0;a<local_size;++a)for(int b=a+1;b<local_size;++b) {
+                    cpu_set_t overlap;CPU_AND(&overlap,&masks[a],&masks[b]);
+                    if(CPU_COUNT(&overlap)>0)disjoint=false;
+                }
+                affinity_layout=disjoint?"disjoint":"overlap_or_width_mismatch";
+                MPI_Comm_free(&node);
+            }
+        }
+    }
+    profiler.add_metadata("node_affinity_layout",affinity_layout);
     profiler.add_metadata("local_index_bits", "32");
 
     std::ostringstream command_line;
@@ -447,8 +484,9 @@ int main(int argc, char **argv) {
     profiler.add_metadata("feature_schema", research.worklets()?"mesh_worklets_v1":research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
+    profiler.add_metadata("worklet_decomposition",research.worklets()?(research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
-    if(research.worklets()) profiler.add_metadata("worklet_scheduler",research.worklet_policy=="critical"?"sync_critical_v2":"owner_fixed_v2");
+    if(research.worklets()) profiler.add_metadata("worklet_scheduler",research.worklet_policy=="critical"?"comm_budget_critical_v3":"owner_fixed_v2");
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
