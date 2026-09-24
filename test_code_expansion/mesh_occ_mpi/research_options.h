@@ -21,6 +21,7 @@ struct ResearchOptions {
     bool prefix_global_ids = false; // Scan paired counts, exchange only neighbor offsets.
     bool overlap_global_ids = true; // false: blocking fused-count control.
     bool deferred_global_ids = false; // C1: overlap fused counts with neighbor-local IDs.
+    bool async_global_ids = false; // C2: owner-local 64-bit temporary IDs; no count collective on core path.
     bool worklets() const { return worklets_per_owner > 0; }
     double task_cut_growth = 0.10;
     int kernel_threads = 0; // 0: preserve the historical nglib entry

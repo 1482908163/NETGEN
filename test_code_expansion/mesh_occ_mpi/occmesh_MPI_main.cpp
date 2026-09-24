@@ -45,7 +45,7 @@ void print_help() {
          "--communication-only : 固定原分区、禁用历史均衡模型；可显式启用 worklets" << endl <<
          "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
          "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
-         "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠" << endl <<
+         "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠\n--async-global-ids : owner-local 临时ID，核心路径取消全局count collective" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
          "--cost-weights <a,b,c,d> : 四阶段代价权重，默认1,1,1,1" << endl <<
@@ -200,6 +200,9 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--deferred-global-ids")) {
             mesh_research::options().deferred_global_ids = true;
         }
+        else if(!strcmp(argv[i],"--async-global-ids")) {
+            mesh_research::options().async_global_ids = true;
+        }
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
@@ -341,7 +344,8 @@ int main(int argc, char **argv) {
         research.kernel_threads<1 || research.kernel_scheduler!="repair")) ||
        (research.worklet_policy!="static" && research.worklet_policy!="dynamic" && research.worklet_policy!="remaining" && research.worklet_policy!="critical") ||
        (!research.worklets() && research.worklet_policy!="static") ||
-       (research.deferred_global_ids && (!research.communication_only || !isComputeAdj))) {
+       ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
+       (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids))) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
@@ -443,7 +447,8 @@ int main(int argc, char **argv) {
     profiler.add_metadata("feature_schema", research.worklets()?"mesh_worklets_v1":research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
-    profiler.add_metadata("global_numbering",research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
+    profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
+    if(research.worklets()) profiler.add_metadata("worklet_scheduler",research.worklet_policy=="critical"?"sync_critical_v2":"owner_fixed_v2");
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
@@ -943,6 +948,33 @@ int main(int argc, char **argv) {
 
             GlobalId *newid = com_barycoords(submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
                                         baryc2locvrtxmap, adjbarycs, numParts, VEgid, id);
+            // C2 keeps owner-local IDs through the core adjacency exchange.  Only
+            // validation or real file output needs legacy contiguous numbering.
+            if(research.async_global_ids && (validate_volume || !profile_core_only)) {
+                scaling::StageScope stage("id_final_compaction","communication");
+                GlobalCount local_owned_vertices=0;
+                for(int v=1;v<=nglib::Ng_GetNP(submesh);++v)
+                    if(owner_local_id_owner(newid[v])==id)
+                        local_owned_vertices=std::max(local_owned_vertices,owner_local_id_local(newid[v]));
+                const GlobalCount local_pair[2]={local_owned_vertices,numNEs};
+                std::vector<GlobalCount> pairs(2*static_cast<std::size_t>(numParts));
+                if(MPI_Allgather(local_pair,2,MPI_INT64_T,pairs.data(),2,MPI_INT64_T,MPI_COMM_WORLD)!=MPI_SUCCESS)
+                    MPI_Abort(MPI_COMM_WORLD,MPI_ERR_OTHER);
+                std::vector<GlobalCount> vertex_counts(numParts),element_counts(numParts);
+                for(int r=0;r<numParts;++r){vertex_counts[r]=pairs[2*r];element_counts[r]=pairs[2*r+1];}
+                const auto voff=make_id_offsets(vertex_counts),eoff=make_id_offsets(element_counts);
+                for(int v=1;v<=nglib::Ng_GetNP(submesh);++v) {
+                    const int owner=owner_local_id_owner(newid[v]);
+                    newid[v]=voff.at(owner)+owner_local_id_local(newid[v]);
+                }
+                for(int e=1;e<=numNEs;++e) {
+                    const int owner=owner_local_id_owner(VEgid[e]);
+                    VEgid[e]=eoff.at(owner)+owner_local_id_local(VEgid[e]);
+                }
+                profiler.add_communication("id_final_compaction",1,1,
+                    static_cast<std::uint64_t>(numParts-1)*2*sizeof(GlobalCount),
+                    static_cast<std::uint64_t>(numParts-1)*2*sizeof(GlobalCount));
+            }
             if(validate_volume) {
                 scaling::StageScope stage("numbering_audit","validation");
                 std::uint64_t hash=1469598103934665603ULL;

@@ -302,8 +302,26 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             profile.set_metric("task_cross_node_faces_before",fixed?cut:legacy->initial_cut());
             profile.set_metric("task_cross_node_faces_after",fixed?cut:legacy->cut());
             profile.set_metric("task_cross_node_faces_limit",fixed?cut:legacy->limit());
-            int moved=0;for(int t=0;t<tasks;++t)moved+=node[executor[t]]!=node[fixed?owner[t]:home[t]];
+            int moved=0,stolen=0,same_node=0,neighbor_steal=0,remote_steal=0;
+            for(int t=0;t<tasks;++t) {
+                moved+=node[executor[t]]!=node[fixed?owner[t]:home[t]];
+                if(fixed && executor[t]!=owner[t]) {
+                    ++stolen;
+                    if(node[executor[t]]==node[owner[t]]) ++same_node;
+                    else {
+                        bool adjacent=false;
+                        for(const auto &e:dependencies[t])
+                            if(owner[e.first]==executor[t]) {adjacent=true;break;}
+                        if(adjacent) ++neighbor_steal; else ++remote_steal;
+                    }
+                }
+            }
             profile.set_metric("task_moved_between_nodes",moved);
+            profile.set_metric("worklets_stolen",stolen);
+            profile.set_metric("worklets_same_node_stolen",same_node);
+            profile.set_metric("worklets_neighbor_stolen",neighbor_steal);
+            profile.set_metric("worklets_remote_stolen",remote_steal);
+            profile.set_metric("worklet_logical_ownership_changes",0);
             profile.add_communication("task_dispatch",tasks+p-1,tasks+p-1,
                 static_cast<std::uint64_t>(tasks+p-1)*sizeof(int),static_cast<std::uint64_t>(tasks+p-1)*6*sizeof(double));
         } else {

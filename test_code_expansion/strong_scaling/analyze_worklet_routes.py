@@ -6,7 +6,7 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix','reference_bound','worklet_owner_fixed','critical_worklet','async_global')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
@@ -28,7 +28,12 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('a_bound','a_prefix','prefix_on_a'),('a_prefix','b_prefix','b_on_a_prefix'),
        ('reference','a_bound','end_to_end'),('reference','b_bound','end_to_end'),
        ('reference','b_repeat','end_to_end'),('reference','c_prefix','end_to_end'),
-       ('reference','a_prefix','end_to_end'),('reference','b_prefix','end_to_end'))
+       ('reference','a_prefix','end_to_end'),('reference','b_prefix','end_to_end'),
+       ('reference','reference_bound','startup_affinity_baseline'),
+       ('reference_bound','worklet_owner_fixed','owner_fixed_worklet'),
+       ('worklet_owner_fixed','critical_worklet','sync_criticality'),
+       ('reference_bound','critical_worklet','end_to_end'),
+       ('reference_bound','async_global','deferred_globalization'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -58,10 +63,10 @@ def analyze(root,ranks,selected=ROUTES):
                                           'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
                                 if expected and run.get('kernel_scheduler')!=expected:
                                     raise ValueError('route kernel scheduler mismatch')
-                                numbering={'c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1'}.get(route,'eager_v1')
+                                numbering={'c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2'}.get(route,'eager_v1')
                                 if numbering and run.get('global_numbering')!=numbering:
                                     raise ValueError('route numbering mismatch')
-                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix'):
+                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_owner_fixed','critical_worklet','async_global'):
                                     if run.get('node_cpu_bind')!='cores' or run.get('node_affinity_layout')!='disjoint':
                                         raise ValueError('bound route lacks verified disjoint startup affinity')
                                 if repeat==0:
@@ -93,7 +98,7 @@ def analyze(root,ranks,selected=ROUTES):
                     ownership=all(a.get('ownership_signature')==b.get('ownership_signature') for a,b in pairs)
                     deterministic=all(a.get('task_signature')==b.get('task_signature') for a,b in pairs)
                     # reference -> static intentionally changes decomposition.
-                    schedule_pair=control in ('a_static','a_dynamic','b_remaining') and candidate in ('a_dynamic','b_remaining','b_critical')
+                    schedule_pair=(control in ('a_static','a_dynamic','b_remaining') and candidate in ('a_dynamic','b_remaining','b_critical')) or (control=='worklet_owner_fixed' and candidate=='critical_worklet')
                     valid=gate['quality_pass'] and len(pairs)==plan['repeats'] and (not schedule_pair or (ownership and deterministic))
                     if not valid:errors.append(f'{control}/{candidate}/{algorithm}/{seed}/{mode}: comparison not validated ({gate["quality_issues"]}); ownership={ownership}, deterministic={deterministic}')
                     changes=[100*(1-b['core_seconds']/a['core_seconds']) for a,b in pairs]

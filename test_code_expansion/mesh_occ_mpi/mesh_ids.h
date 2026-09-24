@@ -10,6 +10,39 @@ using GlobalId = std::int64_t;
 using GlobalCount = std::int64_t;
 static_assert(sizeof(GlobalId) == 8, "64-bit global mesh IDs required");
 
+constexpr unsigned OWNER_LOCAL_ID_BITS = 40;
+constexpr std::uint64_t OWNER_LOCAL_ID_MASK = (std::uint64_t{1} << OWNER_LOCAL_ID_BITS) - 1;
+
+inline GlobalId make_owner_local_id(int owner, GlobalCount local)
+{
+    if (owner < 0 || local <= 0 ||
+        static_cast<std::uint64_t>(local) > OWNER_LOCAL_ID_MASK)
+        throw std::overflow_error("owner-local mesh ID exceeds encoding capacity");
+    const std::uint64_t owner_code = static_cast<std::uint64_t>(owner) + 1;
+    if (owner_code > (static_cast<std::uint64_t>(std::numeric_limits<GlobalId>::max()) >> OWNER_LOCAL_ID_BITS))
+        throw std::overflow_error("owner rank exceeds owner-local ID capacity");
+    return static_cast<GlobalId>((owner_code << OWNER_LOCAL_ID_BITS) |
+                                 static_cast<std::uint64_t>(local));
+}
+
+inline int owner_local_id_owner(GlobalId id)
+{
+    if (id <= 0) throw std::runtime_error("invalid owner-local mesh ID");
+    const std::uint64_t raw = static_cast<std::uint64_t>(id);
+    const std::uint64_t code = raw >> OWNER_LOCAL_ID_BITS;
+    if (code == 0 || code - 1 > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
+        throw std::runtime_error("invalid owner-local mesh owner");
+    return static_cast<int>(code - 1);
+}
+
+inline GlobalCount owner_local_id_local(GlobalId id)
+{
+    if (id <= 0) throw std::runtime_error("invalid owner-local mesh ID");
+    const auto local = static_cast<GlobalCount>(static_cast<std::uint64_t>(id) & OWNER_LOCAL_ID_MASK);
+    if (local <= 0) throw std::runtime_error("invalid owner-local mesh local ID");
+    return local;
+}
+
 // Associative, commutative sum on nonnegative counts with -1 absorbing errors.
 // A user-defined MPI reduction avoids signed overflow inside MPI_SUM itself.
 inline GlobalCount checked_count_sum(GlobalCount a,GlobalCount b) {

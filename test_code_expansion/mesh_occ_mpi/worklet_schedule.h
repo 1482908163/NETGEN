@@ -106,6 +106,16 @@ public:
             const double estimate=weight_[t]*unit;
             remaining[owner_[t]]+=state_[t]==0?estimate:std::max(.05*estimate,estimate-std::max(0.,now-start_[t]));
         }
+        double median_remaining=0.;
+        if(policy=="critical") {
+            std::vector<double> active;
+            for(double x:remaining)if(x>0)active.push_back(x);
+            if(!active.empty()) {
+                const auto mid=active.begin()+active.size()/2;
+                std::nth_element(active.begin(),mid,active.end());
+                median_remaining=*mid;
+            }
+        }
         int best=-1,best_tier=5;double best_score=-1.;
         for(int t=0;t<static_cast<int>(owner_.size());++t)if(state_[t]==0) {
             const int home=owner_[t];
@@ -113,20 +123,23 @@ public:
             const int tier=policy=="static"?0:home==worker?0:node_[home]==node_[worker]?1:neighbors_[worker].count(home)?2:3;
             double score=weight_[t];
             if(policy=="remaining" || policy=="critical")score=remaining[home];
-            if(policy=="critical" && !neighbors_[home].empty()) {
-                double slack=0.,total=0.;
+            if(policy=="critical") {
+                double neighbor_wait=0.,total=0.;
                 for(const auto &edge:boundary_[home]) {
-                    slack+=edge.second*std::max(0.,remaining[home]-remaining[edge.first]);
+                    neighbor_wait+=edge.second*std::max(0.,remaining[home]-remaining[edge.first]);
                     total+=edge.second;
                 }
-                // Boundary-weighted predicted neighbor wait, not a measured deadline.
-                // A tiny fast neighbor no longer dominates the whole partition.
-                if(total>0)score+=slack/total;
+                if(total>0)neighbor_wait/=total;
+                const double critical_slack=std::max(0.,remaining[home]-median_remaining);
+                const double locality=tier==0?1.0:tier==1?.98:tier==2?.90:.75;
+                score=(critical_slack+neighbor_wait+.05*remaining[home])*locality;
             }
-            if(tier<best_tier || (tier==best_tier && (score>best_score ||
-               (score==best_score && (best<0 || weight_[t]>weight_[best]))))) {
-                best=t;best_tier=tier;best_score=score;
-            }
+            const bool better = policy=="critical"
+                ? (score>best_score || (score==best_score && (tier<best_tier ||
+                   (tier==best_tier && (best<0 || weight_[t]>weight_[best])))))
+                : (tier<best_tier || (tier==best_tier && (score>best_score ||
+                   (score==best_score && (best<0 || weight_[t]>weight_[best])))));
+            if(better) {best=t;best_tier=tier;best_score=score;}
         }
         if(best>=0){state_[best]=1;executor_[best]=worker;start_[best]=now;}
         return best;
