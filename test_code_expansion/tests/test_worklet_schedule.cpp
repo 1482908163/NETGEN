@@ -30,6 +30,42 @@ int main() {
             assert(schedule.complete() && seen.size()==weight.size());
         }
     }
+    // Rank zero never computes. Singleton topology + exhausted optional budget
+    // used to strand its tasks when workers retired. Exercise real in-flight
+    // completion order, disconnected owners and widely varying task durations.
+    for(int seed=0;seed<300;++seed) {
+        std::mt19937 random(seed);const int p=2+seed%15,n=5*p;
+        std::vector<int> owners(n),nodes(p);std::vector<double> weights(n);
+        std::vector<std::map<int,int>> edges(n);
+        for(int r=0;r<p;++r)nodes[r]=seed%2?r:r/4;
+        for(int t=0;t<n;++t) {
+            owners[t]=t%p;weights[t]=1.+random()%100000;
+            if(seed%3 && t){edges[t][t-1]=1;edges[t-1][t]=1;}
+        }
+        WorkletSchedule queue(owners,nodes,edges,weights);
+        std::vector<int> live,running(p,-1);std::set<int> seen;
+        for(int r=1;r<p;++r)live.push_back(r);
+        double now=0.;
+        while(!live.empty()) {
+            const auto i=random()%live.size();const int worker=live[i];
+            now+=.01*(1+random()%1000);
+            if(running[worker]>=0)queue.complete(running[worker],worker,now);
+            const int t=queue.claim(worker,"critical",now);running[worker]=t;
+            if(t<0)live.erase(live.begin()+i);
+            else assert(seen.insert(t).second);
+        }
+        assert(queue.complete() && seen.size()==owners.size());
+        assert(queue.remote_claims()<=queue.remote_budget());
+        assert(queue.owners()==owners);
+    }
+    // Required dispatcher service is counted separately from speculative steals.
+    WorkletSchedule required({0,0,0,1,2},{0,1,2},{{},{},{},{},{}},{1,1,1,1,1});
+    for(int worker:{2,1})for(;;) {
+        const int t=required.claim(worker,"critical",0.);
+        if(t<0)break;
+        required.complete(t,worker,1.);
+    }
+    assert(required.complete() && required.remote_claims()==0 && required.mandatory_remote_claims()==3);
     // Completion feedback and in-flight work are included in remaining work.
     WorkletSchedule s({0,0,1,2},{0,0,0,0,0},{{},{},{},{}},{10,3,2,1});
     const int a=s.claim(3,"remaining",0);assert(a==0);
@@ -63,3 +99,4 @@ int main() {
     assert(learned.claim(2,"remaining",100)==1); // Smaller but empirically slower owner's task.
     std::cout<<"worklet partition/scheduler tests passed\n";
 }
+

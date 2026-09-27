@@ -166,6 +166,20 @@ def inspect_quality(rows, metadata):
                 for name in ('surface_sum','surface_xor','volume_sum','volume_xor')}
         if metadata.get('global_numbering'):
             hashes['numbering']=[m['quality_numbering_hi'],m['quality_numbering_lo']]
+        if metadata.get('adjacency_audit_schema')=='canonical_ghost_v1':
+            for name in ('point_sum','point_xor','element_sum','element_xor'):
+                hashes['adjacency_'+name]=[m['quality_adjacency_'+name+'_hi'],m['quality_adjacency_'+name+'_lo']]
+            for name,metric in (('points','local_points_after_adjacency'),
+                                ('elements','local_volume_elements_after_adjacency'),
+                                ('ghosts','ghost_volume_elements_added')):
+                value=m['quality_adjacency_'+name]
+                if not isinstance(value,(int,float)) or not math.isfinite(value) or value<0 or value!=int(value) or value!=m[metric]:
+                    raise ValueError('adjacency audit coverage mismatch: '+name)
+                q['adjacency_'+name]=value
+            if row['stages'].get('adjacency_audit',{}).get('calls')!=1:
+                raise ValueError('missing post-exchange adjacency audit')
+            if metadata.get('global_numbering')=='owner_local_v2' and metadata.get('adjacency_id_path')!='owner_local_v2':
+                raise ValueError('async audit bypassed temporary adjacency IDs')
         integers=[q[k] for k in QUALITY_COUNTS]+q['shape_hist']+[v for pair in hashes.values() for v in pair]
         if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or v!=int(v) for v in integers):
             raise ValueError('invalid audit counter or fingerprint')
@@ -199,7 +213,7 @@ def inspect_quality(rows, metadata):
         angle_max=max((q['angle_max'] for q in nonempty),default=0),
         abs_volume=sum(q['abs_volume'] for q in audited),
         shape_hist=[sum(q['shape_hist'][i] for q in audited) for i in range(10)],
-        face_reference=reference)
+        face_reference=reference,adjacency_audit_schema=metadata.get('adjacency_audit_schema'))
     return result
 
 def compare_quality(control, candidate):
@@ -215,6 +229,13 @@ def compare_quality(control, candidate):
     same_mesh=signature(control,'volume')==signature(candidate,'volume')
     if same_mesh and any(a.get('numbering')!=b.get('numbering') for a,b in zip(control['per_rank'],candidate['per_rank'])):
         problems.append('global_numbering_changed')
+    if control.get('adjacency_audit_schema') or candidate.get('adjacency_audit_schema'):
+        if control.get('adjacency_audit_schema')!=candidate.get('adjacency_audit_schema'):
+            problems.append('adjacency_audit_contract_mismatch')
+        elif same_mesh:
+            fields=('points','elements','ghosts','point_sum','point_xor','element_sum','element_xor')
+            if any(a.get('adjacency_'+k)!=b.get('adjacency_'+k) for a,b in zip(control['per_rank'],candidate['per_rank']) for k in fields):
+                problems.append('adjacency_fingerprint_changed')
     if not math.isclose(control['abs_volume'],candidate['abs_volume'],rel_tol=1e-10,abs_tol=0): problems.append('volume_changed')
     for k in ('shape_min','shape_mean','angle_min'):
         if candidate[k]<control[k]-1e-10*max(1,abs(control[k])): problems.append(k+'_worse')
@@ -327,6 +348,17 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     if metadata.get("core_only") != "true":
         raise ValueError("performance comparison requires core_only=true")
     compute = [sum(seconds(r, stage) for stage in COMPUTE) for r in rows]
+    if metadata.get('global_numbering')=='owner_local_v2' and metadata.get('adjacency_audit_schema')=='canonical_ghost_v1':
+        if metadata.get('adjacency_id_path')!='owner_local_v2':
+            raise ValueError('async adjacency bypassed temporary IDs')
+        for row in rows:
+            if row['metrics'].get('id_global_count_collectives')!=0 or row['stages'].get('id_owner_local_encode',{}).get('calls')!=1:
+                raise ValueError('invalid temporary-ID encoding lifecycle')
+            forbidden=('vertex_count_allgather','element_count_allgather','id_final_compaction','id_compaction','id_count_begin','id_prefix_scan')
+            if any(row['stages'].get(name,{}).get('calls',0) for name in forbidden):
+                raise ValueError('global numbering entered temporary-ID adjacency path')
+            if row['repeat']>0 and row['stages'].get('id_audit_offsets',{}).get('calls',0):
+                raise ValueError('validation count collective entered measured run')
     prefix_numbering=metadata.get('global_numbering')=='prefix_neighbor_v1'
     deferred=metadata.get('global_numbering') in ('deferred_pair_v1','fused_pair_v1')
     waiting = [seconds(r, "id_prefix_pre_collective_wait" if prefix_numbering else "id_count_pre_collective_wait" if deferred else "vertex_count_pre_collective_wait") for r in rows]
@@ -361,7 +393,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     face_bytes = sum(s.get("receive_bytes", 0) for r in rows for name, s in r["stages"].items()
                      if name == "face_allgatherv" or name.startswith("face_sparse_"))
     split = metadata["timing_mode"] == "split"
-    result = dict(node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
+    result = dict(adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
                   partition_seed=int(metadata.get("partition_seed",-1)),
                   repeat=rows[0]["repeat"], core_seconds=max(r["metrics"]["core_seconds"] for r in rows),
                   face_pipeline_seconds=max(seconds(r, "face_pipeline_total") for r in rows),
@@ -776,7 +808,18 @@ def inspect(path, sample_sink=None, timeline_sink=None):
             for r,k in zip(rows,owned):
                 if r['metrics']['worklet_return_checked']!=k or r['metrics']['worklet_ownership_errors']!=0:
                     raise ValueError('worklet return was not verified')
-            result.update(worklet_policy=metadata['worklet_policy'],
+            if metadata.get('worklet_scheduler')=='mandatory_home_v2':
+                m=root['metrics']
+                for k in ('worklet_remote_claims','worklet_remote_budget','worklet_mandatory_remote_claims'):
+                    value=m[k]
+                    if not math.isfinite(value) or value<0 or value!=int(value):
+                        raise ValueError('invalid worklet budget counter')
+                    result[k]=value
+                if m['worklet_remote_claims']>m['worklet_remote_budget']:
+                    raise ValueError('optional worklet steal budget exceeded')
+            result.update(worklet_scheduler=metadata.get('worklet_scheduler'),
+                worklet_decomposition=metadata.get('worklet_decomposition'),
+                worklet_policy=metadata['worklet_policy'],
                 ownership_signature=metadata['worklet_ownership_signature'],
                 worklet_return_max_seconds=max(seconds(r,'worklet_return') for r in rows),
                 worklet_return_bytes=sum(r['stages'].get('worklet_return',{}).get('receive_bytes',0) for r in rows))
@@ -1178,7 +1221,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
+            if name in ("adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
                         "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]

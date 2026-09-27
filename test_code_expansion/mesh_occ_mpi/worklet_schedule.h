@@ -79,7 +79,7 @@ class WorkletSchedule {
     std::vector<std::map<int,double>> boundary_;
     std::vector<double> owner_seconds_,owner_weight_;
     double seconds_per_weight_=1.;bool observed_=false;
-    int remote_claims_=0,remote_budget_=1;
+    int remote_claims_=0,remote_budget_=1,mandatory_remote_claims_=0;
 public:
     WorkletSchedule(std::vector<int> owner,std::vector<int> node,
         const std::vector<std::map<int,int>> &edges,std::vector<double> weight)
@@ -135,14 +135,18 @@ public:
                 median_remaining=*mid;
             }
         }
-        int best=-1,best_tier=5;double best_score=-1.;
+        int best=-1,best_tier=5;double best_score=-std::numeric_limits<double>::infinity();
         for(int t=0;t<static_cast<int>(owner_.size());++t)if(state_[t]==0) {
             const int home=owner_[t];
             if(policy=="static" && (home==0?1:home)!=worker)continue;
-            const int tier=policy=="static"?0:home==worker?0:node_[home]==node_[worker]?1:neighbors_[worker].count(home)?2:3;
+            // Every task has a live mandatory executor: owner, or worker 1 for
+            // dispatcher-owned work. Pending tasks only disappear, never reappear,
+            // so this executor cannot retire before its mandatory queue is drained.
+            const bool mandatory=(home==0?1:home)==worker;
+            const int tier=policy=="static"?0:home==worker?0:mandatory || node_[home]==node_[worker]?1:neighbors_[worker].count(home)?2:3;
             const bool remote=node_[home]!=node_[worker];
             // B3: never spray critical work globally; cap neighbor-node steals.
-            if(policy=="critical" && remote && (tier>=3 || remote_claims_>=remote_budget_))continue;
+            if(policy=="critical" && remote && !mandatory && (tier>=3 || remote_claims_>=remote_budget_))continue;
             double score=weight_[t];
             if(policy=="remaining" || policy=="critical")score=remaining[home];
             if(policy=="critical") {
@@ -154,19 +158,23 @@ public:
                 if(total>0)neighbor_wait/=total;
                 const double critical_slack=std::max(0.,remaining[home]-median_remaining);
                 const double task_seconds=std::max(1e-9,weight_[t]*seconds_per_weight_);
-                const double transfer_cost=remote?(.002+.15*task_seconds):0.;
+                const double transfer_cost=remote && !mandatory?(.002+.15*task_seconds):0.;
                 const double locality=tier==0?1.0:tier==1?.96:.45;
                 score=(critical_slack+neighbor_wait+.05*remaining[home]-transfer_cost)*locality;
             }
-            const bool better = policy=="critical"
-                ? (score>best_score || (score==best_score && (tier<best_tier ||
-                   (tier==best_tier && (best<0 || weight_[t]>weight_[best])))))
-                : (tier<best_tier || (tier==best_tier && (score>best_score ||
-                   (score==best_score && (best<0 || weight_[t]>weight_[best])))));
+            // Do useful home/node work before speculative remote work. A remote
+            // steal must have positive estimated gain, but mandatory service is
+            // never filtered by this heuristic or the optional steal budget.
+            if(policy=="critical" && remote && !mandatory && score<=0.)continue;
+            const bool better = tier<best_tier || (tier==best_tier &&
+                (score>best_score || (score==best_score && (best<0 || weight_[t]>weight_[best]))));
             if(better) {best=t;best_tier=tier;best_score=score;}
         }
         if(best>=0){
-            if(policy=="critical" && node_[owner_[best]]!=node_[worker])++remote_claims_;
+            if(policy=="critical" && node_[owner_[best]]!=node_[worker]) {
+                if((owner_[best]==0?1:owner_[best])==worker)++mandatory_remote_claims_;
+                else ++remote_claims_;
+            }
             state_[best]=1;executor_[best]=worker;start_[best]=now;
         }
         return best;
@@ -175,6 +183,7 @@ public:
     const std::vector<int> &executors() const {return executor_;}
     const std::vector<int> &owners() const {return owner_;}
     int remote_claims() const {return remote_claims_;}
+    int mandatory_remote_claims() const {return mandatory_remote_claims_;}
     int remote_budget() const {return remote_budget_;}
 };
 }

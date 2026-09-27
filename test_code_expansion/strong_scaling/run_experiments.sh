@@ -38,12 +38,11 @@ KERNEL_THREADS="${KERNEL_THREADS:-${default_threads}}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-${default_scheduler}}"
 WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
 default_worklet_factor=1
-[[ "${EXPERIMENT_PRESET}" != abc2 ]] || default_worklet_factor=4
-WORKLET_FACTOR="${WORKLET_FACTOR:-${default_worklet_factor}}" # abc2 默认每个 logical owner 切 4 个 worklets。
+WORKLET_FACTOR="${WORKLET_FACTOR:-${default_worklet_factor}}" # 默认保留原生成域；WORKLET_FACTOR=4 显式复现新增切面实验。
 WORKLET_POLICY="${WORKLET_POLICY:-static}"
 default_routes="reference a_static a_dynamic b_remaining b_critical c_deferred"
 [[ "${EXPERIMENT_PRESET}" != inplace ]] || default_routes="reference a_window a_bound b_bound b_repeat c_fused c_prefix b_prefix"
-[[ "${EXPERIMENT_PRESET}" != abc2 ]] || default_routes="reference_bound worklet_owner_fixed critical_worklet async_global"
+[[ "${EXPERIMENT_PRESET}" != abc2 ]] || default_routes="reference_bound worklet_static_fixed worklet_owner_fixed critical_worklet async_global"
 WORKLET_ROUTES="${WORKLET_ROUTES:-${default_routes}}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
 WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
@@ -280,7 +279,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_owner_fixed|critical_worklet|async_global) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -311,8 +310,9 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 a_window) scheduler=node_window ;;
                 b_window) scheduler=node_window_priority ;;
                 reference_bound) binding=cores ;;
-                worklet_owner_fixed) factor="${WORKLET_FACTOR:-4}";policy=dynamic;adaptive_worklets=1;binding=cores ;;
-                critical_worklet) factor="${WORKLET_FACTOR:-4}";policy=critical;adaptive_worklets=1;binding=cores ;;
+                worklet_static_fixed) factor="$WORKLET_FACTOR";adaptive_worklets=1;binding=cores ;;
+                worklet_owner_fixed) factor="${WORKLET_FACTOR:-1}";policy=dynamic;adaptive_worklets=1;binding=cores ;;
+                critical_worklet) factor="${WORKLET_FACTOR:-1}";policy=critical;adaptive_worklets=1;binding=cores ;;
                 async_global) async_ids=1;binding=cores ;;
             esac
             if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" \
@@ -430,7 +430,8 @@ fi
 [[ "$NODE_CPU_BIND" != cores ]] || markers+=("node_affinity_layout" "node_cpu_bind")
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || markers+=("fused_pair_v1" "--fused-global-ids")
 [[ "$DEFERRED_GLOBAL_IDS" == 0 ]] || markers+=("deferred_pair_v1" "--deferred-global-ids")
-[[ "$ASYNC_GLOBAL_IDS" == 0 ]] || markers+=("owner_local_v2" "--async-global-ids")
+[[ "$ASYNC_GLOBAL_IDS" == 0 ]] || markers+=("owner_local_v2" "--async-global-ids" "canonical_ghost_v1" "adjacency_id_path")
+[[ "${EXPERIMENT_PRESET}" != abc2 || "${WORKLETS_PER_OWNER}" == 0 ]] || markers+=("mandatory_home_v2" "original_owner_v1")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")
 [[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
 [[ "${KERNEL_SCHEDULER}" != node_window ]] || markers+=("net_window_v2")

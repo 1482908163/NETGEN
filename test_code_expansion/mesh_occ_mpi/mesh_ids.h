@@ -68,3 +68,15 @@ inline bool fits_local_mesh(GlobalCount count)
 {
     return count >= 0 && count < std::numeric_limits<int>::max();
 }
+
+// offsets must be produced by make_id_offsets. Reject malformed temporary IDs
+// before addition, including a valid owner with a local ID beyond its count.
+inline GlobalId compact_owner_local_id(GlobalId id,const std::vector<GlobalId> &offsets)
+{
+    const auto owner=static_cast<std::size_t>(owner_local_id_owner(id));
+    const auto local=owner_local_id_local(id);
+    if(owner+1>=offsets.size() || offsets[owner]<0 ||
+       offsets[owner+1]<offsets[owner] || local>offsets[owner+1]-offsets[owner])
+        throw std::runtime_error("owner-local ID outside gathered ownership range");
+    return offsets[owner]+local;
+}

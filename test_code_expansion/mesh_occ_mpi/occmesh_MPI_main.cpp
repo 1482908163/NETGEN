@@ -16,6 +16,7 @@
 #include "task_mesh.h"
 #include "node_resources.h"
 #include "volume_audit.h"
+#include "adjacency_audit.h"
 #include <memory>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -484,9 +485,11 @@ int main(int argc, char **argv) {
     profiler.add_metadata("feature_schema", research.worklets()?"mesh_worklets_v1":research.communication_only?"mesh_comm_v1":(research.mesh_tasks>0?"mesh_tasks_v1":"mesh_phase_v3"));
     profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
-    profiler.add_metadata("worklet_decomposition",research.worklets()?(research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
+    profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
-    if(research.worklets()) profiler.add_metadata("worklet_scheduler",research.worklet_policy=="critical"?"comm_budget_critical_v3":"owner_fixed_v2");
+    profiler.add_metadata("adjacency_audit_schema","canonical_ghost_v1");
+    profiler.add_metadata("adjacency_id_path",research.async_global_ids && profile_core_only?"owner_local_v2":"contiguous_v1");
+    if(research.worklets()) profiler.add_metadata("worklet_scheduler","mandatory_home_v2");
     if(research.kernel_threads>0) profiler.add_metadata("kernel_diagnostics","repair_v2");
     if(node_cooperative) profiler.add_metadata("node_resources","node_coop_v2");
     if(node_cooperative) profiler.add_metadata("node_timeline","node_timeline_v1");
@@ -986,10 +989,12 @@ int main(int argc, char **argv) {
 
             GlobalId *newid = com_barycoords(submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
                                         baryc2locvrtxmap, adjbarycs, numParts, VEgid, id);
-            // C2 keeps owner-local IDs through the core adjacency exchange.  Only
-            // validation or real file output needs legacy contiguous numbering.
+            // Validation builds a canonical view without mutating the IDs passed
+            // to adjacency exchange. Actual file output retains contiguous IDs.
+            std::vector<GlobalId> vertex_offsets,element_offsets;
+            const bool temporary_adjacency=research.async_global_ids && profile_core_only;
             if(research.async_global_ids && (validate_volume || !profile_core_only)) {
-                scaling::StageScope stage("id_final_compaction","communication");
+                scaling::StageScope stage("id_audit_offsets","validation");
                 GlobalCount local_owned_vertices=0;
                 for(int v=1;v<=nglib::Ng_GetNP(submesh);++v)
                     if(owner_local_id_owner(newid[v])==id)
@@ -1000,30 +1005,36 @@ int main(int argc, char **argv) {
                     MPI_Abort(MPI_COMM_WORLD,MPI_ERR_OTHER);
                 std::vector<GlobalCount> vertex_counts(numParts),element_counts(numParts);
                 for(int r=0;r<numParts;++r){vertex_counts[r]=pairs[2*r];element_counts[r]=pairs[2*r+1];}
-                const auto voff=make_id_offsets(vertex_counts),eoff=make_id_offsets(element_counts);
-                for(int v=1;v<=nglib::Ng_GetNP(submesh);++v) {
-                    const int owner=owner_local_id_owner(newid[v]);
-                    newid[v]=voff.at(owner)+owner_local_id_local(newid[v]);
+                vertex_offsets=make_id_offsets(vertex_counts);element_offsets=make_id_offsets(element_counts);
+                if(!profile_core_only) {
+                    for(int v=1;v<=nglib::Ng_GetNP(submesh);++v)
+                        newid[v]=compact_owner_local_id(newid[v],vertex_offsets);
+                    for(int e=1;e<=numNEs;++e)
+                        VEgid[e]=compact_owner_local_id(VEgid[e],element_offsets);
                 }
-                for(int e=1;e<=numNEs;++e) {
-                    const int owner=owner_local_id_owner(VEgid[e]);
-                    VEgid[e]=eoff.at(owner)+owner_local_id_local(VEgid[e]);
-                }
-                profiler.add_communication("id_final_compaction",1,1,
+                profiler.add_communication("id_audit_offsets",1,1,
                     static_cast<std::uint64_t>(numParts-1)*2*sizeof(GlobalCount),
                     static_cast<std::uint64_t>(numParts-1)*2*sizeof(GlobalCount));
             }
+            const auto canonical_vertex=[&](GlobalId gid) {
+                return temporary_adjacency?compact_owner_local_id(gid,vertex_offsets):gid;
+            };
+            const auto canonical_element=[&](GlobalId gid) {
+                return temporary_adjacency?compact_owner_local_id(gid,element_offsets):gid;
+            };
             if(validate_volume) {
                 scaling::StageScope stage("numbering_audit","validation");
                 std::uint64_t hash=1469598103934665603ULL;
                 std::set<GlobalId> seen;
                 for(int v=1;v<=nglib::Ng_GetNP(submesh);++v) {
-                    if(newid[v]<=0 || !seen.insert(newid[v]).second)MPI_Abort(MPI_COMM_WORLD,3);
-                    hash=(hash^static_cast<std::uint64_t>(newid[v]))*1099511628211ULL;
+                    const auto gid=canonical_vertex(newid[v]);
+                    if(gid<=0 || !seen.insert(gid).second)MPI_Abort(MPI_COMM_WORLD,3);
+                    hash=(hash^static_cast<std::uint64_t>(gid))*1099511628211ULL;
                 }
                 for(int e=1;e<=numNEs;++e) {
-                    if(VEgid[e]<=0 || (e>1 && VEgid[e]!=VEgid[e-1]+1))MPI_Abort(MPI_COMM_WORLD,3);
-                    hash=(hash^static_cast<std::uint64_t>(VEgid[e]))*1099511628211ULL;
+                    const auto gid=canonical_element(VEgid[e]);
+                    if(gid<=0 || (e>1 && gid!=canonical_element(VEgid[e-1])+1))MPI_Abort(MPI_COMM_WORLD,3);
+                    hash=(hash^static_cast<std::uint64_t>(gid))*1099511628211ULL;
                 }
                 profiler.set_metric("quality_numbering_hi",static_cast<double>(hash>>32));
                 profiler.set_metric("quality_numbering_lo",static_cast<double>(hash&0xffffffffULL));
@@ -1199,6 +1210,32 @@ int main(int argc, char **argv) {
                 baryc2locvrtxmap, adjbarycs, newid, VEgid,
                 VEindexs, numParts, id);
             netgen_mpi_checkpoint(MPI_COMM_WORLD, "com_baryVolumeElements.end");
+            if(validate_volume) {
+                scaling::StageScope stage("adjacency_audit","validation");
+                mesh_audit::AdjacencyAudit audit;
+                const int np=nglib::Ng_GetNP(submesh),ne=nglib::Ng_GetNE(submesh);
+                if(VEindexs.size()!=static_cast<std::size_t>(ne))
+                    throw std::runtime_error("adjacency element ID coverage mismatch");
+                for(int v=1;v<=np;++v) {
+                    std::array<double,3> xyz{};nglib::Ng_GetPoint(submesh,v,xyz.data());
+                    audit.point(canonical_vertex(newid[v]),xyz);
+                }
+                int e=0;
+                for(const auto &entry:VEindexs) {
+                    int vertices[4],domain=0;++e;
+                    if(entry.Isin!=(e>numNEs) ||
+                       nglib::Ng_GetVolumeElement(submesh,e,vertices,domain)!=nglib::NG_TET)
+                        throw std::runtime_error("invalid adjacency element type/ownership");
+                    std::array<GlobalId,4> ids{};
+                    for(int k=0;k<4;++k) {
+                        if(vertices[k]<1 || vertices[k]>np)
+                            throw std::runtime_error("adjacency local vertex outside mesh");
+                        ids[k]=canonical_vertex(newid[vertices[k]]);
+                    }
+                    audit.element(canonical_element(entry.gid),ids,domain,entry.Isin!=0);
+                }
+                audit.report(profiler);
+            }
             if (netgen_mpi_trace_enabled()) {
                 printf("createElmerOutput, id: %d\n", id);
                 fflush(stdout);

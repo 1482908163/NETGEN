@@ -211,7 +211,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
                 }
                 std::ostringstream sig;sig<<std::hex<<signature;profile.add_metadata("worklet_ownership_signature",sig.str());
                 profile.add_metadata("mesh_tasks",std::to_string(tasks));
-                profile.add_metadata("worklet_decomposition",options().adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1");
+                profile.add_metadata("worklet_decomposition",options().worklets_per_owner==1?"original_owner_v1":options().adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1");
                 profile.set_metric("worklet_split_owners",divided.split_owners);
                 profile.set_metric("worklet_max_factor",divided.max_factor);
                 profile.set_metric("logical_partition",rank);
@@ -224,10 +224,23 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
         }
         std::vector<int> home(tasks),owner(tasks),executor(tasks),node(p),cell_counts(tasks);std::vector<double> weight(tasks,1.);
         failure.stage="node_topology";
-        MPI_Comm shared;check_mpi(MPI_Comm_split_type(MPI_COMM_WORLD,MPI_COMM_TYPE_SHARED,rank,MPI_INFO_NULL,&shared),MPI_COMM_WORLD);
-        int leader=rank;check_mpi(MPI_Allreduce(MPI_IN_PLACE,&leader,1,MPI_INT,MPI_MIN,shared),shared);
-        check_mpi(MPI_Allgather(&leader,1,MPI_INT,node.data(),1,MPI_INT,MPI_COMM_WORLD),MPI_COMM_WORLD);
-        check_mpi(MPI_Comm_free(&shared),MPI_COMM_WORLD);
+        // Use exact processor names, consistent with startup affinity validation.
+        // Some launchers expose singleton shared-memory communicators per rank.
+        char processor[MPI_MAX_PROCESSOR_NAME]={};int processor_length=0;
+        check_mpi(MPI_Get_processor_name(processor,&processor_length),MPI_COMM_WORLD);
+        if(processor_length<=0 || processor_length>=MPI_MAX_PROCESSOR_NAME)
+            throw std::runtime_error("invalid worklet processor name");
+        processor[processor_length]='\0';
+        std::vector<char> processors(static_cast<std::size_t>(p)*MPI_MAX_PROCESSOR_NAME);
+        check_mpi(MPI_Allgather(processor,MPI_MAX_PROCESSOR_NAME,MPI_CHAR,
+            processors.data(),MPI_MAX_PROCESSOR_NAME,MPI_CHAR,MPI_COMM_WORLD),MPI_COMM_WORLD);
+        std::map<std::string,int> nodes;
+        for(int r=0;r<p;++r) {
+            const std::string name(processors.data()+static_cast<std::size_t>(r)*MPI_MAX_PROCESSOR_NAME);
+            node[r]=nodes.emplace(name,r).first->second;
+        }
+        profile.add_metadata("worklet_topology","processor_name_v1");
+        if(fixed)profile.add_metadata("worklet_scheduler","mandatory_home_v2");
         for(int label:labels) {
             if(label<0 || label>=tasks)throw std::runtime_error("invalid task label");
             ++cell_counts[label];
@@ -328,6 +341,7 @@ double GenerateScheduledTasks(void *coarse_raw,void *merged_raw,int tasks,int le
             if(fixed) {
                 profile.set_metric("worklet_remote_claims",worklets->remote_claims());
                 profile.set_metric("worklet_remote_budget",worklets->remote_budget());
+                profile.set_metric("worklet_mandatory_remote_claims",worklets->mandatory_remote_claims());
             }
             profile.add_communication("task_dispatch",tasks+p-1,tasks+p-1,
                 static_cast<std::uint64_t>(tasks+p-1)*sizeof(int),static_cast<std::uint64_t>(tasks+p-1)*6*sizeof(double));
