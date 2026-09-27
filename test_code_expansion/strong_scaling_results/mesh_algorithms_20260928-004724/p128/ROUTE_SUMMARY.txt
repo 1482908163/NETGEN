@@ -1,0 +1,12 @@
+A1/B1/C1: 63 measured runs; 6 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+ABC3: A selectively overdecomposes heavy owners; B adds communication-budgeted criticality; C removes global ID counts and volume-size Alltoall from the core path.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference_bound -> worklet_owner_fixed natural: -6.00% reduction; wins=0/8; validated=False
+reference_bound -> worklet_owner_fixed split: -9.34% reduction; wins=0/8; validated=False
+worklet_owner_fixed -> critical_worklet natural: -19.41% reduction; wins=0/7; validated=False
+worklet_owner_fixed -> critical_worklet split: -19.31% reduction; wins=0/8; validated=True
+reference_bound -> critical_worklet natural: -26.55% reduction; wins=0/7; validated=False
+reference_bound -> critical_worklet split: -32.22% reduction; wins=0/8; validated=False
+reference_bound -> async_global natural: 6.56% reduction; wins=7/8; validated=True
+reference_bound -> async_global split: 5.13% reduction; wins=8/8; validated=True

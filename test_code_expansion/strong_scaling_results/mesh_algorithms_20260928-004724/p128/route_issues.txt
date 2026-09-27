@@ -1,0 +1,15 @@
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260928-004724/route_critical_worklet/p128/sparse_natural/repeat_8: not successfully finalized: worklet_failure_v1
+rank=0
+task=10
+owner=3
+executor=3
+stage=scheduler
+ng_status=-1
+final_illegal=-1
+reason=unfinished task queue
+
+reference_bound/worklet_owner_fixed/sparse/-1/natural: comparison not validated (points_changed;elements_changed;shape_min_worse;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse); ownership=False, deterministic=False
+reference_bound/worklet_owner_fixed/sparse/-1/split: comparison not validated (points_changed;elements_changed;shape_min_worse;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse); ownership=False, deterministic=False
+worklet_owner_fixed/critical_worklet/sparse/-1/natural: comparison not validated (); ownership=True, deterministic=True
+reference_bound/critical_worklet/sparse/-1/natural: comparison not validated (points_changed;elements_changed;shape_min_worse;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse); ownership=False, deterministic=False
+reference_bound/critical_worklet/sparse/-1/split: comparison not validated (points_changed;elements_changed;shape_min_worse;shape_mean_worse;angle_min_worse;angle_max_worse;low_quality_distribution_worse); ownership=False, deterministic=False
