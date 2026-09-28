@@ -481,6 +481,11 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecovery(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int parallel_recovery,
     double *seconds,double *details,double *diagnostics);
 // Conservative front search: seconds[3], details[12], search[6].
+// Same repair kernel as the control; native_profile[30] contains 10 inclusive
+// host operation times for each of generation, repair, optimization.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshProfile(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+    double *recovery,double *native_profile);
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshSpatial(Ng_Mesh * mesh,
     Ng_Meshing_Parameters * mp,int threads,double *seconds,double *details,double *search);
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepair(Ng_Mesh * mesh,

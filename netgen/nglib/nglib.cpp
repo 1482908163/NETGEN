@@ -416,14 +416,30 @@ namespace nglib
 
 
 
+   // Called only by the host, between completed kernel operations.
+   // Existing host timers are inclusive; child timers must not be summed.
+   static void ReadVolumeOperationTimers(double *seconds)
+   {
+     const char *names[]={"Mesh::ImproveMesh","MeshOptimize3d::CombineImprove",
+       "MeshOptimize3d::SplitImprove","MeshOptimize3d::SwapImprove",
+       "MeshOptimize3d::SwapImprove2","UpdateBadness","Meshing3::Delaunay1",
+       "Delaunay - remove outer","Delaunay - remove intersecting","Delaunay - find openel"};
+     std::fill_n(seconds,10,0.0);
+     for(const auto &timer:ngcore::NgProfiler::timers) {
+       if(timer.name.empty())continue;
+       for(int i=0;i<10;++i)if(timer.name==names[i])seconds[i]+=timer.tottime;
+     }
+   }
+
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
        const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr,
-       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false)
+       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
+      if(native_profile)std::fill_n(native_profile,30,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -449,9 +465,15 @@ namespace nglib
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
+            double before[10]={},after[10]={};
+            if(native_profile)ReadVolumeOperationTimers(before);
             auto start=std::chrono::steady_clock::now();
             auto result=fn();
             seconds[phase]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+            if(native_profile) {
+               ReadVolumeOperationTimers(after);
+               for(int i=0;i<10;++i)native_profile[10*phase+i]=after[i]-before[i];
+            }
             return result;
          };
          if (measure(0,[&] { return MeshVolume(local,m); })!=MESHING3_OK)
@@ -493,6 +515,18 @@ namespace nglib
      const auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
                                                nullptr,nullptr,&stats,parallel_recovery!=0);
      for(int i=0;i<VolumeRecoveryStats::count;++i)diagnostics[i]=stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshProfile(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+       double *recovery,double *native_profile)
+   {
+     if(!details || !recovery || !native_profile)return NG_ERROR;
+     VolumeRecoveryStats stats;
+     const auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+                                               nullptr,nullptr,&stats,false,native_profile);
+     for(int i=0;i<VolumeRecoveryStats::count;++i)recovery[i]=stats.values[i].load();
      return result;
    }
 

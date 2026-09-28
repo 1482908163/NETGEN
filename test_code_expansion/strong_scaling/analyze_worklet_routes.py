@@ -6,7 +6,7 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
@@ -41,7 +41,8 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('ready_global','spatial_ready','front_search_on_ready'),
        ('reference_bound','spatial_ready','structural_total'),
        ('async_global','recovery_global','recovery_readonly_parallel'),
-       ('reference_bound','recovery_global','recovery_total'))
+       ('reference_bound','recovery_global','recovery_total'),
+       ('async_global','profile_global','diagnostic_overhead'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -66,24 +67,24 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
-                                expected={'recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
+                                expected={'profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
                                           'b_window':'node_window_priority','b_balanced':'node_window_balanced',
                                           'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
                                 if expected and run.get('kernel_scheduler')!=expected:
                                     raise ValueError('route kernel scheduler mismatch')
-                                numbering={'c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2'}.get(route,'eager_v1')
+                                numbering={'c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2','profile_global':'owner_local_v2'}.get(route,'eager_v1')
                                 if numbering and run.get('global_numbering')!=numbering:
                                     raise ValueError('route numbering mismatch')
-                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global'):
+                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global'):
                                     if run.get('node_cpu_bind')!='cores' or run.get('node_affinity_layout')!='disjoint':
                                         raise ValueError('bound route lacks verified disjoint startup affinity')
                                 if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
                                     policy={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
                                     if run.get('worklet_policy')!=policy:
                                         raise ValueError('route worklet policy mismatch')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
+                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
                                     raise ValueError('missing temporary-ID adjacency audit contract')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global') and run.get('adjacency_id_path')!='owner_local_v2':
+                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global') and run.get('adjacency_id_path')!='owner_local_v2':
                                     raise ValueError('async adjacency did not use temporary IDs')
                                 if route in ('front_spatial','spatial_ready') and run.get('front_search')!='conservative_boxes_v1':
                                     raise ValueError('route conservative front search mismatch')
@@ -91,6 +92,8 @@ def analyze(root,ranks,selected=ROUTES):
                                     raise ValueError('route ready exchange mismatch')
                                 if route=='recovery_global' and run.get('recovery_evaluation')!='parallel_readonly_v1':
                                     raise ValueError('missing recovery parallel contract')
+                                if route=='profile_global' and run.get('volume_native_profile')!='phase_operations_v1':
+                                    raise ValueError('missing phase operation profile')
                                 if repeat==0:
                                     q=run['mesh_quality'];qualities[route,algorithm,seed]=q
                                     if not q['structural_pass']:raise ValueError('mesh structural audit failed')
@@ -110,7 +113,7 @@ def analyze(root,ranks,selected=ROUTES):
             for seed in plan['partition_seeds']:
                 qa=qualities.get((control,algorithm,seed));qb=qualities.get((candidate,algorithm,seed))
                 gate=compare_quality(qa,qb) if qa and qb else dict(quality_pass=False,quality_issues='missing_audit')
-                if candidate in ('async_global','ready_global','front_spatial','spatial_ready','recovery_global') and qa and qb and not gate.get('same_volume_fingerprint'):
+                if candidate in ('async_global','ready_global','front_spatial','spatial_ready','recovery_global','profile_global') and qa and qb and not gate.get('same_volume_fingerprint'):
                     gate['quality_pass']=False
                     gate['quality_issues']+=';structural_owned_mesh_changed'
                 # Splitting changes interior meshing. Do not silently waive a
@@ -149,6 +152,8 @@ def analyze(root,ranks,selected=ROUTES):
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     lines.extend(f"Recovery {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['recovery_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; recovery on each run's slowest rank {r['control_slowest_recovery_seconds']:.6f} -> {r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='recovery_global')
+    if any(r['candidate']=='profile_global' for r in comparisons):
+        lines.append('profile_global is an instrumentation control, not an optimization. Inspect analysis/critical_rank_breakdown.csv for same-rank phase/operation data; native timers are inclusive and must not be summed.')
     if any(r.get('recovery_exercised') is False for r in comparisons):
         lines.append('Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.')
     (out/'ROUTE_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
