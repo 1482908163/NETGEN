@@ -1,0 +1,14 @@
+A1/B1/C1: 80 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference_bound -> async_global natural: 3.74% reduction; wins=8/8; validated=True
+reference_bound -> async_global split: 4.59% reduction; wins=6/8; validated=True
+reference_bound -> front_spatial natural: -0.80% reduction; wins=3/8; validated=True
+reference_bound -> front_spatial split: -2.49% reduction; wins=3/8; validated=True
+async_global -> ready_global natural: 1.57% reduction; wins=6/8; validated=True
+async_global -> ready_global split: 1.62% reduction; wins=4/8; validated=True
+ready_global -> spatial_ready natural: -4.79% reduction; wins=1/8; validated=True
+ready_global -> spatial_ready split: -2.92% reduction; wins=3/8; validated=True
+reference_bound -> spatial_ready natural: 5.21% reduction; wins=6/8; validated=True
+reference_bound -> spatial_ready split: 1.22% reduction; wins=5/8; validated=True

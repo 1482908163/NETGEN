@@ -1,0 +1,11 @@
+control,candidate,contribution,algorithm,seed,timing,paired_count,paired_wins,control_seconds,candidate_seconds,paired_reduction_pct,paired_min_pct,paired_max_pct,validated,ownership_equal,task_mesh_equal,quality_pass,quality_issues,same_volume_fingerprint
+reference_bound,async_global,deferred_globalization,sparse,-1,natural,8,8,4.359884571000066,3.9780207459997428,3.7416823875676797,0.40292428014974124,12.63532362258698,True,,,True,,True
+reference_bound,async_global,deferred_globalization,sparse,-1,split,8,6,4.231415164999817,4.027718838999931,4.593923276175138,-12.886820946591193,10.949073730098712,True,,,True,,True
+reference_bound,front_spatial,front_search_culling,sparse,-1,natural,8,3,4.359884571000066,4.383026020999978,-0.804820953691443,-11.829481995709369,7.5349206805796705,True,,,True,,True
+reference_bound,front_spatial,front_search_culling,sparse,-1,split,8,3,4.231415164999817,4.392623035999804,-2.4885523483773597,-10.741984520416615,6.955501869649828,True,,,True,,True
+async_global,ready_global,peer_readiness,sparse,-1,natural,8,6,3.9780207459997428,3.9249089769999728,1.568207072899458,-6.3937559697073265,10.113704481544094,True,,,True,,True
+async_global,ready_global,peer_readiness,sparse,-1,split,8,4,4.027718838999931,3.9271573694998096,1.6219587918575973,-8.148239851270356,9.240624102584082,True,,,True,,True
+ready_global,spatial_ready,front_search_on_ready,sparse,-1,natural,8,1,3.9249089769999728,4.087029927999993,-4.786418016956063,-13.754736599110572,3.2569819717114923,True,,,True,,True
+ready_global,spatial_ready,front_search_on_ready,sparse,-1,split,8,3,3.9271573694998096,4.040425956999911,-2.916129978677462,-12.42982405350308,5.626400013579258,True,,,True,,True
+reference_bound,spatial_ready,structural_total,sparse,-1,natural,8,6,4.359884571000066,4.087029927999993,5.211430038484249,-7.062866207329543,9.512945023501063,True,,,True,,True
+reference_bound,spatial_ready,structural_total,sparse,-1,split,8,5,4.231415164999817,4.040425956999911,1.2191272866781344,-6.83975033552171,10.048011135301449,True,,,True,,True
