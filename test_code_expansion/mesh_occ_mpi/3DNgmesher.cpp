@@ -1,3 +1,4 @@
+#include "ready_neighbor_exchange.h"
 #include <map>
 #include <algorithm>
 #include <math.h>
@@ -1834,12 +1835,25 @@ GlobalId *com_baryVolumeElements(
 	netgen_mpi_checkpoint(
 		comm, "com_baryVolumeElements.size_exchange.begin",
 		static_cast<long>(pidmap.size()), comm_size);
+	std::vector<std::vector<xdVElement>> recv_by_peer(comm_size);
 	if(mesh_research::options().async_global_ids) {
 		std::set<int> peers;
 		for(const auto &entry:barycvrtx2adjprocsmap)
 			for(int peer:entry.second)if(peer>=0 && peer<comm_size && peer!=mypid)peers.insert(peer);
 		for(const auto &entry:pidmap)if(!peers.count(entry.first))
 			netgen_mpi_check(comm,MPI_ERR_RANK,"volume neighbor graph missing send peer");
+		if(mesh_research::options().ready_volume_exchange) {
+            scaling::StageScope stage("volume_ready_exchange","communication");
+            const auto stats=mesh_research::exchange_ready_neighbors(comm,mpivetype,peers,pidmap,
+                send_counts,recv_counts,recv_by_peer);
+            auto &profile=scaling::Profiler::instance();
+            profile.set_metric("ready_volume_count_completions",stats.counts);
+            profile.set_metric("ready_volume_early_receives",stats.early_receives);
+            profile.set_metric("ready_volume_payload_sends",stats.payload_sends);
+            profile.add_communication("volume_ready_counts",peers.size(),peers.size(),
+                peers.size()*sizeof(int),peers.size()*sizeof(int));
+            profile.set_metric("volume_count_peers",peers.size());
+        } else {
 		std::vector<MPI_Request> requests(2*peers.size(),MPI_REQUEST_NULL);
 		std::size_t q=0;
 		{
@@ -1856,6 +1870,7 @@ GlobalId *com_baryVolumeElements(
 			static_cast<std::uint64_t>(peers.size())*sizeof(int),
 			static_cast<std::uint64_t>(peers.size())*sizeof(int));
 		scaling::Profiler::instance().set_metric("volume_count_peers",static_cast<double>(peers.size()));
+        }
 	} else {
 		ProfileCollectiveArrivalWait("volume_size_exchange_pre_collective_wait", comm);
 		{
@@ -1880,7 +1895,7 @@ GlobalId *com_baryVolumeElements(
 	std::vector<int> r_length;
 	std::vector<xdVElement *> s_data_ves;
 	std::vector<xdVElement *> r_data_ves;
-	std::vector<std::vector<xdVElement>> recv_by_peer(comm_size);
+
 	std::uint64_t volume_receive_items = 0;
 	{
 		scaling::StageScope profile_stage("volume_payload_prepare", "compute");
@@ -1930,7 +1945,7 @@ GlobalId *com_baryVolumeElements(
 	netgen_mpi_check(
 		comm, MPI_Type_size(mpivetype, &volume_element_type_bytes),
 		"com_baryVolumeElements/MPI_Type_size");
-	{
+	if(!mesh_research::options().ready_volume_exchange) {
 		scaling::StageScope profile_stage("volume_payload_exchange", "communication");
 		com_sr_volumelement(
 			comm, num_s, num_r,

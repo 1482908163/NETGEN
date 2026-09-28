@@ -1,5 +1,6 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
+#include "conservative_box_index.hpp"
 
 
 namespace netgen
@@ -175,6 +176,23 @@ int Meshing3 :: ApplyRules
 	triboxes[i].AddPoint (lpoints[face[j]]);
     }
 
+  ConservativeBoxIndex point_index,face_index;
+  auto query_box=[](const Box3d &box) {
+    const auto lo=box.PMin(),hi=box.PMax();
+    return ConservativeBoxIndex::Box{{lo.X(),lo.Y(),lo.Z()},{hi.X(),hi.Y(),hi.Z()}};
+  };
+  if(front_search) {
+    const auto begin=std::chrono::steady_clock::now();
+    std::vector<ConservativeBoxIndex::Box> points,faces;
+    points.reserve(lpoints.Size());faces.reserve(lfaces.Size());
+    for(auto i:lpoints.Range()) {
+      const auto &p=lpoints[i];points.push_back({{p.X(),p.Y(),p.Z()},{p.X(),p.Y(),p.Z()}});
+    }
+    for(int i=1;i<=lfaces.Size();++i)faces.push_back(query_box(triboxes.Elem(i)));
+    point_index=ConservativeBoxIndex(std::move(points));
+    face_index=ConservativeBoxIndex(std::move(faces));
+    front_search->Add(5,std::chrono::duration<double>(std::chrono::steady_clock::now()-begin).count());
+  }
   NgProfiler::StopTimer (91);
   NgProfiler::StartTimer (92);
 
@@ -658,8 +676,17 @@ int Meshing3 :: ApplyRules
 		      // check freezone:
 		      
 		      // for (int i = 1; i <= lpoints.Size(); i++)
-                      for (auto i : lpoints.Range())
+                      std::vector<int> point_candidates,face_candidates;
+                      if(front_search) {
+                        const auto box=query_box(rule->fzbox);
+                        point_candidates=point_index.query(box);face_candidates=face_index.query(box);
+                        front_search->Add(0,1);
+                        front_search->Add(1,lpoints.Size());front_search->Add(2,point_candidates.size());
+                        front_search->Add(3,lfaces.Size());front_search->Add(4,face_candidates.size());
+                      }
+                      for(int qi=0;qi<(front_search?static_cast<int>(point_candidates.size()):lpoints.Size());++qi)
 			{
+                          PointIndex i(PointIndex::BASE+(front_search?point_candidates[qi]:qi));
 			  if ( !pused[i] )
 			    {
 			      const Point3d & lp = lpoints[i];
@@ -681,8 +708,9 @@ int Meshing3 :: ApplyRules
 			    }
 			}
 
-		      for (int i = 1; i <= lfaces.Size() && ok; i++)
+		      for (int qi=0;qi<(front_search?static_cast<int>(face_candidates.size()):lfaces.Size()) && ok;++qi)
 			{
+                          const int i=1+(front_search?face_candidates[qi]:qi);
 			  NgArrayMem<int, 10> lpi(4);
 
 			  if (!fused.Get(i))

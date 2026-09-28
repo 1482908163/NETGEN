@@ -32,6 +32,7 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  VolumeFrontSearchStats * front_search = nullptr;
 public:
   /// 
   Meshing3 (const string & rulefilename); 

@@ -182,6 +182,7 @@ int Meshing3 :: AddConnectedPair (const INDEX_2 & apair)
 MESHING3_RESULT Meshing3 :: 
 GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 {
+  front_search=mp.volume_front_search;
   static Timer t("Meshing3::GenerateMesh"); RegionTimer reg(t);
   // static Timer meshing3_timer_a("Meshing3::GenerateMesh a", 2);
   // static Timer meshing3_timer_b("Meshing3::GenerateMesh b", 2);

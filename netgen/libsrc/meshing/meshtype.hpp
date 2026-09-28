@@ -95,6 +95,15 @@ namespace netgen
     }
   };
 
+  struct VolumeFrontSearchStats {
+    static constexpr int count=6;
+    std::atomic<double> values[count];
+    VolumeFrontSearchStats() {for(auto &v:values)v.store(0);}
+    void Add(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+  };
   // Per-call diagnostics; domain workers may contribute concurrently.
   struct VolumeKernelStats {
     static constexpr int count = 12;
@@ -1709,6 +1718,7 @@ namespace netgen
 
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
+    VolumeFrontSearchStats * volume_front_search = nullptr;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     const VolumeResources * volume_resources = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims

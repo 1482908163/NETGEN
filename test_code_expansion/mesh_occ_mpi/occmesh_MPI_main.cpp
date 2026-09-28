@@ -43,11 +43,12 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_fixed/node_elastic/node_window/node_window_priority/node_window_balanced/node_window_repeat内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/spatial/frontier/node_original/node_native/node_fixed/node_elastic/node_window/node_window_priority/node_window_balanced/node_window_repeat内核策略" << endl <<
          "--communication-only : 固定原分区、禁用历史均衡模型；可显式启用 worklets" << endl <<
          "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
          "--adaptive-worklets : 仅对粗负载上四分位的重分区增加worklet粒度" << endl <<
          "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
+         "--ready-volume-exchange : 逐邻居计数到达后接收载荷，要求 --async-global-ids" << endl <<
          "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠\n--async-global-ids : owner-local 临时ID，核心路径取消全局count collective" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -206,6 +207,9 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--deferred-global-ids")) {
             mesh_research::options().deferred_global_ids = true;
         }
+        else if(!strcmp(argv[i],"--ready-volume-exchange")) {
+            mesh_research::options().ready_volume_exchange = true;
+        }
         else if(!strcmp(argv[i],"--async-global-ids")) {
             mesh_research::options().async_global_ids = true;
         }
@@ -352,11 +356,13 @@ int main(int argc, char **argv) {
        (!research.worklets() && research.worklet_policy!="static") ||
        ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
        (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids)) ||
+       (research.ready_volume_exchange && !research.async_global_ids) ||
+       (research.kernel_scheduler=="spatial" && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
        (research.adaptive_worklets && !research.worklets())) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
-    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="frontier") ||
+    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="spatial" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
         if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
@@ -487,6 +493,8 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
+    profiler.add_metadata("front_search",research.kernel_scheduler=="spatial"?"conservative_boxes_v1":"linear_v1");
+    profiler.add_metadata("volume_exchange_policy",research.ready_volume_exchange?"peer_ready_v1":"batch_v1");
     profiler.add_metadata("adjacency_audit_schema","canonical_ghost_v1");
     profiler.add_metadata("adjacency_id_path",research.async_global_ids && profile_core_only?"owner_local_v2":"contiguous_v1");
     if(research.worklets()) profiler.add_metadata("worklet_scheduler","mandatory_home_v2");
@@ -879,7 +887,7 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
-            double kernel_seconds[3]={},kernel_details[12]={};
+            double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={};
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -898,6 +906,8 @@ int main(int argc, char **argv) {
                     : research.kernel_scheduler=="node_scoped"
                     ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
                     : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
+                : research.kernel_scheduler=="spatial"
+                ? nglib::Ng_GenerateVolumeMeshSpatial(submesh,&nmp,research.kernel_threads,kernel_seconds,kernel_details,front_search)
                 : research.kernel_threads>0
                 ? nglib::Ng_GenerateVolumeMeshRepair(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="frontier"?3:(research.kernel_scheduler=="repair" || research.kernel_scheduler=="node_native")?2:research.kernel_scheduler=="cavity"?1:0,kernel_seconds,kernel_details)
@@ -914,6 +924,11 @@ int main(int argc, char **argv) {
                 profiler.set_metric("kernel_generation_seconds",kernel_seconds[0]);
                 profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
                 profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);
+            }
+            if(research.kernel_scheduler=="spatial") {
+                const char *names[]={"queries","point_scan_opportunities","point_candidates",
+                    "face_scan_opportunities","face_candidates","build_seconds"};
+                for(int k=0;k<6;++k)profiler.set_metric(std::string("front_search_")+names[k],front_search[k]);
             }
             if(local_status!=nglib::NG_OK) {
                 std::cerr<<"局部体网格生成失败，进程 "<<id<<std::endl;

@@ -14,7 +14,7 @@ import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
     worklet=route in ('a_static','a_dynamic','b_remaining','b_critical','worklet_static_fixed','worklet_owner_fixed','critical_worklet');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
-    scheduler={'a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
+    scheduler={'front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
@@ -29,12 +29,14 @@ def fixture(route,repeat,mode='natural'):
         task_mesh_signature='1234',worklet_ownership_signature='abcd')
     meta['node_affinity_layout']='disjoint'
     meta['adjacency_audit_schema']='canonical_ghost_v1'
-    meta['adjacency_id_path']='owner_local_v2' if route=='async_global' else 'contiguous_v1'
-    if route=='async_global':meta['global_numbering']='owner_local_v2'
+    meta['adjacency_id_path']='owner_local_v2' if route in ('async_global','ready_global','spatial_ready') else 'contiguous_v1'
+    if route in ('async_global','ready_global','spatial_ready'):meta['global_numbering']='owner_local_v2'
     if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
         meta['worklet_scheduler']='mandatory_home_v2'
         meta['worklet_decomposition']='original_owner_v1'
         meta['worklet_policy']={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
+    meta['front_search']='conservative_boxes_v1' if route in ('front_spatial','spatial_ready') else 'linear_v1'
+    meta['volume_exchange_policy']='peer_ready_v1' if route in ('ready_global','spatial_ready') else 'batch_v1'
     if repeat==0:meta.update(mesh_quality='volume_audit_v1',quality_face_reference='allgather')
     if scheduler.startswith('node_'):
         meta['node_resources']='node_coop_v2'
@@ -71,9 +73,15 @@ def fixture(route,repeat,mode='natural'):
             for name in ('checks','restarts','grants','seconds'):m['coop_checkpoint_'+name]=0
             for name in ('checks','unknown','short','cost','deferred','no_capacity','grants','reserved_cores','already','gain_estimate_seconds','restart_estimate_seconds'):
                 m['coop_work_'+name]=0
-        if route=='async_global':
+        if route in ('async_global','ready_global','spatial_ready'):
             m['id_global_count_collectives']=0
             stages['id_owner_local_encode']=dict(seconds=.01,calls=1)
+        if route in ('front_spatial','spatial_ready'):
+            m.update(front_search_queries=1,front_search_point_scan_opportunities=100,front_search_point_candidates=10,
+                front_search_face_scan_opportunities=80,front_search_face_candidates=8,front_search_build_seconds=.001)
+        if route in ('ready_global','spatial_ready'):
+            m.update(volume_count_peers=1,ready_volume_count_completions=1,ready_volume_early_receives=0,ready_volume_payload_sends=1)
+            stages['volume_ready_exchange']=dict(seconds=.01,calls=1)
         if deferred:
             for s in ('id_count_begin','id_count_commit_wait','id_compaction'):stages[s]=dict(seconds=.01,calls=1)
         if prefix:
@@ -191,6 +199,18 @@ def main():
             invalid=root/'bad_adjacency.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
             try:profiles.inspect(invalid);assert False
             except ValueError as e:assert error in str(e),str(e)
+        for route,metric,value,error in [('front_spatial','front_search_point_candidates',101,'candidates exceed'),
+                    ('ready_global','ready_volume_count_completions',0,'completion coverage mismatch')]:
+            bad=fixture(route,1);bad[0]['metrics'][metric]=value
+            invalid=root/'bad_structural.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
+            try:profiles.inspect(invalid);assert False
+            except ValueError as e:assert error in str(e),str(e)
+        path=root/'route_front_spatial/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
+        original=path.read_text();bad=fixture('front_spatial',0);bad[0]['metrics']['quality_volume_sum_lo']+=1
+        path.write_text(''.join(json.dumps(r)+'\n' for r in bad))
+        assert not routes.analyze(root,2)
+        assert 'structural_owned_mesh_changed' in (root/'p2/route_issues.txt').read_text()
+        path.write_text(original)
         bad=fixture('critical_worklet',1);bad[0]['metrics']['worklet_remote_claims']=2
         invalid=root/'bad_budget.jsonl';invalid.write_text(''.join(json.dumps(r)+'\n' for r in bad))
         try:profiles.inspect(invalid);assert False
