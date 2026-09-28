@@ -494,7 +494,13 @@ namespace netgen
             meshed = 0;
             PrintMessage (5, mesh.GetNOpenElements(), " open faces found");
 
-            MeshOptimize3d optmesh(mesh, mp, OPT_REST);
+            // Only read-only edge candidate evaluation may start a worker team.
+            // Smoothing, topology writes and operation order remain serial.
+            VolumeRecoveryTimer recovery_timer(mp.volume_recovery_stats,1);
+            if(mp.volume_recovery_stats)mp.volume_recovery_stats->Add(0,1);
+            MeshingParameters recovery_mp=mp;
+            recovery_mp.volume_recovery_active=true;
+            MeshOptimize3d optmesh(mesh, recovery_mp, OPT_REST);
 
             const char * optstr = "mcmstmcmstmcmstmcm";
             for (size_t j = 1; j <= strlen(optstr); j++)

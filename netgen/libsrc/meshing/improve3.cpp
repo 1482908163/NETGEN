@@ -48,7 +48,17 @@ static void ForVolumeCandidates(const MeshingParameters & mp,
     const Array<std::tuple<PointIndex,PointIndex>> & edges,
     const Table<ElementIndex,PointIndex> & incidence, TFUNC evaluate)
 {
+  auto * recovery=mp.volume_recovery_active ? mp.volume_recovery_stats : nullptr;
+  VolumeRecoveryTimer recovery_timer(recovery,3);
+  // This scope ends before sorting and committing mesh mutations in the caller.
+  ngcore::RegionTaskManager recovery_team(
+      mp.volume_recovery_active && mp.volume_recovery_parallel && mp.parallel_meshing
+      ? mp.nthreads : 0);
   const int workers = ngcore::TaskManager::GetNumThreads();
+  if(recovery) {
+    recovery->Add(2,1);recovery->Add(4,edges.Size());
+    if(workers>1)recovery->Add(5,1);
+  }
   if (!mp.volume_candidate_schedule || workers<=1 || edges.Size()<256)
   {
     ParallelForRange(Range(edges), evaluate, ngcore::TasksPerThread(4));

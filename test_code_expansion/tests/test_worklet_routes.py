@@ -14,7 +14,7 @@ import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
     worklet=route in ('a_static','a_dynamic','b_remaining','b_critical','worklet_static_fixed','worklet_owner_fixed','critical_worklet');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
-    scheduler={'front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
+    scheduler={'recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
@@ -29,14 +29,16 @@ def fixture(route,repeat,mode='natural'):
         task_mesh_signature='1234',worklet_ownership_signature='abcd')
     meta['node_affinity_layout']='disjoint'
     meta['adjacency_audit_schema']='canonical_ghost_v1'
-    meta['adjacency_id_path']='owner_local_v2' if route in ('async_global','ready_global','spatial_ready') else 'contiguous_v1'
-    if route in ('async_global','ready_global','spatial_ready'):meta['global_numbering']='owner_local_v2'
+    meta['adjacency_id_path']='owner_local_v2' if route in ('async_global','ready_global','spatial_ready','recovery_global') else 'contiguous_v1'
+    if route in ('async_global','ready_global','spatial_ready','recovery_global'):meta['global_numbering']='owner_local_v2'
     if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
         meta['worklet_scheduler']='mandatory_home_v2'
         meta['worklet_decomposition']='original_owner_v1'
         meta['worklet_policy']={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
     meta['front_search']='conservative_boxes_v1' if route in ('front_spatial','spatial_ready') else 'linear_v1'
     meta['volume_exchange_policy']='peer_ready_v1' if route in ('ready_global','spatial_ready') else 'batch_v1'
+    if route in ('reference_bound','async_global','recovery_global'):
+        meta['recovery_evaluation']='parallel_readonly_v1' if route=='recovery_global' else 'serial_readonly_v1'
     if repeat==0:meta.update(mesh_quality='volume_audit_v1',quality_face_reference='allgather')
     if scheduler.startswith('node_'):
         meta['node_resources']='node_coop_v2'
@@ -47,6 +49,8 @@ def fixture(route,repeat,mode='natural'):
         m=dict(core_seconds=1.,local_points_before_adjacency=4,
             local_volume_elements_before_adjacency=1,local_surface_elements_before_adjacency=4,
             kernel_generation_seconds=.1,kernel_repair_seconds=.1,kernel_optimization_seconds=.1)
+        if 'recovery_evaluation' in meta:
+            m.update(recovery_calls=1,recovery_seconds=.04,recovery_evaluation_calls=2,recovery_evaluation_seconds=.02,recovery_candidates=64,recovery_parallel_evaluations=0)
         for name in ('delaunay_seconds','front_seconds','domain_repair_seconds','repair_mark_seconds',
                      'repair_split_seconds','repair_swap_seconds','repair_swap2_seconds',
                      'repair_rounds','repair_candidates_total','repair_candidates_active','repair_fallbacks'):
@@ -73,7 +77,7 @@ def fixture(route,repeat,mode='natural'):
             for name in ('checks','restarts','grants','seconds'):m['coop_checkpoint_'+name]=0
             for name in ('checks','unknown','short','cost','deferred','no_capacity','grants','reserved_cores','already','gain_estimate_seconds','restart_estimate_seconds'):
                 m['coop_work_'+name]=0
-        if route in ('async_global','ready_global','spatial_ready'):
+        if route in ('async_global','ready_global','spatial_ready','recovery_global'):
             m['id_global_count_collectives']=0
             stages['id_owner_local_encode']=dict(seconds=.01,calls=1)
         if route in ('front_spatial','spatial_ready'):
@@ -115,6 +119,28 @@ def main():
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
         assert routes.analyze(root,2)
+        parallel=fixture('recovery_global',1)
+        for row in parallel:
+            row['metadata']['kernel_threads']='4'
+            row['metrics']['recovery_parallel_evaluations']=2
+        check=root/'recovery.jsonl'
+        def write_rows(rows):check.write_text(''.join(json.dumps(r)+'\n' for r in rows))
+        write_rows(parallel)
+        run,_=profiles.inspect(check)
+        assert run['recovery_exercised'] and run['recovery_parallel_evaluations']==4
+        write_rows(list(reversed(parallel)))
+        reversed_run,_=profiles.inspect(check)
+        assert reversed_run==run
+        broken=copy.deepcopy(parallel);broken[0]['metrics']['recovery_parallel_evaluations']=0
+        write_rows(broken)
+        try:profiles.inspect(check);assert False
+        except ValueError as e:assert 'worker activation' in str(e)
+        for row in parallel:
+            for key in list(row['metrics']):
+                if key.startswith('recovery_'):row['metrics'][key]=0
+        write_rows(parallel)
+        run,_=profiles.inspect(check)
+        assert not run['recovery_exercised']
         comparisons=list(csv.DictReader((root/'p2/route_comparisons.csv').open()))
         direct=[r for r in comparisons if r['contribution']=='end_to_end']
         assert len(direct)==30

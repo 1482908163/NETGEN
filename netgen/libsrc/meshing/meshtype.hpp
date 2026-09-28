@@ -95,6 +95,28 @@ namespace netgen
     }
   };
 
+  // Recovery diagnostics have a separate ABI from the existing 12 counters.
+  struct VolumeRecoveryStats {
+    static constexpr int count=6;
+    std::atomic<double> values[count];
+    VolumeRecoveryStats() { for(auto & v:values) v.store(0); }
+    void Add(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+  };
+  struct VolumeRecoveryTimer {
+    VolumeRecoveryStats *stats;
+    int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeRecoveryTimer(VolumeRecoveryStats *s,int i):stats(s),index(i) {
+      if(stats) start=std::chrono::steady_clock::now();
+    }
+    ~VolumeRecoveryTimer() {
+      if(stats)stats->Add(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
+
   struct VolumeFrontSearchStats {
     static constexpr int count=6;
     std::atomic<double> values[count];
@@ -1716,6 +1738,9 @@ namespace netgen
     ///
     bool autozrefine = false;
 
+    VolumeRecoveryStats *volume_recovery_stats = nullptr;
+    bool volume_recovery_parallel = false;
+    bool volume_recovery_active = false;
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
     VolumeFrontSearchStats * volume_front_search = nullptr;

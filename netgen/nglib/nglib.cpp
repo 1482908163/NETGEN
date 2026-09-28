@@ -418,7 +418,8 @@ namespace nglib
 
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
-       const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr)
+       const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr,
+       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -443,6 +444,8 @@ namespace nglib
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
          local.volume_front_search = front;
+         local.volume_recovery_stats = recovery;
+         local.volume_recovery_parallel = parallel_recovery;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
@@ -479,6 +482,18 @@ namespace nglib
    {
      if(!details) return NG_ERROR;
      return GenerateVolumeKernelImpl(mesh,mp,threads,schedule,seconds,details);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecovery(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters *mp,int threads,int parallel_recovery,
+       double *seconds,double *details,double *diagnostics)
+   {
+     if(!details || !diagnostics || parallel_recovery<0 || parallel_recovery>1)return NG_ERROR;
+     VolumeRecoveryStats stats;
+     const auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+                                               nullptr,nullptr,&stats,parallel_recovery!=0);
+     for(int i=0;i<VolumeRecoveryStats::count;++i)diagnostics[i]=stats.values[i].load();
+     return result;
    }
 
    NGLIB_API Ng_Result Ng_GenerateVolumeMeshSpatial(Ng_Mesh * mesh,

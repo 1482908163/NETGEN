@@ -339,6 +339,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     n = rows[0]["ranks"]
     if len(rows) != n or sorted(r["rank"] for r in rows) != list(range(n)):
         raise ValueError("missing or duplicate rank rows")
+    rows.sort(key=lambda row:row["rank"])
     metadata = rows[0]["metadata"]
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
@@ -393,7 +394,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
     face_bytes = sum(s.get("receive_bytes", 0) for r in rows for name, s in r["stages"].items()
                      if name == "face_allgatherv" or name.startswith("face_sparse_"))
     split = metadata["timing_mode"] == "split"
-    result = dict(front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
+    result = dict(recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
                   partition_seed=int(metadata.get("partition_seed",-1)),
                   repeat=rows[0]["repeat"], core_seconds=max(r["metrics"]["core_seconds"] for r in rows),
                   face_pipeline_seconds=max(seconds(r, "face_pipeline_total") for r in rows),
@@ -426,7 +427,7 @@ def inspect(path, sample_sink=None, timeline_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -441,6 +442,32 @@ def inspect(path, sample_sink=None, timeline_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid thread lifecycle metric: "+key)
             result[key]=sum(values) if name=="starts" else max(values)
+    recovery_mode=metadata.get('recovery_evaluation')
+    if metadata.get('kernel_scheduler')=='recovery' and recovery_mode!='parallel_readonly_v1':
+        raise ValueError('missing recovery evaluation contract')
+    if recovery_mode is not None:
+        expected='parallel_readonly_v1' if metadata.get('kernel_scheduler')=='recovery' else 'serial_readonly_v1'
+        if recovery_mode!=expected:raise ValueError('invalid recovery evaluation mode')
+        names=('calls','seconds','evaluation_calls','evaluation_seconds','candidates','parallel_evaluations')
+        for row in rows:
+            m=row['metrics']
+            for name in names:
+                v=m['recovery_'+name]
+                if not math.isfinite(v) or v<0 or ('seconds' not in name and v!=int(v)):
+                    raise ValueError('invalid recovery diagnostic')
+            if m['recovery_evaluation_seconds']>m['recovery_seconds']+1e-6:
+                raise ValueError('recovery evaluation exceeds recovery region')
+            expected_calls=m['recovery_evaluation_calls'] if recovery_mode=='parallel_readonly_v1' and int(metadata['kernel_threads'])>1 else 0
+            if m['recovery_parallel_evaluations']!=expected_calls:
+                raise ValueError('recovery worker activation mismatch')
+            if m['recovery_calls']==0 and any(m['recovery_'+k]!=0 for k in names[2:]):
+                raise ValueError('recovery evaluation outside recovery region')
+        for name in names:
+            key='recovery_'+name
+            values=[row['metrics'][key] for row in rows]
+            result[key]=max(values) if 'seconds' in name else sum(values)
+            result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
+        result['recovery_exercised']=result['recovery_candidates']>0 and result['recovery_evaluation_calls']>0
     if metadata.get('kernel_scheduler')=='spatial':
         if metadata.get('front_search')!='conservative_boxes_v1':raise ValueError('missing conservative front search')
         fields=('queries','point_scan_opportunities','point_candidates','face_scan_opportunities','face_candidates','build_seconds')
@@ -1247,7 +1274,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
+            if name in ("recovery_evaluation", "front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
                         "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
