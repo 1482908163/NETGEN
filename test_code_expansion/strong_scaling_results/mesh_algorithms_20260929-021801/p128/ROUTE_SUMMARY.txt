@@ -1,0 +1,7 @@
+A1/B1/C1: 32 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+async_global -> profile_global natural: -0.62% reduction; wins=3/8; validated=True
+async_global -> profile_global split: -1.48% reduction; wins=1/8; validated=True
+profile_global is an instrumentation control, not an optimization. Inspect analysis/critical_rank_breakdown.csv for same-rank phase/operation data; native timers are inclusive and must not be summed.
