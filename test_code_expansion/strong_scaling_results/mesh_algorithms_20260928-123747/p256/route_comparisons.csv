@@ -1,0 +1,13 @@
+control,candidate,contribution,algorithm,seed,timing,paired_count,paired_wins,control_seconds,candidate_seconds,paired_reduction_pct,paired_min_pct,paired_max_pct,validated,ownership_equal,task_mesh_equal,quality_pass,quality_issues,same_volume_fingerprint
+reference_bound,worklet_static_fixed,task_dispatch_overhead,sparse,-1,natural,8,0,3.4613610730000914,3.6771157244999984,-6.643158030928509,-12.247330002443757,-3.428411211495752,True,,,True,,True
+reference_bound,worklet_static_fixed,task_dispatch_overhead,sparse,-1,split,8,1,3.53047030499998,3.781989883500021,-8.536323610985775,-18.493956445770078,3.2155545209430647,True,,,True,,True
+worklet_static_fixed,worklet_owner_fixed,execution_balance,sparse,-1,natural,8,2,3.6771157244999984,3.7800505135000435,-2.2371950988941514,-6.850655166137876,2.118584887034869,True,True,True,True,,True
+worklet_static_fixed,worklet_owner_fixed,execution_balance,sparse,-1,split,8,4,3.781989883500021,3.7257180555000105,1.2053018733441834,-4.750839448641542,5.930941357980457,True,True,True,True,,True
+reference_bound,worklet_owner_fixed,owner_fixed_worklet,sparse,-1,natural,8,0,3.4613610730000914,3.7800505135000435,-9.886490148726812,-15.199672820496147,-5.161049516664362,True,,,True,,True
+reference_bound,worklet_owner_fixed,owner_fixed_worklet,sparse,-1,split,8,0,3.53047030499998,3.7257180555000105,-5.92263164112855,-21.382781419260443,-1.3825190950249366,True,,,True,,True
+worklet_owner_fixed,critical_worklet,sync_criticality,sparse,-1,natural,8,6,3.7800505135000435,3.6902808459999505,0.9818388176883686,-1.0865122120018222,5.084059240291827,True,True,True,True,,True
+worklet_owner_fixed,critical_worklet,sync_criticality,sparse,-1,split,8,3,3.7257180555000105,3.7874130990000197,-2.7488953401792138,-9.45246078066826,5.907455508062687,True,True,True,True,,True
+reference_bound,critical_worklet,end_to_end,sparse,-1,natural,8,0,3.4613610730000914,3.6902808459999505,-7.773150985163236,-13.791439381908344,-4.316135781616759,True,,,True,,True
+reference_bound,critical_worklet,end_to_end,sparse,-1,split,8,0,3.53047030499998,3.7874130990000197,-10.3805408954456,-17.537979241917334,-2.575115576858078,True,,,True,,True
+reference_bound,async_global,deferred_globalization,sparse,-1,natural,8,7,3.4613610730000914,3.184047454000101,7.512124302162149,-0.18023634960588897,12.81056514679918,True,,,True,,True
+reference_bound,async_global,deferred_globalization,sparse,-1,split,8,8,3.53047030499998,3.2317667700000356,6.573493443939782,2.4942600199954756,17.644271759896068,True,,,True,,True

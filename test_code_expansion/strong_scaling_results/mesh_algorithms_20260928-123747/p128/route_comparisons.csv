@@ -1,0 +1,13 @@
+control,candidate,contribution,algorithm,seed,timing,paired_count,paired_wins,control_seconds,candidate_seconds,paired_reduction_pct,paired_min_pct,paired_max_pct,validated,ownership_equal,task_mesh_equal,quality_pass,quality_issues,same_volume_fingerprint
+reference_bound,worklet_static_fixed,task_dispatch_overhead,sparse,-1,natural,8,0,4.292437065000115,5.479418268000018,-27.654157927740783,-36.6147560345256,-20.678299904454754,True,,,True,,True
+reference_bound,worklet_static_fixed,task_dispatch_overhead,sparse,-1,split,8,0,4.1148484609998945,5.526812904500019,-34.38030457593452,-40.02237403452935,-18.72878709669663,True,,,True,,True
+worklet_static_fixed,worklet_owner_fixed,execution_balance,sparse,-1,natural,8,8,5.479418268000018,4.614726735999874,15.674729943435995,13.021018222902182,18.236445422294565,True,True,True,True,,True
+worklet_static_fixed,worklet_owner_fixed,execution_balance,sparse,-1,split,8,8,5.526812904500019,4.609410662000073,16.946722735428626,15.032189713934374,18.271901192824103,True,True,True,True,,True
+reference_bound,worklet_owner_fixed,owner_fixed_worklet,sparse,-1,natural,8,0,4.292437065000115,4.614726735999874,-7.654729022419737,-15.107312966521835,-2.0018648635585556,True,,,True,,True
+reference_bound,worklet_owner_fixed,owner_fixed_worklet,sparse,-1,split,8,1,4.1148484609998945,4.609410662000073,-11.92558653101312,-14.886687803168597,2.8364970881306295,True,,,True,,True
+worklet_owner_fixed,critical_worklet,sync_criticality,sparse,-1,natural,8,5,4.614726735999874,4.556702209500145,0.6947559261996583,-2.0978586765936225,5.277688106689027,True,True,True,True,,True
+worklet_owner_fixed,critical_worklet,sync_criticality,sparse,-1,split,8,5,4.609410662000073,4.5752087030000865,0.5588196860748185,-1.7528994758103433,4.851619761766868,True,True,True,True,,True
+reference_bound,critical_worklet,end_to_end,sparse,-1,natural,8,0,4.292437065000115,4.556702209500145,-6.391207287726807,-12.408267093223401,-1.6716444648399387,True,,,True,,True
+reference_bound,critical_worklet,end_to_end,sparse,-1,split,8,1,4.1148484609998945,4.5752087030000865,-10.490600054106602,-13.751313463006731,1.303640630936631,True,,,True,,True
+reference_bound,async_global,deferred_globalization,sparse,-1,natural,8,8,4.292437065000115,3.9515705019998677,5.888885015614104,2.6185869413439145,11.756407390837298,True,,,True,,True
+reference_bound,async_global,deferred_globalization,sparse,-1,split,8,8,4.1148484609998945,3.9018375710002147,5.609219869156957,2.9323431504258646,13.392468755912358,True,,,True,,True
