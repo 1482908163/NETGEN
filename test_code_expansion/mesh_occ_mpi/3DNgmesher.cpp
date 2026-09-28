@@ -1010,6 +1010,36 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 	{
 		Ng_AddSurfaceElementwithIndex((nglib::Ng_Mesh *)submesh, nglib::NG_TRIG, (*li).lsvrtx, (*li).geoboundary);
 	}
+	const auto &research=mesh_research::options();
+    if(research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel") {
+        auto &prof=scaling::Profiler::instance();
+        const double pack_start=MPI_Wtime();
+        if(edgemap.size()>std::size_t(std::numeric_limits<int>::max())) {
+            MPI_Abort(MPI_COMM_WORLD,3);return;
+        }
+        std::vector<int> known;known.reserve(3*edgemap.size());
+        for(const auto &entry:edgemap) {known.push_back(entry.first.x);known.push_back(entry.first.y);known.push_back(entry.second);}
+        prof.add_metric("refine_pack_seconds",MPI_Wtime()-pack_start);
+        struct EdgeCommit {
+            std::map<IntPair,int,IntPairCompare> &map;
+            std::map<IntPair,int,IntPairCompare>::iterator hint;
+        } commit{edgemap,edgemap.begin()};
+        auto insert=[](void *ctx,int a,int b,int mid) {
+            auto &c=*static_cast<EdgeCommit*>(ctx);IntPair key{};key.x=a;key.y=b;
+            while(c.hint!=c.map.end() && IntPairCompare{}(c.hint->first,key))++c.hint;
+            c.map.emplace_hint(c.hint,key,mid);
+        };
+        double stats[8]={};
+        const auto status=nglib::Ng_RefineVolumeDeterministic((nglib::Ng_Mesh*)submesh,
+            research.kernel_scheduler=="refine_serial"?1:research.kernel_threads,
+            int(edgemap.size()),known.data(),&commit,insert,stats);
+        if(status!=nglib::NG_OK) {std::cerr<<"确定性体细化失败"<<std::endl;MPI_Abort(MPI_COMM_WORLD,3);return;}
+        const char *names[]={"snapshot_seconds","plan_seconds","write_seconds","map_seconds",
+            "new_points","edge_occurrences","plan_buffer_bytes","parallel_calls"};
+        for(int k=0;k<8;++k)prof.add_metric(std::string("refine_")+names[k],stats[k]);
+        prof.add_metric("refine_calls",1);
+        return;
+    }
 	int oldne = nglib::Ng_GetNE((nglib::Ng_Mesh *)submesh);
 	int Ev[10];
 	double Evxyz[4][3];

@@ -7,6 +7,8 @@ MPICXX="${MPICXX:-mpicxx}"
 MPI_LAUNCHER="${MPI_LAUNCHER:-mpiexec}"
 TEST_PROCESS_COUNTS="${TEST_PROCESS_COUNTS:-1 2 3 4 8}"
 mkdir -p "${BUILD}"
+"${CXX}" -std=c++17 -Wall -Wextra -Werror -pthread "${ROOT}/tests/test_deterministic_refine.cpp" -o "${BUILD}/test_deterministic_refine"
+"${BUILD}/test_deterministic_refine"
 for name in box_index partition_cost face_dependency mesh_ids adjacency_audit worklet_schedule worklet_failure node_window; do
     "${CXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" \
         "${ROOT}/tests/test_${name}.cpp" -o "${BUILD}/test_${name}"
@@ -39,3 +41,5 @@ python3 "${ROOT}/tests/test_structural_runner.py"
 python3 "${ROOT}/tests/test_recovery_runner.py"
 python3 "${ROOT}/tests/test_tail_profile_runner.py"
 python3 "${ROOT}/tests/test_refine_orientation.py"
+
+python3 "${ROOT}/tests/test_refine_bulk_runner.py"

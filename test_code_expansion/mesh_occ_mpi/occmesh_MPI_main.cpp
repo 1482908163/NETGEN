@@ -357,12 +357,12 @@ int main(int argc, char **argv) {
        ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
        (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids)) ||
        (research.ready_volume_exchange && !research.async_global_ids) ||
-       ((research.kernel_scheduler=="spatial" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile") && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
+       ((research.kernel_scheduler=="spatial" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel") && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
        (research.adaptive_worklets && !research.worklets())) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
-    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="spatial" && research.kernel_scheduler!="recovery" && research.kernel_scheduler!="profile" && research.kernel_scheduler!="frontier") ||
+    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="spatial" && research.kernel_scheduler!="recovery" && research.kernel_scheduler!="profile" && research.kernel_scheduler!="refine_serial" && research.kernel_scheduler!="refine_parallel" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
         if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
@@ -493,9 +493,17 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
-    if(research.kernel_threads>0 && research.mesh_tasks==0 && !research.worklets() && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile"))
+    if(research.kernel_threads>0 && research.mesh_tasks==0 && !research.worklets() && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel"))
         profiler.add_metadata("recovery_evaluation",research.kernel_scheduler=="recovery"?"parallel_readonly_v1":"serial_readonly_v1");
     if(research.kernel_scheduler=="profile")profiler.add_metadata("volume_native_profile","phase_operations_v1");
+    const bool deterministic_refine=research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel";
+    profiler.add_metadata("volume_refinement",deterministic_refine?"first_encounter_bulk_v1":"legacy_map_v1");
+    profiler.add_metadata("refinement_threads",std::to_string(deterministic_refine?(research.kernel_scheduler=="refine_serial"?1:research.kernel_threads):1));
+    if(deterministic_refine) {
+        const char *names[]={"pack_seconds","snapshot_seconds","plan_seconds","write_seconds","map_seconds",
+            "new_points","edge_occurrences","plan_buffer_bytes","parallel_calls","calls"};
+        for(auto name:names)profiler.set_metric(std::string("refine_")+name,0);
+    }
     profiler.add_metadata("front_search",research.kernel_scheduler=="spatial"?"conservative_boxes_v1":"linear_v1");
     profiler.add_metadata("volume_exchange_policy",research.ready_volume_exchange?"peer_ready_v1":"batch_v1");
     profiler.add_metadata("adjacency_audit_schema","canonical_ghost_v1");
@@ -912,7 +920,7 @@ int main(int argc, char **argv) {
                 : research.kernel_scheduler=="profile"
                 ? nglib::Ng_GenerateVolumeMeshProfile(submesh,&nmp,research.kernel_threads,
                     kernel_seconds,kernel_details,recovery_stats,native_profile)
-                : research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile")
+                : research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel")
                 ? nglib::Ng_GenerateVolumeMeshRecovery(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="recovery",kernel_seconds,kernel_details,recovery_stats)
                 : research.kernel_scheduler=="spatial"
@@ -934,7 +942,7 @@ int main(int argc, char **argv) {
                 profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
                 profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);
             }
-            if(research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile")) {
+            if(research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="refine_parallel")) {
                 const char *names[]={"calls","seconds","evaluation_calls","evaluation_seconds","candidates","parallel_evaluations"};
                 for(int k=0;k<6;++k)profiler.set_metric(std::string("recovery_")+names[k],recovery_stats[k]);
             }
@@ -964,6 +972,7 @@ int main(int argc, char **argv) {
 
         {
             scaling::StageScope profile_stage("volume_refine", "compute");
+            profiler.set_metric("refine_initial_elements",nglib::Ng_GetNE(submesh));
             for (i = 0; i < numrefine; i++) {
                 Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap);
             }

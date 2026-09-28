@@ -21,6 +21,8 @@
 
 #include <filesystem>
 #include <chrono>
+#include <limits>
+#include <../meshing/deterministic_tet_refine.hpp>
 
 #include <nginterface.h>
 
@@ -516,6 +518,70 @@ namespace nglib
                                                nullptr,nullptr,&stats,parallel_recovery!=0);
      for(int i=0;i<VolumeRecoveryStats::count;++i)diagnostics[i]=stats.values[i].load();
      return result;
+   }
+
+
+   NGLIB_API Ng_Result Ng_RefineVolumeDeterministic(Ng_Mesh *mesh,int threads,
+       int known_count,const int *known_edges,void *context,
+       void (*insert_edge)(void*,int,int,int),double *stats)
+   {
+     if(!mesh || threads<1 || known_count<0 || (known_count && !known_edges) || !insert_edge || !stats || ngcore::task_manager)return NG_ERROR;
+     std::fill_n(stats,8,0.0);
+     try {
+       using Clock=std::chrono::steady_clock;
+       auto stamp=Clock::now();
+       auto elapsed=[&](){auto now=Clock::now();double dt=std::chrono::duration<double>(now-stamp).count();stamp=now;return dt;};
+       Mesh &m=*reinterpret_cast<Mesh*>(mesh);
+       const int np=m.GetNP(),ne=m.GetNE();
+       if(ne>std::numeric_limits<int>::max()/8)return NG_ERROR;
+       std::vector<netgen_refine::Tet> cells(ne);
+       std::vector<int> domains(ne);
+       for(int i=0;i<ne;++i) {
+         const auto &el=m.VolumeElement(i+1);
+         if(el.GetType()!=TET || el.IsDeleted())return NG_ERROR;
+         for(int k=0;k<4;++k)cells[i][k]=int(el[k]);
+         domains[i]=el.GetIndex();
+       }
+       std::vector<netgen_refine::Edge> known(known_count);
+       for(int i=0;i<known_count;++i)known[i]={known_edges[3*std::size_t(i)],known_edges[3*std::size_t(i)+1],known_edges[3*std::size_t(i)+2]};
+       stats[0]=elapsed();
+       // One team for the complete refinement call; all mesh allocations are serial.
+       ngcore::RegionTaskManager team(threads);
+       auto execute=[&](std::size_t size,auto fn){ngcore::ParallelFor(ngcore::Range(size),fn);};
+       auto plan=netgen_refine::build(cells,np,known,threads,execute);
+       for(const auto &e:plan.added) {
+         const auto &a=m.Point(e.a);const auto &b=m.Point(e.b);
+         for(int k=0;k<3;++k)if(!std::isfinite(a(k)) || !std::isfinite(b(k)) || !std::isfinite(0.5*(a(k)+b(k))))
+           throw std::runtime_error("nonfinite refinement midpoint");
+       }
+       stats[1]=elapsed();
+       m.Points().SetSize(np+int(plan.added.size()));
+       m.VolumeElements().SetSize(8*std::size_t(ne));
+       execute(plan.added.size(),[&](std::size_t i){
+         const auto &e=plan.added[i];const auto &a=m.Point(e.a);const auto &b=m.Point(e.b);
+         m.Point(e.mid)=MeshPoint(Point3d(0.5*(a(0)+b(0)),0.5*(a(1)+b(1)),0.5*(a(2)+b(2))),1,INNERPOINT);
+       });
+       execute(cells.size(),[&](std::size_t i){
+         for(int j=0;j<8;++j) {
+           const auto pi=netgen_refine::child(cells[i],plan,i,j);
+           Element el(TET);el.SetIndex(domains[i]);
+           for(int k=0;k<4;++k)el[k]=pi[k];
+           if(j) {el.Touch();el.Flags().fixed=0;el.Flags().deleted=0;}
+           m.VolumeElements()[ElementIndex(netgen_refine::child_slot(cells.size(),i,j))]=el;
+         }
+       });
+       m.SetNextTimeStamp();
+       stats[2]=elapsed();
+       // Caller restores its complete edge map in sorted-key order, on host only.
+       for(const auto &e:plan.added)insert_edge(context,e.a,e.b,e.mid);
+       stats[3]=elapsed();
+       stats[4]=plan.added.size();stats[5]=6.0*ne;
+       stats[6]=plan.buffer_bytes;stats[7]=ngcore::TaskManager::GetNumThreads()>1 ? 1 : 0;
+       return NG_OK;
+     } catch(const std::exception &e) {
+       std::cerr<<"Deterministic volume refinement failed: "<<e.what()<<std::endl;
+       return NG_ERROR;
+     }
    }
 
    NGLIB_API Ng_Result Ng_GenerateVolumeMeshProfile(Ng_Mesh *mesh,

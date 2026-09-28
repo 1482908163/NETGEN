@@ -483,6 +483,13 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecovery(Ng_Mesh *mesh,
 // Conservative front search: seconds[3], details[12], search[6].
 // Same repair kernel as the control; native_profile[30] contains 10 inclusive
 // host operation times for each of generation, repair, optimization.
+// Refine existing tetrahedra only, after the original surface refinement.
+// known_edges: sorted triples (endpoint,endpoint,midpoint), known_count entries.
+// insert_edge runs on the calling thread. stats[8]: snapshot,plan,write,map seconds,
+// new points, edge occurrences, explicit plan-buffer bytes, parallel call count.
+NGLIB_API Ng_Result Ng_RefineVolumeDeterministic(Ng_Mesh *mesh,int threads,
+    int known_count,const int *known_edges,void *context,
+    void (*insert_edge)(void*,int,int,int),double *stats);
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshProfile(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
     double *recovery,double *native_profile);
