@@ -1,0 +1,15 @@
+A1/B1/C1: 48 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+reference_bound -> async_global natural: 4.56% reduction; wins=7/8; validated=True
+reference_bound -> async_global split: 4.38% reduction; wins=5/8; validated=True
+async_global -> recovery_global natural: 1.10% reduction; wins=6/8; validated=True
+async_global -> recovery_global split: -0.68% reduction; wins=3/8; validated=True
+reference_bound -> recovery_global natural: 7.18% reduction; wins=7/8; validated=True
+reference_bound -> recovery_global split: 4.56% reduction; wins=5/8; validated=True
+Recovery async_global -> recovery_global natural: exercised=False; compute max 3.009523 -> 2.991522s; recovery on each run's slowest rank 0.000000 -> 0.000000s
+Recovery async_global -> recovery_global split: exercised=False; compute max 3.018514 -> 2.985525s; recovery on each run's slowest rank 0.000000 -> 0.000000s
+Recovery reference_bound -> recovery_global natural: exercised=False; compute max 2.992215 -> 2.991522s; recovery on each run's slowest rank 0.000000 -> 0.000000s
+Recovery reference_bound -> recovery_global split: exercised=False; compute max 2.995138 -> 2.985525s; recovery on each run's slowest rank 0.000000 -> 0.000000s
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.
