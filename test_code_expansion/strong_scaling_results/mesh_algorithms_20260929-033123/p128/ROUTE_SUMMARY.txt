@@ -1,0 +1,16 @@
+A1/B1/C1: 48 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+async_global -> refine_serial natural: 6.13% reduction; wins=6/8; validated=True
+async_global -> refine_serial split: 3.47% reduction; wins=7/8; validated=True
+refine_serial -> refine_parallel natural: 0.13% reduction; wins=4/8; validated=True
+refine_serial -> refine_parallel split: 3.67% reduction; wins=7/8; validated=True
+async_global -> refine_parallel natural: 5.55% reduction; wins=7/8; validated=True
+async_global -> refine_parallel split: 6.43% reduction; wins=8/8; validated=True
+Refinement async_global -> refine_serial natural: exercised=True; compute max 3.000062 -> 2.686274s; refine on each run's slowest rank 0.674774 -> 0.378276s
+Refinement async_global -> refine_serial split: exercised=True; compute max 2.962223 -> 2.716552s; refine on each run's slowest rank 0.676097 -> 0.380636s
+Refinement refine_serial -> refine_parallel natural: exercised=True; compute max 2.686274 -> 2.602178s; refine on each run's slowest rank 0.378276 -> 0.309391s
+Refinement refine_serial -> refine_parallel split: exercised=True; compute max 2.716552 -> 2.623319s; refine on each run's slowest rank 0.380636 -> 0.330300s
+Refinement async_global -> refine_parallel natural: exercised=True; compute max 3.000062 -> 2.602178s; refine on each run's slowest rank 0.674774 -> 0.309391s
+Refinement async_global -> refine_parallel split: exercised=True; compute max 2.962223 -> 2.623319s; refine on each run's slowest rank 0.676097 -> 0.330300s
