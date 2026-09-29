@@ -335,9 +335,14 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 ready_global) async_ids=1;ready=1;binding=cores ;;
                 spatial_ready) scheduler=spatial;async_ids=1;ready=1;binding=cores ;;
             esac
+            # Keep startup diagnostics even if a child exits before creating plan.json.
+            launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
             if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
-                 bash "${SCRIPT_DIR}/run_experiments.sh"; then route_failures=$((route_failures+1));fi
+                 bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
+                route_failures=$((route_failures+1))
+                printf 'Route failed: %s repeat=%s; see route_launch_errors.log\n' "$route" "$rr" >> "${route_root}/p${PROCESS_COUNT}/route_launch_failures.txt"
+            fi
         done
     done
     python3 "${SCRIPT_DIR}/analyze_worklet_routes.py" "$route_root" --ranks "$PROCESS_COUNT" --routes "${routes[@]}" || route_failures=$((route_failures+1))
@@ -456,7 +461,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune ]] || markers+=("first_encounter_bulk_v1" "refinement_threads")
-[[ "$EXPERIMENT_PRESET" != legal_prune ]] || markers+=("exact_rejection_v1" "legal_split_pruned")
+[[ "$EXPERIMENT_PRESET" != legal_prune ]] || markers+=("exact_rejection_v1" "legal_split_policy" "legal_split_")
 [[ "$KERNEL_SCHEDULER" != spatial ]] || markers+=("conservative_boxes_v1" "front_search_")
 [[ "$READY_VOLUME_EXCHANGE" == 0 ]] || markers+=("peer_ready_v1" "--ready-volume-exchange")
 ((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2")

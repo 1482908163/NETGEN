@@ -22,7 +22,7 @@ with tempfile.TemporaryDirectory() as directory:
 # mesh_worklets_v1 --worklets-per-owner --worklet-policy worklet_failure_v1
 # heavy_q75_q90_v1 --adaptive-worklets owner_local_v2 --async-global-ids
 # mandatory_home_v2 original_owner_v1 canonical_ghost_v1 adjacency_id_path
-# exact_rejection_v1 legal_split_pruned
+# exact_rejection_v1 legal_split_policy legal_split_
 # first_encounter_bulk_v1 refinement_threads phase_operations_v1 parallel_readonly_v1 serial_readonly_v1 recovery_
 import os,sys,json
 from pathlib import Path
@@ -45,6 +45,9 @@ if mode=='split':
     for row in rows:row['metadata'].pop('mesh_quality',None)
 (Path(value('--profile-dir'))/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\\n' for r in rows))
 ''');binary.chmod(0o755)
+    # The actual executable constructs metric names at runtime. It need not
+    # contain the full legal_split_pruned byte sequence.
+    assert b'legal_split_pruned' not in binary.read_bytes()
     source=tmp/'input.step';source.write_text('mock input')
     lib=tmp/'lib';lib.mkdir();(lib/'libnglib.so').write_text('mock library')
     env=dict(os.environ)
@@ -84,5 +87,12 @@ if mode=='split':
             assert len(details)==32 and all(r['refine_initial_elements'] for r in details)
             comparisons=list(csv.DictReader((out/'p2/route_comparisons.csv').open()))
             assert comparisons and all(r['validated']=='True' for r in comparisons)
-print('PASS: 3 exact split rejection routes, serial bulk control, 48 formal mock runs, rotated order and failure continuation')
-
+    binary.write_text(binary.read_text().replace('exact_rejection_v1','removed_capability'))
+    out=tmp/'startup_failure'
+    run=subprocess.run(command,env=dict(env,RUN_ROOT=str(out),REPEATS='1',
+        MOCK_CALLS=str(tmp/'startup_calls'),MOCK_FAIL='0'),capture_output=True,text=True,timeout=240)
+    assert run.returncode==1
+    assert not (tmp/'startup_calls').exists()
+    assert 'missing capability marker exact_rejection_v1' in (out/'p2/route_launch_errors.log').read_text()
+    assert 'Route failed:' in (out/'p2/route_launch_failures.txt').read_text()
+print('PASS: runtime-built metric names, missing-capability rejection, saved startup errors, 48 formal mock runs and failure continuation')
