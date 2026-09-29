@@ -500,6 +500,15 @@ namespace netgen
             if(mp.volume_recovery_stats)mp.volume_recovery_stats->Add(0,1);
             MeshingParameters recovery_mp=mp;
             recovery_mp.volume_recovery_active=true;
+            // One team spans the whole recovery sequence. Individual native
+            // operations join before topology changes or the next color wave.
+            RegionTaskManager recovery_batch_team(
+                mp.volume_recovery_batch_parallel && mp.parallel_meshing ? mp.nthreads : 0);
+            if(mp.volume_recovery_batch_stats) {
+              mp.volume_recovery_batch_stats->Add(0,1);
+              if(ngcore::TaskManager::GetNumThreads()>1)
+                mp.volume_recovery_batch_stats->Add(1,1);
+            }
             MeshOptimize3d optmesh(mesh, recovery_mp, OPT_REST);
 
             const char * optstr = "mcmstmcmstmcmstmcm";

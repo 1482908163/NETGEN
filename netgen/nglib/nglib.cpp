@@ -436,7 +436,8 @@ namespace nglib
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
        const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr,
-       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr, VolumeKernelStats *legal_split=nullptr)
+       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr, VolumeKernelStats *legal_split=nullptr,
+       VolumeKernelStats *batch=nullptr, bool batch_parallel=false)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -461,6 +462,8 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_recovery_batch_stats = batch;
+         local.volume_recovery_batch_parallel = batch_parallel;
          local.volume_legal_split_prune = legal_split!=nullptr;
          local.volume_legal_split_stats = legal_split;
          local.volume_front_search = front;
@@ -534,6 +537,22 @@ namespace nglib
          nullptr,nullptr,&recovery_stats,false,nullptr,&pruning_stats);
      for(int i=0;i<6;++i)recovery[i]=recovery_stats.values[i].load();
      for(int i=0;i<3;++i)pruning[i]=pruning_stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecoveryBatch(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int parallel_batch,double *seconds,
+       double *details,double *recovery,double *batch)
+   {
+     if(!details || !recovery || !batch || parallel_batch<0 || parallel_batch>1)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats batch_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,nullptr,nullptr,&batch_stats,parallel_batch!=0);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();
+       batch[i]=batch_stats.values[i].load();
+     }
      return result;
    }
 

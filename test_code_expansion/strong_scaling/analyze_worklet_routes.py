@@ -6,7 +6,7 @@ import statistics as st
 from pathlib import Path
 from analyze_results import inspect, profile_path, compare_quality, write_csv
 
-ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune')
+ROUTES=('reference','a_static','a_dynamic','b_remaining','b_critical','c_deferred','a_fixed','a_window','b_window','c_fused','a_native','b_balanced','a_fused','b_fused','a_bound','b_bound','b_repeat','c_prefix','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel')
 PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','execution_balance'),
        ('a_dynamic','b_remaining','remaining_work'),('b_remaining','b_critical','sync_criticality'),
        ('reference','c_deferred','deferred_numbering'),
@@ -47,7 +47,10 @@ PAIRS=(('reference','a_static','decomposition'),('a_static','a_dynamic','executi
        ('refine_serial','refine_parallel','refinement_parallelism'),
        ('async_global','refine_parallel','refinement_total'),
        ('refine_serial','legal_prune','exact_split_rejection'),
-       ('async_global','legal_prune','bulk_and_exact_split_rejection'))
+       ('async_global','legal_prune','bulk_and_exact_split_rejection'),
+       ('refine_serial','batch_serial','recovery_batch_instrumentation'),
+       ('batch_serial','batch_parallel','native_recovery_batch'),
+       ('refine_serial','batch_parallel','native_recovery_total'))
 
 def analyze(root,ranks,selected=ROUTES):
     indexed={};qualities={};errors=[];flat=[];plans={}
@@ -72,24 +75,24 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
-                                expected={'legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
+                                expected={'batch_serial':'batch_serial','batch_parallel':'batch_parallel','legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
                                           'b_window':'node_window_priority','b_balanced':'node_window_balanced',
                                           'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
                                 if expected and run.get('kernel_scheduler')!=expected:
                                     raise ValueError('route kernel scheduler mismatch')
-                                numbering={'legal_prune':'owner_local_v2','c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2','profile_global':'owner_local_v2','refine_serial':'owner_local_v2','refine_parallel':'owner_local_v2'}.get(route,'eager_v1')
+                                numbering={'batch_serial':'owner_local_v2','batch_parallel':'owner_local_v2','legal_prune':'owner_local_v2','c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2','profile_global':'owner_local_v2','refine_serial':'owner_local_v2','refine_parallel':'owner_local_v2'}.get(route,'eager_v1')
                                 if numbering and run.get('global_numbering')!=numbering:
                                     raise ValueError('route numbering mismatch')
-                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune'):
+                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):
                                     if run.get('node_cpu_bind')!='cores' or run.get('node_affinity_layout')!='disjoint':
                                         raise ValueError('bound route lacks verified disjoint startup affinity')
                                 if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
                                     policy={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
                                     if run.get('worklet_policy')!=policy:
                                         raise ValueError('route worklet policy mismatch')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
+                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
                                     raise ValueError('missing temporary-ID adjacency audit contract')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune') and run.get('adjacency_id_path')!='owner_local_v2':
+                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') and run.get('adjacency_id_path')!='owner_local_v2':
                                     raise ValueError('async adjacency did not use temporary IDs')
                                 if route in ('front_spatial','spatial_ready') and run.get('front_search')!='conservative_boxes_v1':
                                     raise ValueError('route conservative front search mismatch')
@@ -118,7 +121,7 @@ def analyze(root,ranks,selected=ROUTES):
             for seed in plan['partition_seeds']:
                 qa=qualities.get((control,algorithm,seed));qb=qualities.get((candidate,algorithm,seed))
                 gate=compare_quality(qa,qb) if qa and qb else dict(quality_pass=False,quality_issues='missing_audit')
-                if candidate in ('async_global','ready_global','front_spatial','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune') and qa and qb and not gate.get('same_volume_fingerprint'):
+                if candidate in ('async_global','ready_global','front_spatial','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') and qa and qb and not gate.get('same_volume_fingerprint'):
                     gate['quality_pass']=False
                     gate['quality_issues']+=';structural_owned_mesh_changed'
                 # Splitting changes interior meshing. Do not silently waive a
@@ -143,8 +146,9 @@ def analyze(root,ranks,selected=ROUTES):
                         candidate_compute_max_seconds=st.median(b['compute_max_seconds'] for a,b in pairs),
                         control_slowest_recovery_seconds=st.median(a['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate=='recovery_global' else None,
                         candidate_slowest_recovery_seconds=st.median(b['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate=='recovery_global' else None,
+                        recovery_batch_exercised=all(b.get('recovery_batch_exercised',False) for a,b in pairs) if candidate in ('batch_serial','batch_parallel') else None,
                         legal_split_exercised=all(b.get('legal_split_exercised',False) for a,b in pairs) if candidate=='legal_prune' else None,
-                        refinement_exercised=all(b.get('refinement_exercised',False) for a,b in pairs) if candidate in ('refine_serial','refine_parallel','legal_prune') else None,
+                        refinement_exercised=all(b.get('refinement_exercised',False) for a,b in pairs) if candidate in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') else None,
                         control_slowest_refine_seconds=st.median(a.get('slowest_compute_volume_refine_seconds',0) for a,b in pairs),
                         candidate_slowest_refine_seconds=st.median(b.get('slowest_compute_volume_refine_seconds',0) for a,b in pairs),
                         recovery_exercised=all(b.get('recovery_exercised',False) for a,b in pairs) if candidate=='recovery_global' else None,
@@ -161,10 +165,13 @@ def analyze(root,ranks,selected=ROUTES):
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     lines.extend(f"Recovery {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['recovery_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; recovery on each run's slowest rank {r['control_slowest_recovery_seconds']:.6f} -> {r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='recovery_global')
-    lines.extend(f"Refinement {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['refinement_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; refine on each run's slowest rank {r['control_slowest_refine_seconds']:.6f} -> {r['candidate_slowest_refine_seconds']:.6f}s" for r in comparisons if r['candidate'] in ('refine_serial','refine_parallel','legal_prune'))
+    lines.extend(f"Refinement {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['refinement_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; refine on each run's slowest rank {r['control_slowest_refine_seconds']:.6f} -> {r['candidate_slowest_refine_seconds']:.6f}s" for r in comparisons if r['candidate'] in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'))
     lines.extend(f"Exact split rejection {r['timing']}: exercised={r['legal_split_exercised']}" for r in comparisons if r['candidate']=='legal_prune')
     if any(r.get('legal_split_exercised') is False for r in comparisons):
         lines.append('No rejected split candidates in every pair: no pruning speedup claim is supported.')
+    lines.extend(f"Recovery batch {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['recovery_batch_exercised']}" for r in comparisons if r['candidate'] in ('batch_serial','batch_parallel'))
+    if any(r.get('recovery_batch_exercised') is False for r in comparisons):
+        lines.append('Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.')
     if any(r.get('refinement_exercised') is False for r in comparisons):
         lines.append('Refinement not exercised: no refinement speedup claim is supported.')
     if any(r['candidate']=='profile_global' for r in comparisons):

@@ -427,7 +427,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","batch_serial","batch_parallel","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -442,10 +442,10 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid thread lifecycle metric: "+key)
             result[key]=sum(values) if name=="starts" else max(values)
-    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune'):
+    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):
         if metadata.get('volume_refinement')!='first_encounter_bulk_v1':
             raise ValueError('missing deterministic refinement contract')
-        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune') else int(metadata['kernel_threads'])
+        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune','batch_serial','batch_parallel') else int(metadata['kernel_threads'])
         if int(metadata.get('refinement_threads',0))!=expected_threads:
             raise ValueError('refinement thread identity mismatch')
         rounds=int(metadata['numrefine'])
@@ -519,7 +519,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     if metadata.get('kernel_scheduler')=='recovery' and recovery_mode!='parallel_readonly_v1':
         raise ValueError('missing recovery evaluation contract')
     if recovery_mode is not None:
-        expected='parallel_readonly_v1' if metadata.get('kernel_scheduler')=='recovery' else 'serial_readonly_v1'
+        expected={'batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','recovery':'parallel_readonly_v1'}.get(metadata.get('kernel_scheduler'),'serial_readonly_v1')
         if recovery_mode!=expected:raise ValueError('invalid recovery evaluation mode')
         names=('calls','seconds','evaluation_calls','evaluation_seconds','candidates','parallel_evaluations')
         for row in rows:
@@ -530,7 +530,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                     raise ValueError('invalid recovery diagnostic')
             if m['recovery_evaluation_seconds']>m['recovery_seconds']+1e-6:
                 raise ValueError('recovery evaluation exceeds recovery region')
-            expected_calls=m['recovery_evaluation_calls'] if recovery_mode=='parallel_readonly_v1' and int(metadata['kernel_threads'])>1 else 0
+            expected_calls=m['recovery_evaluation_calls'] if recovery_mode in ('parallel_readonly_v1','batch_parallel_v1') and int(metadata['kernel_threads'])>1 else 0
             if m['recovery_parallel_evaluations']!=expected_calls:
                 raise ValueError('recovery worker activation mismatch')
             if m['recovery_calls']==0 and any(m['recovery_'+k]!=0 for k in names[2:]):
@@ -541,6 +541,30 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result[key]=max(values) if 'seconds' in name else sum(values)
             result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
         result['recovery_exercised']=result['recovery_candidates']>0 and result['recovery_evaluation_calls']>0
+    if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel'):
+        if recovery_mode not in ('batch_serial_v1','batch_parallel_v1'):
+            raise ValueError('missing recovery batch contract')
+        fields=('calls','parallel_calls','smooth_calls','inner_visits','color_waves','smooth_seconds')
+        for row in rows:
+            m=row['metrics']
+            for key in fields:
+                v=m['recovery_batch_'+key]
+                if not math.isfinite(v) or v<0 or ('seconds' not in key and int(v)!=v):
+                    raise ValueError('invalid recovery batch diagnostic')
+            expected=m['recovery_calls'] if recovery_mode=='batch_parallel_v1' and int(metadata['kernel_threads'])>1 else 0
+            if m['recovery_batch_calls']!=m['recovery_calls'] or m['recovery_batch_parallel_calls']!=expected:
+                raise ValueError('recovery batch activation mismatch')
+            if m['recovery_batch_smooth_calls']!=8*m['recovery_calls'] or m['recovery_batch_color_waves']<m['recovery_batch_smooth_calls']:
+                raise ValueError('recovery smoothing sequence coverage mismatch')
+            if not m['recovery_calls'] and any(m['recovery_batch_'+k] for k in fields):
+                raise ValueError('batch work outside recovery')
+            if m['recovery_batch_smooth_seconds']>1.05*m['recovery_seconds']+1e-3:
+                raise ValueError('smoothing time exceeds recovery')
+        for key in fields:
+            name='recovery_batch_'+key;values=[r['metrics'][name] for r in rows]
+            result[name]=max(values) if 'seconds' in key else sum(values)
+            result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
+        result['recovery_batch_exercised']=result['recovery_batch_inner_visits']>0
     if metadata.get('kernel_scheduler')=='spatial':
         if metadata.get('front_search')!='conservative_boxes_v1':raise ValueError('missing conservative front search')
         fields=('queries','point_scan_opportunities','point_candidates','face_scan_opportunities','face_candidates','build_seconds')

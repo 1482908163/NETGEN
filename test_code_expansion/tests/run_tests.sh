@@ -46,3 +46,6 @@ python3 "${ROOT}/tests/test_refine_bulk_runner.py"
 
 python3 "${ROOT}/tests/test_legal_split_rejection.py"
 python3 "${ROOT}/tests/test_legal_prune_runner.py"
+
+python3 "${ROOT}/tests/test_recovery_coloring.py"
+python3 "${ROOT}/tests/test_recovery_batch_runner.py"

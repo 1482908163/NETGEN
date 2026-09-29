@@ -1347,6 +1347,10 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
   static Timer trange("range");
   static Timer tloch("loch");
 
+  auto * batch_stats=mp.volume_recovery_active ? mp.volume_recovery_batch_stats : nullptr;
+  VolumeKernelTimer batch_timer(batch_stats,5);
+  if(batch_stats)batch_stats->Add(2,1);
+
   BuildBoundaryEdges(false);
 
   (*testout) << "Improve Mesh" << "\n";
@@ -1375,6 +1379,12 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
             table.Add(colors[i], pi);
           }, ncolors);
 
+  if(batch_stats) {
+    size_t inner=0;
+    for(auto pi:points.Range()) if((*this)[pi].Type()==INNERPOINT)++inner;
+    batch_stats->Add(3,inner);
+    batch_stats->Add(4,ncolors);
+  }
   tcoloring.Stop();
 
   if (goal == OPT_QUALITY)
@@ -1808,3 +1818,4 @@ void Mesh :: ImproveMeshJacobianOnSurface (const MeshingParameters & mp,
 
 
 }
+
