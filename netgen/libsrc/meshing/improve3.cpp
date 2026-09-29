@@ -553,8 +553,9 @@ void MeshOptimize3d :: CombineImprove ()
 
 
 
-double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only)
+double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only, bool * pruned)
 {
+  if(pruned) *pruned=false;
   double d_badness = 0.0;
   // int cnt = 0;
 
@@ -584,6 +585,15 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
 
   if (!NeedsOptimization(hasbothpoints))
     return 0.0;
+
+  // OPT_LEGAL admits this cavity only when HasIllegalElement is true.
+  // The unchanged late legality loop below rejects every such cavity at
+  // LegalTet(oldel), before any mesh mutation. Avoid the intervening BFGS.
+  // Keep NeedsOptimization above: it preserves the original legality cache reads.
+  if(mp.volume_legal_split_prune && goal==OPT_LEGAL) {
+    if(pruned) *pruned=true;
+    return 0.0;
+  }
 
   double bad1 = 0.0;
   double bad1_max = 0.0;
@@ -760,21 +770,27 @@ void MeshOptimize3d :: SplitImprove ()
   std::atomic<int> improvement_counter(0);
   auto ptmp = mesh.AddPoint( {0,0,0} );
 
+  auto * prune_stats=goal==OPT_LEGAL ? mp.volume_legal_split_stats : nullptr;
+  if(prune_stats) { prune_stats->Add(0,1); prune_stats->Add(1,edges.Size()); }
   tsearch.Start();
   ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
+    int pruned_count=0;
     NgArray<PointIndices<3>> locfaces;
 
     for(auto i : myrange)
     {
       auto [p0,p1] = edges[i];
-      double d_badness = SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, true);
+      bool pruned=false;
+      double d_badness = SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, true, &pruned);
+      pruned_count+=pruned;
       if(d_badness<0.0)
       {
         int index = improvement_counter++;
         candidate_edges[index] = make_tuple(d_badness, i);
       }
     }
+    if(prune_stats) prune_stats->Add(2,pruned_count);
   });
   tsearch.Stop();
 

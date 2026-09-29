@@ -487,6 +487,11 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecovery(Ng_Mesh *mesh,
 // known_edges: sorted triples (endpoint,endpoint,midpoint), known_count entries.
 // insert_edge runs on the calling thread. stats[8]: snapshot,plan,write,map seconds,
 // new points, edge occurrences, explicit plan-buffer bytes, parallel call count.
+// Exact rejection of OPT_LEGAL split candidates; both repair calls retained.
+// pruning[3]: legal split passes, candidate edges, early rejected candidates.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshLegalSplitPruned(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+    double *recovery,double *pruning);
 NGLIB_API Ng_Result Ng_RefineVolumeDeterministic(Ng_Mesh *mesh,int threads,
     int known_count,const int *known_edges,void *context,
     void (*insert_edge)(void*,int,int,int),double *stats);

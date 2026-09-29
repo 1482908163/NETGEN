@@ -986,6 +986,8 @@ namespace netgen
     dummymp.volume_candidate_schedule=options.volume_repair_frontier ? 1 : 0;
     dummymp.volume_repair_frontier=options.volume_repair_frontier;
     dummymp.volume_kernel_stats=stats;
+    dummymp.volume_legal_split_prune=options.volume_legal_split_prune;
+    dummymp.volume_legal_split_stats=options.volume_legal_split_stats;
     MeshOptimize3d optmesh(mesh3d, dummymp, OPT_LEGAL);
     int it = 10;
     while (nillegal && (it--) > 0)

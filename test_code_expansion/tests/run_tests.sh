@@ -43,3 +43,6 @@ python3 "${ROOT}/tests/test_tail_profile_runner.py"
 python3 "${ROOT}/tests/test_refine_orientation.py"
 
 python3 "${ROOT}/tests/test_refine_bulk_runner.py"
+
+python3 "${ROOT}/tests/test_legal_split_rejection.py"
+python3 "${ROOT}/tests/test_legal_prune_runner.py"

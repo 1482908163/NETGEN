@@ -394,7 +394,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     face_bytes = sum(s.get("receive_bytes", 0) for r in rows for name, s in r["stages"].items()
                      if name == "face_allgatherv" or name.startswith("face_sparse_"))
     split = metadata["timing_mode"] == "split"
-    result = dict(volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
+    result = dict(legal_split_policy=metadata.get('legal_split_policy'),volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
                   partition_seed=int(metadata.get("partition_seed",-1)),
                   repeat=rows[0]["repeat"], core_seconds=max(r["metrics"]["core_seconds"] for r in rows),
                   face_pipeline_seconds=max(seconds(r, "face_pipeline_total") for r in rows),
@@ -427,7 +427,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -442,10 +442,10 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid thread lifecycle metric: "+key)
             result[key]=sum(values) if name=="starts" else max(values)
-    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel'):
+    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune'):
         if metadata.get('volume_refinement')!='first_encounter_bulk_v1':
             raise ValueError('missing deterministic refinement contract')
-        expected_threads=1 if metadata['kernel_scheduler']=='refine_serial' else int(metadata['kernel_threads'])
+        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune') else int(metadata['kernel_threads'])
         if int(metadata.get('refinement_threads',0))!=expected_threads:
             raise ValueError('refinement thread identity mismatch')
         rounds=int(metadata['numrefine'])
@@ -470,6 +470,24 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result[key]=max(values) if 'seconds' in field else sum(values)
             result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
         result['refinement_exercised']=rounds>0 and result['refine_edge_occurrences']>0
+    if metadata.get('kernel_scheduler')=='legal_prune':
+        if metadata.get('legal_split_policy')!='exact_rejection_v1':
+            raise ValueError('missing exact split rejection contract')
+        for row in rows:
+            m=row['metrics']
+            for key in ('passes','candidates','pruned'):
+                v=m['legal_split_'+key]
+                if not math.isfinite(v) or v<0 or int(v)!=v:
+                    raise ValueError('invalid legal split diagnostic')
+            if m['legal_split_passes']!=m['kernel_repair_rounds']:
+                raise ValueError('legal split passes differ from repair rounds')
+            if m['legal_split_pruned']>m['legal_split_candidates'] or (m['legal_split_candidates'] and not m['legal_split_passes']):
+                raise ValueError('legal split coverage mismatch')
+        for key in ('passes','candidates','pruned'):
+            name='legal_split_'+key
+            result[name]=sum(row['metrics'][name] for row in rows)
+            result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
+        result['legal_split_exercised']=result['legal_split_pruned']>0
     if metadata.get('kernel_scheduler')=='profile':
         if metadata.get('volume_native_profile')!='phase_operations_v1':
             raise ValueError('missing native operation profile contract')
@@ -963,7 +981,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in COMPUTE})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_'))})
             critical_sink.append(item)
     return result, detail
 
@@ -1341,7 +1359,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("volume_refinement", "volume_native_profile", "recovery_evaluation", "front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
+            if name in ("legal_split_policy", "volume_refinement", "volume_native_profile", "recovery_evaluation", "front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "worklet_policy", "ownership_signature",
                         "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]

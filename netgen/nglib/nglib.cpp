@@ -436,7 +436,7 @@ namespace nglib
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
        const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr,
-       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr)
+       VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr, VolumeKernelStats *legal_split=nullptr)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -461,6 +461,8 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_legal_split_prune = legal_split!=nullptr;
+         local.volume_legal_split_stats = legal_split;
          local.volume_front_search = front;
          local.volume_recovery_stats = recovery;
          local.volume_recovery_parallel = parallel_recovery;
@@ -520,6 +522,20 @@ namespace nglib
      return result;
    }
 
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshLegalSplitPruned(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+       double *recovery,double *pruning)
+   {
+     if(!details || !recovery || !pruning)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats pruning_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,nullptr,&pruning_stats);
+     for(int i=0;i<6;++i)recovery[i]=recovery_stats.values[i].load();
+     for(int i=0;i<3;++i)pruning[i]=pruning_stats.values[i].load();
+     return result;
+   }
 
    NGLIB_API Ng_Result Ng_RefineVolumeDeterministic(Ng_Mesh *mesh,int threads,
        int known_count,const int *known_edges,void *context,
