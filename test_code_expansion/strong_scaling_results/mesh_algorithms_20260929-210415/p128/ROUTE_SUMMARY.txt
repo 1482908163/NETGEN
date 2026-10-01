@@ -1,0 +1,23 @@
+A1/B1/C1: 48 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+refine_serial -> batch_serial natural: 2.57% reduction; wins=5/8; validated=True
+refine_serial -> batch_serial split: 0.47% reduction; wins=6/8; validated=True
+batch_serial -> batch_parallel natural: -3.09% reduction; wins=3/8; validated=True
+batch_serial -> batch_parallel split: -0.55% reduction; wins=4/8; validated=True
+refine_serial -> batch_parallel natural: -1.94% reduction; wins=3/8; validated=True
+refine_serial -> batch_parallel split: -2.36% reduction; wins=3/8; validated=True
+Refinement refine_serial -> batch_serial natural: exercised=True; compute max 2.706218 -> 2.700130s; refine on each run's slowest rank 0.381002 -> 0.379646s
+Refinement refine_serial -> batch_serial split: exercised=True; compute max 2.697610 -> 2.683469s; refine on each run's slowest rank 0.380023 -> 0.374238s
+Refinement batch_serial -> batch_parallel natural: exercised=True; compute max 2.700130 -> 2.694815s; refine on each run's slowest rank 0.379646 -> 0.381614s
+Refinement batch_serial -> batch_parallel split: exercised=True; compute max 2.683469 -> 2.701040s; refine on each run's slowest rank 0.374238 -> 0.381140s
+Refinement refine_serial -> batch_parallel natural: exercised=True; compute max 2.706218 -> 2.694815s; refine on each run's slowest rank 0.381002 -> 0.381614s
+Refinement refine_serial -> batch_parallel split: exercised=True; compute max 2.697610 -> 2.701040s; refine on each run's slowest rank 0.380023 -> 0.381140s
+Recovery batch refine_serial -> batch_serial natural: exercised=False
+Recovery batch refine_serial -> batch_serial split: exercised=False
+Recovery batch batch_serial -> batch_parallel natural: exercised=False
+Recovery batch batch_serial -> batch_parallel split: exercised=False
+Recovery batch refine_serial -> batch_parallel natural: exercised=False
+Recovery batch refine_serial -> batch_parallel split: exercised=False
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.

@@ -1,0 +1,22 @@
+A1/B1/C1: 48 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+refine_serial -> batch_serial natural: -0.45% reduction; wins=3/8; validated=True
+refine_serial -> batch_serial split: -3.14% reduction; wins=2/8; validated=True
+batch_serial -> batch_parallel natural: 8.59% reduction; wins=8/8; validated=True
+batch_serial -> batch_parallel split: 9.82% reduction; wins=7/8; validated=True
+refine_serial -> batch_parallel natural: 8.94% reduction; wins=8/8; validated=True
+refine_serial -> batch_parallel split: 7.06% reduction; wins=8/8; validated=True
+Refinement refine_serial -> batch_serial natural: exercised=True; compute max 1.984987 -> 1.995072s; refine on each run's slowest rank 0.209492 -> 0.209609s
+Refinement refine_serial -> batch_serial split: exercised=True; compute max 2.006373 -> 1.983238s; refine on each run's slowest rank 0.210134 -> 0.209999s
+Refinement batch_serial -> batch_parallel natural: exercised=True; compute max 1.995072 -> 1.733925s; refine on each run's slowest rank 0.209609 -> 0.208668s
+Refinement batch_serial -> batch_parallel split: exercised=True; compute max 1.983238 -> 1.742242s; refine on each run's slowest rank 0.209999 -> 0.209158s
+Refinement refine_serial -> batch_parallel natural: exercised=True; compute max 1.984987 -> 1.733925s; refine on each run's slowest rank 0.209492 -> 0.208668s
+Refinement refine_serial -> batch_parallel split: exercised=True; compute max 2.006373 -> 1.742242s; refine on each run's slowest rank 0.210134 -> 0.209158s
+Recovery batch refine_serial -> batch_serial natural: exercised=True
+Recovery batch refine_serial -> batch_serial split: exercised=True
+Recovery batch batch_serial -> batch_parallel natural: exercised=True
+Recovery batch batch_serial -> batch_parallel split: exercised=True
+Recovery batch refine_serial -> batch_parallel natural: exercised=True
+Recovery batch refine_serial -> batch_parallel split: exercised=True
