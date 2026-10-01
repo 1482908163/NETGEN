@@ -540,6 +540,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             values=[row['metrics'][key] for row in rows]
             result[key]=max(values) if 'seconds' in name else sum(values)
             result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
+        result['recovery_active_ranks']=sum(row['metrics']['recovery_calls']>0 for row in rows)
         result['recovery_exercised']=result['recovery_candidates']>0 and result['recovery_evaluation_calls']>0
     if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel'):
         if recovery_mode not in ('batch_serial_v1','batch_parallel_v1'):
@@ -564,6 +565,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             name='recovery_batch_'+key;values=[r['metrics'][name] for r in rows]
             result[name]=max(values) if 'seconds' in key else sum(values)
             result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
+        result['recovery_batch_point_work_ranks']=sum(row['metrics']['recovery_batch_inner_visits']>0 for row in rows)
         result['recovery_batch_exercised']=result['recovery_batch_inner_visits']>0
     if metadata.get('kernel_scheduler')=='spatial':
         if metadata.get('front_search')!='conservative_boxes_v1':raise ValueError('missing conservative front search')

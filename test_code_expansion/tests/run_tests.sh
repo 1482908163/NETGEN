@@ -49,3 +49,6 @@ python3 "${ROOT}/tests/test_legal_prune_runner.py"
 
 python3 "${ROOT}/tests/test_recovery_coloring.py"
 python3 "${ROOT}/tests/test_recovery_batch_runner.py"
+
+python3 "${ROOT}/tests/test_recovery_scale_config.py"
+python3 "${ROOT}/tests/test_recovery_scale_runner.py"

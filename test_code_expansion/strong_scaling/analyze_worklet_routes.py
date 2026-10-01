@@ -144,18 +144,37 @@ def analyze(root,ranks,selected=ROUTES):
                         candidate_seconds=st.median(b['core_seconds'] for a,b in pairs),
                         control_compute_max_seconds=st.median(a['compute_max_seconds'] for a,b in pairs),
                         candidate_compute_max_seconds=st.median(b['compute_max_seconds'] for a,b in pairs),
-                        control_slowest_recovery_seconds=st.median(a['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate=='recovery_global' else None,
-                        candidate_slowest_recovery_seconds=st.median(b['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate=='recovery_global' else None,
+                        control_slowest_recovery_seconds=st.median(a['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate in ('recovery_global','batch_serial','batch_parallel') else None,
+                        candidate_slowest_recovery_seconds=st.median(b['slowest_compute_recovery_seconds'] for a,b in pairs) if candidate in ('recovery_global','batch_serial','batch_parallel') else None,
+                        candidate_recovery_active_ranks=st.median(b.get('recovery_active_ranks',0) for a,b in pairs) if candidate in ('batch_serial','batch_parallel') else None,
+                        candidate_recovery_point_work_ranks=st.median(b.get('recovery_batch_point_work_ranks',0) for a,b in pairs) if candidate in ('batch_serial','batch_parallel') else None,
                         recovery_batch_exercised=all(b.get('recovery_batch_exercised',False) for a,b in pairs) if candidate in ('batch_serial','batch_parallel') else None,
                         legal_split_exercised=all(b.get('legal_split_exercised',False) for a,b in pairs) if candidate=='legal_prune' else None,
                         refinement_exercised=all(b.get('refinement_exercised',False) for a,b in pairs) if candidate in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') else None,
                         control_slowest_refine_seconds=st.median(a.get('slowest_compute_volume_refine_seconds',0) for a,b in pairs),
                         candidate_slowest_refine_seconds=st.median(b.get('slowest_compute_volume_refine_seconds',0) for a,b in pairs),
-                        recovery_exercised=all(b.get('recovery_exercised',False) for a,b in pairs) if candidate=='recovery_global' else None,
+                        recovery_exercised=all(b.get('recovery_exercised',False) for a,b in pairs) if candidate in ('recovery_global','batch_serial','batch_parallel') else None,
                         paired_reduction_pct=st.median(changes),paired_min_pct=min(changes),paired_max_pct=max(changes),validated=valid,
                         ownership_equal=ownership if schedule_pair else None,
                         task_mesh_equal=deterministic if schedule_pair else None,**gate))
+    diversity=[]
+    for route,plan in plans.items():
+        seeds=plan['partition_seeds']
+        if len(seeds)<2:continue
+        for algorithm in plan['algorithms']:
+            reports=[qualities.get((route,algorithm,seed)) for seed in seeds]
+            signatures=set()
+            for q in reports:
+                if q and q['structural_pass']:
+                    signature=[(r['rank'],r['surface_sum'],r['surface_xor'])
+                               for r in sorted(q['per_rank'],key=lambda r:r['rank'])]
+                    signatures.add(json.dumps(signature,sort_keys=True))
+            diversity.append(dict(route=route,algorithm=algorithm,requested_seeds=len(seeds),
+                valid_seed_reports=sum(bool(q and q['structural_pass']) for q in reports),
+                distinct_surface_assignments=len(signatures)))
     out=root/f'p{ranks}';out.mkdir(parents=True,exist_ok=True)
+    (out/'partition_diversity.csv').write_text('')
+    write_csv(out/'partition_diversity.csv',diversity)
     for name,data in (('route_runs.csv',flat),('route_comparisons.csv',comparisons)):
         (out/name).write_text('');write_csv(out/name,data)
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
@@ -163,13 +182,15 @@ def analyze(root,ranks,selected=ROUTES):
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
            'Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.',
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
-    lines.extend(f'{r["control"]} -> {r["candidate"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
-    lines.extend(f"Recovery {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['recovery_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; recovery on each run's slowest rank {r['control_slowest_recovery_seconds']:.6f} -> {r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='recovery_global')
-    lines.extend(f"Refinement {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['refinement_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; refine on each run's slowest rank {r['control_slowest_refine_seconds']:.6f} -> {r['candidate_slowest_refine_seconds']:.6f}s" for r in comparisons if r['candidate'] in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'))
+    lines.extend(f'{r["control"]} -> {r["candidate"]} seed={r["seed"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
+    lines.extend(f"Recovery {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: exercised={r['recovery_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; recovery on each run's slowest rank {r['control_slowest_recovery_seconds']:.6f} -> {r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='recovery_global')
+    lines.extend(f"Refinement {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: exercised={r['refinement_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; refine on each run's slowest rank {r['control_slowest_refine_seconds']:.6f} -> {r['candidate_slowest_refine_seconds']:.6f}s" for r in comparisons if r['candidate'] in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'))
     lines.extend(f"Exact split rejection {r['timing']}: exercised={r['legal_split_exercised']}" for r in comparisons if r['candidate']=='legal_prune')
     if any(r.get('legal_split_exercised') is False for r in comparisons):
         lines.append('No rejected split candidates in every pair: no pruning speedup claim is supported.')
-    lines.extend(f"Recovery batch {r['control']} -> {r['candidate']} {r['timing']}: exercised={r['recovery_batch_exercised']}" for r in comparisons if r['candidate'] in ('batch_serial','batch_parallel'))
+    lines.extend(f"Recovery batch {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: exercised={r['recovery_batch_exercised']}" for r in comparisons if r['candidate'] in ('batch_serial','batch_parallel'))
+    lines.extend(f"恢复覆盖 seed={r['seed']} {r['timing']}: 活跃进程={r['candidate_recovery_active_ranks']}/{ranks}; 有点优化工作的进程={r['candidate_recovery_point_work_ranks']}/{ranks}; 各次最慢进程恢复时间中位数={r['control_slowest_recovery_seconds']:.6f}->{r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='batch_parallel')
+    lines.extend(f"分区多样性 {d['route']}: 有效种子报告={d['valid_seed_reports']}/{d['requested_seeds']}; 不同逐进程表面分配指纹={d['distinct_surface_assignments']}。相同指纹不能视为独立分区覆盖。" for d in diversity)
     if any(r.get('recovery_batch_exercised') is False for r in comparisons):
         lines.append('Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.')
     if any(r.get('refinement_exercised') is False for r in comparisons):
