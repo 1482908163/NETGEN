@@ -1,0 +1,32 @@
+A1/B1/C1: 96 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+refine_serial -> batch_parallel seed=-1 natural: 1.80% reduction; wins=5/8; validated=True
+refine_serial -> batch_parallel seed=-1 split: -1.30% reduction; wins=2/8; validated=True
+refine_serial -> batch_parallel seed=17 natural: 1.05% reduction; wins=4/8; validated=True
+refine_serial -> batch_parallel seed=17 split: 0.91% reduction; wins=5/8; validated=True
+refine_serial -> batch_parallel seed=41 natural: 2.50% reduction; wins=7/8; validated=True
+refine_serial -> batch_parallel seed=41 split: -0.50% reduction; wins=3/8; validated=True
+Refinement refine_serial -> batch_parallel seed=-1 natural: exercised=True; compute max 2.708872 -> 2.694715s; refine on each run's slowest rank 0.382708 -> 0.379096s
+Refinement refine_serial -> batch_parallel seed=-1 split: exercised=True; compute max 2.707965 -> 2.703694s; refine on each run's slowest rank 0.380669 -> 0.383508s
+Refinement refine_serial -> batch_parallel seed=17 natural: exercised=True; compute max 2.780425 -> 2.800614s; refine on each run's slowest rank 0.397327 -> 0.397683s
+Refinement refine_serial -> batch_parallel seed=17 split: exercised=True; compute max 2.756670 -> 2.776743s; refine on each run's slowest rank 0.395302 -> 0.395161s
+Refinement refine_serial -> batch_parallel seed=41 natural: exercised=True; compute max 2.693043 -> 2.669190s; refine on each run's slowest rank 0.359088 -> 0.385106s
+Refinement refine_serial -> batch_parallel seed=41 split: exercised=True; compute max 2.661314 -> 2.666050s; refine on each run's slowest rank 0.359997 -> 0.384149s
+Recovery batch refine_serial -> batch_parallel seed=-1 natural: exercised=False
+Recovery batch refine_serial -> batch_parallel seed=-1 split: exercised=False
+Recovery batch refine_serial -> batch_parallel seed=17 natural: exercised=True
+Recovery batch refine_serial -> batch_parallel seed=17 split: exercised=True
+Recovery batch refine_serial -> batch_parallel seed=41 natural: exercised=False
+Recovery batch refine_serial -> batch_parallel seed=41 split: exercised=False
+恢复覆盖 seed=-1 natural: 活跃进程=0.0/128; 有点优化工作的进程=0.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+恢复覆盖 seed=-1 split: 活跃进程=0.0/128; 有点优化工作的进程=0.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+恢复覆盖 seed=17 natural: 活跃进程=1.0/128; 有点优化工作的进程=1.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+恢复覆盖 seed=17 split: 活跃进程=1.0/128; 有点优化工作的进程=1.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+恢复覆盖 seed=41 natural: 活跃进程=0.0/128; 有点优化工作的进程=0.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+恢复覆盖 seed=41 split: 活跃进程=0.0/128; 有点优化工作的进程=0.0/128; 各次最慢进程恢复时间中位数=0.000000->0.000000s
+分区多样性 refine_serial: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.
