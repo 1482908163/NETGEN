@@ -438,7 +438,8 @@ namespace nglib
        const VolumeResources * resources=nullptr, VolumeFrontSearchStats * front=nullptr,
        VolumeRecoveryStats * recovery=nullptr, bool parallel_recovery=false, double *native_profile=nullptr, VolumeKernelStats *legal_split=nullptr,
        VolumeKernelStats *batch=nullptr, bool batch_parallel=false,
-       VolumeKernelStats *smooth=nullptr, bool smooth_balanced=false)
+       VolumeKernelStats *smooth=nullptr, bool smooth_balanced=false,
+       VolumeKernelStats *split=nullptr, bool split_reuse=false, bool split_verify=false)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -463,6 +464,9 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_split_stats = split;
+         local.volume_split_reuse = split_reuse;
+         local.volume_split_verify = split_verify;
          local.volume_smooth_stats = smooth;
          local.volume_smooth_balanced = smooth_balanced;
          local.volume_recovery_batch_stats = batch;
@@ -573,6 +577,23 @@ namespace nglib
        batch[i]=batch_stats.values[i].load();
      }
      for(int i=0;i<8;++i)smooth[i]=smooth_stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshSplitReuse(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int reuse,int verify,double *seconds,
+       double *details,double *recovery,double *batch,double *split,double *profile)
+   {
+     if(!details || !recovery || !batch || !split || !profile || reuse<0 || reuse>1 || verify<0 || verify>1)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats batch_stats,split_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,nullptr,false,&split_stats,reuse!=0,verify!=0);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();
+       batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<12;++i)split[i]=split_stats.values[i].load();
      return result;
    }
 

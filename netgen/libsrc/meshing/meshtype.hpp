@@ -1743,6 +1743,10 @@ namespace netgen
     bool volume_recovery_active = false;
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
+    bool volume_split_active = false;
+    bool volume_split_reuse = false;
+    bool volume_split_verify = false;
+    VolumeKernelStats *volume_split_stats = nullptr;
     bool volume_smooth_active = false;
     bool volume_smooth_balanced = false;
     VolumeKernelStats * volume_smooth_stats = nullptr;

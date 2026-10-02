@@ -357,12 +357,12 @@ int main(int argc, char **argv) {
        ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
        (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids)) ||
        (research.ready_volume_exchange && !research.async_global_ids) ||
-       ((research.kernel_scheduler=="spatial" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel") && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
+       ((research.kernel_scheduler=="spatial" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel") && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
        (research.adaptive_worklets && !research.worklets())) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
         MPI_Abort(MPI_COMM_WORLD,2);
     }
-    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="spatial" && research.kernel_scheduler!="recovery" && research.kernel_scheduler!="profile" && research.kernel_scheduler!="refine_serial" && research.kernel_scheduler!="batch_serial" && research.kernel_scheduler!="batch_parallel" && research.kernel_scheduler!="smooth_profile" && research.kernel_scheduler!="smooth_balanced" && research.kernel_scheduler!="legal_prune" && research.kernel_scheduler!="refine_parallel" && research.kernel_scheduler!="frontier") ||
+    if((!node_cooperative && research.kernel_scheduler!="static" && research.kernel_scheduler!="cavity" && research.kernel_scheduler!="repair" && research.kernel_scheduler!="spatial" && research.kernel_scheduler!="recovery" && research.kernel_scheduler!="profile" && research.kernel_scheduler!="refine_serial" && research.kernel_scheduler!="batch_serial" && research.kernel_scheduler!="batch_parallel" && research.kernel_scheduler!="split_profile" && research.kernel_scheduler!="split_reuse" && research.kernel_scheduler!="smooth_profile" && research.kernel_scheduler!="smooth_balanced" && research.kernel_scheduler!="legal_prune" && research.kernel_scheduler!="refine_parallel" && research.kernel_scheduler!="frontier") ||
        (research.kernel_threads==0 && research.kernel_scheduler!="static") ||
        (research.kernel_threads>0 && (!research.communication_only || research.mesh_tasks>0))) {
         if(id==0)std::cerr<<"内核实验要求通信基线路径、明确线程数以及 static/cavity 调度。"<<std::endl;
@@ -493,17 +493,22 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
-    if(research.kernel_threads>0 && research.mesh_tasks==0 && !research.worklets() && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel"))
-        profiler.add_metadata("recovery_evaluation",(research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")?"batch_parallel_v1":research.kernel_scheduler=="batch_serial"?"batch_serial_v1":research.kernel_scheduler=="recovery"?"parallel_readonly_v1":"serial_readonly_v1");
+    if(research.kernel_threads>0 && research.mesh_tasks==0 && !research.worklets() && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel"))
+        profiler.add_metadata("recovery_evaluation",((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")?"batch_parallel_v1":research.kernel_scheduler=="batch_serial"?"batch_serial_v1":research.kernel_scheduler=="recovery"?"parallel_readonly_v1":"serial_readonly_v1");
     if(research.kernel_scheduler=="profile")profiler.add_metadata("volume_native_profile","phase_operations_v1");
     profiler.add_metadata("legal_split_policy",research.kernel_scheduler=="legal_prune"?"exact_rejection_v1":"original_v1");
     if(research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced") {
         profiler.add_metadata("smooth_schedule",research.kernel_scheduler=="smooth_balanced"?"active_star_weighted_v1":"native_count_v1");
         profiler.add_metadata("volume_native_profile","phase_operations_v1");
     }
-    const bool deterministic_refine=((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel";
+    if(research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") {
+        profiler.add_metadata("split_proposal_verification",research.kernel_scheduler=="split_reuse" && validate_volume?"recompute_exact_v1":"off");
+        profiler.add_metadata("split_proposal_policy",research.kernel_scheduler=="split_reuse"?"intact_star_reuse_v1":"recompute_v1");
+        profiler.add_metadata("volume_native_profile","phase_operations_v1");
+    }
+    const bool deterministic_refine=((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel";
     profiler.add_metadata("volume_refinement",deterministic_refine?"first_encounter_bulk_v1":"legacy_map_v1");
-    profiler.add_metadata("refinement_threads",std::to_string(deterministic_refine?(((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune")?1:research.kernel_threads):1));
+    profiler.add_metadata("refinement_threads",std::to_string(deterministic_refine?(((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune")?1:research.kernel_threads):1));
     if(deterministic_refine) {
         const char *names[]={"pack_seconds","snapshot_seconds","plan_seconds","write_seconds","map_seconds",
             "new_points","edge_occurrences","plan_buffer_bytes","parallel_calls","calls"};
@@ -903,7 +908,7 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
-            double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={},recovery_stats[6]={},native_profile[30]={},legal_split[3]={},recovery_batch[6]={},smooth_stats[8]={};
+            double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={},recovery_stats[6]={},native_profile[30]={},legal_split[3]={},recovery_batch[6]={},smooth_stats[8]={},split_stats[12]={};
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -922,19 +927,22 @@ int main(int argc, char **argv) {
                     : research.kernel_scheduler=="node_scoped"
                     ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
                     : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
+                : research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse"
+                ? nglib::Ng_GenerateVolumeMeshSplitReuse(submesh,&nmp,research.kernel_threads,
+                    research.kernel_scheduler=="split_reuse",validate_volume,kernel_seconds,kernel_details,recovery_stats,recovery_batch,split_stats,native_profile)
                 : research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced"
                 ? nglib::Ng_GenerateVolumeMeshSmoothBalance(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="smooth_balanced",kernel_seconds,kernel_details,recovery_stats,recovery_batch,smooth_stats,native_profile)
-                : research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")
+                : research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")
                 ? nglib::Ng_GenerateVolumeMeshRecoveryBatch(submesh,&nmp,research.kernel_threads,
-                    (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced"),kernel_seconds,kernel_details,recovery_stats,recovery_batch)
+                    ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced"),kernel_seconds,kernel_details,recovery_stats,recovery_batch)
                 : research.kernel_scheduler=="legal_prune"
                 ? nglib::Ng_GenerateVolumeMeshLegalSplitPruned(submesh,&nmp,research.kernel_threads,
                     kernel_seconds,kernel_details,recovery_stats,legal_split)
                 : research.kernel_scheduler=="profile"
                 ? nglib::Ng_GenerateVolumeMeshProfile(submesh,&nmp,research.kernel_threads,
                     kernel_seconds,kernel_details,recovery_stats,native_profile)
-                : research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel")
+                : research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel")
                 ? nglib::Ng_GenerateVolumeMeshRecovery(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="recovery",kernel_seconds,kernel_details,recovery_stats)
                 : research.kernel_scheduler=="spatial"
@@ -956,11 +964,11 @@ int main(int argc, char **argv) {
                 profiler.set_metric("kernel_repair_seconds",kernel_seconds[1]);
                 profiler.set_metric("kernel_optimization_seconds",kernel_seconds[2]);
             }
-            if(research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel")) {
+            if(research.kernel_threads>0 && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel")) {
                 const char *names[]={"calls","seconds","evaluation_calls","evaluation_seconds","candidates","parallel_evaluations"};
                 for(int k=0;k<6;++k)profiler.set_metric(std::string("recovery_")+names[k],recovery_stats[k]);
             }
-            if(research.kernel_scheduler=="batch_serial" || (research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) {
+            if(research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) {
                 const char *names[]={"calls","parallel_calls","smooth_calls","inner_visits","color_waves","smooth_seconds"};
                 for(int k=0;k<6;++k)profiler.set_metric(std::string("recovery_batch_")+names[k],recovery_batch[k]);
             }
@@ -972,7 +980,11 @@ int main(int argc, char **argv) {
                 const char *names[]={"calls","point_visits","active_visits","color_waves","dispatches","weighted_calls","planning_seconds","seconds"};
                 for(int k=0;k<8;++k)profiler.set_metric(std::string("smooth_balance_")+names[k],smooth_stats[k]);
             }
-            if(research.kernel_scheduler=="profile" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced") {
+            if(research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") {
+                const char *names[]={"calls","proposals","attempts","reused","applied","evaluation_seconds","commit_seconds","cache_bytes_sum","seconds","candidates","verified","mismatches"};
+                for(int k=0;k<12;++k)profiler.set_metric(std::string("split_proposal_")+names[k],split_stats[k]);
+            }
+            if(research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse" || research.kernel_scheduler=="profile" || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced") {
                 const char *phases[]={"generation","repair","optimization"};
                 const char *ops[]={"smooth","combine","split","swap","swap2","badness",
                     "delaunay_insert","delaunay_outer","delaunay_intersect","delaunay_open"};

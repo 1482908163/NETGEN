@@ -427,7 +427,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","batch_serial","batch_parallel","smooth_profile","smooth_balanced","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","batch_serial","batch_parallel","split_profile","split_reuse","smooth_profile","smooth_balanced","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -442,10 +442,10 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid thread lifecycle metric: "+key)
             result[key]=sum(values) if name=="starts" else max(values)
-    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
+    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','split_profile','split_reuse','smooth_profile','smooth_balanced'):
         if metadata.get('volume_refinement')!='first_encounter_bulk_v1':
             raise ValueError('missing deterministic refinement contract')
-        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced') else int(metadata['kernel_threads'])
+        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune','batch_serial','batch_parallel','split_profile','split_reuse','smooth_profile','smooth_balanced') else int(metadata['kernel_threads'])
         if int(metadata.get('refinement_threads',0))!=expected_threads:
             raise ValueError('refinement thread identity mismatch')
         rounds=int(metadata['numrefine'])
@@ -488,7 +488,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result[name]=sum(row['metrics'][name] for row in rows)
             result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
         result['legal_split_exercised']=result['legal_split_pruned']>0
-    if metadata.get('kernel_scheduler') in ('profile','smooth_profile','smooth_balanced'):
+    if metadata.get('kernel_scheduler') in ('profile','smooth_profile','smooth_balanced','split_profile','split_reuse'):
         if metadata.get('volume_native_profile')!='phase_operations_v1':
             raise ValueError('missing native operation profile contract')
         if metadata.get('kernel_scheduler')=='profile' and metadata.get('recovery_evaluation')!='serial_readonly_v1':
@@ -519,7 +519,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     if metadata.get('kernel_scheduler')=='recovery' and recovery_mode!='parallel_readonly_v1':
         raise ValueError('missing recovery evaluation contract')
     if recovery_mode is not None:
-        expected={'batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','smooth_profile':'batch_parallel_v1','smooth_balanced':'batch_parallel_v1','recovery':'parallel_readonly_v1'}.get(metadata.get('kernel_scheduler'),'serial_readonly_v1')
+        expected={'batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','split_profile':'batch_parallel_v1','split_reuse':'batch_parallel_v1','smooth_profile':'batch_parallel_v1','smooth_balanced':'batch_parallel_v1','recovery':'parallel_readonly_v1'}.get(metadata.get('kernel_scheduler'),'serial_readonly_v1')
         if recovery_mode!=expected:raise ValueError('invalid recovery evaluation mode')
         names=('calls','seconds','evaluation_calls','evaluation_seconds','candidates','parallel_evaluations')
         for row in rows:
@@ -542,7 +542,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
         result['recovery_active_ranks']=sum(row['metrics']['recovery_calls']>0 for row in rows)
         result['recovery_exercised']=result['recovery_candidates']>0 and result['recovery_evaluation_calls']>0
-    if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
+    if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel','split_profile','split_reuse','smooth_profile','smooth_balanced'):
         if recovery_mode not in ('batch_serial_v1','batch_parallel_v1'):
             raise ValueError('missing recovery batch contract')
         fields=('calls','parallel_calls','smooth_calls','inner_visits','color_waves','smooth_seconds')
@@ -590,6 +590,34 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 raise ValueError('native control unexpectedly planned weighted work')
         for key in fields:
             name='smooth_balance_'+key;values=[r['metrics'][name] for r in rows]
+            result[name]=max(values) if 'seconds' in key else sum(values)
+            result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
+    if metadata.get('kernel_scheduler') in ('split_profile','split_reuse'):
+        reuse=metadata['kernel_scheduler']=='split_reuse'
+        if metadata.get('split_proposal_policy')!=('intact_star_reuse_v1' if reuse else 'recompute_v1') or metadata.get('volume_native_profile')!='phase_operations_v1':
+            raise ValueError('missing split proposal contract')
+        fields=('calls','candidates','proposals','attempts','reused','applied','evaluation_seconds','commit_seconds','cache_bytes_sum','seconds','verified','mismatches')
+        verify=reuse and metadata.get('mesh_quality')=='volume_audit_v1'
+        if metadata.get('split_proposal_verification')!=('recompute_exact_v1' if verify else 'off'):
+            raise ValueError('missing split differential verification contract')
+        for row in rows:
+            m=row['metrics']
+            for key in fields:
+                v=m['split_proposal_'+key]
+                if not math.isfinite(v) or v<0 or ('seconds' not in key and int(v)!=v):
+                    raise ValueError('invalid split proposal diagnostic')
+            if m['split_proposal_mismatches'] or m['split_proposal_verified']!=(m['split_proposal_applied'] if verify else 0):
+                raise ValueError('split proposal differential verification failed')
+            if not (m['split_proposal_applied']<=m['split_proposal_attempts']==m['split_proposal_proposals']<=m['split_proposal_candidates']):
+                raise ValueError('split proposal count mismatch')
+            if m['split_proposal_reused']>m['split_proposal_attempts'] or (not reuse and (m['split_proposal_reused'] or m['split_proposal_cache_bytes_sum'])):
+                raise ValueError('split reuse activation mismatch')
+            if reuse and m['split_proposal_reused']<m['split_proposal_applied']:
+                raise ValueError('successful split missed proposal reuse')
+            if m['split_proposal_evaluation_seconds']+m['split_proposal_commit_seconds']>m['split_proposal_seconds']+1e-6 or m['split_proposal_seconds']>1.05*m['kernel_optimization_seconds']+1e-3:
+                raise ValueError('split proposal timing outside final optimization')
+        for key in fields:
+            name='split_proposal_'+key;values=[r['metrics'][name] for r in rows]
             result[name]=max(values) if 'seconds' in key else sum(values)
             result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
     if metadata.get('kernel_scheduler')=='spatial':
@@ -1032,7 +1060,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in COMPUTE})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_'))})
             critical_sink.append(item)
     return result, detail
 

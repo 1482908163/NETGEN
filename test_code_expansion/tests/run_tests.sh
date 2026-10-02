@@ -57,3 +57,8 @@ python3 "${ROOT}/tests/test_smooth_balance_coloring.py"
 python3 "${ROOT}/tests/test_smooth_balance_config.py"
 python3 "${ROOT}/tests/test_smooth_balance_runner.py"
 python3 "${ROOT}/tests/test_smooth_balance_validation.py"
+
+python3 "${ROOT}/tests/test_split_reuse_transaction.py"
+python3 "${ROOT}/tests/test_split_reuse_config.py"
+python3 "${ROOT}/tests/test_split_reuse_validation.py"
+python3 "${ROOT}/tests/test_split_reuse_runner.py"

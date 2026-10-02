@@ -553,7 +553,7 @@ void MeshOptimize3d :: CombineImprove ()
 
 
 
-double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only, bool * pruned)
+double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only, bool * pruned, SplitProposal *proposal, bool reuse)
 {
   if(pruned) *pruned=false;
   double d_badness = 0.0;
@@ -613,6 +613,17 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
           puretet = 0;
   if (!puretet) return 0.0;
 
+  Point3d pnew;
+  double bad2;
+  if(reuse && !check_only && proposal && proposal->valid) {
+    // All original pi1-star elements were checked above, not only the edge
+    // cavity. Prior commits only append points/elements and delete old cells;
+    // no original coordinates move. Thus an intact star has the exact same
+    // objective and proposal. Still repeat the original legality tests below.
+    pnew=proposal->point;
+    bad2=proposal->badness;
+    if(mp.volume_split_active && mp.volume_split_stats)mp.volume_split_stats->Add(3,1);
+  } else {
   Point3d p1 = mesh[pi1];
   Point3d p2 = mesh[pi2];
 
@@ -638,7 +649,7 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
   par.maxit_linsearch = 50;
   par.maxit_bfgs = 20;
 
-  Point3d pnew = Center (p1, p2);
+  pnew = Center (p1, p2);
   Vector px(3);
   px(0) = pnew.X();
   px(1) = pnew.Y();
@@ -662,7 +673,9 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
         }
     }
 
-  double bad2 = pf.Func (px);
+  bad2 = pf.Func (px);
+
+  }
 
   for (int k = 0; k < hasbothpoints.Size(); k++)
     {
@@ -699,6 +712,23 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
 
   if(bad2 >= 1e24) return 0.0;
   d_badness = bad2-bad1;
+  if(reuse && !check_only && proposal && proposal->valid && mp.volume_split_verify) {
+    // Warmup-only differential check against the unchanged recomputation path.
+    SplitProposal observed;
+    const double checked=SplitImproveEdge(elementsonnode,locfaces,badmax,pi1,pi2,ptmp,
+                                         true,nullptr,&observed,false);
+    if(mp.volume_split_stats)mp.volume_split_stats->Add(10,1);
+    if(!observed.valid || checked!=d_badness || observed.badness!=bad2 ||
+       observed.point.X()!=pnew.X() || observed.point.Y()!=pnew.Y() || observed.point.Z()!=pnew.Z()) {
+      if(mp.volume_split_stats)mp.volume_split_stats->Add(11,1);
+      throw NgException("Split proposal differs from exact recomputation");
+    }
+  }
+  if(check_only && proposal && d_badness<0.0) {
+    proposal->point=pnew;
+    proposal->badness=bad2;
+    proposal->valid=true;
+  }
   if(check_only)
       return d_badness;
 
@@ -736,6 +766,10 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
 void MeshOptimize3d :: SplitImprove ()
 {
   static Timer t("MeshOptimize3d::SplitImprove"); RegionTimer reg(t);
+  auto *split_stats=mp.volume_split_active ? mp.volume_split_stats : nullptr;
+  const bool reuse=mp.volume_split_active && mp.volume_split_reuse && goal==OPT_QUALITY;
+  VolumeKernelTimer split_timer(split_stats,8);
+  if(split_stats)split_stats->Add(0,1);
   static Timer topt("Optimize");
   static Timer tsearch("Search-split");
 
@@ -768,11 +802,17 @@ void MeshOptimize3d :: SplitImprove ()
   // Find edges with improvement
   Array<std::tuple<double, int>> candidate_edges(edges.Size());
   std::atomic<int> improvement_counter(0);
+  Array<SplitProposal> proposals(reuse ? edges.Size() : 0);
+  if(split_stats) {
+    split_stats->Add(7,proposals.Size()*sizeof(SplitProposal));
+    split_stats->Add(9,edges.Size());
+  }
   auto ptmp = mesh.AddPoint( {0,0,0} );
 
   auto * prune_stats=goal==OPT_LEGAL ? mp.volume_legal_split_stats : nullptr;
   if(prune_stats) { prune_stats->Add(0,1); prune_stats->Add(1,edges.Size()); }
   tsearch.Start();
+  { VolumeKernelTimer evaluation_timer(split_stats,5);
   ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
     int pruned_count=0;
@@ -782,7 +822,7 @@ void MeshOptimize3d :: SplitImprove ()
     {
       auto [p0,p1] = edges[i];
       bool pruned=false;
-      double d_badness = SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, true, &pruned);
+      double d_badness = SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, true, &pruned, reuse ? &proposals[i] : nullptr, false);
       pruned_count+=pruned;
       if(d_badness<0.0)
       {
@@ -792,7 +832,9 @@ void MeshOptimize3d :: SplitImprove ()
     }
     if(prune_stats) prune_stats->Add(2,pruned_count);
   });
+  }
   tsearch.Stop();
+  if(split_stats)split_stats->Add(1,improvement_counter.load());
 
   auto edges_with_improvement = candidate_edges.Part(0, improvement_counter.load());
 
@@ -804,12 +846,16 @@ void MeshOptimize3d :: SplitImprove ()
   topt.Start();
   int cnt = 0;
   NgArray<PointIndices<3>> locfaces;
+  { VolumeKernelTimer commit_timer(split_stats,6);
   for(auto [d_badness, ei] : edges_with_improvement)
   {
+      if(split_stats)split_stats->Add(2,1);
       auto [p0,p1] = edges[ei];
-      if (SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, false) < 0.0)
+      if (SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, false, nullptr, reuse ? &proposals[ei] : nullptr, reuse) < 0.0)
         cnt++;
   }
+  }
+  if(split_stats)split_stats->Add(4,cnt);
   topt.Stop();
   mesh.Compress();
   PrintMessage (5, cnt, " splits performed");
