@@ -1,3 +1,4 @@
+#include "weighted_point_ranges.hpp"
 #include <mystdlib.h>
 
 #include "meshing.hpp"
@@ -1347,6 +1348,10 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
   static Timer trange("range");
   static Timer tloch("loch");
 
+  auto * smooth_stats=mp.volume_smooth_active ? mp.volume_smooth_stats : nullptr;
+  VolumeKernelTimer smooth_timer(smooth_stats,7);
+  if(smooth_stats)smooth_stats->Add(0,1);
+
   auto * batch_stats=mp.volume_recovery_active ? mp.volume_recovery_batch_stats : nullptr;
   VolumeKernelTimer batch_timer(batch_stats,5);
   if(batch_stats)batch_stats->Add(2,1);
@@ -1378,6 +1383,15 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
             PointIndex pi = i+static_cast<int>(PointIndex::BASE);
             table.Add(colors[i], pi);
           }, ncolors);
+
+  if(smooth_stats) {
+    size_t inner=0;
+    for(auto pi:points.Range()) if((*this)[pi].Type()==INNERPOINT)++inner;
+    smooth_stats->Add(1,points.Size());
+    smooth_stats->Add(2,inner);
+    smooth_stats->Add(3,ncolors);
+    if(mp.volume_smooth_balanced)smooth_stats->Add(5,1);
+  }
 
   if(batch_stats) {
     size_t inner=0;
@@ -1429,7 +1443,7 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
       if (multithread.terminate)
           throw NgException ("Meshing stopped");
 
-      ParallelForRange( color_table[icolor].Range(), [&](auto myrange)
+      auto optimize_points = [&](auto myrange, const auto & point_ids)
       {
         RegionTracer reg(ngcore::TaskManager::GetThreadId(), trange, myrange.Size());
         Vector x(3);
@@ -1444,7 +1458,7 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
 
         for (auto i : myrange)
         {
-          PointIndex pi = color_table[icolor][i];
+          PointIndex pi = point_ids[i];
           if ( (*this)[pi].Type() == INNERPOINT )
           {
             double lh = pointh[pi];
@@ -1477,7 +1491,39 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
               }
           }
         }
-      }, 4*ngcore::TaskManager::GetNumThreads());
+      };
+
+      const int workers=ngcore::TaskManager::GetNumThreads();
+      if(mp.volume_smooth_active && mp.volume_smooth_balanced) {
+        // Original color labels/order remain unchanged. Same-color point stars
+        // are element-disjoint; boundary points do no optimizer work.
+        std::vector<PointIndex> active;
+        std::vector<size_t> weights;
+        std::vector<std::pair<size_t,size_t>> chunks;
+        {
+          VolumeKernelTimer planning(smooth_stats,6);
+          for(auto pi:color_table[icolor]) if((*this)[pi].Type()==INNERPOINT) {
+            active.push_back(pi);
+            weights.push_back(elementsonpoint[pi].Size());
+          }
+          chunks=MakeWeightedPointRanges(weights,workers);
+        }
+        if(smooth_stats)smooth_stats->Add(4,chunks.size());
+        if(!chunks.empty()) {
+          // Native synchronous dispatch: next color starts only after joining.
+          ParallelForRange(ngcore::Range(chunks.size()),[&](auto range) {
+            for(auto k:range) {
+              auto [first,last]=chunks[k];
+              optimize_points(ngcore::Range(first,last),active);
+            }
+          },int(chunks.size()));
+        }
+      } else {
+        if(smooth_stats)smooth_stats->Add(4,4*workers);
+        ParallelForRange(color_table[icolor].Range(),[&](auto range) {
+          optimize_points(range,color_table[icolor]);
+        },4*workers);
+      }
   }
   topt.Stop();
 

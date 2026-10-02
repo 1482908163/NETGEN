@@ -724,6 +724,8 @@ namespace netgen
     mesh3d.CalcSurfacesOfNode();
 
     MeshOptimize3d optmesh(mesh3d, mp);
+    MeshingParameters smooth_mp = mp;
+    smooth_mp.volume_smooth_active = true;
 
     // optimize only bad elements first
     optmesh.SetMinBadness(1000.);
@@ -778,8 +780,8 @@ namespace netgen
 	      case 'm': mesh3d.ImproveMesh(*geometry); break;
 	      case 'M': mesh3d.ImproveMesh(*geometry); break;
 #else
-	      case 'm': mesh3d.ImproveMesh(mp); break;
-	      case 'M': mesh3d.ImproveMesh(mp); break;
+	      case 'm': mesh3d.ImproveMesh(smooth_mp); break;
+	      case 'M': mesh3d.ImproveMesh(smooth_mp); break;
 #endif
 	      case 'j': mesh3d.ImproveMeshJacobian(mp); break;
 	      }

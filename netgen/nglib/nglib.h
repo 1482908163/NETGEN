@@ -495,6 +495,11 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshLegalSplitPruned(Ng_Mesh *mesh,
 // Recovery batch reuses one team across the unchanged recovery sequence.
 // batch[6]: calls, parallel calls, smoothing calls, inner point visits,
 // color waves, inclusive smoothing seconds. Existing arrays unchanged.
+// Final smoothing: original coloring, optional incidence-weighted dispatch.
+// Output arrays: seconds[3], details[12], recovery[6], batch[6], smooth[8], profile[30].
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshSmoothBalance(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int balanced,double *seconds,
+    double *details,double *recovery,double *batch,double *smooth,double *profile);
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshRecoveryBatch(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int parallel_batch,double *seconds,
     double *details,double *recovery,double *batch);

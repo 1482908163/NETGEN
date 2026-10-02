@@ -52,3 +52,8 @@ python3 "${ROOT}/tests/test_recovery_batch_runner.py"
 
 python3 "${ROOT}/tests/test_recovery_scale_config.py"
 python3 "${ROOT}/tests/test_recovery_scale_runner.py"
+
+python3 "${ROOT}/tests/test_smooth_balance_coloring.py"
+python3 "${ROOT}/tests/test_smooth_balance_config.py"
+python3 "${ROOT}/tests/test_smooth_balance_runner.py"
+python3 "${ROOT}/tests/test_smooth_balance_validation.py"

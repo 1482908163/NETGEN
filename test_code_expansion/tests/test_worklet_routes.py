@@ -14,7 +14,7 @@ import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
     worklet=route in ('a_static','a_dynamic','b_remaining','b_critical','worklet_static_fixed','worklet_owner_fixed','critical_worklet');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
-    scheduler={'batch_serial':'batch_serial','batch_parallel':'batch_parallel','legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
+    scheduler={'batch_serial':'batch_serial','batch_parallel':'batch_parallel','smooth_profile':'smooth_profile','smooth_balanced':'smooth_balanced','legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
     meta.update(feature_schema='mesh_worklets_v1' if worklet else 'mesh_comm_v1',
         core_only='true',algorithm='sparse',timing_mode=mode,numrefine='0',partition_seed='-1',
@@ -29,19 +29,20 @@ def fixture(route,repeat,mode='natural'):
         task_mesh_signature='1234',worklet_ownership_signature='abcd')
     meta['node_affinity_layout']='disjoint'
     meta['adjacency_audit_schema']='canonical_ghost_v1'
-    meta['adjacency_id_path']='owner_local_v2' if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') else 'contiguous_v1'
-    if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):meta['global_numbering']='owner_local_v2'
+    meta['adjacency_id_path']='owner_local_v2' if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced') else 'contiguous_v1'
+    if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced'):meta['global_numbering']='owner_local_v2'
     if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
         meta['worklet_scheduler']='mandatory_home_v2'
         meta['worklet_decomposition']='original_owner_v1'
         meta['worklet_policy']={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
     meta['front_search']='conservative_boxes_v1' if route in ('front_spatial','spatial_ready') else 'linear_v1'
     meta['volume_exchange_policy']='peer_ready_v1' if route in ('ready_global','spatial_ready') else 'batch_v1'
-    if route in ('reference_bound','async_global','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):
-        meta['recovery_evaluation']={'batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','recovery_global':'parallel_readonly_v1'}.get(route,'serial_readonly_v1')
-    if route=='profile_global':meta['volume_native_profile']='phase_operations_v1'
-    meta['volume_refinement']='first_encounter_bulk_v1' if route in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel') else 'legacy_map_v1'
+    if route in ('reference_bound','async_global','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
+        meta['recovery_evaluation']={'batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','smooth_profile':'batch_parallel_v1','smooth_balanced':'batch_parallel_v1','recovery_global':'parallel_readonly_v1'}.get(route,'serial_readonly_v1')
+    if route in ('profile_global','smooth_profile','smooth_balanced'):meta['volume_native_profile']='phase_operations_v1'
+    meta['volume_refinement']='first_encounter_bulk_v1' if route in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced') else 'legacy_map_v1'
     meta['refinement_threads']='1'
+    if route in ('smooth_profile','smooth_balanced'):meta['smooth_schedule']='active_star_weighted_v1' if route=='smooth_balanced' else 'native_count_v1'
     if repeat==0:meta.update(mesh_quality='volume_audit_v1',quality_face_reference='allgather')
     if scheduler.startswith('node_'):
         meta['node_resources']='node_coop_v2'
@@ -54,16 +55,18 @@ def fixture(route,repeat,mode='natural'):
             kernel_generation_seconds=.1,kernel_repair_seconds=.1,kernel_optimization_seconds=.1)
         if 'recovery_evaluation' in meta:
             m.update(recovery_calls=1,recovery_seconds=.04,recovery_evaluation_calls=2,recovery_evaluation_seconds=.02,recovery_candidates=64,recovery_parallel_evaluations=0)
-        if route in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):
+        if route in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
             for key in ('pack_seconds','snapshot_seconds','plan_seconds','write_seconds','map_seconds','new_points','edge_occurrences','plan_buffer_bytes','parallel_calls','calls'):
                 m['refine_'+key]=0
             m['refine_initial_elements']=1
-        if route in ('batch_serial','batch_parallel'):
+        if route in ('batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
             m.update(recovery_batch_calls=1,recovery_batch_parallel_calls=0,recovery_batch_smooth_calls=8,recovery_batch_inner_visits=64,recovery_batch_color_waves=16,recovery_batch_smooth_seconds=.03)
+        if route in ('smooth_profile','smooth_balanced'):
+            m.update(smooth_balance_calls=2,smooth_balance_point_visits=100,smooth_balance_active_visits=50,smooth_balance_color_waves=8,smooth_balance_dispatches=16,smooth_balance_weighted_calls=2 if route=='smooth_balanced' else 0,smooth_balance_planning_seconds=.001 if route=='smooth_balanced' else 0,smooth_balance_seconds=.02)
         if route=='legal_prune':
             meta['legal_split_policy']='exact_rejection_v1'
             m.update(legal_split_passes=2,legal_split_candidates=100,legal_split_pruned=10)
-        if route=='profile_global':
+        if route in ('profile_global','smooth_profile','smooth_balanced'):
             for phase in ('generation','repair','optimization'):
                 for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
                     m[f'native_{phase}_{op}_seconds']=.02
@@ -94,7 +97,7 @@ def fixture(route,repeat,mode='natural'):
             for name in ('checks','restarts','grants','seconds'):m['coop_checkpoint_'+name]=0
             for name in ('checks','unknown','short','cost','deferred','no_capacity','grants','reserved_cores','already','gain_estimate_seconds','restart_estimate_seconds'):
                 m['coop_work_'+name]=0
-        if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel'):
+        if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','smooth_profile','smooth_balanced'):
             m['id_global_count_collectives']=0
             stages['id_owner_local_encode']=dict(seconds=.01,calls=1)
         if route in ('front_spatial','spatial_ready'):
