@@ -1,0 +1,69 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> smooth_profile seed=-1 natural: 0.22% reduction; wins=4/8; validated=True
+batch_parallel -> smooth_profile seed=-1 split: 1.35% reduction; wins=6/8; validated=True
+batch_parallel -> smooth_profile seed=17 natural: 0.31% reduction; wins=4/8; validated=True
+batch_parallel -> smooth_profile seed=17 split: -0.36% reduction; wins=4/8; validated=True
+batch_parallel -> smooth_profile seed=41 natural: 1.44% reduction; wins=6/8; validated=True
+batch_parallel -> smooth_profile seed=41 split: -1.24% reduction; wins=3/8; validated=True
+smooth_profile -> smooth_balanced seed=-1 natural: -0.40% reduction; wins=4/8; validated=True
+smooth_profile -> smooth_balanced seed=-1 split: 0.37% reduction; wins=5/8; validated=True
+smooth_profile -> smooth_balanced seed=17 natural: 1.50% reduction; wins=7/8; validated=True
+smooth_profile -> smooth_balanced seed=17 split: -0.31% reduction; wins=4/8; validated=True
+smooth_profile -> smooth_balanced seed=41 natural: 1.86% reduction; wins=5/8; validated=True
+smooth_profile -> smooth_balanced seed=41 split: -2.48% reduction; wins=3/8; validated=True
+batch_parallel -> smooth_balanced seed=-1 natural: -0.17% reduction; wins=4/8; validated=True
+batch_parallel -> smooth_balanced seed=-1 split: 1.32% reduction; wins=6/8; validated=True
+batch_parallel -> smooth_balanced seed=17 natural: 1.23% reduction; wins=6/8; validated=True
+batch_parallel -> smooth_balanced seed=17 split: 1.51% reduction; wins=5/8; validated=True
+batch_parallel -> smooth_balanced seed=41 natural: 4.80% reduction; wins=6/8; validated=True
+batch_parallel -> smooth_balanced seed=41 split: -2.12% reduction; wins=2/8; validated=True
+Refinement batch_parallel -> smooth_profile seed=-1 natural: exercised=True; compute max 2.723608 -> 2.698178s; refine on each run's slowest rank 0.379514 -> 0.382392s
+Refinement batch_parallel -> smooth_profile seed=-1 split: exercised=True; compute max 2.697647 -> 2.698518s; refine on each run's slowest rank 0.381377 -> 0.380235s
+Refinement batch_parallel -> smooth_profile seed=17 natural: exercised=True; compute max 2.763189 -> 2.767337s; refine on each run's slowest rank 0.396614 -> 0.394897s
+Refinement batch_parallel -> smooth_profile seed=17 split: exercised=True; compute max 2.782793 -> 2.798404s; refine on each run's slowest rank 0.397690 -> 0.395329s
+Refinement batch_parallel -> smooth_profile seed=41 natural: exercised=True; compute max 2.685924 -> 2.658791s; refine on each run's slowest rank 0.359416 -> 0.358951s
+Refinement batch_parallel -> smooth_profile seed=41 split: exercised=True; compute max 2.662489 -> 2.675036s; refine on each run's slowest rank 0.379939 -> 0.360820s
+Refinement smooth_profile -> smooth_balanced seed=-1 natural: exercised=True; compute max 2.698178 -> 2.667958s; refine on each run's slowest rank 0.382392 -> 0.380633s
+Refinement smooth_profile -> smooth_balanced seed=-1 split: exercised=True; compute max 2.698518 -> 2.678526s; refine on each run's slowest rank 0.380235 -> 0.381169s
+Refinement smooth_profile -> smooth_balanced seed=17 natural: exercised=True; compute max 2.767337 -> 2.776797s; refine on each run's slowest rank 0.394897 -> 0.392623s
+Refinement smooth_profile -> smooth_balanced seed=17 split: exercised=True; compute max 2.798404 -> 2.774702s; refine on each run's slowest rank 0.395329 -> 0.395778s
+Refinement smooth_profile -> smooth_balanced seed=41 natural: exercised=True; compute max 2.658791 -> 2.665744s; refine on each run's slowest rank 0.358951 -> 0.359692s
+Refinement smooth_profile -> smooth_balanced seed=41 split: exercised=True; compute max 2.675036 -> 2.670055s; refine on each run's slowest rank 0.360820 -> 0.380672s
+Refinement batch_parallel -> smooth_balanced seed=-1 natural: exercised=True; compute max 2.723608 -> 2.667958s; refine on each run's slowest rank 0.379514 -> 0.380633s
+Refinement batch_parallel -> smooth_balanced seed=-1 split: exercised=True; compute max 2.697647 -> 2.678526s; refine on each run's slowest rank 0.381377 -> 0.381169s
+Refinement batch_parallel -> smooth_balanced seed=17 natural: exercised=True; compute max 2.763189 -> 2.776797s; refine on each run's slowest rank 0.396614 -> 0.392623s
+Refinement batch_parallel -> smooth_balanced seed=17 split: exercised=True; compute max 2.782793 -> 2.774702s; refine on each run's slowest rank 0.397690 -> 0.395778s
+Refinement batch_parallel -> smooth_balanced seed=41 natural: exercised=True; compute max 2.685924 -> 2.665744s; refine on each run's slowest rank 0.359416 -> 0.359692s
+Refinement batch_parallel -> smooth_balanced seed=41 split: exercised=True; compute max 2.662489 -> 2.670055s; refine on each run's slowest rank 0.379939 -> 0.380672s
+最终平滑 seed=-1 natural: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.182257->0.160376s
+最终平滑 seed=-1 split: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.179705->0.160647s
+最终平滑 seed=17 natural: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.176587->0.155106s
+最终平滑 seed=17 split: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.177584->0.155252s
+最终平滑 seed=41 natural: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.162786->0.150573s
+最终平滑 seed=41 split: 有效点覆盖=True; 各次最慢进程平滑时间中位数=0.161350->0.151411s
+Recovery batch batch_parallel -> smooth_profile seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> smooth_profile seed=-1 split: exercised=False
+Recovery batch batch_parallel -> smooth_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> smooth_profile seed=17 split: exercised=True
+Recovery batch batch_parallel -> smooth_profile seed=41 natural: exercised=False
+Recovery batch batch_parallel -> smooth_profile seed=41 split: exercised=False
+Recovery batch smooth_profile -> smooth_balanced seed=-1 natural: exercised=False
+Recovery batch smooth_profile -> smooth_balanced seed=-1 split: exercised=False
+Recovery batch smooth_profile -> smooth_balanced seed=17 natural: exercised=True
+Recovery batch smooth_profile -> smooth_balanced seed=17 split: exercised=True
+Recovery batch smooth_profile -> smooth_balanced seed=41 natural: exercised=False
+Recovery batch smooth_profile -> smooth_balanced seed=41 split: exercised=False
+Recovery batch batch_parallel -> smooth_balanced seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> smooth_balanced seed=-1 split: exercised=False
+Recovery batch batch_parallel -> smooth_balanced seed=17 natural: exercised=True
+Recovery batch batch_parallel -> smooth_balanced seed=17 split: exercised=True
+Recovery batch batch_parallel -> smooth_balanced seed=41 natural: exercised=False
+Recovery batch batch_parallel -> smooth_balanced seed=41 split: exercised=False
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 smooth_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 smooth_balanced: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.
