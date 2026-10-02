@@ -1,0 +1,69 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> split_profile seed=-1 natural: 2.62% reduction; wins=8/8; validated=True
+batch_parallel -> split_profile seed=-1 split: 2.16% reduction; wins=5/8; validated=True
+batch_parallel -> split_profile seed=17 natural: -1.26% reduction; wins=4/8; validated=True
+batch_parallel -> split_profile seed=17 split: -0.65% reduction; wins=3/8; validated=True
+batch_parallel -> split_profile seed=41 natural: 0.92% reduction; wins=6/8; validated=True
+batch_parallel -> split_profile seed=41 split: 2.70% reduction; wins=7/8; validated=True
+split_profile -> split_reuse seed=-1 natural: -3.06% reduction; wins=2/8; validated=True
+split_profile -> split_reuse seed=-1 split: -2.02% reduction; wins=2/8; validated=True
+split_profile -> split_reuse seed=17 natural: 2.86% reduction; wins=6/8; validated=True
+split_profile -> split_reuse seed=17 split: -2.86% reduction; wins=2/8; validated=True
+split_profile -> split_reuse seed=41 natural: -5.34% reduction; wins=3/8; validated=True
+split_profile -> split_reuse seed=41 split: -2.21% reduction; wins=2/8; validated=True
+batch_parallel -> split_reuse seed=-1 natural: 0.11% reduction; wins=4/8; validated=True
+batch_parallel -> split_reuse seed=-1 split: -0.49% reduction; wins=4/8; validated=True
+batch_parallel -> split_reuse seed=17 natural: 2.97% reduction; wins=6/8; validated=True
+batch_parallel -> split_reuse seed=17 split: -2.32% reduction; wins=1/8; validated=True
+batch_parallel -> split_reuse seed=41 natural: 0.42% reduction; wins=4/8; validated=True
+batch_parallel -> split_reuse seed=41 split: -0.35% reduction; wins=4/8; validated=True
+Refinement batch_parallel -> split_profile seed=-1 natural: exercised=True; compute max 2.693308 -> 2.685937s; refine on each run's slowest rank 0.382222 -> 0.380318s
+Refinement batch_parallel -> split_profile seed=-1 split: exercised=True; compute max 2.719788 -> 2.719382s; refine on each run's slowest rank 0.381428 -> 0.383480s
+Refinement batch_parallel -> split_profile seed=17 natural: exercised=True; compute max 2.784830 -> 2.777387s; refine on each run's slowest rank 0.395778 -> 0.395498s
+Refinement batch_parallel -> split_profile seed=17 split: exercised=True; compute max 2.780682 -> 2.781537s; refine on each run's slowest rank 0.395001 -> 0.393136s
+Refinement batch_parallel -> split_profile seed=41 natural: exercised=True; compute max 2.693879 -> 2.664805s; refine on each run's slowest rank 0.380201 -> 0.359321s
+Refinement batch_parallel -> split_profile seed=41 split: exercised=True; compute max 2.682734 -> 2.664787s; refine on each run's slowest rank 0.357430 -> 0.358876s
+Refinement split_profile -> split_reuse seed=-1 natural: exercised=True; compute max 2.685937 -> 2.687058s; refine on each run's slowest rank 0.380318 -> 0.381383s
+Refinement split_profile -> split_reuse seed=-1 split: exercised=True; compute max 2.719382 -> 2.697000s; refine on each run's slowest rank 0.383480 -> 0.380550s
+Refinement split_profile -> split_reuse seed=17 natural: exercised=True; compute max 2.777387 -> 2.769762s; refine on each run's slowest rank 0.395498 -> 0.395845s
+Refinement split_profile -> split_reuse seed=17 split: exercised=True; compute max 2.781537 -> 2.805511s; refine on each run's slowest rank 0.393136 -> 0.395861s
+Refinement split_profile -> split_reuse seed=41 natural: exercised=True; compute max 2.664805 -> 2.683999s; refine on each run's slowest rank 0.359321 -> 0.360943s
+Refinement split_profile -> split_reuse seed=41 split: exercised=True; compute max 2.664787 -> 2.655294s; refine on each run's slowest rank 0.358876 -> 0.399253s
+Refinement batch_parallel -> split_reuse seed=-1 natural: exercised=True; compute max 2.693308 -> 2.687058s; refine on each run's slowest rank 0.382222 -> 0.381383s
+Refinement batch_parallel -> split_reuse seed=-1 split: exercised=True; compute max 2.719788 -> 2.697000s; refine on each run's slowest rank 0.381428 -> 0.380550s
+Refinement batch_parallel -> split_reuse seed=17 natural: exercised=True; compute max 2.784830 -> 2.769762s; refine on each run's slowest rank 0.395778 -> 0.395845s
+Refinement batch_parallel -> split_reuse seed=17 split: exercised=True; compute max 2.780682 -> 2.805511s; refine on each run's slowest rank 0.395001 -> 0.395861s
+Refinement batch_parallel -> split_reuse seed=41 natural: exercised=True; compute max 2.693879 -> 2.683999s; refine on each run's slowest rank 0.380201 -> 0.360943s
+Refinement batch_parallel -> split_reuse seed=41 split: exercised=True; compute max 2.682734 -> 2.655294s; refine on each run's slowest rank 0.357430 -> 0.399253s
+分裂候选复用 seed=-1 natural: 实际复用=True; 各次最慢进程串行提交中位数=0.004728->0.000266s
+分裂候选复用 seed=-1 split: 实际复用=True; 各次最慢进程串行提交中位数=0.004748->0.000265s
+分裂候选复用 seed=17 natural: 实际复用=True; 各次最慢进程串行提交中位数=0.002657->0.000185s
+分裂候选复用 seed=17 split: 实际复用=True; 各次最慢进程串行提交中位数=0.002659->0.000180s
+分裂候选复用 seed=41 natural: 实际复用=True; 各次最慢进程串行提交中位数=0.010553->0.000633s
+分裂候选复用 seed=41 split: 实际复用=True; 各次最慢进程串行提交中位数=0.010537->0.000148s
+Recovery batch batch_parallel -> split_profile seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> split_profile seed=-1 split: exercised=False
+Recovery batch batch_parallel -> split_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> split_profile seed=17 split: exercised=True
+Recovery batch batch_parallel -> split_profile seed=41 natural: exercised=False
+Recovery batch batch_parallel -> split_profile seed=41 split: exercised=False
+Recovery batch split_profile -> split_reuse seed=-1 natural: exercised=False
+Recovery batch split_profile -> split_reuse seed=-1 split: exercised=False
+Recovery batch split_profile -> split_reuse seed=17 natural: exercised=True
+Recovery batch split_profile -> split_reuse seed=17 split: exercised=True
+Recovery batch split_profile -> split_reuse seed=41 natural: exercised=False
+Recovery batch split_profile -> split_reuse seed=41 split: exercised=False
+Recovery batch batch_parallel -> split_reuse seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> split_reuse seed=-1 split: exercised=False
+Recovery batch batch_parallel -> split_reuse seed=17 natural: exercised=True
+Recovery batch batch_parallel -> split_reuse seed=17 split: exercised=True
+Recovery batch batch_parallel -> split_reuse seed=41 natural: exercised=False
+Recovery batch batch_parallel -> split_reuse seed=41 split: exercised=False
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 split_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 split_reuse: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.
