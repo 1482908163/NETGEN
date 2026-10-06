@@ -495,6 +495,14 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshLegalSplitPruned(Ng_Mesh *mesh,
 // Recovery batch reuses one team across the unchanged recovery sequence.
 // batch[6]: calls, parallel calls, smoothing calls, inner point visits,
 // color waves, inclusive smoothing seconds. Existing arrays unchanged.
+// Exact front incidence enumeration; warmup verifies every indexed query.
+// Outputs: seconds[3], details[12], recovery[6], batch[6], front[12], profile[30].
+// front[12]: calls, builds, queries, linear/indexed visits, skipped virtual slots,
+// verified, mismatches, build seconds, total seconds, mappings, admitted rules.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontTopology(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int indexed,int verify,double *seconds,
+    double *details,double *recovery,double *batch,double *front,double *profile);
+
 // Final split proposals: seconds[3], details[12], recovery[6], batch[6], split[12], profile[30].
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshSplitReuse(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int reuse,int verify,double *seconds,

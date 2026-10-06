@@ -1011,7 +1011,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 		Ng_AddSurfaceElementwithIndex((nglib::Ng_Mesh *)submesh, nglib::NG_TRIG, (*li).lsvrtx, (*li).geoboundary);
 	}
 	const auto &research=mesh_research::options();
-    if(((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel") {
+    if(((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="front_profile" || research.kernel_scheduler=="front_topology" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel") {
         auto &prof=scaling::Profiler::instance();
         const double pack_start=MPI_Wtime();
         if(edgemap.size()>std::size_t(std::numeric_limits<int>::max())) {
@@ -1031,7 +1031,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
         };
         double stats[8]={};
         const auto status=nglib::Ng_RefineVolumeDeterministic((nglib::Ng_Mesh*)submesh,
-            ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune")?1:research.kernel_threads,
+            ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="front_profile" || research.kernel_scheduler=="front_topology" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune")?1:research.kernel_threads,
             int(edgemap.size()),known.data(),&commit,insert,stats);
         if(status!=nglib::NG_OK) {std::cerr<<"确定性体细化失败"<<std::endl;MPI_Abort(MPI_COMM_WORLD,3);return;}
         const char *names[]={"snapshot_seconds","plan_seconds","write_seconds","map_seconds",

@@ -1754,6 +1754,9 @@ namespace netgen
     VolumeKernelStats * volume_recovery_batch_stats = nullptr;
     bool volume_legal_split_prune = false;
     VolumeKernelStats * volume_legal_split_stats = nullptr;
+    bool volume_front_topology = false;
+    bool volume_front_verify = false;
+    VolumeKernelStats * volume_front_match_stats = nullptr;
     VolumeFrontSearchStats * volume_front_search = nullptr;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     const VolumeResources * volume_resources = nullptr;

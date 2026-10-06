@@ -1,6 +1,7 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
 #include "conservative_box_index.hpp"
+#include "front_face_index.hpp"
 
 
 namespace netgen
@@ -64,6 +65,32 @@ int Meshing3 :: ApplyRules
  )
 
 {
+  // Aggregate counters once per call; no atomics in the backtracking loop.
+  struct MatchDiagnostics {
+    VolumeKernelStats *stats;
+    double values[12]={};
+    std::chrono::steady_clock::time_point start;
+    explicit MatchDiagnostics(VolumeKernelStats *s):stats(s) {
+      if(stats) {start=std::chrono::steady_clock::now();values[0]=1;}
+    }
+    ~MatchDiagnostics() {
+      if(!stats)return;
+      values[9]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+      for(int i=0;i<12;++i)stats->Add(i,values[i]);
+    }
+  } diagnostics(front_match_stats);
+  std::unique_ptr<FrontFaceIndex> incidence_index;
+  // Built lazily: a successful single-face rule needs no incidence index.
+  auto ensure_index=[&]() {
+    if(incidence_index)return;
+    auto start=std::chrono::steady_clock::now();
+    incidence_index.reset(new FrontFaceIndex(lpoints.Size()+PointIndex::BASE,lfacesplit));
+    for(int f=1;f<=lfacesplit;++f)
+      for(int j=1;j<=lfaces[f-1].GetNP();++j)
+        incidence_index->Add(int(lfaces[f-1].PNum(j)),f,j,lfaces[f-1].GetNP());
+    diagnostics.values[1]++;
+    diagnostics.values[8]+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+  };
   // static Timer t("ruler3 - all"); RegionTimer reg(t);
   // static Timer tstart("ruler3 - rule start");   
   // static Timer tloop("ruler3 - rule loop"); 
@@ -271,6 +298,7 @@ int Meshing3 :: ApplyRules
       if (testmode)
 	problems[rim] = "no mapping found";
       
+      if(front_match_stats)diagnostics.values[11]++;
       loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
       if (loktestmode)
@@ -320,15 +348,54 @@ int Meshing3 :: ApplyRules
 
 	      int actfnp = rule->GetNP(nfok);
 
+              int anchor=-1, anchor_position=0;
+              if(front_topology)
+                for(int j=1;j<=actfnp;++j) {
+                  auto point=pmap.Get(rule->GetPointNr(nfok,j));
+                  if(point.IsValid()) {anchor=int(point);anchor_position=j;break;}
+                }
+              if(anchor>=0)ensure_index();
+
 	      while (!ok)
 		{
-		  locfr++;
-		  if (locfr == actfnp + 1)
-		    {
-		      locfr = 1;
-		      locfi++;
-		      if (locfi > lfacesplit) break;
-		    }
+                  if(anchor>=0) {
+                    const int after_face=locfi,after_rotation=locfr;
+                    auto next=incidence_index->Next(anchor,actfnp,anchor_position,locfi,locfr);
+                    diagnostics.values[2]++;
+                    if(front_verify) {
+                      // Independent exhaustive oracle, including duplicate vertices.
+                      std::pair<int,int> expected{lfacesplit+1,1};
+                      for(int f=std::max(1,after_face);f<=lfacesplit;++f) {
+                        if(lfaces[f-1].GetNP()!=actfnp)continue;
+                        for(int r=1;r<=actfnp;++r) {
+                          if(std::make_pair(f,r)<=std::make_pair(after_face,after_rotation))continue;
+                          if(int(lfaces[f-1].PNumMod(anchor_position+r))==anchor) {
+                            expected={f,r};break;
+                          }
+                        }
+                        if(expected.first<=lfacesplit)break;
+                      }
+                      diagnostics.values[6]++;
+                      if(next!=expected) {
+                        diagnostics.values[7]++;
+                        throw NgException("front face/rotation iterator mismatch");
+                      }
+                    }
+                    // Virtual exhaustive slots, not actual rejected face visits.
+                    const long long before=(static_cast<long long>(after_face)-1)*actfnp+after_rotation;
+                    const long long after=(static_cast<long long>(next.first)-1)*actfnp+next.second;
+                    diagnostics.values[5]+=after-before-1;
+                    locfi=next.first;locfr=next.second;
+                    if(locfi>lfacesplit)break;
+                    diagnostics.values[4]++;
+                  } else {
+                    locfr++;
+                    if(locfr==actfnp+1) {
+                      locfr=1;locfi++;
+                      if(locfi>lfacesplit)break;
+                    }
+                    if(front_match_stats)diagnostics.values[3]++;
+                  }
 		  
 		  
 		  if (fnearness.Get(locfi) > rule->GetFNearness (nfok) ||
@@ -612,8 +679,10 @@ int Meshing3 :: ApplyRules
 			fmapi.Set(i, 0);
 		      
 
-		      if (ok)
+		      if (ok) {
                         foundmap[rim]++;
+                        if(front_match_stats)diagnostics.values[10]++;
+                      }
 		      
 
 
