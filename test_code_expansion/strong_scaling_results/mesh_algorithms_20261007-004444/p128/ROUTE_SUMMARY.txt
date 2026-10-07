@@ -1,0 +1,69 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> front_profile seed=-1 natural: 4.58% reduction; wins=6/8; validated=True
+batch_parallel -> front_profile seed=-1 split: -1.34% reduction; wins=4/8; validated=True
+batch_parallel -> front_profile seed=17 natural: -3.25% reduction; wins=3/8; validated=True
+batch_parallel -> front_profile seed=17 split: 1.69% reduction; wins=6/8; validated=True
+batch_parallel -> front_profile seed=41 natural: -2.15% reduction; wins=3/8; validated=True
+batch_parallel -> front_profile seed=41 split: 1.96% reduction; wins=5/8; validated=True
+front_profile -> front_topology seed=-1 natural: -3.22% reduction; wins=1/8; validated=True
+front_profile -> front_topology seed=-1 split: -0.42% reduction; wins=4/8; validated=True
+front_profile -> front_topology seed=17 natural: 0.22% reduction; wins=4/8; validated=True
+front_profile -> front_topology seed=17 split: 1.92% reduction; wins=4/8; validated=True
+front_profile -> front_topology seed=41 natural: 0.01% reduction; wins=4/8; validated=True
+front_profile -> front_topology seed=41 split: 1.51% reduction; wins=5/8; validated=True
+batch_parallel -> front_topology seed=-1 natural: 1.70% reduction; wins=5/8; validated=True
+batch_parallel -> front_topology seed=-1 split: -0.92% reduction; wins=3/8; validated=True
+batch_parallel -> front_topology seed=17 natural: -2.31% reduction; wins=2/8; validated=True
+batch_parallel -> front_topology seed=17 split: 4.90% reduction; wins=7/8; validated=True
+batch_parallel -> front_topology seed=41 natural: 2.76% reduction; wins=5/8; validated=True
+batch_parallel -> front_topology seed=41 split: 5.02% reduction; wins=5/8; validated=True
+Refinement batch_parallel -> front_profile seed=-1 natural: exercised=True; compute max 2.678452 -> 2.700203s; refine on each run's slowest rank 0.381372 -> 0.381299s
+Refinement batch_parallel -> front_profile seed=-1 split: exercised=True; compute max 2.682075 -> 2.703460s; refine on each run's slowest rank 0.378809 -> 0.380904s
+Refinement batch_parallel -> front_profile seed=17 natural: exercised=True; compute max 2.815631 -> 2.781413s; refine on each run's slowest rank 0.399485 -> 0.394163s
+Refinement batch_parallel -> front_profile seed=17 split: exercised=True; compute max 2.813765 -> 2.796390s; refine on each run's slowest rank 0.394041 -> 0.396442s
+Refinement batch_parallel -> front_profile seed=41 natural: exercised=True; compute max 2.719254 -> 2.691007s; refine on each run's slowest rank 0.360641 -> 0.382605s
+Refinement batch_parallel -> front_profile seed=41 split: exercised=True; compute max 2.692313 -> 2.678863s; refine on each run's slowest rank 0.359459 -> 0.363689s
+Refinement front_profile -> front_topology seed=-1 natural: exercised=True; compute max 2.700203 -> 2.709320s; refine on each run's slowest rank 0.381299 -> 0.380955s
+Refinement front_profile -> front_topology seed=-1 split: exercised=True; compute max 2.703460 -> 2.689135s; refine on each run's slowest rank 0.380904 -> 0.377789s
+Refinement front_profile -> front_topology seed=17 natural: exercised=True; compute max 2.781413 -> 2.837129s; refine on each run's slowest rank 0.394163 -> 0.393526s
+Refinement front_profile -> front_topology seed=17 split: exercised=True; compute max 2.796390 -> 2.800760s; refine on each run's slowest rank 0.396442 -> 0.393081s
+Refinement front_profile -> front_topology seed=41 natural: exercised=True; compute max 2.691007 -> 2.707711s; refine on each run's slowest rank 0.382605 -> 0.356337s
+Refinement front_profile -> front_topology seed=41 split: exercised=True; compute max 2.678863 -> 2.713170s; refine on each run's slowest rank 0.363689 -> 0.362256s
+Refinement batch_parallel -> front_topology seed=-1 natural: exercised=True; compute max 2.678452 -> 2.709320s; refine on each run's slowest rank 0.381372 -> 0.380955s
+Refinement batch_parallel -> front_topology seed=-1 split: exercised=True; compute max 2.682075 -> 2.689135s; refine on each run's slowest rank 0.378809 -> 0.377789s
+Refinement batch_parallel -> front_topology seed=17 natural: exercised=True; compute max 2.815631 -> 2.837129s; refine on each run's slowest rank 0.399485 -> 0.393526s
+Refinement batch_parallel -> front_topology seed=17 split: exercised=True; compute max 2.813765 -> 2.800760s; refine on each run's slowest rank 0.394041 -> 0.393081s
+Refinement batch_parallel -> front_topology seed=41 natural: exercised=True; compute max 2.719254 -> 2.707711s; refine on each run's slowest rank 0.360641 -> 0.356337s
+Refinement batch_parallel -> front_topology seed=41 split: exercised=True; compute max 2.692313 -> 2.713170s; refine on each run's slowest rank 0.359459 -> 0.362256s
+前沿拓扑索引 seed=-1 natural: 实际启用=True; 最慢进程匹配时间=0.068140->0.076648s; 全局枚举访问=20856857.0->3448899.0
+前沿拓扑索引 seed=-1 split: 实际启用=True; 最慢进程匹配时间=0.068226->0.077122s; 全局枚举访问=20856857.0->3448899.0
+前沿拓扑索引 seed=17 natural: 实际启用=True; 最慢进程匹配时间=0.084639->0.095608s; 全局枚举访问=21965070.0->3579019.0
+前沿拓扑索引 seed=17 split: 实际启用=True; 最慢进程匹配时间=0.084715->0.095522s; 全局枚举访问=21965070.0->3579019.0
+前沿拓扑索引 seed=41 natural: 实际启用=True; 最慢进程匹配时间=0.157925->0.286392s; 全局枚举访问=17054480.0->2770455.0
+前沿拓扑索引 seed=41 split: 实际启用=True; 最慢进程匹配时间=0.248721->0.286744s; 全局枚举访问=17054480.0->2770455.0
+Recovery batch batch_parallel -> front_profile seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> front_profile seed=-1 split: exercised=False
+Recovery batch batch_parallel -> front_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_profile seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_profile seed=41 natural: exercised=False
+Recovery batch batch_parallel -> front_profile seed=41 split: exercised=False
+Recovery batch front_profile -> front_topology seed=-1 natural: exercised=False
+Recovery batch front_profile -> front_topology seed=-1 split: exercised=False
+Recovery batch front_profile -> front_topology seed=17 natural: exercised=True
+Recovery batch front_profile -> front_topology seed=17 split: exercised=True
+Recovery batch front_profile -> front_topology seed=41 natural: exercised=False
+Recovery batch front_profile -> front_topology seed=41 split: exercised=False
+Recovery batch batch_parallel -> front_topology seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> front_topology seed=-1 split: exercised=False
+Recovery batch batch_parallel -> front_topology seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_topology seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_topology seed=41 natural: exercised=False
+Recovery batch batch_parallel -> front_topology seed=41 split: exercised=False
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_topology: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.
