@@ -1,0 +1,69 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> front_bound_profile seed=-1 natural: -2.10% reduction; wins=2/8; validated=True
+batch_parallel -> front_bound_profile seed=-1 split: -0.22% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound_profile seed=17 natural: -2.45% reduction; wins=2/8; validated=True
+batch_parallel -> front_bound_profile seed=17 split: 0.07% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound_profile seed=41 natural: -0.79% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound_profile seed=41 split: -0.70% reduction; wins=3/8; validated=True
+front_bound_profile -> front_bound seed=-1 natural: 1.45% reduction; wins=4/8; validated=True
+front_bound_profile -> front_bound seed=-1 split: -0.13% reduction; wins=3/8; validated=True
+front_bound_profile -> front_bound seed=17 natural: 3.03% reduction; wins=6/8; validated=True
+front_bound_profile -> front_bound seed=17 split: -0.56% reduction; wins=4/8; validated=True
+front_bound_profile -> front_bound seed=41 natural: -0.26% reduction; wins=3/8; validated=True
+front_bound_profile -> front_bound seed=41 split: 0.58% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound seed=-1 natural: -0.04% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound seed=-1 split: -1.12% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound seed=17 natural: 0.37% reduction; wins=5/8; validated=True
+batch_parallel -> front_bound seed=17 split: -1.25% reduction; wins=2/8; validated=True
+batch_parallel -> front_bound seed=41 natural: -1.08% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound seed=41 split: -2.97% reduction; wins=3/8; validated=True
+Refinement batch_parallel -> front_bound_profile seed=-1 natural: exercised=True; compute max 2.694054 -> 2.716322s; refine on each run's slowest rank 0.379434 -> 0.378815s
+Refinement batch_parallel -> front_bound_profile seed=-1 split: exercised=True; compute max 2.722137 -> 2.709559s; refine on each run's slowest rank 0.381222 -> 0.380761s
+Refinement batch_parallel -> front_bound_profile seed=17 natural: exercised=True; compute max 2.801776 -> 2.798032s; refine on each run's slowest rank 0.397453 -> 0.396391s
+Refinement batch_parallel -> front_bound_profile seed=17 split: exercised=True; compute max 2.790623 -> 2.784803s; refine on each run's slowest rank 0.396087 -> 0.395743s
+Refinement batch_parallel -> front_bound_profile seed=41 natural: exercised=True; compute max 2.671295 -> 2.701076s; refine on each run's slowest rank 0.361361 -> 0.377941s
+Refinement batch_parallel -> front_bound_profile seed=41 split: exercised=True; compute max 2.701012 -> 2.711474s; refine on each run's slowest rank 0.360224 -> 0.362406s
+Refinement front_bound_profile -> front_bound seed=-1 natural: exercised=True; compute max 2.716322 -> 2.672220s; refine on each run's slowest rank 0.378815 -> 0.380379s
+Refinement front_bound_profile -> front_bound seed=-1 split: exercised=True; compute max 2.709559 -> 2.731698s; refine on each run's slowest rank 0.380761 -> 0.380774s
+Refinement front_bound_profile -> front_bound seed=17 natural: exercised=True; compute max 2.798032 -> 2.801055s; refine on each run's slowest rank 0.396391 -> 0.393607s
+Refinement front_bound_profile -> front_bound seed=17 split: exercised=True; compute max 2.784803 -> 2.786744s; refine on each run's slowest rank 0.395743 -> 0.395612s
+Refinement front_bound_profile -> front_bound seed=41 natural: exercised=True; compute max 2.701076 -> 2.669298s; refine on each run's slowest rank 0.377941 -> 0.358953s
+Refinement front_bound_profile -> front_bound seed=41 split: exercised=True; compute max 2.711474 -> 2.689708s; refine on each run's slowest rank 0.362406 -> 0.359240s
+Refinement batch_parallel -> front_bound seed=-1 natural: exercised=True; compute max 2.694054 -> 2.672220s; refine on each run's slowest rank 0.379434 -> 0.380379s
+Refinement batch_parallel -> front_bound seed=-1 split: exercised=True; compute max 2.722137 -> 2.731698s; refine on each run's slowest rank 0.381222 -> 0.380774s
+Refinement batch_parallel -> front_bound seed=17 natural: exercised=True; compute max 2.801776 -> 2.801055s; refine on each run's slowest rank 0.397453 -> 0.393607s
+Refinement batch_parallel -> front_bound seed=17 split: exercised=True; compute max 2.790623 -> 2.786744s; refine on each run's slowest rank 0.396087 -> 0.395612s
+Refinement batch_parallel -> front_bound seed=41 natural: exercised=True; compute max 2.671295 -> 2.669298s; refine on each run's slowest rank 0.361361 -> 0.358953s
+Refinement batch_parallel -> front_bound seed=41 split: exercised=True; compute max 2.701012 -> 2.689708s; refine on each run's slowest rank 0.360224 -> 0.359240s
+前沿质量剪枝 seed=-1 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.069219->0.065309s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1091449.0->446913.0 / 4005526.0->1526252.0 / 4085109.0->3990141.0 / 100653.0->379130.0
+前沿质量剪枝 seed=-1 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.068879->0.065740s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1091449.0->446913.0 / 4005526.0->1526252.0 / 4085109.0->3990141.0 / 100653.0->379130.0
+前沿质量剪枝 seed=17 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.086208->0.081568s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1118097.0->472845.0 / 4174299.0->1641462.0 / 4255816.0->4161662.0 / 105220.0->381384.0
+前沿质量剪枝 seed=17 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.085935->0.081224s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1118097.0->472845.0 / 4174299.0->1641462.0 / 4255816.0->4161662.0 / 105220.0->381384.0
+前沿质量剪枝 seed=41 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.250634->0.243111s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=886135.0->367487.0 / 3360988.0->1282505.0 / 3597325.0->3514272.0 / 93078.0->311450.0
+前沿质量剪枝 seed=41 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.251757->0.243672s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=886135.0->367487.0 / 3360988.0->1282505.0 / 3597325.0->3514272.0 / 93078.0->311450.0
+Recovery batch batch_parallel -> front_bound_profile seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> front_bound_profile seed=-1 split: exercised=False
+Recovery batch batch_parallel -> front_bound_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=41 natural: exercised=False
+Recovery batch batch_parallel -> front_bound_profile seed=41 split: exercised=False
+Recovery batch front_bound_profile -> front_bound seed=-1 natural: exercised=False
+Recovery batch front_bound_profile -> front_bound seed=-1 split: exercised=False
+Recovery batch front_bound_profile -> front_bound seed=17 natural: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=17 split: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=41 natural: exercised=False
+Recovery batch front_bound_profile -> front_bound seed=41 split: exercised=False
+Recovery batch batch_parallel -> front_bound seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> front_bound seed=-1 split: exercised=False
+Recovery batch batch_parallel -> front_bound seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_bound seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_bound seed=41 natural: exercised=False
+Recovery batch batch_parallel -> front_bound seed=41 split: exercised=False
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_bound_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_bound: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.

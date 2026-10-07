@@ -1,0 +1,67 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> front_bound_profile seed=-1 natural: 0.09% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound_profile seed=-1 split: -3.19% reduction; wins=1/8; validated=True
+batch_parallel -> front_bound_profile seed=17 natural: 0.72% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound_profile seed=17 split: -1.72% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound_profile seed=41 natural: -1.01% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound_profile seed=41 split: 0.48% reduction; wins=5/8; validated=True
+front_bound_profile -> front_bound seed=-1 natural: 1.25% reduction; wins=4/8; validated=True
+front_bound_profile -> front_bound seed=-1 split: 1.08% reduction; wins=4/8; validated=True
+front_bound_profile -> front_bound seed=17 natural: -2.75% reduction; wins=3/8; validated=True
+front_bound_profile -> front_bound seed=17 split: -0.39% reduction; wins=3/8; validated=True
+front_bound_profile -> front_bound seed=41 natural: 2.01% reduction; wins=5/8; validated=True
+front_bound_profile -> front_bound seed=41 split: 2.24% reduction; wins=5/8; validated=True
+batch_parallel -> front_bound seed=-1 natural: -0.15% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound seed=-1 split: -4.24% reduction; wins=3/8; validated=True
+batch_parallel -> front_bound seed=17 natural: -0.40% reduction; wins=4/8; validated=True
+batch_parallel -> front_bound seed=17 split: -1.71% reduction; wins=2/8; validated=True
+batch_parallel -> front_bound seed=41 natural: 1.32% reduction; wins=5/8; validated=True
+batch_parallel -> front_bound seed=41 split: 1.96% reduction; wins=6/8; validated=True
+Refinement batch_parallel -> front_bound_profile seed=-1 natural: exercised=True; compute max 0.983768 -> 0.999036s; refine on each run's slowest rank 0.095003 -> 0.095177s
+Refinement batch_parallel -> front_bound_profile seed=-1 split: exercised=True; compute max 0.974614 -> 0.984856s; refine on each run's slowest rank 0.095378 -> 0.094844s
+Refinement batch_parallel -> front_bound_profile seed=17 natural: exercised=True; compute max 1.098980 -> 1.094859s; refine on each run's slowest rank 0.095140 -> 0.095036s
+Refinement batch_parallel -> front_bound_profile seed=17 split: exercised=True; compute max 1.107229 -> 1.124244s; refine on each run's slowest rank 0.094750 -> 0.095830s
+Refinement batch_parallel -> front_bound_profile seed=41 natural: exercised=True; compute max 1.029173 -> 1.078029s; refine on each run's slowest rank 0.113346 -> 0.102121s
+Refinement batch_parallel -> front_bound_profile seed=41 split: exercised=True; compute max 1.061703 -> 1.051815s; refine on each run's slowest rank 0.113009 -> 0.102569s
+Refinement front_bound_profile -> front_bound seed=-1 natural: exercised=True; compute max 0.999036 -> 0.963794s; refine on each run's slowest rank 0.095177 -> 0.095420s
+Refinement front_bound_profile -> front_bound seed=-1 split: exercised=True; compute max 0.984856 -> 0.955921s; refine on each run's slowest rank 0.094844 -> 0.095094s
+Refinement front_bound_profile -> front_bound seed=17 natural: exercised=True; compute max 1.094859 -> 1.088799s; refine on each run's slowest rank 0.095036 -> 0.095235s
+Refinement front_bound_profile -> front_bound seed=17 split: exercised=True; compute max 1.124244 -> 1.118467s; refine on each run's slowest rank 0.095830 -> 0.094802s
+Refinement front_bound_profile -> front_bound seed=41 natural: exercised=True; compute max 1.078029 -> 1.046726s; refine on each run's slowest rank 0.102121 -> 0.114051s
+Refinement front_bound_profile -> front_bound seed=41 split: exercised=True; compute max 1.051815 -> 1.047324s; refine on each run's slowest rank 0.102569 -> 0.114194s
+Refinement batch_parallel -> front_bound seed=-1 natural: exercised=True; compute max 0.983768 -> 0.963794s; refine on each run's slowest rank 0.095003 -> 0.095420s
+Refinement batch_parallel -> front_bound seed=-1 split: exercised=True; compute max 0.974614 -> 0.955921s; refine on each run's slowest rank 0.095378 -> 0.095094s
+Refinement batch_parallel -> front_bound seed=17 natural: exercised=True; compute max 1.098980 -> 1.088799s; refine on each run's slowest rank 0.095140 -> 0.095235s
+Refinement batch_parallel -> front_bound seed=17 split: exercised=True; compute max 1.107229 -> 1.118467s; refine on each run's slowest rank 0.094750 -> 0.094802s
+Refinement batch_parallel -> front_bound seed=41 natural: exercised=True; compute max 1.029173 -> 1.046726s; refine on each run's slowest rank 0.113346 -> 0.114051s
+Refinement batch_parallel -> front_bound seed=41 split: exercised=True; compute max 1.061703 -> 1.047324s; refine on each run's slowest rank 0.113009 -> 0.114194s
+前沿质量剪枝 seed=-1 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.194332->0.184339s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1404078.0->601945.0 / 5041504.0->1991979.0 / 5217520.0->5102773.0 / 130686.0->484751.0
+前沿质量剪枝 seed=-1 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.194988->0.184053s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1404078.0->601945.0 / 5041504.0->1991979.0 / 5217520.0->5102773.0 / 130686.0->484751.0
+前沿质量剪枝 seed=17 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.482918->0.472235s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1517748.0->663710.0 / 5217067.0->2115721.0 / 5250261.0->5133259.0 / 128972.0->513110.0
+前沿质量剪枝 seed=17 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.482267->0.472549s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1517748.0->663710.0 / 5217067.0->2115721.0 / 5250261.0->5133259.0 / 128972.0->513110.0
+前沿质量剪枝 seed=41 natural: 实际启用=True; 各次最慢进程匹配时间中位数=0.187268->0.178942s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1570818.0->671212.0 / 5622232.0->2238459.0 / 5563759.0->5437594.0 / 135849.0->533059.0
+前沿质量剪枝 seed=41 split: 实际启用=True; 各次最慢进程匹配时间中位数=0.188329->0.179585s（不代表同一固定进程）; 全局候选/点包含/面相交/质量评价中位数=1570818.0->671212.0 / 5622232.0->2238459.0 / 5563759.0->5437594.0 / 135849.0->533059.0
+Recovery batch batch_parallel -> front_bound_profile seed=-1 natural: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=-1 split: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=41 natural: exercised=True
+Recovery batch batch_parallel -> front_bound_profile seed=41 split: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=-1 natural: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=-1 split: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=17 natural: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=17 split: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=41 natural: exercised=True
+Recovery batch front_bound_profile -> front_bound seed=41 split: exercised=True
+Recovery batch batch_parallel -> front_bound seed=-1 natural: exercised=True
+Recovery batch batch_parallel -> front_bound seed=-1 split: exercised=True
+Recovery batch batch_parallel -> front_bound seed=17 natural: exercised=True
+Recovery batch batch_parallel -> front_bound seed=17 split: exercised=True
+Recovery batch batch_parallel -> front_bound seed=41 natural: exercised=True
+Recovery batch batch_parallel -> front_bound seed=41 split: exercised=True
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_bound_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_bound: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
