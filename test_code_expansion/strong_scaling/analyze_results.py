@@ -394,7 +394,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     face_bytes = sum(s.get("receive_bytes", 0) for r in rows for name, s in r["stages"].items()
                      if name == "face_allgatherv" or name.startswith("face_sparse_"))
     split = metadata["timing_mode"] == "split"
-    result = dict(legal_split_policy=metadata.get('legal_split_policy'),volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
+    result = dict(ghost_exchange_policy=metadata.get("ghost_exchange_policy","legacy_v1"),ghost_plan_verification=metadata.get("ghost_plan_verification","off"),legal_split_policy=metadata.get('legal_split_policy'),volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
                   partition_seed=int(metadata.get("partition_seed",-1)),
                   repeat=rows[0]["repeat"], core_seconds=max(r["metrics"]["core_seconds"] for r in rows),
                   face_pipeline_seconds=max(seconds(r, "face_pipeline_total") for r in rows),
@@ -692,6 +692,48 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(m['front_search_'+k+'_candidates']>m['front_search_'+k+'_scan_opportunities'] for k in ('point','face')):
                 raise ValueError('front search candidates exceed scan opportunities')
         for name in fields:result['front_search_'+name]=sum(row['metrics']['front_search_'+name] for row in rows)
+    ghost_policy=metadata.get('ghost_exchange_policy','legacy_v1')
+    if ghost_policy not in ('legacy_v1','staged_plan_v1','id_overlap_plan_v1'):
+        raise ValueError('unknown ghost exchange policy')
+    if ghost_policy!='legacy_v1':
+        pipeline=ghost_policy=='id_overlap_plan_v1'
+        verify=metadata.get('mesh_quality')=='volume_audit_v1'
+        if metadata.get('global_numbering')!='owner_local_v2' or metadata.get('volume_exchange_policy')!='batch_v1':
+            raise ValueError('ghost plan requires owner-local IDs and batch payload')
+        if metadata.get('ghost_plan_verification')!=('serial_pack_exact_v1' if verify else 'off'):
+            raise ValueError('ghost plan oracle mode mismatch')
+        fields=('scanned_elements','selected_elements','send_elements','reference_bytes','reference_width',
+                'count_peers','preposted_count_peers','prepared_before_vertex_wait','oracle_calls',
+                'oracle_verified_elements','oracle_mismatches','build_seconds')
+        for row in rows:
+            m=row['metrics'];stages=row['stages']
+            for key in fields:
+                value=m['ghost_plan_'+key]
+                if not math.isfinite(value) or value<0 or (key!='build_seconds' and value!=int(value)):
+                    raise ValueError('invalid ghost plan metric: '+key)
+            scanned=m['ghost_plan_scanned_elements'];selected=m['ghost_plan_selected_elements'];sent=m['ghost_plan_send_elements']
+            peers=m['ghost_plan_count_peers']
+            if scanned!=m['local_volume_elements_before_adjacency'] or not selected<=scanned or selected>sent or (selected==0)!=(sent==0):
+                raise ValueError('ghost plan element coverage mismatch')
+            if sent!=m['volume_send_items'] or peers!=m['volume_count_peers'] or peers>n-1 or sent>selected*peers:
+                raise ValueError('ghost plan packet/count coverage mismatch')
+            if m['ghost_plan_reference_width']!=20 or m['ghost_plan_reference_bytes']!=20*sent:
+                raise ValueError('ghost plan reference buffer coverage mismatch')
+            if m['ghost_plan_prepared_before_vertex_wait']!=int(pipeline) or m['ghost_plan_preposted_count_peers']!=(peers if pipeline else 0):
+                raise ValueError('ghost plan scheduling mismatch')
+            if m['ghost_plan_oracle_calls']!=int(verify) or m['ghost_plan_oracle_mismatches'] or m['ghost_plan_oracle_verified_elements']!=(sent if verify else 0):
+                raise ValueError('ghost plan oracle coverage mismatch')
+            if any(stages.get(name,{}).get('calls',0)!=1 for name in ('ghost_vertex_post','ghost_vertex_wait','ghost_count_post','ghost_count_wait','ghost_id_bind','volume_exchange_pack','volume_payload_exchange')):
+                raise ValueError('ghost plan stage lifecycle mismatch')
+            if any(stages.get(name,{}).get('calls',0) for name in ('vertex_exchange','volume_neighbor_size_exchange','volume_size_exchange','volume_ready_exchange')):
+                raise ValueError('ghost plan used legacy wait path')
+            if stages.get('ghost_plan_audit',{}).get('calls',0)!=int(verify):
+                raise ValueError('ghost plan oracle stage mismatch')
+        for key in fields:
+            result['ghost_plan_'+key]=sum(row['metrics']['ghost_plan_'+key] for row in rows)
+        for name in ('ghost_vertex_post','ghost_vertex_wait','ghost_count_post','ghost_count_wait','ghost_id_bind','volume_exchange_pack','volume_payload_exchange'):
+            result[name+'_max_seconds']=max(seconds(row,name) for row in rows)
+        result['ghost_plan_coverage_signature']=json.dumps([[row['rank']]+[row['metrics']['ghost_plan_'+k] for k in ('scanned_elements','selected_elements','send_elements','count_peers')] for row in rows],separators=(',',':'))
     if metadata.get('volume_exchange_policy')=='peer_ready_v1':
         if metadata.get('global_numbering')!='owner_local_v2':raise ValueError('ready exchange requires temporary IDs')
         for row in rows:
@@ -706,6 +748,21 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         for name in ('count_completions','early_receives','payload_sends'):
             result['ready_volume_'+name]=sum(row['metrics']['ready_volume_'+name] for row in rows)
         result['volume_ready_exchange_max_seconds']=max(seconds(row,'volume_ready_exchange') for row in rows)
+    payload_fields=('volume_send_items','volume_receive_items','volume_num_s','volume_num_r','vertex_send_items','vertex_receive_items')
+    result['ghost_payload_coverage_signature']=json.dumps([[row['rank']]+[row['metrics'].get(k) for k in payload_fields] for row in rows],separators=(',',':'))
+    if ghost_policy!='legacy_v1' and any(any(row['metrics'].get(k) is None for k in payload_fields) for row in rows):
+        raise ValueError('ghost payload coverage metrics missing')
+    exchange_names=('vertex_exchange','volume_exchange_pack','volume_neighbor_size_exchange',
+        'volume_size_exchange','volume_ready_exchange','volume_payload_exchange','volume_payload_prepare',
+        'volume_exchange_unpack','vertex_exchange_unpack','ghost_vertex_post','ghost_vertex_wait',
+        'ghost_count_post','ghost_count_wait','ghost_id_bind')
+    # Sum actual scopes on one rank; this is inclusive work/wait, not pure transfer.
+    exchange_totals=[sum(seconds(row,name) for name in exchange_names) for row in rows]
+    exchange_critical=max(range(n),key=lambda i:exchange_totals[i])
+    result['adjacency_exchange_stage_sum_max_seconds']=exchange_totals[exchange_critical]
+    result['adjacency_exchange_stage_sum_critical_rank']=rows[exchange_critical]['rank']
+    for name in exchange_names:
+        result['adjacency_exchange_critical_'+name+'_seconds']=seconds(rows[exchange_critical],name)
     if metadata.get("kernel_diagnostics")=="repair_v2":
         timing_names=("delaunay_seconds","front_seconds","domain_repair_seconds","repair_mark_seconds",
                       "repair_split_seconds","repair_swap_seconds","repair_swap2_seconds")
@@ -1113,14 +1170,18 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         result["mesh_quality"]=inspect_quality(rows,metadata)
     if critical_sink is not None and result['repeat']>0 and int(metadata.get('kernel_threads',0))>0 and not metadata.get('feature_schema')=='mesh_worklets_v1':
         # Retain just the five slowest ranks; raw profiles remain available locally.
-        for order,i in enumerate(sorted(range(n),key=lambda i:(-compute[i],rows[i]['rank']))[:5],1):
+        compute_order=sorted(range(n),key=lambda i:(-compute[i],rows[i]['rank']))
+        selected=compute_order[:5]
+        if ghost_policy!='legacy_v1' and exchange_critical not in selected:selected.append(exchange_critical)
+        for i in selected:
+            order=compute_order.index(i)+1
             row=rows[i]
             item={k:result[k] for k in ('algorithm','timing','ranks','partition_seed','repeat')}
             item.update(rank=row['rank'],compute_order=order,compute_seconds=compute[i],
                         kernel_scheduler=metadata['kernel_scheduler'])
-            item.update({stage+'_seconds':seconds(row,stage) for stage in COMPUTE})
+            item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','ghost_plan_'))})
             critical_sink.append(item)
     return result, detail
 
@@ -1498,8 +1559,8 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("legal_split_policy", "volume_refinement", "volume_native_profile", "recovery_evaluation", "front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "front_match_coverage_signature", "front_bound_coverage_signature", "worklet_policy", "ownership_signature",
-                        "coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
+            if name in ("ghost_exchange_policy", "ghost_plan_verification", "ghost_plan_coverage_signature", "ghost_payload_coverage_signature", "legal_split_policy", "volume_refinement", "volume_native_profile", "recovery_evaluation", "front_search", "volume_exchange_policy", "adjacency_audit_schema", "adjacency_id_path", "worklet_scheduler", "worklet_decomposition", "node_cpu_bind", "node_affinity_layout", "kernel_scheduler", "global_numbering", "algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "front_match_coverage_signature", "front_bound_coverage_signature", "worklet_policy", "ownership_signature",
+                        "adjacency_exchange_stage_sum_critical_rank","coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
             summary[name+"_median"] = st.median(present) if present else None

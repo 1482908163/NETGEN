@@ -22,8 +22,10 @@ done
 "${MPICXX}" -std=c++17 -I "${ROOT}/mesh_occ_mpi" "${ROOT}/tests/test_node_resources.cpp" -pthread -o "${BUILD}/test_node_resources"
 "${BUILD}/test_node_resources"
 "${MPICXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" "${ROOT}/tests/test_ready_neighbors.cpp" -pthread -o "${BUILD}/test_ready_neighbors"
+"${MPICXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" "${ROOT}/tests/test_ghost_plan_mpi.cpp" -pthread -o "${BUILD}/test_ghost_plan_mpi"
 read -r -a extra <<< "${MPI_EXTRA_ARGS:-}"
 for p in ${TEST_PROCESS_COUNTS}; do
+    timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_ghost_plan_mpi"
     timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_ready_neighbors"
     timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_mesh_ids_mpi"
     for mode in natural split; do
@@ -74,3 +76,8 @@ python3 "${ROOT}/tests/test_front_bound_state.py"
 python3 "${ROOT}/tests/test_front_bound_config.py"
 python3 "${ROOT}/tests/test_front_bound_validation.py"
 python3 "${ROOT}/tests/test_front_bound_runner.py"
+
+python3 "${ROOT}/tests/test_ghost_plan.py"
+python3 "${ROOT}/tests/test_ghost_pipeline_config.py"
+python3 "${ROOT}/tests/test_ghost_pipeline_validation.py"
+python3 "${ROOT}/tests/test_ghost_pipeline_runner.py"

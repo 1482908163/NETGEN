@@ -23,6 +23,7 @@ struct ResearchOptions {
     bool overlap_global_ids = true; // false: blocking fused-count control.
     bool deferred_global_ids = false; // C1: overlap fused counts with neighbor-local IDs.
     bool async_global_ids = false; // C2: owner-local 64-bit temporary IDs; no count collective on core path.
+    std::string ghost_exchange = "legacy"; // legacy / staged / pipeline
     bool ready_volume_exchange = false; // C: post payloads as each peer count arrives.
     bool worklets() const { return worklets_per_owner > 0; }
     double task_cut_growth = 0.10;

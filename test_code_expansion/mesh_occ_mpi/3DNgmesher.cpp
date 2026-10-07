@@ -20,6 +20,62 @@ namespace nglib
 {
 #include <nglib.h>
 }
+namespace {
+struct GhostMeshAccess {
+    nglib::Ng_Mesh *mesh;
+    int np() const {return nglib::Ng_GetNP(mesh);}
+    int ne() const {return nglib::Ng_GetNE(mesh);}
+    void tetrahedron(int e,int *vertices,int &domain) const {
+        int entity[20];
+        if(nglib::Ng_GetVolumeElement(mesh,e,entity,domain)!=nglib::NG_TET)
+            throw std::logic_error("ghost plan requires tetrahedra");
+        std::copy(entity,entity+4,vertices);
+    }
+    void point(int v,double *xyz) const {nglib::Ng_GetPoint(mesh,v,xyz);}
+};
+void BuildGhostPlan(GhostExchangeContext &ghost,void *mesh,
+    const std::map<int,std::list<int>> &adj,
+    const std::map<Barycvrtx,std::list<int>,CompBarycvrtx> &graph,
+    MPI_Comm comm,int rank,int ranks) {
+    try {
+        const double start=MPI_Wtime();
+        {
+            scaling::StageScope stage("volume_exchange_pack","compute");
+            ghost.plan.Build(GhostMeshAccess{static_cast<nglib::Ng_Mesh*>(mesh)},adj,rank,ranks);
+        }
+        for(const auto &entry:graph)for(int peer:entry.second)
+            if(peer>=0 && peer<ranks && peer!=rank)ghost.neighbors.insert(peer);
+        ghost.prepared=true;
+        auto &p=scaling::Profiler::instance();
+        p.set_metric("ghost_plan_build_seconds",MPI_Wtime()-start);
+        p.set_metric("ghost_plan_scanned_elements",ghost.plan.source_elements);
+        p.set_metric("ghost_plan_selected_elements",ghost.plan.selected_elements);
+        p.set_metric("ghost_plan_send_elements",ghost.plan.send_elements);
+        p.set_metric("ghost_plan_reference_bytes",ghost.plan.ReferenceBytes());
+        p.set_metric("ghost_plan_reference_width",sizeof(mesh_research::GhostExchangePlan<xdVElement>::Reference));
+    } catch(const std::exception &e) {
+        std::fprintf(stderr,"[GHOST_PLAN_ERROR] rank=%d %s\n",rank,e.what());
+        netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost plan build");
+    }
+}
+void PostGhostCounts(GhostExchangeContext &ghost,MPI_Comm comm,int rank,int ranks) {
+    try {
+        std::map<int,int> counts;
+        for(const auto &entry:ghost.plan.packets)counts[entry.first]=static_cast<int>(entry.second.size());
+        scaling::StageScope stage("ghost_count_post","communication");
+        ghost.counts.Begin(comm,rank,ranks,ghost.neighbors,counts);
+        auto &p=scaling::Profiler::instance();
+        p.set_metric("ghost_plan_count_peers",ghost.counts.peers);
+        p.set_metric("ghost_plan_preposted_count_peers",ghost.overlap?ghost.counts.peers:0);
+        p.set_metric("ghost_plan_prepared_before_vertex_wait",ghost.overlap?1:0);
+        p.add_communication("ghost_count_post",ghost.counts.peers,ghost.counts.peers,
+            ghost.counts.peers*sizeof(int),ghost.counts.peers*sizeof(int));
+    } catch(const std::exception &e) {
+        std::fprintf(stderr,"[GHOST_PLAN_ERROR] rank=%d %s\n",rank,e.what());
+        netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost counts post");
+    }
+}
+} // namespace
 //数组排序，整个数组元素将按升序排序
 void SortInt(int *v)
 {
@@ -1387,7 +1443,7 @@ GlobalId *com_barycoords(
 	std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap,
 	std::map<int, std::list<int>> &adjbarycs,
 	int numprocs, GlobalId *newgVEid,
-	int mypid)
+	int mypid, GhostExchangeContext *ghost)
 {
 	MPI_Datatype mpibaryctype = barycentric_mpi_type(comm);
 	int num_s, num_r; // number of sends and receives ���ͺͽ��յ�����
@@ -1655,7 +1711,24 @@ GlobalId *com_barycoords(
 	}
 	int barycentric_type_bytes = 0;
 	MPI_Type_size(mpibaryctype, &barycentric_type_bytes);
-	{
+	if(ghost) {
+        std::vector<MPI_Request> requests;
+        {
+            scaling::StageScope stage("ghost_vertex_post","communication");
+            requests=mesh_research::PostKnownVertices(comm,mpibaryctype,mypid,
+                num_s,num_r,dest,src,s_length,r_length,s_data,r_data);
+        }
+        if(ghost->overlap) {
+            BuildGhostPlan(*ghost,submesh,adjbarycs,barycvrtx2adjprocsmap,comm,mypid,numprocs);
+            PostGhostCounts(*ghost,comm,mypid,numprocs);
+        }
+        const double wait_start=MPI_Wtime();
+        {
+            scaling::StageScope stage("ghost_vertex_wait","communication");
+            mesh_research::WaitKnownVertices(comm,requests);
+        }
+        scaling::Profiler::instance().set_metric("vertex_waitall_seconds",MPI_Wtime()-wait_start);
+    } else {
 		scaling::StageScope profile_stage("vertex_exchange", "communication");
 		com_sr_datatype(comm, num_s, num_r, dest, src, s_length, r_length,
 						s_data, r_data, mpibaryctype, mypid);
@@ -1769,12 +1842,13 @@ GlobalId *com_baryVolumeElements(
 	GlobalId *VEgid,
 	std::list<VEindex> &VEindexs,
 	int numprocs,
-	int mypid)
+	int mypid, GhostExchangeContext *ghost)
 {
 	nglib::Ng_Mesh *mesh = (nglib::Ng_Mesh *)submesh;
 	std::list<int>::iterator li;
 	std::map<int, std::list<int>>::iterator ib;
-	std::map<int, VEVector> pidmap;
+	std::map<int, VEVector> legacy_pidmap;
+    auto &pidmap=ghost?ghost->plan.packets:legacy_pidmap;
 	const int num_keys = nglib::Ng_GetNE(mesh);
 	std::set<int> pid_tmp;
 	std::set<int>::iterator pt;
@@ -1785,7 +1859,7 @@ GlobalId *com_baryVolumeElements(
 	MPI_Datatype mpivetype = volume_element_mpi_type(comm);
 
 	int entity[4];
-	{
+	if(!ghost) {
 		scaling::StageScope profile_stage("volume_exchange_pack", "compute");
 		for (int i = 0; i < num_keys; ++i)
 		{
@@ -1825,6 +1899,31 @@ GlobalId *com_baryVolumeElements(
 		}
 	}
 
+    if(ghost) {
+        if(!ghost->prepared)BuildGhostPlan(*ghost,submesh,adjbarycs,barycvrtx2adjprocsmap,comm,mypid,numprocs);
+        try {
+            {
+                scaling::StageScope stage("ghost_id_bind","compute");
+                ghost->plan.Bind(GhostMeshAccess{mesh},oldgid,VEgid);
+            }
+            auto &p=scaling::Profiler::instance();
+            p.set_metric("ghost_plan_oracle_calls",ghost->verify?1:0);
+            p.set_metric("ghost_plan_oracle_verified_elements",0);
+            p.set_metric("ghost_plan_oracle_mismatches",0);
+            if(ghost->verify) {
+                scaling::StageScope stage("ghost_plan_audit","validation");
+                p.set_metric("ghost_plan_oracle_verified_elements",
+                    ghost->plan.Verify(GhostMeshAccess{mesh},adjbarycs,oldgid,VEgid));
+            }
+            if(!ghost->overlap)PostGhostCounts(*ghost,comm,mypid,numprocs);
+            // Geometry is fixed; references are no longer needed after binding.
+            ghost->plan.references.clear();
+        } catch(const std::exception &e) {
+            std::fprintf(stderr,"[GHOST_PLAN_ERROR] rank=%d %s\n",mypid,e.what());
+            netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost plan bind or oracle");
+        }
+    }
+
 	int comm_size = 0;
 	netgen_mpi_check(
 		comm, MPI_Comm_size(comm, &comm_size),
@@ -1840,8 +1939,9 @@ GlobalId *com_baryVolumeElements(
 		std::abort();
 	}
 
-	std::vector<int> send_counts(comm_size, 0);
-	std::vector<int> recv_counts(comm_size, 0);
+	std::vector<int> legacy_send_counts(comm_size, 0),legacy_recv_counts(comm_size, 0);
+    auto &send_counts=ghost?ghost->counts.send:legacy_send_counts;
+    auto &recv_counts=ghost?ghost->counts.receive:legacy_recv_counts;
 	std::uint64_t volume_send_items = 0;
 	for (const auto &entry : pidmap)
 	{
@@ -1858,7 +1958,9 @@ GlobalId *com_baryVolumeElements(
 			MPI_Abort(comm, MPI_ERR_RANK);
 			std::abort();
 		}
-		send_counts[peer] = static_cast<int>(element_count);
+		if(!ghost)send_counts[peer] = static_cast<int>(element_count);
+        else if(send_counts[peer]!=static_cast<int>(element_count))
+            netgen_mpi_check(comm,MPI_ERR_COUNT,"ghost count changed after posting");
 		volume_send_items += static_cast<std::uint64_t>(element_count);
 	}
 
@@ -1866,7 +1968,11 @@ GlobalId *com_baryVolumeElements(
 		comm, "com_baryVolumeElements.size_exchange.begin",
 		static_cast<long>(pidmap.size()), comm_size);
 	std::vector<std::vector<xdVElement>> recv_by_peer(comm_size);
-	if(mesh_research::options().async_global_ids) {
+	if(ghost) {
+        scaling::StageScope stage("ghost_count_wait","communication");
+        ghost->counts.Wait();
+        scaling::Profiler::instance().set_metric("volume_count_peers",ghost->counts.peers);
+    } else if(mesh_research::options().async_global_ids) {
 		std::set<int> peers;
 		for(const auto &entry:barycvrtx2adjprocsmap)
 			for(int peer:entry.second)if(peer>=0 && peer<comm_size && peer!=mypid)peers.insert(peer);
@@ -2067,6 +2173,7 @@ GlobalId *com_baryVolumeElements(
 	netgen_mpi_check(
 		comm, MPI_Type_free(&mpivetype),
 		"com_baryVolumeElements/MPI_Type_free");
+    if(ghost)ghost->plan.packets.clear();
 	return newgid;
 }
 

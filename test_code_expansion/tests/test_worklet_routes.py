@@ -13,6 +13,24 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route in ('ghost_staged','ghost_pipeline'):
+        rows=fixture('batch_parallel',repeat,mode)
+        pipeline=route=='ghost_pipeline';verify=repeat==0 and mode=='natural'
+        for row in rows:
+            row['metadata'].update(ghost_exchange_policy='id_overlap_plan_v1' if pipeline else 'staged_plan_v1',
+                                   ghost_plan_verification='serial_pack_exact_v1' if verify else 'off')
+            row['metrics'].update(volume_send_items=1,volume_count_peers=1,
+                ghost_plan_scanned_elements=1,ghost_plan_selected_elements=1,ghost_plan_send_elements=1,
+                ghost_plan_reference_bytes=20,ghost_plan_reference_width=20,ghost_plan_count_peers=1,
+                ghost_plan_preposted_count_peers=int(pipeline),ghost_plan_prepared_before_vertex_wait=int(pipeline),
+                ghost_plan_oracle_calls=int(verify),ghost_plan_oracle_verified_elements=int(verify),
+                ghost_plan_oracle_mismatches=0,ghost_plan_build_seconds=.01)
+            for name in ('ghost_vertex_post','ghost_vertex_wait','ghost_count_post','ghost_count_wait','ghost_id_bind','volume_exchange_pack','volume_payload_exchange'):
+                row['stages'][name]=dict(seconds=.01,calls=1,category='compute' if name in ('ghost_id_bind','volume_exchange_pack') else 'communication')
+            for name in ('vertex_exchange','volume_neighbor_size_exchange','volume_size_exchange','volume_ready_exchange'):
+                row['stages'].pop(name,None)
+            if verify:row['stages']['ghost_plan_audit']=dict(seconds=.01,calls=1,category='validation')
+        return rows
     worklet=route in ('a_static','a_dynamic','b_remaining','b_critical','worklet_static_fixed','worklet_owner_fixed','critical_worklet');deferred=route in ('c_deferred','c_fused','a_fused','b_fused')
     scheduler={'batch_serial':'batch_serial','batch_parallel':'batch_parallel','front_bound_profile':'front_bound_profile','front_bound':'front_bound','front_profile':'front_profile','front_topology':'front_topology','split_profile':'split_profile','split_reuse':'split_reuse','smooth_profile':'smooth_profile','smooth_balanced':'smooth_balanced','legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window','b_window':'node_window_priority','b_balanced':'node_window_balanced','a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
     meta={k:'fixture' for k in profiles.QUALITY_IDENTITY}
@@ -151,6 +169,7 @@ def fixture(route,repeat,mode='natural'):
             for i in range(10):m['quality_shape_bin_'+str(i)]=int(i==9)
             for name in ('surface_sum','surface_xor','volume_sum','volume_xor','numbering'):
                 m['quality_'+name+'_hi']=rank;m['quality_'+name+'_lo']=100
+        if route=='batch_parallel':m.update(volume_send_items=1,volume_receive_items=1,volume_num_s=1,volume_num_r=1,vertex_send_items=1,vertex_receive_items=1)
         rows.append(dict(rank=rank,ranks=2,repeat=repeat,metadata=meta,metrics=m,stages=stages))
     return rows
 

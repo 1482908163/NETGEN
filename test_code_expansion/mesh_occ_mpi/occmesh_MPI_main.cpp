@@ -48,6 +48,7 @@ void print_help() {
          "--worklets-per-owner <1..64> : 在每个原分区内拆分封闭任务，最终归属不变" << endl <<
          "--adaptive-worklets : 仅对粗负载上四分位的重分区增加worklet粒度" << endl <<
          "--worklet-policy <static|dynamic|remaining|critical> : 任务执行调度策略" << endl <<
+         "--ghost-exchange legacy|staged|pipeline : 幽灵载荷依赖拆分，要求 --async-global-ids" << endl <<
          "--ready-volume-exchange : 逐邻居计数到达后接收载荷，要求 --async-global-ids" << endl <<
          "--prefix-global-ids : 前缀计数与邻居偏移交换\n--fused-global-ids / --deferred-global-ids : 仅合并全局计数 / 合并并与邻居编号交换重叠\n--async-global-ids : owner-local 临时ID，核心路径取消全局count collective" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
@@ -216,7 +217,7 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") ||
                 !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
@@ -240,6 +241,7 @@ int main(int argc, char **argv) {
                         throw std::runtime_error("invalid kernel thread count");
                 }
                 else if(option=="--kernel-scheduler") research.kernel_scheduler=value;
+                else if(option=="--ghost-exchange") research.ghost_exchange=value;
                 else if(option=="--algorithm") research.algorithm=value;
                 else if(option=="--worklet-policy") research.worklet_policy=value;
                 else if(option=="--worklets-per-owner") {
@@ -357,6 +359,8 @@ int main(int argc, char **argv) {
        ((research.deferred_global_ids || research.async_global_ids) && (!research.communication_only || !isComputeAdj)) ||
        (research.async_global_ids && (research.deferred_global_ids || research.prefix_global_ids)) ||
        (research.ready_volume_exchange && !research.async_global_ids) ||
+       (research.ghost_exchange!="legacy" && (research.ghost_exchange!="staged" && research.ghost_exchange!="pipeline")) ||
+       (research.ghost_exchange!="legacy" && (!research.communication_only || !research.async_global_ids || research.ready_volume_exchange || research.mesh_tasks>0 || research.worklets())) ||
        ((research.kernel_scheduler=="spatial" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="front_bound_profile" || research.kernel_scheduler=="front_bound" || research.kernel_scheduler=="front_profile" || research.kernel_scheduler=="front_topology" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel") && (research.mesh_tasks>0 || research.worklets() || research.kernel_threads<1)) ||
        (research.adaptive_worklets && !research.worklets())) {
         if(id==0)std::cerr<<"Worklets require communication-only, P>=2 and parallel repair; deferred IDs require communication-only and adjacency."<<std::endl;
@@ -492,6 +496,8 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklets_per_owner",std::to_string(research.worklets_per_owner));
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
+    profiler.add_metadata("ghost_exchange_policy",research.ghost_exchange=="pipeline"?"id_overlap_plan_v1":research.ghost_exchange=="staged"?"staged_plan_v1":"legacy_v1");
+    profiler.add_metadata("ghost_plan_verification",research.ghost_exchange!="legacy" && validate_volume?"serial_pack_exact_v1":"off");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");
     if(research.kernel_threads>0 && research.mesh_tasks==0 && !research.worklets() && (research.kernel_scheduler=="repair" || research.kernel_scheduler=="recovery" || research.kernel_scheduler=="profile" || ((research.kernel_scheduler=="refine_serial" || research.kernel_scheduler=="batch_serial" || ((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="front_bound_profile" || research.kernel_scheduler=="front_bound" || research.kernel_scheduler=="front_profile" || research.kernel_scheduler=="front_topology" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")) || research.kernel_scheduler=="legal_prune") || research.kernel_scheduler=="refine_parallel"))
         profiler.add_metadata("recovery_evaluation",((research.kernel_scheduler=="batch_parallel" || research.kernel_scheduler=="front_bound_profile" || research.kernel_scheduler=="front_bound" || research.kernel_scheduler=="front_profile" || research.kernel_scheduler=="front_topology" || research.kernel_scheduler=="split_profile" || research.kernel_scheduler=="split_reuse") || research.kernel_scheduler=="smooth_profile" || research.kernel_scheduler=="smooth_balanced")?"batch_parallel_v1":research.kernel_scheduler=="batch_serial"?"batch_serial_v1":research.kernel_scheduler=="recovery"?"parallel_readonly_v1":"serial_readonly_v1");
@@ -1095,8 +1101,10 @@ int main(int argc, char **argv) {
             }
             // cout << id << "start com_barycoords" << endl;
 
+            std::unique_ptr<GhostExchangeContext> ghost_exchange;
+            if(research.ghost_exchange!="legacy")ghost_exchange.reset(new GhostExchangeContext(research.ghost_exchange=="pipeline",validate_volume));
             GlobalId *newid = com_barycoords(submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
-                                        baryc2locvrtxmap, adjbarycs, numParts, VEgid, id);
+                                        baryc2locvrtxmap, adjbarycs, numParts, VEgid, id, ghost_exchange.get());
             // Validation builds a canonical view without mutating the IDs passed
             // to adjacency exchange. Actual file output retains contiguous IDs.
             std::vector<GlobalId> vertex_offsets,element_offsets;
@@ -1316,7 +1324,7 @@ int main(int argc, char **argv) {
             newid = com_baryVolumeElements(
                 submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
                 baryc2locvrtxmap, adjbarycs, newid, VEgid,
-                VEindexs, numParts, id);
+                VEindexs, numParts, id, ghost_exchange.get());
             netgen_mpi_checkpoint(MPI_COMM_WORLD, "com_baryVolumeElements.end");
             if(validate_volume) {
                 scaling::StageScope stage("adjacency_audit","validation");
