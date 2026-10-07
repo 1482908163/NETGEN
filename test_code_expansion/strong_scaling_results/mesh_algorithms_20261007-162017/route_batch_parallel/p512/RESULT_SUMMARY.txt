@@ -1,0 +1,26 @@
+实验结果总览 / Experiment result overview
+========================================================
+状态: 完整，可分析
+有效正式运行: 48 / 48
+异常项: 0
+
+优先查看：
+1. 本文件：快速判断实验是否完整及主要指标。
+2. analysis/summary.csv：论文分析用的重复实验中位数。
+3. analysis/issues.txt：仅在异常项不为 0 时查看。
+4. repeat_*/run.log.gz：只在排查某次失败时查看。
+
+核心汇总（时间单位 s，通信量单位 GiB）：
+algorithm timing ranks seed repeats core compute_max face_exchange vertex_wait imbalance recv_GiB vs_baseline vs_sparse
+sparse natural 512 -1 8 2.423 0.981 0.311 - 1.893 0.016 - 1.000
+  负载诊断：最慢rank=454（8/8次）；compute~tet相关=0.801；local_volume~输入surface相关=0.622；top1%单位单元成本=1.200x；top5%单位单元成本=1.137x
+sparse natural 512 17 8 2.496 1.099 0.249 - 2.110 0.016 - 1.000
+  负载诊断：最慢rank=359（8/8次）；compute~tet相关=0.765；local_volume~输入surface相关=0.528；top1%单位单元成本=1.323x；top5%单位单元成本=1.163x
+sparse natural 512 41 8 2.389 1.041 0.193 - 1.998 0.016 - 1.000
+  负载诊断：最慢rank=436（6/8次）；compute~tet相关=0.809；local_volume~输入surface相关=0.602；top1%单位单元成本=1.285x；top5%单位单元成本=1.153x
+sparse split 512 -1 8 2.419 0.982 0.258 0.000 1.901 0.016 - 1.000
+  负载诊断：最慢rank=454（8/8次）；compute~tet相关=0.808；local_volume~输入surface相关=0.620；top1%单位单元成本=1.205x；top5%单位单元成本=1.132x
+sparse split 512 17 8 2.428 1.114 0.203 0.000 2.137 0.016 - 1.000
+  负载诊断：最慢rank=359（8/8次）；compute~tet相关=0.763；local_volume~输入surface相关=0.525；top1%单位单元成本=1.318x；top5%单位单元成本=1.161x
+sparse split 512 41 8 2.350 1.066 0.143 0.000 2.038 0.016 - 1.000
+  负载诊断：最慢rank=436（5/8次）；compute~tet相关=0.803；local_volume~输入surface相关=0.596；top1%单位单元成本=1.295x；top5%单位单元成本=1.159x

@@ -1,0 +1,80 @@
+A1/B1/C1: 144 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> ghost_staged seed=-1 natural: 0.93% reduction; wins=5/8; validated=True
+batch_parallel -> ghost_staged seed=-1 split: 3.46% reduction; wins=6/8; validated=True
+batch_parallel -> ghost_staged seed=17 natural: 0.29% reduction; wins=4/8; validated=True
+batch_parallel -> ghost_staged seed=17 split: 1.19% reduction; wins=6/8; validated=True
+batch_parallel -> ghost_staged seed=41 natural: 0.56% reduction; wins=4/8; validated=True
+batch_parallel -> ghost_staged seed=41 split: -0.49% reduction; wins=4/8; validated=True
+ghost_staged -> ghost_pipeline seed=-1 natural: -1.88% reduction; wins=3/8; validated=True
+ghost_staged -> ghost_pipeline seed=-1 split: 0.67% reduction; wins=5/8; validated=True
+ghost_staged -> ghost_pipeline seed=17 natural: 0.55% reduction; wins=4/8; validated=True
+ghost_staged -> ghost_pipeline seed=17 split: -0.39% reduction; wins=4/8; validated=True
+ghost_staged -> ghost_pipeline seed=41 natural: -1.58% reduction; wins=2/8; validated=True
+ghost_staged -> ghost_pipeline seed=41 split: -0.94% reduction; wins=4/8; validated=True
+batch_parallel -> ghost_pipeline seed=-1 natural: 0.39% reduction; wins=4/8; validated=True
+batch_parallel -> ghost_pipeline seed=-1 split: 2.81% reduction; wins=5/8; validated=True
+batch_parallel -> ghost_pipeline seed=17 natural: 0.92% reduction; wins=4/8; validated=True
+batch_parallel -> ghost_pipeline seed=17 split: 0.81% reduction; wins=5/8; validated=True
+batch_parallel -> ghost_pipeline seed=41 natural: -3.12% reduction; wins=2/8; validated=True
+batch_parallel -> ghost_pipeline seed=41 split: 0.67% reduction; wins=4/8; validated=True
+幽灵依赖 batch_parallel -> ghost_staged seed=-1 natural: 核心 2.826254 -> 2.797001s；同进程交换阶段合计最大值 1.234218 -> 1.182833s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_staged seed=-1 split: 核心 2.847438 -> 2.761785s；同进程交换阶段合计最大值 1.224442 -> 1.191094s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_staged seed=17 natural: 核心 2.662238 -> 2.618572s；同进程交换阶段合计最大值 1.139080 -> 1.063147s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_staged seed=17 split: 核心 2.655974 -> 2.635227s；同进程交换阶段合计最大值 1.091780 -> 1.095750s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_staged seed=41 natural: 核心 2.998585 -> 3.024634s；同进程交换阶段合计最大值 1.630512 -> 1.625774s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_staged seed=41 split: 核心 2.983794 -> 3.044799s；同进程交换阶段合计最大值 1.644115 -> 1.655456s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=-1 natural: 核心 2.797001 -> 2.793038s；同进程交换阶段合计最大值 1.182833 -> 1.207093s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=-1 split: 核心 2.761785 -> 2.761254s；同进程交换阶段合计最大值 1.191094 -> 1.182355s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=17 natural: 核心 2.618572 -> 2.658722s；同进程交换阶段合计最大值 1.063147 -> 1.077779s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=17 split: 核心 2.635227 -> 2.599779s；同进程交换阶段合计最大值 1.095750 -> 1.109366s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=41 natural: 核心 3.024634 -> 3.099423s；同进程交换阶段合计最大值 1.625774 -> 1.660758s；质量/覆盖=True
+幽灵依赖 ghost_staged -> ghost_pipeline seed=41 split: 核心 3.044799 -> 3.027851s；同进程交换阶段合计最大值 1.655456 -> 1.619646s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=-1 natural: 核心 2.826254 -> 2.793038s；同进程交换阶段合计最大值 1.234218 -> 1.207093s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=-1 split: 核心 2.847438 -> 2.761254s；同进程交换阶段合计最大值 1.224442 -> 1.182355s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=17 natural: 核心 2.662238 -> 2.658722s；同进程交换阶段合计最大值 1.139080 -> 1.077779s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=17 split: 核心 2.655974 -> 2.599779s；同进程交换阶段合计最大值 1.091780 -> 1.109366s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=41 natural: 核心 2.998585 -> 3.099423s；同进程交换阶段合计最大值 1.630512 -> 1.660758s；质量/覆盖=True
+幽灵依赖 batch_parallel -> ghost_pipeline seed=41 split: 核心 2.983794 -> 3.027851s；同进程交换阶段合计最大值 1.644115 -> 1.619646s；质量/覆盖=True
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+Refinement batch_parallel -> ghost_staged seed=-1 natural: exercised=True; compute max 1.750385 -> 1.697244s; refine on each run's slowest rank 0.209662 -> 0.207854s
+Refinement batch_parallel -> ghost_staged seed=-1 split: exercised=True; compute max 1.727498 -> 1.718642s; refine on each run's slowest rank 0.210227 -> 0.207653s
+Refinement batch_parallel -> ghost_staged seed=17 natural: exercised=True; compute max 1.594464 -> 1.535274s; refine on each run's slowest rank 0.191972 -> 0.191513s
+Refinement batch_parallel -> ghost_staged seed=17 split: exercised=True; compute max 1.553406 -> 1.572965s; refine on each run's slowest rank 0.190743 -> 0.191025s
+Refinement batch_parallel -> ghost_staged seed=41 natural: exercised=True; compute max 1.953809 -> 1.947182s; refine on each run's slowest rank 0.201694 -> 0.201295s
+Refinement batch_parallel -> ghost_staged seed=41 split: exercised=True; compute max 1.956521 -> 1.936723s; refine on each run's slowest rank 0.201265 -> 0.201486s
+Refinement ghost_staged -> ghost_pipeline seed=-1 natural: exercised=True; compute max 1.697244 -> 1.726418s; refine on each run's slowest rank 0.207854 -> 0.208042s
+Refinement ghost_staged -> ghost_pipeline seed=-1 split: exercised=True; compute max 1.718642 -> 1.712033s; refine on each run's slowest rank 0.207653 -> 0.207815s
+Refinement ghost_staged -> ghost_pipeline seed=17 natural: exercised=True; compute max 1.535274 -> 1.568212s; refine on each run's slowest rank 0.191513 -> 0.191142s
+Refinement ghost_staged -> ghost_pipeline seed=17 split: exercised=True; compute max 1.572965 -> 1.572301s; refine on each run's slowest rank 0.191025 -> 0.190476s
+Refinement ghost_staged -> ghost_pipeline seed=41 natural: exercised=True; compute max 1.947182 -> 1.965563s; refine on each run's slowest rank 0.201295 -> 0.200601s
+Refinement ghost_staged -> ghost_pipeline seed=41 split: exercised=True; compute max 1.936723 -> 1.943611s; refine on each run's slowest rank 0.201486 -> 0.200955s
+Refinement batch_parallel -> ghost_pipeline seed=-1 natural: exercised=True; compute max 1.750385 -> 1.726418s; refine on each run's slowest rank 0.209662 -> 0.208042s
+Refinement batch_parallel -> ghost_pipeline seed=-1 split: exercised=True; compute max 1.727498 -> 1.712033s; refine on each run's slowest rank 0.210227 -> 0.207815s
+Refinement batch_parallel -> ghost_pipeline seed=17 natural: exercised=True; compute max 1.594464 -> 1.568212s; refine on each run's slowest rank 0.191972 -> 0.191142s
+Refinement batch_parallel -> ghost_pipeline seed=17 split: exercised=True; compute max 1.553406 -> 1.572301s; refine on each run's slowest rank 0.190743 -> 0.190476s
+Refinement batch_parallel -> ghost_pipeline seed=41 natural: exercised=True; compute max 1.953809 -> 1.965563s; refine on each run's slowest rank 0.201694 -> 0.200601s
+Refinement batch_parallel -> ghost_pipeline seed=41 split: exercised=True; compute max 1.956521 -> 1.943611s; refine on each run's slowest rank 0.201265 -> 0.200955s
+Recovery batch batch_parallel -> ghost_staged seed=-1 natural: exercised=True
+Recovery batch batch_parallel -> ghost_staged seed=-1 split: exercised=True
+Recovery batch batch_parallel -> ghost_staged seed=17 natural: exercised=True
+Recovery batch batch_parallel -> ghost_staged seed=17 split: exercised=True
+Recovery batch batch_parallel -> ghost_staged seed=41 natural: exercised=True
+Recovery batch batch_parallel -> ghost_staged seed=41 split: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=-1 natural: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=-1 split: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=17 natural: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=17 split: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=41 natural: exercised=True
+Recovery batch ghost_staged -> ghost_pipeline seed=41 split: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=-1 natural: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=-1 split: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=17 natural: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=17 split: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=41 natural: exercised=True
+Recovery batch batch_parallel -> ghost_pipeline seed=41 split: exercised=True
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 ghost_staged: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 ghost_pipeline: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
