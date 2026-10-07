@@ -81,3 +81,8 @@ python3 "${ROOT}/tests/test_ghost_plan.py"
 python3 "${ROOT}/tests/test_ghost_pipeline_config.py"
 python3 "${ROOT}/tests/test_ghost_pipeline_validation.py"
 python3 "${ROOT}/tests/test_ghost_pipeline_runner.py"
+
+python3 "${ROOT}/tests/test_combine_waves_transaction.py"
+python3 "${ROOT}/tests/test_combine_waves_validation.py"
+python3 "${ROOT}/tests/test_combine_waves_runner.py"
+python3 "${ROOT}/tests/test_combine_waves_config.py"

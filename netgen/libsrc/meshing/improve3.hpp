@@ -1,5 +1,6 @@
 #ifndef FILE_IMPROVE3
 #define FILE_IMPROVE3
+#include <vector>
 
 namespace netgen
 {
@@ -30,7 +31,8 @@ public:
   double CombineImproveEdge (
             Table<ElementIndex, PointIndex> & elements_of_point,
             PointIndex pi0, PointIndex pi1,
-            FlatArray<bool, PointIndex> is_point_removed, bool check_only=false);
+            FlatArray<bool, PointIndex> is_point_removed, bool check_only=false,
+            std::vector<ElementIndex> *illegal_reports=nullptr);
 
   void CombineImprove ();
 

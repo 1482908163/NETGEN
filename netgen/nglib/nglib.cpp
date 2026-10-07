@@ -441,7 +441,8 @@ namespace nglib
        VolumeKernelStats *smooth=nullptr, bool smooth_balanced=false,
        VolumeKernelStats *split=nullptr, bool split_reuse=false, bool split_verify=false,
        VolumeKernelStats *front_match=nullptr, bool front_topology=false, bool front_verify=false,
-       VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false)
+       VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false,
+       VolumeCombineStats *combine=nullptr, bool combine_waves=false, bool combine_verify=false)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -466,6 +467,9 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_combine_stats = combine;
+         local.volume_combine_waves = combine_waves;
+         local.volume_combine_verify = combine_verify;
          local.volume_split_stats = split;
          local.volume_split_reuse = split_reuse;
          local.volume_split_verify = split_verify;
@@ -568,6 +572,26 @@ namespace nglib
        recovery[i]=recovery_stats.values[i].load();
        batch[i]=batch_stats.values[i].load();
      }
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCombineWaves(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int waves,int verify,double *seconds,
+       double *details,double *recovery,double *batch,double *combine,double *profile)
+   {
+     if(!details || !recovery || !batch || !combine || !profile ||
+        waves<0 || waves>1 || verify<0 || verify>1 || (verify && !waves))return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats batch_stats;
+     VolumeCombineStats combine_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,
+         nullptr,false,nullptr,false,false,nullptr,false,false,nullptr,false,false,
+         &combine_stats,waves!=0,verify!=0);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<VolumeCombineStats::count;++i)combine[i]=combine_stats.values[i].load();
      return result;
    }
 

@@ -16,6 +16,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
+#   combine_waves : 三规模、三分区，原域内边合并有序并行提交与逐波串行重放
 #   ghost_pipeline : 三规模、三分区，编号传输与幽灵打包/数量交换的依赖拆分
 #   front_bound : 三规模、三分区，前沿质量上界提前剪枝与整调用重放
 #   front_topology : 三规模、三分区，前沿面与旋转的拓扑索引对照
@@ -36,7 +37,7 @@ EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
 # boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
 default_stage=communication
 [[ "${EXPERIMENT_PRESET}" != kernel && "${EXPERIMENT_PRESET}" != cooperate ]] || default_stage=kernel
-[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_stage=routes
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_stage=routes
 EXPERIMENT_STAGE="${EXPERIMENT_STAGE:-${default_stage}}"
 # 内核原型：同一进程数/分区，固定预留核数，比较内部调度和线程数。
 default_kernel_counts="4 16";default_kernel_schedulers="static repair"
@@ -45,7 +46,7 @@ KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-${default_kernel_counts}}"
 # 已验证基线：sparse + repair；static 留作消融，frontier 仅显式复现失败方案。
 KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-${default_kernel_schedulers}}"
 default_threads=0;default_scheduler=static
-[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || { default_threads=4;default_scheduler=repair; }
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || { default_threads=4;default_scheduler=repair; }
 KERNEL_THREADS="${KERNEL_THREADS:-${default_threads}}"
 KERNEL_SCHEDULER="${KERNEL_SCHEDULER:-${default_scheduler}}"
 WORKLETS_PER_OWNER="${WORKLETS_PER_OWNER:-0}"
@@ -58,15 +59,16 @@ default_routes="reference a_static a_dynamic b_remaining b_critical c_deferred"
 [[ "${EXPERIMENT_PRESET}" != structural ]] || default_routes="reference_bound front_spatial async_global ready_global spatial_ready"
 [[ "${EXPERIMENT_PRESET}" != recovery ]] || default_routes="reference_bound async_global recovery_global"
 [[ "${EXPERIMENT_PRESET}" != tail_profile ]] || default_routes="async_global profile_global"
-[[ "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="async_global refine_serial refine_parallel"
-[[ "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="async_global refine_serial legal_prune"
-[[ "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="refine_serial batch_serial batch_parallel"
-[[ "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="refine_serial batch_parallel"
-[[ "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="batch_parallel smooth_profile smooth_balanced"
+[[ "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="async_global refine_serial refine_parallel"
+[[ "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="async_global refine_serial legal_prune"
+[[ "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="refine_serial batch_serial batch_parallel"
+[[ "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="refine_serial batch_parallel"
+[[ "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="batch_parallel smooth_profile smooth_balanced"
 [[ "${EXPERIMENT_PRESET}" != split_reuse ]] || default_routes="batch_parallel split_profile split_reuse"
 [[ "${EXPERIMENT_PRESET}" != front_topology ]] || default_routes="batch_parallel front_profile front_topology"
-[[ "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="batch_parallel front_bound_profile front_bound"
+[[ "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="batch_parallel front_bound_profile front_bound"
 [[ "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_routes="batch_parallel ghost_staged ghost_pipeline"
+[[ "${EXPERIMENT_PRESET}" != combine_waves ]] || default_routes="batch_parallel combine_profile combine_waves"
 WORKLET_ROUTES="${WORKLET_ROUTES:-${default_routes}}" # 静态审计已通过，恢复同批次完整对照。
 export WORKLET_ROUTES
 WORKLET_FACTORS="${WORKLET_FACTORS:-1 2}" # 独立比较原分区与二份切分。
@@ -86,7 +88,7 @@ export WORKLETS_PER_OWNER WORKLET_FACTOR WORKLET_POLICY DEFERRED_GLOBAL_IDS
 default_cpus=1;default_rpn=16
 [[ "${EXPERIMENT_PRESET}" != kernel ]] || { default_cpus=16;default_rpn=1; }
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || { default_cpus=4;default_rpn=4; }
-[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || { default_cpus=4;default_rpn=4; }
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || { default_cpus=4;default_rpn=4; }
 CPUS_PER_TASK="${CPUS_PER_TASK:-${default_cpus}}"
 export CPUS_PER_TASK KERNEL_THREADS KERNEL_SCHEDULER KERNEL_THREAD_COUNTS KERNEL_SCHEDULERS
 BALANCE_METHOD="${BALANCE_METHOD:-none}"
@@ -118,12 +120,12 @@ case "${EXPERIMENT_STAGE}" in
     *) echo "EXPERIMENT_STAGE must be routes, kernel, communication, calibration, evaluation or legacy" >&2; exit 2 ;;
 esac
 case "${EXPERIMENT_PRESET}" in
-    worklets|inplace|abc2|structural|recovery|tail_profile|refine_bulk|legal_prune|recovery_batch|recovery_scale|smooth_balance|split_reuse|front_topology|front_bound|ghost_pipeline)
+    worklets|inplace|abc2|structural|recovery|tail_profile|refine_bulk|legal_prune|recovery_batch|recovery_scale|smooth_balance|split_reuse|front_topology|front_bound|combine_waves|ghost_pipeline)
         default_tasks=0;default_process_counts="128 256"
         default_levels=2;default_refines=2;default_verify_faces=0
         default_algorithms="sparse";default_timings="natural split";default_repeats=3
         [[ "${EXPERIMENT_PRESET}" != inplace ]] || default_repeats=8
-        [[ "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_repeats=8
+        [[ "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_repeats=8
         ;;
     kernel|cooperate)
         default_tasks=0
@@ -161,10 +163,10 @@ case "${EXPERIMENT_PRESET}" in
         default_timings="natural split"
         default_repeats=3
         ;;
-    *) echo "EXPERIMENT_PRESET must be ghost_pipeline, front_bound, front_topology, split_reuse, smooth_balance, recovery_scale, recovery_batch, legal_prune, refine_bulk, tail_profile, recovery, structural, worklets, inplace, abc2, cooperate, kernel, pilot, production or diagnose" >&2; exit 2 ;;
+    *) echo "EXPERIMENT_PRESET must be combine_waves, ghost_pipeline, front_bound, front_topology, split_reuse, smooth_balance, recovery_scale, recovery_batch, legal_prune, refine_bulk, tail_profile, recovery, structural, worklets, inplace, abc2, cooperate, kernel, pilot, production or diagnose" >&2; exit 2 ;;
 esac
 
-if [[ "${EXPERIMENT_PRESET}" == recovery_scale || "${EXPERIMENT_PRESET}" == smooth_balance || "${EXPERIMENT_PRESET}" == split_reuse || "${EXPERIMENT_PRESET}" == front_topology || "${EXPERIMENT_PRESET}" == front_bound || "${EXPERIMENT_PRESET}" == ghost_pipeline ]]; then
+if [[ "${EXPERIMENT_PRESET}" == recovery_scale || "${EXPERIMENT_PRESET}" == smooth_balance || "${EXPERIMENT_PRESET}" == split_reuse || "${EXPERIMENT_PRESET}" == front_topology || "${EXPERIMENT_PRESET}" == front_bound || "${EXPERIMENT_PRESET}" == combine_waves || "${EXPERIMENT_PRESET}" == ghost_pipeline ]]; then
     default_process_counts="128 256 512"
     default_seeds="-1 17 41"
 fi
@@ -192,7 +194,7 @@ VERIFY_FACES="${VERIFY_FACES:-${default_verify_faces}}"
 # 全量质量审计只占用自然计时的 repeat_0，不混入正式测量。
 default_final_validation=0
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || default_final_validation=1
-[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_final_validation=1
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_final_validation=1
 QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
 COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
 export QUALITY_WARMUP COMMUNICATION_ABLATION
@@ -214,7 +216,7 @@ PARTITION="${PARTITION:-mt_module}"
 SBATCH_COMMAND="${SBATCH_COMMAND:-yhbatch}"
 SBATCH_EXTRA_ARGS="${SBATCH_EXTRA_ARGS:-}"
 default_launcher=yhrun
-[[ "${EXPERIMENT_PRESET}" != cooperate && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_launcher="${SCRIPT_DIR}/node_affinity_yhrun.sh"
+[[ "${EXPERIMENT_PRESET}" != cooperate && "${EXPERIMENT_PRESET}" != inplace && "${EXPERIMENT_PRESET}" != abc2 && "${EXPERIMENT_PRESET}" != structural && "${EXPERIMENT_PRESET}" != recovery && "${EXPERIMENT_PRESET}" != tail_profile && "${EXPERIMENT_PRESET}" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || default_launcher="${SCRIPT_DIR}/node_affinity_yhrun.sh"
 MPI_LAUNCHER="${MPI_LAUNCHER:-${default_launcher}}"
 MPI_EXTRA_ARGS="${MPI_EXTRA_ARGS:---mpi=pmix}"
 DRY_RUN="${DRY_RUN:-0}"
@@ -236,7 +238,7 @@ if [[ "$EXPERIMENT_STAGE" == routes ]] || (( WORKLETS_PER_OWNER>0 )); then
     [[ "$KERNEL_SCHEDULER" == repair && "$BALANCE_METHOD" == none && "$QUALITY_WARMUP" == 1 ]] &&
         (( KERNEL_THREADS>0 )) || { echo "Worklet suite requires parallel repair and quality warmup." >&2;exit 2; }
 fi
-if [[ "${EXPERIMENT_PRESET}" == inplace || "${EXPERIMENT_PRESET}" == abc2 || "${EXPERIMENT_PRESET}" == structural || "${EXPERIMENT_PRESET}" == recovery || "${EXPERIMENT_PRESET}" == tail_profile || "${EXPERIMENT_PRESET}" == refine_bulk || "${EXPERIMENT_PRESET}" == legal_prune || "${EXPERIMENT_PRESET}" == recovery_batch || "${EXPERIMENT_PRESET}" == recovery_scale || "${EXPERIMENT_PRESET}" == smooth_balance || "${EXPERIMENT_PRESET}" == split_reuse || "${EXPERIMENT_PRESET}" == front_topology || "${EXPERIMENT_PRESET}" == front_bound || "${EXPERIMENT_PRESET}" == ghost_pipeline ]]; then
+if [[ "${EXPERIMENT_PRESET}" == inplace || "${EXPERIMENT_PRESET}" == abc2 || "${EXPERIMENT_PRESET}" == structural || "${EXPERIMENT_PRESET}" == recovery || "${EXPERIMENT_PRESET}" == tail_profile || "${EXPERIMENT_PRESET}" == refine_bulk || "${EXPERIMENT_PRESET}" == legal_prune || "${EXPERIMENT_PRESET}" == recovery_batch || "${EXPERIMENT_PRESET}" == recovery_scale || "${EXPERIMENT_PRESET}" == smooth_balance || "${EXPERIMENT_PRESET}" == split_reuse || "${EXPERIMENT_PRESET}" == front_topology || "${EXPERIMENT_PRESET}" == front_bound || "${EXPERIMENT_PRESET}" == combine_waves || "${EXPERIMENT_PRESET}" == ghost_pipeline ]]; then
     ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2 && KERNEL_THREADS==CPUS_PER_TASK)) || exit 2
     for count in ${PROCESS_COUNTS}; do ((count>=RANKS_PER_NODE && count%RANKS_PER_NODE==0)) || exit 2;done
 fi
@@ -312,7 +314,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -348,7 +350,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 critical_worklet) factor="${WORKLET_FACTOR:-1}";policy=critical;adaptive_worklets=1;binding=cores ;;
                 async_global) async_ids=1;binding=cores ;;
                 ghost_staged|ghost_pipeline) scheduler=batch_parallel;async_ids=1;binding=cores;ghost_exchange="${route#ghost_}" ;;
-                batch_serial|batch_parallel|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound) scheduler="$route";async_ids=1;binding=cores ;;
+                batch_serial|batch_parallel|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves) scheduler="$route";async_ids=1;binding=cores ;;
                 legal_prune) scheduler=legal_prune;async_ids=1;binding=cores ;;
                 refine_serial) scheduler=refine_serial;async_ids=1;binding=cores ;;
                 refine_parallel) scheduler=refine_parallel;async_ids=1;binding=cores ;;
@@ -485,12 +487,13 @@ fi
 [[ "${EXPERIMENT_PRESET}" != abc2 || "${WORKLETS_PER_OWNER}" == 0 ]] || markers+=("mandatory_home_v2" "original_owner_v1")
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
-[[ "$EXPERIMENT_PRESET" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || markers+=("first_encounter_bulk_v1" "refinement_threads")
+[[ "$EXPERIMENT_PRESET" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || markers+=("first_encounter_bulk_v1" "refinement_threads")
 [[ "$EXPERIMENT_PRESET" != legal_prune ]] || markers+=("exact_rejection_v1" "legal_split_policy" "legal_split_")
-[[ "$EXPERIMENT_PRESET" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || markers+=("batch_serial_v1" "batch_parallel_v1" "recovery_batch_")
+[[ "$EXPERIMENT_PRESET" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline ]] || markers+=("batch_serial_v1" "batch_parallel_v1" "recovery_batch_")
 [[ "$EXPERIMENT_PRESET" != smooth_balance ]] || markers+=("active_star_weighted_v1" "native_count_v1" "smooth_balance_" "phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != split_reuse ]] || markers+=("intact_star_reuse_v1" "recompute_v1" "split_proposal_" "phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != front_topology ]] || markers+=("face_rotation_index_v1" "exhaustive_v1" "iterator_exact_v1" "front_match_" "phase_operations_v1")
+[[ "$EXPERIMENT_PRESET" != combine_waves ]] || markers+=("ordered_disjoint_stars_v1" "serial_order_v1" "serial_wave_state_exact_v1" "combine_commit_" "phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != front_bound ]] || markers+=("incumbent_quality_bound_v1" "late_quality_v1" "apply_rules_exact_v1" "front_bound_" "phase_operations_v1")
 [[ "$KERNEL_SCHEDULER" != spatial ]] || markers+=("conservative_boxes_v1" "front_search_")
 [[ "$GHOST_EXCHANGE" == legacy ]] || markers+=("--ghost-exchange" "staged_plan_v1" "id_overlap_plan_v1" "serial_pack_exact_v1" "ghost_plan_" "ghost_vertex_post" "ghost_count_wait")

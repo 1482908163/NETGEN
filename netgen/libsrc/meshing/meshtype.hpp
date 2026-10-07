@@ -136,6 +136,29 @@ namespace netgen
       while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
     }
   };
+  struct VolumeCombineStats {
+    static constexpr int count=16;
+    std::atomic<double> values[count];
+    VolumeCombineStats() {for(auto &v:values)v.store(0);}
+    void Add(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void Max(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(old<value && !values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
+    }
+  };
+  struct VolumeCombineTimer {
+    VolumeCombineStats *stats;int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeCombineTimer(VolumeCombineStats *s,int i):stats(s),index(i) {
+      if(stats)start=std::chrono::steady_clock::now();
+    }
+    ~VolumeCombineTimer() {
+      if(stats)stats->Add(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
   struct VolumeKernelTimer {
     VolumeKernelStats * stats;
     int index;
@@ -1743,6 +1766,10 @@ namespace netgen
     bool volume_recovery_active = false;
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
+    bool volume_combine_active = false;
+    bool volume_combine_waves = false;
+    bool volume_combine_verify = false;
+    VolumeCombineStats *volume_combine_stats = nullptr;
     bool volume_split_active = false;
     bool volume_split_reuse = false;
     bool volume_split_verify = false;

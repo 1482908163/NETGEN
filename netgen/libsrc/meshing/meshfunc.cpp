@@ -724,6 +724,7 @@ namespace netgen
     mesh3d.CalcSurfacesOfNode();
 
     MeshingParameters final_mp = mp;
+    final_mp.volume_combine_active = true;
     final_mp.volume_split_active = true;
     MeshOptimize3d optmesh(mesh3d, final_mp);
     MeshingParameters smooth_mp = mp;

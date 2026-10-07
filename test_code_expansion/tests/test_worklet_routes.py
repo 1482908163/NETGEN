@@ -13,6 +13,19 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route in ('combine_profile','combine_waves'):
+        rows=fixture('split_profile',repeat,mode)
+        wave=route=='combine_waves';verify=wave and repeat==0 and mode=='natural'
+        for row in rows:
+            row['metadata'].update(kernel_scheduler=route,kernel_threads='1',
+                combine_commit_policy='ordered_disjoint_stars_v1' if wave else 'serial_order_v1',
+                combine_commit_verification='serial_wave_state_exact_v1' if verify else 'off')
+            m=row['metrics']
+            values=(2,12,8,8,2,8 if wave else 0,0,0,
+                    .003 if wave else 0,.01,.025,.06,8 if verify else 0,8 if verify else 0,0,1 if wave else 0)
+            from combine_commit_checks import FIELDS
+            m.update({'combine_commit_'+k:v for k,v in zip(FIELDS,values)})
+        return rows
     if route in ('ghost_staged','ghost_pipeline'):
         rows=fixture('batch_parallel',repeat,mode)
         pipeline=route=='ghost_pipeline';verify=repeat==0 and mode=='natural'

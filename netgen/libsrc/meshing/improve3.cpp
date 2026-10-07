@@ -5,6 +5,8 @@
 #include <core/logging.hpp>
 
 #include "meshing.hpp"
+#include "ordered_cavity_waves.hpp"
+#include "combine_wave_verify.hpp"
 
 #ifdef SOLIDGEOM
 #include <csg.hpp>
@@ -309,7 +311,7 @@ double MeshOptimize3d :: CombineImproveEdge (
                             Table<ElementIndex, PointIndex> & elements_of_point,
                             PointIndex pi0, PointIndex pi1,
                             FlatArray<bool, PointIndex> is_point_removed,
-                            bool check_only)
+                            bool check_only,std::vector<ElementIndex> *illegal_reports)
 {
   if (pi1 < pi0) Swap (pi0, pi1);
   if(is_point_removed[pi0] || is_point_removed[pi1]) return false;
@@ -437,8 +439,10 @@ double MeshOptimize3d :: CombineImproveEdge (
                   elem[l] = pi0;
 
           elem.Touch();
-          if (!mesh.LegalTet (elem))
-              (*testout) << "illegal tet " << ei << endl;
+          if (!mesh.LegalTet (elem)) {
+              if(illegal_reports)illegal_reports->push_back(ei);
+              else (*testout) << "illegal tet " << ei << endl;
+          }
       }
 
       for (auto i : Range(has_one_point))
@@ -456,6 +460,9 @@ double MeshOptimize3d :: CombineImproveEdge (
 
 void MeshOptimize3d :: CombineImprove ()
 {
+  auto *combine_stats=mp.volume_combine_active ? mp.volume_combine_stats : nullptr;
+  VolumeCombineTimer combine_timer(combine_stats,11);
+  if(combine_stats)combine_stats->Add(0,1);
   static Timer t("MeshOptimize3d::CombineImprove"); RegionTimer reg(t);
   static Timer topt("Optimize");
   static Timer tsearch("Search-combine");
@@ -492,10 +499,13 @@ void MeshOptimize3d :: CombineImprove ()
   RestrictRepairFrontier(mesh, mp, elementsonnode, edges, goal);
 
   // Find edges with improvement
+  if(combine_stats)combine_stats->Add(1,edges.Size());
   Array<std::tuple<double, int>> combine_candidate_edges(edges.Size());
   std::atomic<int> improvement_counter(0);
 
   tsearch.Start();
+  {
+  VolumeCombineTimer evaluation(combine_stats,9);
   ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
     for(auto i : myrange)
@@ -509,23 +519,96 @@ void MeshOptimize3d :: CombineImprove ()
       }
     }
   });
+  }
   tsearch.Stop();
 
   auto edges_with_improvement = combine_candidate_edges.Part(0, improvement_counter.load());
 
   QuickSort(edges_with_improvement);
+  if(combine_stats)combine_stats->Add(2,edges_with_improvement.Size());
   PrintMessage(5, edges.Size(), " edges");
   PrintMessage(5, edges_with_improvement.Size(), " edges with improvement");
 
   // Apply actual optimizations
   topt.Start();
   int cnt = 0;
+  {
+  VolumeCombineTimer commit(combine_stats,10);
+  if(combine_stats)combine_stats->Add(3,edges_with_improvement.Size());
+  if(!mp.volume_combine_active || !mp.volume_combine_waves) {
   for(auto [d_badness, ei] : edges_with_improvement)
   {
       auto [p0,p1] = edges[ei];
       if (CombineImproveEdge (elementsonnode, p0, p1, is_point_removed, false) < 0.0)
         cnt++;
   }
+  } else {
+    const int workers=std::max(1,ngcore::TaskManager::GetNumThreads());
+    netgen_cavity::OrderedWaves planner(np+int(PointIndex::BASE));
+    std::vector<int> point_ids;
+    std::size_t first=0;
+    while(first<edges_with_improvement.Size()) {
+      std::size_t end;
+      {
+        VolumeCombineTimer planning(combine_stats,8);
+        end=planner.Next(first,edges_with_improvement.Size(),workers,[&](std::size_t i) {
+          auto [d,edge]=edges_with_improvement[i];
+          auto [p0,p1]=edges[edge];
+          std::vector<int> ids{int(p0),int(p1)};
+          // Entire endpoint stars, including deleted/non-tet cells: they are
+          // inspected by the unchanged function, not just the edge cavity.
+          for(auto pi:{p0,p1})for(auto cell:elementsonnode[pi])
+            for(auto pj:mesh[cell].PNums())ids.push_back(int(pj));
+          return ids;
+        },point_ids);
+      }
+      const auto size=end-first;
+      if(combine_stats) {
+        combine_stats->Add(5,1);combine_stats->Max(15,size);
+        if(size>1) {combine_stats->Add(6,1);combine_stats->Add(7,size);}
+      }
+      std::vector<double> results(size),serial_results(size);
+      std::vector<std::vector<ElementIndex>> reports(size),serial_reports(size);
+      auto apply=[&](std::size_t k,auto &values,auto &messages) {
+        auto [d,edge]=edges_with_improvement[first+k];
+        auto [p0,p1]=edges[edge];
+        values[k]=CombineImproveEdge(elementsonnode,p0,p1,is_point_removed,false,&messages[k]);
+      };
+      std::unique_ptr<CombineWaveState> expected;
+      if(mp.volume_combine_verify) {
+        std::vector<ElementIndex> cells;
+        for(auto i=first;i<end;++i) {
+          auto [d,edge]=edges_with_improvement[i];auto [p0,p1]=edges[edge];
+          for(auto pi:{p0,p1})for(auto cell:elementsonnode[pi])cells.push_back(cell);
+        }
+        CombineWaveState before(mesh,is_point_removed,point_ids,cells);
+        try {
+          for(std::size_t k=0;k<size;++k)apply(k,serial_results,serial_reports);
+          expected=std::make_unique<CombineWaveState>(mesh,is_point_removed,point_ids,cells);
+        } catch(...) {before.Restore(mesh,is_point_removed);throw;}
+        before.Restore(mesh,is_point_removed);
+      }
+      if(size==1)apply(0,results,reports);
+      else ParallelFor(Range(size),[&](std::size_t k) {apply(k,results,reports);},int(size));
+      if(expected) {
+        bool equal=expected->Equal(mesh,is_point_removed) && reports==serial_reports;
+        for(std::size_t k=0;k<size;++k)equal=equal && CavitySameBits(results[k],serial_results[k]);
+        if(combine_stats) {combine_stats->Add(12,1);combine_stats->Add(13,size);}
+        if(!equal) {
+          if(combine_stats)combine_stats->Add(14,1);
+          throw NgException("Combine wave differs from ordered serial commit");
+        }
+      }
+      // Diagnostics are emitted by the host in original candidate order.
+      for(std::size_t k=0;k<size;++k) {
+        if(results[k]<0.0)++cnt;
+        for(auto cell:reports[k])(*testout)<<"illegal tet "<<cell<<endl;
+      }
+      first=end;
+    }
+  }
+  }
+  if(combine_stats)combine_stats->Add(4,cnt);
   topt.Stop();
 
   mesh.Compress();

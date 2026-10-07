@@ -510,6 +510,15 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontTopology(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int indexed,int verify,double *seconds,
     double *details,double *recovery,double *batch,double *front,double *profile);
 
+// Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
+// batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
+// attempts, applied, waves, parallel_waves, parallel_attempts, planning_seconds,
+// evaluation_seconds, commit_seconds, seconds, verified_waves, verified_attempts,
+// mismatches, max_wave_size. Verification replays actual serial mutations first.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshCombineWaves(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int waves,int verify,double *seconds,
+    double *details,double *recovery,double *batch,double *combine,double *profile);
+
 // Final split proposals: seconds[3], details[12], recovery[6], batch[6], split[12], profile[30].
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshSplitReuse(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int reuse,int verify,double *seconds,
