@@ -2,6 +2,9 @@
 #include "meshing.hpp"
 #include "conservative_box_index.hpp"
 #include "front_face_index.hpp"
+#include "front_quality_bound.hpp"
+#include <functional>
+#include <cstring>
 
 
 namespace netgen
@@ -49,7 +52,76 @@ extern double minwithoutother;
 
 
 
-int Meshing3 :: ApplyRules 
+int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
+    Array<int,PointIndex>& allow,Array<MiniElement2d>& faces,INDEX split,
+    INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
+    int tolerance,double sloppy,int rotation,float& error)
+{
+  if(!front_bound || !front_bound_verify)
+    return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
+  Array<Point3d,PointIndex> original_points(points);
+  Array<MiniElement2d> original_faces(faces);
+  Array<int> before_found(foundmap),before_can(canuse);
+  Array<string> before_problems(problems);
+  std::vector<vnetrule::FreeZoneReplayState> before_zones;
+  for(const auto &rule:rules)before_zones.push_back(rule->SaveFreeZoneReplayState());
+  const double before_other=minother,before_without=minwithoutother;
+  const int result=ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
+  Array<int> optimized_found(foundmap),optimized_can(canuse);
+  Array<string> optimized_problems(problems);
+  std::vector<vnetrule::FreeZoneReplayState> optimized_zones;
+  for(const auto &rule:rules)optimized_zones.push_back(rule->SaveFreeZoneReplayState());
+  const double optimized_other=minother,optimized_without=minwithoutother;
+  auto *stats=front_bound_stats;
+  const bool saved_bound=front_bound;
+  auto *saved_match=front_match_stats;
+  struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
+    front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
+    foundmap=optimized_found;canuse=optimized_can;problems=optimized_problems;
+    minother=optimized_other;minwithoutother=optimized_without;
+    for(int i=0;i<rules.Size();++i)rules[i]->RestoreFreeZoneReplayState(optimized_zones[i]);
+  }};
+  front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
+  foundmap=before_found;canuse=before_can;problems=before_problems;
+  minother=before_other;minwithoutother=before_without;
+  for(int i=0;i<rules.Size();++i)rules[i]->RestoreFreeZoneReplayState(before_zones[i]);
+  NgArray<Element> original_elements;
+  NgArray<INDEX> original_deleted;
+  float original_error=0;
+  const int reference=ApplyRulesImpl(original_points,allow,original_faces,split,pairs,
+      original_elements,original_deleted,tolerance,sloppy,rotation,original_error);
+  auto exact=[](double a,double b){return std::memcmp(&a,&b,sizeof(double))==0;};
+  bool same=result==reference && std::memcmp(&error,&original_error,sizeof(float))==0
+      && points.Size()==original_points.Size() && faces.Size()==original_faces.Size()
+      && elements.Size()==original_elements.Size() && deleted.Size()==original_deleted.Size();
+  if(same)for(auto i:points.Range()) {
+    const auto &a=points[i],&b=original_points[i];
+    if(!exact(a.X(),b.X()) || !exact(a.Y(),b.Y()) || !exact(a.Z(),b.Z()))same=false;
+  }
+  if(same)for(auto i:faces.Range()) {
+    if(faces[i].GetNP()!=original_faces[i].GetNP()){same=false;break;}
+    for(int j=1;j<=faces[i].GetNP();++j)
+      if(faces[i].PNum(j)!=original_faces[i].PNum(j))same=false;
+  }
+  if(same)for(auto i:elements.Range()) {
+    const auto &a=elements[i],&b=original_elements[i];
+    if(a.GetType()!=b.GetType() || a.GetNP()!=b.GetNP() || a.GetIndex()!=b.GetIndex()){same=false;break;}
+    for(int j=1;j<=a.GetNP();++j)if(a.PNum(j)!=b.PNum(j))same=false;
+  }
+  if(same)for(auto i:deleted.Range())if(deleted[i]!=original_deleted[i])same=false;
+  for(auto i:foundmap.Range())
+    if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
+  for(int i=0;i<rules.Size();++i)
+    if(rules[i]->SaveFreeZoneReplayState()!=optimized_zones[i])same=false;
+  if(stats)stats->Add(10,1);
+  if(!same) {
+    if(stats)stats->Add(11,1);
+    throw NgException("front quality bound ApplyRules replay mismatch");
+  }
+  return result;
+}
+
+int Meshing3 :: ApplyRulesImpl 
 (
  Array<Point3d, PointIndex> & lpoints,     // in: local points, out: old+new local points
  Array<int, PointIndex> & allowpoint,      // in: 2 .. it is allowed to use pointi, 1..will be allowed later, 0..no means
@@ -79,6 +151,8 @@ int Meshing3 :: ApplyRules
       for(int i=0;i<12;++i)stats->Add(i,values[i]);
     }
   } diagnostics(front_match_stats);
+  MatchDiagnostics bound_diagnostics(front_bound_stats);
+  Array<Point3d,PointIndex> bound_points;
   std::unique_ptr<FrontFaceIndex> incidence_index;
   // Built lazily: a successful single-face rule needs no incidence index.
   auto ensure_index=[&]() {
@@ -298,6 +372,9 @@ int Meshing3 :: ApplyRules
       if (testmode)
 	problems[rim] = "no mapping found";
       
+      bool tetrahedral_rule=rule->GetNE()>0;
+      if(front_bound)for(int e=1;e<=rule->GetNE();++e)
+        if(rule->GetElement(e).GetNP()!=4)tetrahedral_rule=false;
       if(front_match_stats)diagnostics.values[11]++;
       loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
@@ -605,6 +682,7 @@ int Meshing3 :: ApplyRules
 		    {
 		      NgProfiler::RegionTimer regfa2(302);		      
 
+                      if(front_bound_stats)bound_diagnostics.values[1]++;
 		      // all points are mapped
 		      
 		      if (loktestmode)
@@ -721,8 +799,34 @@ int Meshing3 :: ApplyRules
                           allp (3*i-1) = rp.Z() + newu(3*i-1 - idiff);
 			}
 		      
-		      rule->SetFreeZoneTransformation (allp, 
-						       tolerance + int(sloppy));
+                      bool bound_calculated=false,skip_geometry=false;
+                      float bound_error=0;
+                      if(front_bound && !loktestmode && !ok) {
+                        skip_geometry=true;
+                        bound_diagnostics.values[4]++;
+                      } else if(front_bound && ok && !loktestmode && tetrahedral_rule && (!impossible || found)) {
+                        // Same coordinates, objective, arithmetic order and float
+                        // accumulation as the original late quality evaluation.
+                        bound_points.SetSize(rule->GetNP()+1-PointIndex::BASE);
+                        for(int p=1;p<=rule->GetNP();++p)
+                          bound_points[PointIndex(p)]=Point3d(allp(3*p-3),allp(3*p-2),allp(3*p-1));
+                        for(int e=1;e<=rule->GetNE();++e) {
+                          double value=CalcElementBadness(bound_points,rule->GetElement(e));
+                          if(value>bound_error)bound_error=value;
+                          bound_diagnostics.values[8]++;
+                        }
+                        bound_calculated=true;
+                        bound_diagnostics.values[2]++;
+                        if(FrontQualityCannotWin(bound_error,minteterr,tolerance,impossible,found,loktestmode)) {
+                          skip_geometry=true;
+                          bound_diagnostics.values[3]++;
+                        }
+                      }
+                      // This legacy transformation partially retains coefficients
+                      // for degenerate faces. Always perform it in original order.
+                      rule->SetFreeZoneTransformation(allp,tolerance+int(sloppy));
+                      if(!skip_geometry) {
+                        if(front_bound_stats)bound_diagnostics.values[5]++;
 
 		      if (!rule->ConvexFreeZone())
 			{
@@ -762,6 +866,7 @@ int Meshing3 :: ApplyRules
 
 			      if (rule->fzbox.IsIn (lp))
 				{
+				  if(front_bound_stats)bound_diagnostics.values[6]++;
 				  if (rule->IsInFreeZone(lp))
 				    {
 				      if (loktestmode)
@@ -803,6 +908,7 @@ int Meshing3 :: ApplyRules
 				    }
 
 
+				  if(front_bound_stats)bound_diagnostics.values[7]++;
 				  if (lfacei.GetNP() == 3)
 				    {
 				      triin = rule->IsTriangleInFreeZone 
@@ -1058,12 +1164,12 @@ int Meshing3 :: ApplyRules
 
 			  // Calculate Element badness
 			  
-			  teterr = 0;
-			  for (auto i : elements.Range())
-			    {
-			      double hf = CalcElementBadness (lpoints, elements[i]);
-			      if (hf > teterr) teterr = hf;
-			    }
+                          teterr=bound_calculated?bound_error:0;
+                          if(!bound_calculated)for(auto i:elements.Range()) {
+                            double hf=CalcElementBadness(lpoints,elements[i]);
+                            if(hf>teterr)teterr=hf;
+                            if(front_bound_stats)bound_diagnostics.values[8]++;
+                          }
 
 			  /*
 			    // keine gute Erfahrung am 25.1.2000, js
@@ -1199,6 +1305,7 @@ int Meshing3 :: ApplyRules
 			  elements.SetSize (0);
 			}
 		      
+                      } // !skip_geometry: backtracking remains identical
 		      npok = rule->GetNOldP();
 		      incnpok = 0;
 		    }

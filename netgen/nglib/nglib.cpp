@@ -440,7 +440,8 @@ namespace nglib
        VolumeKernelStats *batch=nullptr, bool batch_parallel=false,
        VolumeKernelStats *smooth=nullptr, bool smooth_balanced=false,
        VolumeKernelStats *split=nullptr, bool split_reuse=false, bool split_verify=false,
-       VolumeKernelStats *front_match=nullptr, bool front_topology=false, bool front_verify=false)
+       VolumeKernelStats *front_match=nullptr, bool front_topology=false, bool front_verify=false,
+       VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -474,6 +475,9 @@ namespace nglib
          local.volume_recovery_batch_parallel = batch_parallel;
          local.volume_legal_split_prune = legal_split!=nullptr;
          local.volume_legal_split_stats = legal_split;
+         local.volume_front_bound_stats = front_bound_stats;
+         local.volume_front_bound = front_bound;
+         local.volume_front_bound_verify = front_bound_verify;
          local.volume_front_match_stats = front_match;
          local.volume_front_topology = front_topology;
          local.volume_front_verify = front_verify;
@@ -598,6 +602,24 @@ namespace nglib
        batch[i]=batch_stats.values[i].load();
      }
      for(int i=0;i<12;++i)split[i]=split_stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontQualityBound(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int bound,int verify,double *seconds,
+       double *details,double *recovery,double *batch,double *front,double *profile)
+   {
+     if(!details || !recovery || !batch || !front || !profile || bound<0 || bound>1 || verify<0 || verify>1)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats batch_stats,front_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,
+         nullptr,false,nullptr,false,false,nullptr,false,false,&front_stats,bound!=0,bound && verify);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();
+       batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<12;++i)front[i]=front_stats.values[i].load();
      return result;
    }
 

@@ -495,6 +495,13 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshLegalSplitPruned(Ng_Mesh *mesh,
 // Recovery batch reuses one team across the unchanged recovery sequence.
 // batch[6]: calls, parallel calls, smoothing calls, inner point visits,
 // color waves, inclusive smoothing seconds. Existing arrays unchanged.
+// Quality bound: same array lengths as FrontTopology. front[12]: calls,
+// mappings, early evaluations, quality/topology pruned, geometry candidates, point/face
+// tests, objective element evaluations, seconds, full replay checks/mismatches.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontQualityBound(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int bound,int verify,double *seconds,
+    double *details,double *recovery,double *batch,double *front,double *profile);
+
 // Exact front incidence enumeration; warmup verifies every indexed query.
 // Outputs: seconds[3], details[12], recovery[6], batch[6], front[12], profile[30].
 // front[12]: calls, builds, queries, linear/indexed visits, skipped virtual slots,

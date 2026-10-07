@@ -32,6 +32,8 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  bool front_bound = false, front_bound_verify = false;
+  VolumeKernelStats *front_bound_stats = nullptr;
   bool front_topology = false, front_verify = false;
   VolumeKernelStats * front_match_stats = nullptr;
   VolumeFrontSearchStats * front_search = nullptr;
@@ -58,6 +60,11 @@ public:
 		  double sloppy, int rotind1,
 		  float & retminerr);
   
+private:
+  int ApplyRulesImpl(Array<Point3d,PointIndex>&,Array<int,PointIndex>&,
+      Array<MiniElement2d>&,INDEX,INDEX_2_HASHTABLE<int>&,NgArray<Element>&,
+      NgArray<INDEX>&,int,double,int,float&);
+public:
   ///
   PointIndex AddPoint (const Point3d & p, PointIndex globind);
   ///

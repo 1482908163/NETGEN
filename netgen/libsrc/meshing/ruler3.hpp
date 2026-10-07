@@ -1,5 +1,7 @@
 #ifndef FILE_RULER3
 #define FILE_RULER3
+#include <vector>
+#include <cstring>
 
 namespace netgen
 {
@@ -135,6 +137,22 @@ public:
     {
       return tolerances.Get(pi);
     }
+  // Byte snapshots preserve even legacy, partially written degenerate rows.
+  // Only used for warmup replay; formal meshing allocates no snapshot.
+  using FreeZoneReplayState=std::vector<std::vector<unsigned char>>;
+  FreeZoneReplayState SaveFreeZoneReplayState() const {
+    FreeZoneReplayState saved;
+    for(int i=1;i<=freefaceinequ.Size();++i) {
+      const auto &m=*freefaceinequ.Get(i);
+      saved.emplace_back(sizeof(double)*m.Height()*m.Width());
+      if(!saved.back().empty())std::memcpy(saved.back().data(),&m.Get(1,1),saved.back().size());
+    }
+    return saved;
+  }
+  void RestoreFreeZoneReplayState(const FreeZoneReplayState &saved) {
+    for(int i=1;i<=freefaceinequ.Size();++i)
+      if(!saved[i-1].empty())std::memcpy(&(*freefaceinequ.Get(i))(0,0),saved[i-1].data(),saved[i-1].size());
+  }
   ///
   void SetFreeZoneTransformation (const Vector & allp,
 				  int tolclass);
