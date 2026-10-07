@@ -45,3 +45,7 @@ strong_scaling_results/**/build_logs/
 # Slurm 标准输出和错误文件
 strong_scaling_results/**/*.out
 strong_scaling_results/**/*.err
+
+# 全成本诊断保留压缩原始记录，供所有进程的成本和身份复算。
+!strong_scaling_results/**/route_cost_profile/**/rank_profiles.jsonl.gz
+

@@ -330,7 +330,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
     return lines,issues
 
 
-def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -427,7 +427,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","batch_serial","batch_parallel","combine_profile","combine_waves","front_bound_profile","front_bound","front_profile","front_topology","split_profile","split_reuse","smooth_profile","smooth_balanced","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
+        if metadata.get("feature_schema") not in ("mesh_comm_v1","mesh_worklets_v1") or metadata.get("kernel_scheduler") not in ("static","cavity","repair","spatial","recovery","profile","refine_serial","refine_parallel","legal_prune","batch_serial","batch_parallel","cost_profile","combine_profile","combine_waves","front_bound_profile","front_bound","front_profile","front_topology","split_profile","split_reuse","smooth_profile","smooth_balanced","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_window","node_window_priority","node_window_balanced","node_window_repeat","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -442,10 +442,10 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             if any(not math.isfinite(v) or v<0 for v in values):
                 raise ValueError("invalid thread lifecycle metric: "+key)
             result[key]=sum(values) if name=="starts" else max(values)
-    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
+    if metadata.get('kernel_scheduler') in ('refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
         if metadata.get('volume_refinement')!='first_encounter_bulk_v1':
             raise ValueError('missing deterministic refinement contract')
-        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune','batch_serial','batch_parallel','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') else int(metadata['kernel_threads'])
+        expected_threads=1 if metadata['kernel_scheduler'] in ('refine_serial','legal_prune','batch_serial','batch_parallel','cost_profile','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') else int(metadata['kernel_threads'])
         if int(metadata.get('refinement_threads',0))!=expected_threads:
             raise ValueError('refinement thread identity mismatch')
         rounds=int(metadata['numrefine'])
@@ -488,7 +488,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result[name]=sum(row['metrics'][name] for row in rows)
             result['slowest_compute_'+name]=rows[slowest_compute_rank]['metrics'][name]
         result['legal_split_exercised']=result['legal_split_pruned']>0
-    if metadata.get('kernel_scheduler') in ('combine_profile','combine_waves','profile','smooth_profile','smooth_balanced','split_profile','split_reuse','front_profile','front_topology','front_bound_profile','front_bound'):
+    if metadata.get('kernel_scheduler') in ('cost_profile','combine_profile','combine_waves','profile','smooth_profile','smooth_balanced','split_profile','split_reuse','front_profile','front_topology','front_bound_profile','front_bound'):
         if metadata.get('volume_native_profile')!='phase_operations_v1':
             raise ValueError('missing native operation profile contract')
         if metadata.get('kernel_scheduler')=='profile' and metadata.get('recovery_evaluation')!='serial_readonly_v1':
@@ -508,6 +508,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 # Inclusive child timers may overlap: never add these maxima.
                 result[key]=max(values)
                 result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
+    if metadata.get('kernel_scheduler')=='cost_profile':
+        from cost_profile_checks import validate
+        validate(rows,metadata,result,slowest_compute_rank,cost_sink,compute)
     # Preserve a coherent view of ONE rank rather than summing stage maxima.
     if int(metadata.get('kernel_threads',0))>0:
         for key,value in rows[slowest_compute_rank]['metrics'].items():
@@ -519,7 +522,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     if metadata.get('kernel_scheduler')=='recovery' and recovery_mode!='parallel_readonly_v1':
         raise ValueError('missing recovery evaluation contract')
     if recovery_mode is not None:
-        expected={'combine_profile':'batch_parallel_v1','combine_waves':'batch_parallel_v1','batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','front_bound_profile':'batch_parallel_v1','front_bound':'batch_parallel_v1','front_profile':'batch_parallel_v1','front_topology':'batch_parallel_v1','split_profile':'batch_parallel_v1','split_reuse':'batch_parallel_v1','smooth_profile':'batch_parallel_v1','smooth_balanced':'batch_parallel_v1','recovery':'parallel_readonly_v1'}.get(metadata.get('kernel_scheduler'),'serial_readonly_v1')
+        expected={'cost_profile':'batch_parallel_v1','combine_profile':'batch_parallel_v1','combine_waves':'batch_parallel_v1','batch_serial':'batch_serial_v1','batch_parallel':'batch_parallel_v1','front_bound_profile':'batch_parallel_v1','front_bound':'batch_parallel_v1','front_profile':'batch_parallel_v1','front_topology':'batch_parallel_v1','split_profile':'batch_parallel_v1','split_reuse':'batch_parallel_v1','smooth_profile':'batch_parallel_v1','smooth_balanced':'batch_parallel_v1','recovery':'parallel_readonly_v1'}.get(metadata.get('kernel_scheduler'),'serial_readonly_v1')
         if recovery_mode!=expected:raise ValueError('invalid recovery evaluation mode')
         names=('calls','seconds','evaluation_calls','evaluation_seconds','candidates','parallel_evaluations')
         for row in rows:
@@ -542,7 +545,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             result['slowest_compute_'+key]=rows[slowest_compute_rank]['metrics'][key]
         result['recovery_active_ranks']=sum(row['metrics']['recovery_calls']>0 for row in rows)
         result['recovery_exercised']=result['recovery_candidates']>0 and result['recovery_evaluation_calls']>0
-    if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
+    if metadata.get('kernel_scheduler') in ('batch_serial','batch_parallel','cost_profile','combine_profile','combine_waves','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
         if recovery_mode not in ('batch_serial_v1','batch_parallel_v1'):
             raise ValueError('missing recovery batch contract')
         fields=('calls','parallel_calls','smooth_calls','inner_visits','color_waves','smooth_seconds')
@@ -1196,7 +1199,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_'))})
             critical_sink.append(item)
     return result, detail
 
@@ -1503,7 +1506,9 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                result,_=inspect(profile_path(args.root))
+                cost_rows=[]
+                result,_=inspect(profile_path(args.root),cost_sink=cost_rows)
+                if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
                 if 'mesh_quality' in result:
                     q=result['mesh_quality']
                     (args.root/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
@@ -1518,6 +1523,7 @@ def main():
     runs, stage_rows, errors = [], [], []
     timeline_rows=[]
     critical_rows=[]
+    cost_rows=[]
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     sample_tmp=output/"model_samples.csv.gz.tmp"
@@ -1535,7 +1541,7 @@ def main():
                 if not (directory/"SUCCESS").exists():
                     errors.append(f"Incomplete run: {directory}")
                     continue
-                result, details = inspect(profile_path(directory), sample_writer, timeline_rows, critical_rows)
+                result, details = inspect(profile_path(directory), sample_writer, timeline_rows, critical_rows, cost_rows)
             completed.append(directory)
             if result["repeat"] <= 0:
                 continue  # Explicit warmups; no subtraction/estimated timing.
@@ -1609,6 +1615,8 @@ def main():
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     write_csv(output/"runs.csv", runs)
+    (output/"volume_operation_costs.csv").write_text("")
+    write_csv(output/"volume_operation_costs.csv",cost_rows)
     write_csv(output/"node_resource_timeline.csv", timeline_rows)
     (output/"critical_rank_breakdown.csv").write_text("")
     write_csv(output/"critical_rank_breakdown.csv", critical_rows)

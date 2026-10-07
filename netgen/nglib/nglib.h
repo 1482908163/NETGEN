@@ -510,6 +510,18 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontTopology(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int indexed,int verify,double *seconds,
     double *details,double *recovery,double *batch,double *front,double *profile);
 
+// Diagnostics only: same algorithm/resources as batch_parallel. Each row is
+// [total,prepare,evaluate,order,commit,cleanup] seconds; [calls,input_points,
+// input_elements,evaluated_items,candidates,commit_attempts,applied,
+// team_evaluations]; [quality,conform,rest,worstcase,legal] total seconds;
+// [serial_evaluate,team_evaluate] seconds (team availability, not CPU time).
+// Row order: generation/repair/optimization x combine/split/swap/swap2.
+// Stage buckets partition total; goal totals are a separate partition.
+enum { NG_VOLUME_COST_PROFILE_COUNT = 3*4*21 };
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshCostProfile(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *cost,int cost_count);
+
 // Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
 // batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
 // attempts, applied, waves, parallel_waves, parallel_attempts, planning_seconds,

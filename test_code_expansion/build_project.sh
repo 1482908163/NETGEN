@@ -40,13 +40,24 @@ module list
 echo "LIBRARY_PATH: $LIBRARY_PATH"
 echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
+# Reuse the previous ELF before the build can replace it. Missing tools or
+# unmatched old hashes leave an explicit diagnostic and do not block the build.
+if [[ -f "${PROJ_DIR}/strong_scaling/diagnose_failures.py" ]]; then
+  python3 "${PROJ_DIR}/strong_scaling/diagnose_failures.py" \
+    --previous-root "${PROJ_DIR}/strong_scaling_results" \
+    --binary "${BUILD_DIR}/mesh_occ_mpi/mesh_occ_mpi" \
+    --kernel "${NETGEN_INSTALL_DIR}/lib/libnglib.so" \
+    --core "${NETGEN_INSTALL_DIR}/lib/libngcore.so" || echo "旧失败地址解析未完成，继续构建。"
+fi
+
 echo ">>> 构建同仓库 Netgen 内核（包含候选调度接口）..."
 # 节点租约负责核绑定；禁止任务管理器内部 NUMA 自动绑核覆盖租约核集合。
 cmake -S "${NETGEN_ROOT}/netgen" -B "${NETGEN_ROOT}/build-netgen" \
   -DCMAKE_INSTALL_PREFIX="${NETGEN_INSTALL_DIR}" \
   -DCMAKE_C_COMPILER="${GCCHOME}/bin/gcc" -DCMAKE_CXX_COMPILER="${GCCHOME}/bin/g++" \
   -DCMAKE_PREFIX_PATH="${NETGEN_INSTALL_DIR}" \
-  -DUSE_GUI=OFF -DUSE_PYTHON=OFF -DUSE_OCC=ON -DUSE_MPI=ON -DUSE_NUMA=OFF -DCMAKE_BUILD_TYPE=Release
+  -DUSE_GUI=OFF -DUSE_PYTHON=OFF -DUSE_OCC=ON -DUSE_MPI=ON -DUSE_NUMA=OFF -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -g1" -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -g1"
 cmake --build "${NETGEN_ROOT}/build-netgen" -j "${BUILD_JOBS}"
 cmake --install "${NETGEN_ROOT}/build-netgen"
 
@@ -81,3 +92,4 @@ make install || {
 echo "✅ 编译完成"
 echo "安装路径: ${NETGEN_INSTALL_DIR}"
 echo "可执行文件: $BUILD_DIR/mesh_occ_mpi/mesh_occ_mpi"
+

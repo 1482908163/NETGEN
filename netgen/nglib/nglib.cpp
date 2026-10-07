@@ -442,7 +442,8 @@ namespace nglib
        VolumeKernelStats *split=nullptr, bool split_reuse=false, bool split_verify=false,
        VolumeKernelStats *front_match=nullptr, bool front_topology=false, bool front_verify=false,
        VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false,
-       VolumeCombineStats *combine=nullptr, bool combine_waves=false, bool combine_verify=false)
+       VolumeCombineStats *combine=nullptr, bool combine_waves=false, bool combine_verify=false,
+       VolumeCostStats *cost=nullptr)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -467,6 +468,7 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_cost_stats = cost;
          local.volume_combine_stats = combine;
          local.volume_combine_waves = combine_waves;
          local.volume_combine_verify = combine_verify;
@@ -491,6 +493,7 @@ namespace nglib
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
+            local.volume_cost_phase=phase;
             double before[10]={},after[10]={};
             if(native_profile)ReadVolumeOperationTimers(before);
             auto start=std::chrono::steady_clock::now();
@@ -572,6 +575,27 @@ namespace nglib
        recovery[i]=recovery_stats.values[i].load();
        batch[i]=batch_stats.values[i].load();
      }
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCostProfile(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
+       double *recovery,double *batch,double *profile,double *cost,int cost_count)
+   {
+     static_assert(NG_VOLUME_COST_PROFILE_COUNT==VolumeCostStats::count,"volume cost ABI mismatch");
+     if(!details || !recovery || !batch || !profile || !cost ||
+        cost_count!=VolumeCostStats::count)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;
+     VolumeKernelStats batch_stats;
+     VolumeCostStats cost_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,
+         nullptr,false,nullptr,false,false,nullptr,false,false,nullptr,false,false,
+         nullptr,false,false,&cost_stats);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<VolumeCostStats::count;++i)cost[i]=cost_stats.values[i].load();
      return result;
    }
 

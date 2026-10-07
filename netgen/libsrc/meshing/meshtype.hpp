@@ -12,6 +12,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include "volume_cost_profile.hpp"
 #include <core/taskmanager.hpp>
 
 #include <mydefs.hpp>
@@ -1789,6 +1790,8 @@ namespace netgen
     VolumeKernelStats * volume_front_match_stats = nullptr;
     VolumeFrontSearchStats * volume_front_search = nullptr;
     VolumeKernelStats * volume_kernel_stats = nullptr;
+    VolumeCostStats *volume_cost_stats = nullptr;
+    int volume_cost_phase = 0;
     const VolumeResources * volume_resources = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;

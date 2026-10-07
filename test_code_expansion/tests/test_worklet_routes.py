@@ -13,6 +13,20 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route=='cost_profile':
+        from cost_profile_checks import PHASES,OPERATIONS,FIELDS
+        rows=fixture('batch_parallel',repeat,mode)
+        for row in rows:
+            row['metadata'].update(kernel_scheduler='cost_profile',volume_native_profile='phase_operations_v1',
+                                   volume_cost_profile='phase_full_cost_v1')
+            for phase in PHASES:
+                for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
+                    row['metrics'][f'native_{phase}_{op}_seconds']=0
+                for op in OPERATIONS:
+                    for field in FIELDS:row['metrics'][f'cost_{phase}_{op}_{field}']=0
+            values=(.02,.004,.01,.001,.003,.002,1,4,1,6,2,2,1,0,0,.02,0,0,0,.01,0)
+            row['metrics'].update({'cost_generation_swap_'+field:value for field,value in zip(FIELDS,values)})
+        return rows
     if route in ('combine_profile','combine_waves'):
         rows=fixture('split_profile',repeat,mode)
         wave=route=='combine_waves';verify=wave and repeat==0 and mode=='natural'
@@ -198,6 +212,15 @@ def main():
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
         assert routes.analyze(root,2)
+        # A diagnostic route must preserve all quality details even when an
+        # aggregate nonregression gate would accept an apparent improvement.
+        cost_audit=root/'route_cost_profile/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
+        original_cost=cost_audit.read_text();changed=fixture('cost_profile',0)
+        changed[0]['metrics'].update(quality_shape_min=.951,quality_shape_sum=.951)
+        cost_audit.write_text(''.join(json.dumps(r)+'\n' for r in changed))
+        assert not routes.analyze(root,2)
+        assert 'full_cost_diagnostic_changed_mesh' in (root/'p2/route_issues.txt').read_text()
+        cost_audit.write_text(original_cost)
         parallel=fixture('recovery_global',1)
         for row in parallel:
             row['metadata']['kernel_threads']='4'
@@ -401,4 +424,3 @@ def main():
 
 if __name__=='__main__':
     main()
-

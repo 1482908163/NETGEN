@@ -460,6 +460,7 @@ double MeshOptimize3d :: CombineImproveEdge (
 
 void MeshOptimize3d :: CombineImprove ()
 {
+  VolumeCostScope cost(mp.volume_cost_stats,mp.volume_cost_phase,0,int(goal),mesh.GetNP(),mesh.GetNE());
   auto *combine_stats=mp.volume_combine_active ? mp.volume_combine_stats : nullptr;
   VolumeCombineTimer combine_timer(combine_stats,11);
   if(combine_stats)combine_stats->Add(0,1);
@@ -503,6 +504,8 @@ void MeshOptimize3d :: CombineImprove ()
   Array<std::tuple<double, int>> combine_candidate_edges(edges.Size());
   std::atomic<int> improvement_counter(0);
 
+  cost.EvaluationTeam(ngcore::task_manager && ngcore::TaskManager::GetNumThreads()>1);
+  cost.Stage(VolumeCostStats::evaluate_seconds);
   tsearch.Start();
   {
   VolumeCombineTimer evaluation(combine_stats,9);
@@ -521,6 +524,7 @@ void MeshOptimize3d :: CombineImprove ()
   });
   }
   tsearch.Stop();
+  cost.Stage(VolumeCostStats::order_seconds);
 
   auto edges_with_improvement = combine_candidate_edges.Part(0, improvement_counter.load());
 
@@ -529,6 +533,10 @@ void MeshOptimize3d :: CombineImprove ()
   PrintMessage(5, edges.Size(), " edges");
   PrintMessage(5, edges_with_improvement.Size(), " edges with improvement");
 
+  cost.Count(VolumeCostStats::evaluated_items,edges.Size());
+  cost.Count(VolumeCostStats::candidates,edges_with_improvement.Size());
+  cost.Stage(VolumeCostStats::commit_seconds);
+  cost.Count(VolumeCostStats::commit_attempts,edges_with_improvement.Size());
   // Apply actual optimizations
   topt.Start();
   int cnt = 0;
@@ -609,6 +617,8 @@ void MeshOptimize3d :: CombineImprove ()
   }
   }
   if(combine_stats)combine_stats->Add(4,cnt);
+  cost.Count(VolumeCostStats::applied,cnt);
+  cost.Stage(VolumeCostStats::cleanup_seconds);
   topt.Stop();
 
   mesh.Compress();
@@ -848,6 +858,7 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
 
 void MeshOptimize3d :: SplitImprove ()
 {
+  VolumeCostScope cost(mp.volume_cost_stats,mp.volume_cost_phase,1,int(goal),mesh.GetNP(),mesh.GetNE());
   static Timer t("MeshOptimize3d::SplitImprove"); RegionTimer reg(t);
   auto *split_stats=mp.volume_split_active ? mp.volume_split_stats : nullptr;
   const bool reuse=mp.volume_split_active && mp.volume_split_reuse && goal==OPT_QUALITY;
@@ -894,6 +905,8 @@ void MeshOptimize3d :: SplitImprove ()
 
   auto * prune_stats=goal==OPT_LEGAL ? mp.volume_legal_split_stats : nullptr;
   if(prune_stats) { prune_stats->Add(0,1); prune_stats->Add(1,edges.Size()); }
+  cost.EvaluationTeam(ngcore::task_manager && ngcore::TaskManager::GetNumThreads()>1);
+  cost.Stage(VolumeCostStats::evaluate_seconds);
   tsearch.Start();
   { VolumeKernelTimer evaluation_timer(split_stats,5);
   ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
@@ -917,6 +930,7 @@ void MeshOptimize3d :: SplitImprove ()
   });
   }
   tsearch.Stop();
+  cost.Stage(VolumeCostStats::order_seconds);
   if(split_stats)split_stats->Add(1,improvement_counter.load());
 
   auto edges_with_improvement = candidate_edges.Part(0, improvement_counter.load());
@@ -925,6 +939,10 @@ void MeshOptimize3d :: SplitImprove ()
   PrintMessage(5, edges.Size(), " edges");
   PrintMessage(5, edges_with_improvement.Size(), " edges with improvement");
 
+  cost.Count(VolumeCostStats::evaluated_items,edges.Size());
+  cost.Count(VolumeCostStats::candidates,edges_with_improvement.Size());
+  cost.Stage(VolumeCostStats::commit_seconds);
+  cost.Count(VolumeCostStats::commit_attempts,edges_with_improvement.Size());
   // Apply actual optimizations
   topt.Start();
   int cnt = 0;
@@ -939,6 +957,8 @@ void MeshOptimize3d :: SplitImprove ()
   }
   }
   if(split_stats)split_stats->Add(4,cnt);
+  cost.Count(VolumeCostStats::applied,cnt);
+  cost.Stage(VolumeCostStats::cleanup_seconds);
   topt.Stop();
   mesh.Compress();
   PrintMessage (5, cnt, " splits performed");
@@ -1441,6 +1461,7 @@ double MeshOptimize3d :: SwapImproveEdge (
 
 void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elements)
 {
+  VolumeCostScope cost(mp.volume_cost_stats,mp.volume_cost_phase,2,int(goal),mesh.GetNP(),mesh.GetNE());
   static Timer t("MeshOptimize3d::SwapImprove"); RegionTimer reg(t);
   static Timer tloop("MeshOptimize3d::SwapImprove loop");
 
@@ -1512,13 +1533,18 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
 
   auto num_elements_before = mesh.VolumeElements().Range().Next();
 
+  cost.EvaluationTeam(ngcore::task_manager && ngcore::TaskManager::GetNumThreads()>1);
+  cost.Stage(VolumeCostStats::evaluate_seconds);
+  std::atomic<int> cost_evaluated{0};
   ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
   {
+    int cost_visits=0;
     for(auto i : myrange)
     {
       if (multithread.terminate)
         break;
 
+      if(mp.volume_cost_stats)++cost_visits;
       auto [pi0, pi1] = edges[i];
       double d_badness = SwapImproveEdge (working_elements, elementsonnode, faces, pi0, pi1, true);
       if(d_badness<0.0)
@@ -1527,11 +1553,17 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
         candidate_edges[index] = make_tuple(d_badness, i);
       }
     }
+    if(mp.volume_cost_stats)cost_evaluated.fetch_add(cost_visits,std::memory_order_relaxed);
   });
 
+  cost.Stage(VolumeCostStats::order_seconds);
   auto edges_with_improvement = candidate_edges.Part(0, improvement_counter.load());
   QuickSort(edges_with_improvement);
 
+  cost.Count(VolumeCostStats::evaluated_items,cost_evaluated.load());
+  cost.Count(VolumeCostStats::candidates,edges_with_improvement.Size());
+  cost.Stage(VolumeCostStats::commit_seconds);
+  cost.Count(VolumeCostStats::commit_attempts,edges_with_improvement.Size());
   for(auto [d_badness, ei] : edges_with_improvement)
   {
       auto [pi0,pi1] = edges[ei];
@@ -1539,6 +1571,8 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
           cnt++;
   }
 
+  cost.Count(VolumeCostStats::applied,cnt);
+  cost.Stage(VolumeCostStats::cleanup_seconds);
   tloop.Stop();
 
   PrintMessage (5, cnt, " swaps performed");
@@ -2613,6 +2647,7 @@ double MeshOptimize3d :: SwapImprove2 ( ElementIndex eli1, int face,
 
 void MeshOptimize3d :: SwapImprove2 (bool conform_segments)
 {
+  VolumeCostScope cost(mp.volume_cost_stats,mp.volume_cost_phase,3,int(goal),mesh.GetNP(),mesh.GetNE());
   static Timer t("MeshOptimize3d::SwapImprove2"); RegionTimer reg(t);
 
   if (!conform_segments && goal == OPT_CONFORM) return;
@@ -2654,8 +2689,12 @@ void MeshOptimize3d :: SwapImprove2 (bool conform_segments)
 
   UpdateBadness();
 
+  cost.EvaluationTeam(ngcore::task_manager && ngcore::TaskManager::GetNumThreads()>1);
+  cost.Stage(VolumeCostStats::evaluate_seconds);
+  std::atomic<int> cost_evaluated{0};
   ParallelForRange( Range(ne), [&]( auto myrange )
       {
+        int cost_visits=0;
         int tid = ngcore::TaskManager::GetThreadId();
         auto & my_faces_with_improvement = faces_with_improvement_threadlocal[tid];
         for (ElementIndex eli1 : myrange)
@@ -2677,26 +2716,35 @@ void MeshOptimize3d :: SwapImprove2 (bool conform_segments)
 
             for (int j = 0; j < 4; j++)
               {
+                if(mp.volume_cost_stats)++cost_visits;
                 double d_badness = SwapImprove2( eli1, j, elementsonnode, belementsonnode, conform_segments, true);
                 if(d_badness<0.0)
                     my_faces_with_improvement.Append( std::make_tuple(d_badness, eli1, j) );
               }
           }
+        if(mp.volume_cost_stats)cost_evaluated.fetch_add(cost_visits,std::memory_order_relaxed);
       });
 
+  cost.Stage(VolumeCostStats::order_seconds);
   for (auto & a : faces_with_improvement_threadlocal)
     faces_with_improvement.Append(a);
 
   QuickSort(faces_with_improvement);
 
+  cost.Count(VolumeCostStats::evaluated_items,cost_evaluated.load());
+  cost.Count(VolumeCostStats::candidates,faces_with_improvement.Size());
+  cost.Stage(VolumeCostStats::commit_seconds);
   for (auto [dummy, eli,j] : faces_with_improvement)
     {
       if(mesh[eli].IsDeleted())
           continue;
+      cost.Count(VolumeCostStats::commit_attempts);
       if(SwapImprove2( eli, j, elementsonnode, belementsonnode, conform_segments, false) < 0.0)
           cnt++;
     }
 
+  cost.Count(VolumeCostStats::applied,cnt);
+  cost.Stage(VolumeCostStats::cleanup_seconds);
   PrintMessage (5, cnt, " swaps performed");
 
   mesh.Compress();
