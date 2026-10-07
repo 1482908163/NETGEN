@@ -1,0 +1,383 @@
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_0
+launcher_or_uninstrumented_failure
+exit_code=137
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_0/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_0
+实验名称 : sparse
+重复编号 : 0
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x407df590
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x407df590
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+Volume Mesh successfully created.....
+Number of points = 8067
+Number of volume elements = 26411
+Generate Coarse Mesh Done...
+[VERIFY] sparse face closure and adjacency match global reference
+id0 sum runtime is :0s
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  adjacency local vertex outside mesh
+meshing done 
+successful!!!
+yhrun: error: cn483: task 54: Aborted
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.6:54]
+slurmstepd: error: *** STEP 6072444.6 ON cn264 CANCELLED AT 2026-10-07T20:00:54 ***
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+yhrun: error: cn486: tasks 64-67: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_1
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_1/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_1
+实验名称 : sparse
+重复编号 : 1
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3edab310
+[cn483:934446:0:934462] Caught signal 11 (Segmentation fault: address not mapped to object at address (nil))
+==== backtrace (tid: 934462) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x4000283d079c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x4000283d092c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x4000283d0cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x4000215c65b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN19BRepMesh_Deflection17ComputeDeflectionERKN11opencascade6handleI14IMeshData_WireEERK21IMeshTools_Parameters+0x24) [0x400023aaad34]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZNK20BRepMesh_ModelHealer17fixFaceBoundariesERKN11opencascade6handleI14IMeshData_FaceEE+0x94) [0x400023adaf48]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZNK20BRepMesh_ModelHealer7processERKN11opencascade6handleI14IMeshData_FaceEE+0xec) [0x400023adb700]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN14OSD_ThreadPool3JobIN12OSD_Parallel27FunctorWrapperForThreadPoolI20BRepMesh_ModelHealerEEE7PerformEi+0x5c) [0x400023addb5c]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool10performJobERN11opencascade6handleI16Standard_FailureEEPNS_12JobInterfaceEi+0x44) [0x4000255f1154]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool16EnumeratedThread13performThreadEv+0x78) [0x4000255f1dec]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool16EnumeratedThread9runThreadEPv+0xc) [0x4000255f1e30]
+11  /usr/lib/aarch64-linux-gnu/libpthread.so.0(+0x7624) [0x400025758624]
+12  /usr/lib/aarch64-linux-gnu/libc.so.6(+0xd149c) [0x400027d1e49c]
+=================================
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3edab310
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.18:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.18 ON cn264 CANCELLED AT 2026-10-07T20:05:50 ***
+slurmstepd: error: *** STEP 6072444.18 ON cn264 CANCELLED AT 2026-10-07T20:05:50 ***
+yhrun: error: cn477: tasks 28-31: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_split/repeat_1
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_split/repeat_1/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_split/repeat_1
+实验名称 : sparse
+重复编号 : 1
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 开启
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3b443fd0
+[cn483:934539:0:934539] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x200200000)
+==== backtrace (tid: 934539) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x40003f03f79c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x40003f03f92c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x40003f03fcd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x4000382355b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN19NCollection_BaseMap7DestroyEPFvP20NCollection_ListNodeRN11opencascade6handleI25NCollection_BaseAllocatorEEEb+0x60) [0x40003c2a92a0]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN17BRepMeshData_EdgeD1Ev+0x5c) [0x40003a6feb0c]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN18BRepMeshData_ModelD2Ev+0xc8) [0x40003a7025f8]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN18BRepMeshData_ModelD0Ev+0x14) [0x40003a702844]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN16BRepMesh_ContextD1Ev+0x114) [0x40003a7103c4]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN16BRepMesh_ContextD0Ev+0x14) [0x40003a710444]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN24BRepMesh_IncrementalMesh7PerformERK21Message_ProgressRange+0x68) [0x40003a739428]
+11  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN24BRepMesh_IncrementalMeshC2ERK12TopoDS_ShapeRK21IMeshTools_ParametersRK21Message_ProgressRange+0xb0) [0x40003a7396e0]
+12  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x3341c0) [0x40003857b1c0]
+13  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen19OCCSetLocalMeshSizeERKNS_11OCCGeometryERNS_4MeshERKNS_17MeshingParametersERKNS_13OCCParametersE+0xdfc) [0x40003854cd5c]
+14  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib23Ng_OCC_SetLocalMeshSizeEPPvS1_PNS_21Ng_Meshing_ParametersE+0x138) [0x4000386d40c8]
+15  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x40e55c]
+16  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x40003e8dce10]
+17  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4181b0]
+=================================
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3b443fd0
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.19:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.19 ON cn264 CANCELLED AT 2026-10-07T20:05:55 ***
+yhrun: error: cn483: tasks 52-53,55: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_1
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_1/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_natural/repeat_1
+实验名称 : sparse
+重复编号 : 1
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x208aa440
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x208aa440
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+[cn483:934950:0:934950] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x2a0bd5c0)
+==== backtrace (tid: 934950) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x40001dc3079c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x40001dc3092c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x40001dc30cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x400016e265b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x22746c) [0x40001705f46c]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x1666f4) [0x400016f9e6f4]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20d694) [0x400017045694]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e078) [0x400017046078]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e5e8) [0x4000170465e8]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so(_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0) [0x40001d6663d0]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740) [0x400017043614]
+11  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib21Ng_GenerateVolumeMeshEPPvPNS_21Ng_Meshing_ParametersE+0x3c) [0x4000172b99fc]
+12  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x40e78c]
+13  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x40001d4cde10]
+14  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4181b0]
+=================================
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.22:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.22 ON cn264 CANCELLED AT 2026-10-07T20:06:50 ***
+yhrun: error: cn8276: tasks 236-239: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_split/repeat_2
+launcher_or_uninstrumented_failure
+exit_code=137
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_split/repeat_2/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_split/repeat_2
+实验名称 : sparse
+重复编号 : 2
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 开启
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x16917200
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x16917200
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+Volume Mesh successfully created.....
+Number of points = 8067
+Number of volume elements = 26411
+Generate Coarse Mesh Done...
+id0 sum runtime is :0s
+meshing done 
+successful!!!
+double free or corruption (out)
+yhrun: error: cn483: task 54: Aborted
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.49:54]
+slurmstepd: error: *** STEP 6072444.49 ON cn264 CANCELLED AT 2026-10-07T20:15:47 ***
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+yhrun: error: cn483: tasks 52-53,55: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_2
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_2/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_2
+实验名称 : sparse
+重复编号 : 2
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3eb0c2f0
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3eb0c2f0
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+Volume Mesh successfully created.....
+Number of points = 8067
+Number of volume elements = 26411
+Generate Coarse Mesh Done...
+id0 sum runtime is :0s
+[cn483:939650:0:939650] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x5199f42d8)
+==== backtrace (tid: 939650) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x40000910179c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x40000910192c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x400009101cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x4000022f75b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x227444) [0x400002530444]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x1666f4) [0x40000246f6f4]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20d694) [0x400002516694]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e078) [0x400002517078]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e5e8) [0x4000025175e8]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so(_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0) [0x400008b373d0]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740) [0x400002514614]
+11  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x484da8) [0x40000278dda8]
+12  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib33Ng_GenerateVolumeMeshCombineWavesEPPvPNS_21Ng_Meshing_ParametersEiiiPdS4_S4_S4_S4_S4_+0x138) [0x40000278e6c8]
+13  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x412b5c]
+14  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x40000899ee10]
+15  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4181b0]
+=================================
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.52:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.52 ON cn264 CANCELLED AT 2026-10-07T20:16:48 ***
+yhrun: error: cn472: tasks 8-11: Killed
+
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_natural/repeat_8
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_natural/repeat_8/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_natural/repeat_8
+实验名称 : sparse
+重复编号 : 8
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x352cd2f0
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x352cd2f0
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+[cn483:955948:0:955948] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x2df0db98)
+==== backtrace (tid: 955948) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x4000101a879c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x4000101a892c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x4000101a8cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x40000939e5b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x1bc780) [0x40000956c780]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so(_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0) [0x40000fbde3d0]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen4Mesh8CompressEv+0x7b0) [0x40000958e454]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x166cec) [0x400009516cec]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20d694) [0x4000095bd694]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e078) [0x4000095be078]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e5e8) [0x4000095be5e8]
+11  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so(_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0) [0x40000fbde3d0]
+12  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740) [0x4000095bb614]
+13  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib21Ng_GenerateVolumeMeshEPPvPNS_21Ng_Meshing_ParametersE+0x3c) [0x4000098319fc]
+14  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x40e78c]
+15  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x40000fa45e10]
+16  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4181b0]
+=================================
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.156:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.156 ON cn264 CANCELLED AT 2026-10-07T20:51:47 ***
+yhrun: error: cn483: tasks 52-53,55: Killed
+

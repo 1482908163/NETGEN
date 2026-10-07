@@ -1,0 +1,40 @@
+========参数========
+使用核数 : 512
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p512/sparse_seed41_natural/repeat_7/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p512/sparse_seed41_natural/repeat_7
+实验名称 : sparse
+重复编号 : 7
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+[cn10344:42003:0:42003] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x60)
+==== backtrace (tid:  42003) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x40000d74579c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x40000d74592c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x40000d745cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x40000693b5b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x1b6048) [0x400006b03048]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x21f12c) [0x400006b6c12c]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x166470) [0x400006ab3470]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20d694) [0x400006b5a694]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e078) [0x400006b5b078]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x20e5e8) [0x400006b5b5e8]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so(_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0) [0x40000d17b3d0]
+11  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740) [0x400006b58614]
+12  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(+0x484da8) [0x400006dd1da8]
+13  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib33Ng_GenerateVolumeMeshCombineWavesEPPvPNS_21Ng_Meshing_ParametersEiiiPdS4_S4_S4_S4_S4_+0x138) [0x400006dd26c8]
+14  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x412b5c]
+15  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x40000cfe2e10]
+16  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4181b0]
+=================================
+yhrun: error: cn10344: task 352: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn10344 [88]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072445.134:352]
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072445.134 ON cn10256 CANCELLED AT 2026-10-07T20:43:26 ***
+yhrun: error: cn10344: tasks 353-355: Killed

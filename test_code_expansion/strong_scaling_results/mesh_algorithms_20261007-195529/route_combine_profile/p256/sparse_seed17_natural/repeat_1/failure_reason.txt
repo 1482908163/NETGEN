@@ -1,0 +1,50 @@
+launcher_or_uninstrumented_failure
+exit_code=139
+finalization_error=
+log_tail:
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_1/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed17_natural/repeat_1
+实验名称 : sparse
+重复编号 : 1
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 关闭
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3edab310
+[cn483:934446:0:934462] Caught signal 11 (Segmentation fault: address not mapped to object at address (nil))
+==== backtrace (tid: 934462) ====
+ 0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x4000283d079c]
+ 1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x4000283d092c]
+ 2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x4000283d0cd4]
+ 3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x4000215c65b8]
+ 4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN19BRepMesh_Deflection17ComputeDeflectionERKN11opencascade6handleI14IMeshData_WireEERK21IMeshTools_Parameters+0x24) [0x400023aaad34]
+ 5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZNK20BRepMesh_ModelHealer17fixFaceBoundariesERKN11opencascade6handleI14IMeshData_FaceEE+0x94) [0x400023adaf48]
+ 6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZNK20BRepMesh_ModelHealer7processERKN11opencascade6handleI14IMeshData_FaceEE+0xec) [0x400023adb700]
+ 7  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKMesh.so.7(_ZN14OSD_ThreadPool3JobIN12OSD_Parallel27FunctorWrapperForThreadPoolI20BRepMesh_ModelHealerEEE7PerformEi+0x5c) [0x400023addb5c]
+ 8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool10performJobERN11opencascade6handleI16Standard_FailureEEPNS_12JobInterfaceEi+0x44) [0x4000255f1154]
+ 9  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool16EnumeratedThread13performThreadEv+0x78) [0x4000255f1dec]
+10  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libTKernel.so.7(_ZN14OSD_ThreadPool16EnumeratedThread9runThreadEPv+0xc) [0x4000255f1e30]
+11  /usr/lib/aarch64-linux-gnu/libpthread.so.0(+0x7624) [0x400025758624]
+12  /usr/lib/aarch64-linux-gnu/libc.so.6(+0xd149c) [0x400027d1e49c]
+=================================
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3edab310
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+yhrun: error: cn483: task 54: Segmentation fault
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn483 [13]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6072444.18:54]
+yhrun: Job step aborted: Waiting up to 602 seconds for job step to finish.
+slurmstepd: error: *** STEP 6072444.18 ON cn264 CANCELLED AT 2026-10-07T20:05:50 ***
+slurmstepd: error: *** STEP 6072444.18 ON cn264 CANCELLED AT 2026-10-07T20:05:50 ***
+yhrun: error: cn477: tasks 28-31: Killed

@@ -1,0 +1,44 @@
+A1/B1/C1: 143 measured runs; 3 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> combine_profile seed=-1 natural: -3.58% reduction; wins=3/8; validated=True
+batch_parallel -> combine_profile seed=-1 split: 0.57% reduction; wins=5/8; validated=True
+batch_parallel -> combine_profile seed=17 natural: -2.24% reduction; wins=3/8; validated=True
+batch_parallel -> combine_profile seed=17 split: -4.31% reduction; wins=2/8; validated=True
+batch_parallel -> combine_profile seed=41 natural: -0.74% reduction; wins=4/8; validated=True
+batch_parallel -> combine_profile seed=41 split: -1.88% reduction; wins=2/8; validated=True
+combine_profile -> combine_waves seed=-1 natural: -1.62% reduction; wins=3/8; validated=True
+combine_profile -> combine_waves seed=-1 split: -3.51% reduction; wins=3/8; validated=True
+combine_profile -> combine_waves seed=17 natural: 0.16% reduction; wins=5/8; validated=True
+combine_profile -> combine_waves seed=17 split: 6.02% reduction; wins=6/8; validated=True
+combine_profile -> combine_waves seed=41 natural: -6.31% reduction; wins=2/7; validated=False
+combine_profile -> combine_waves seed=41 split: -2.59% reduction; wins=4/8; validated=True
+batch_parallel -> combine_waves seed=-1 natural: -5.67% reduction; wins=2/8; validated=True
+batch_parallel -> combine_waves seed=-1 split: -4.57% reduction; wins=2/8; validated=True
+batch_parallel -> combine_waves seed=17 natural: -0.69% reduction; wins=4/8; validated=True
+batch_parallel -> combine_waves seed=17 split: 2.26% reduction; wins=5/8; validated=True
+batch_parallel -> combine_waves seed=41 natural: -9.02% reduction; wins=1/7; validated=False
+batch_parallel -> combine_waves seed=41 split: -8.57% reduction; wins=3/8; validated=True
+边合并 batch_parallel -> combine_profile seed=-1 natural: 配对核心降时=-3.58%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_profile seed=-1 split: 配对核心降时=0.57%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_profile seed=17 natural: 配对核心降时=-2.24%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_profile seed=17 split: 配对核心降时=-4.31%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_profile seed=41 natural: 配对核心降时=-0.74%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_profile seed=41 split: 配对核心降时=-1.88%；有效并行覆盖=None（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=-1 natural: 配对核心降时=-1.62%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=-1 split: 配对核心降时=-3.51%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=17 natural: 配对核心降时=0.16%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=17 split: 配对核心降时=6.02%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=41 natural: 配对核心降时=-6.31%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 combine_profile -> combine_waves seed=41 split: 配对核心降时=-2.59%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=-1 natural: 配对核心降时=-5.67%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=-1 split: 配对核心降时=-4.57%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=17 natural: 配对核心降时=-0.69%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=17 split: 配对核心降时=2.26%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=41 natural: 配对核心降时=-9.02%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+边合并 batch_parallel -> combine_waves seed=41 split: 配对核心降时=-8.57%；有效并行覆盖=True（各次最慢进程可不同，固定进程详见明细）
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 combine_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 combine_waves: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
