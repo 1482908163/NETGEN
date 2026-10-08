@@ -46,6 +46,8 @@ for row in rows:
     row['metrics']['recovery_parallel_evaluations']=2 if route in ('batch_parallel','cost_profile') else 0
     if route in ('batch_parallel','cost_profile'):row['metrics']['recovery_batch_parallel_calls']=1 if route in ('batch_parallel','cost_profile') else 0
     row['metadata']['refinement_threads']='1'
+    if os.environ.get('MOCK_COST_FAILURE')=='1' and (route,repeat,seed)==('cost_profile',1,17):
+        row['metrics']['native_generation_swap_seconds']=.03
 if mode=='split':
     for row in rows:row['metadata'].pop('mesh_quality',None)
 (Path(value('--profile-dir'))/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\\n' for r in rows))
@@ -63,12 +65,14 @@ if mode=='split':
         MPI_EXTRA_ARGS=' ',START_EPOCH='0',BINARY=str(binary),INPUT_PATH=str(source),
         MOCK_FIXTURES=str(ROOT/'tests'),RESUME='0',TIMEOUT_SECONDS='10')
     command=['bash',str(ROOT/'strong_scaling/run_experiments.sh')]
-    for failure in (False,True):
+    for failure in (False,True,'validation'):
         out=tmp/('failure' if failure else 'success');calls=tmp/(out.name+'_calls')
-        case=dict(env,RUN_ROOT=str(out),MOCK_CALLS=str(calls),MOCK_FAIL=str(int(failure)))
+        if failure=='validation':out=tmp/'validation';calls=tmp/'validation_calls'
+        case=dict(env,RUN_ROOT=str(out),MOCK_CALLS=str(calls),MOCK_FAIL=str(int(failure is True)),
+                  MOCK_COST_FAILURE=str(int(failure=='validation')))
         if failure:case['REPEATS']='2'
         run=subprocess.run(command,env=case,capture_output=True,text=True,timeout=240)
-        assert run.returncode==int(failure),(run.returncode,run.stdout,run.stderr,(out/'p2/route_issues.txt').read_text()[:6000] if (out/'p2/route_issues.txt').exists() else '')
+        assert run.returncode==int(bool(failure)),(run.returncode,run.stdout,run.stderr,(out/'p2/route_issues.txt').read_text()[:6000] if (out/'p2/route_issues.txt').exists() else '')
         rows=[line.split() for line in calls.read_text().splitlines()]
         repeats=2 if failure else 3
         assert len(rows)==len(ROUTES)*3*(repeats+1),(len(rows),rows)
@@ -79,7 +83,13 @@ if mode=='split':
         if failure:
             bad=out/'route_cost_profile/p2/sparse_seed17_natural/repeat_1'
             assert not (bad/'SUCCESS').exists()
-            assert 'exit_code=7' in (bad/'failure_reason.txt').read_text()
+            reason=(bad/'failure_reason.txt').read_text()
+            assert ('exit_code=1' if failure=='validation' else 'exit_code=7') in reason
+            if failure=='validation':
+                assert reason.startswith('analysis_validation_failure\n')
+                assert 'native operation coverage mismatch' in reason
+                assert (bad/'rank_profiles.jsonl.gz').exists()
+                assert not (bad/'rank_profiles.jsonl').exists()
             assert (out/'route_batch_parallel/p2/sparse_natural/repeat_2/SUCCESS').exists()
             assert (out/'p2/route_issues.txt').read_text().strip()
         else:

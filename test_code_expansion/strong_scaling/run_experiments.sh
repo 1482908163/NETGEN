@@ -791,11 +791,18 @@ if not reason.exists():
     if log.exists():
         with log.open('rb') as stream:
             stream.seek(max(0,log.stat().st_size-8192));tail=stream.read(8192)
-    reason.write_text('launcher_or_uninstrumented_failure\nexit_code='+sys.argv[2]+'\n'+
+    kind='analysis_validation_failure' if sys.argv[3] else 'launcher_or_uninstrumented_failure'
+    reason.write_text(kind+'\nexit_code='+sys.argv[2]+'\n'+
         'finalization_error='+sys.argv[3][:2048]+'\nlog_tail:\n'+tail.decode('utf8',errors='replace'))
 with (folder.parents[1]/'FAILURE_SUMMARY.txt').open('a') as stream:
     stream.write(str(folder)+'\n'+reason.read_text(errors='replace')[:12000]+'\n')
 FAILURE
+                # Keep failed raw measurements uploadable even when validation
+                # refuses SUCCESS. No mesh cleanup or success reclassification.
+                if [[ "${CLEANUP_RESULTS}" == 1 ]]; then
+                    python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --archive-failed \
+                        > "${out}/failure_archive.log" 2>&1 || true
+                fi
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"
         done

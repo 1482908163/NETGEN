@@ -119,6 +119,26 @@ def try_cleanup(directory):
         print(f"Cleanup warning ({directory}): {error}", file=sys.stderr)
         return 0, 0, 0
 
+def archive_failed_runs(root):
+    """Retain failed evidence without validating it or deleting mesh output."""
+    reasons = [root/'failure_reason.txt'] if (root/'failure_reason.txt').exists() else sorted(root.rglob('failure_reason.txt'))
+    archived = 0
+    for reason in reasons:
+        directory = reason.parent
+        # Do not follow a result-directory alias outside the requested batch.
+        if reason.is_symlink() or any(p.is_symlink() for p in (directory, *directory.parents)):
+            raise ValueError('failed evidence path contains a symlink: '+str(directory))
+        with run_guard(directory) as acquired:
+            if not acquired or (directory/'RUNNING').exists():
+                raise ValueError('failed run is still active: '+str(directory))
+            if (directory/'SUCCESS').exists():
+                continue
+            for name in ('rank_profiles.jsonl', 'run.log'):
+                compress_result(directory/name)
+            archived += 1
+    print(f'Archived failed runs: {archived}; success/status records and mesh outputs unchanged')
+    return archived
+
 def mean(x):
     return st.fmean(x) if x else 0.0
 
@@ -1493,10 +1513,19 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--archive-failed", action="store_true", help="losslessly compress failed-run evidence; never mark it successful or delete its mesh")
     parser.add_argument("--require-calibration",action="store_true",help="采样完整后还必须通过分区多样性与节点轮换检查")
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.archive_failed:
+        if args.finish_run or args.kernel_overview:
+            parser.error('--archive-failed is a separate evidence-only action')
+        try:
+            archive_failed_runs(args.root)
+        except (OSError, ValueError) as error:
+            parser.exit(1, 'Failed evidence archive: '+str(error)+'\n')
+        return
     if args.kernel_overview:
         if not args.kernel_ranks: parser.error("--kernel-ranks required")
         kernel_overview(args.root,args.kernel_ranks)

@@ -1,0 +1,356 @@
+{
+  "dataset": "review_generation_225304",
+  "upload_commit": "e6670035c6cb4123985905a88095cebaa8b79937",
+  "measured_source": "aef5316da46bf37567c18f8b7d84b1156131cb33",
+  "runtime_sha256": "a5e100defbabf496a6b298aa6b1e5053cfb327de2069fb38d619ff769d1c6a6c",
+  "successful_warmups": 18,
+  "successful_formal": 51,
+  "rejected_formal": 3,
+  "complete_quality_pairs": 9,
+  "verified_raw_runs": 30,
+  "verified_raw_rank_records": 7680,
+  "successful_raw_not_loaded": [
+    {
+      "ranks": 512,
+      "seed": -1,
+      "repeat": 0
+    },
+    {
+      "ranks": 512,
+      "seed": 17,
+      "repeat": 0
+    },
+    {
+      "ranks": 512,
+      "seed": 41,
+      "repeat": 0
+    }
+  ],
+  "formal_rank_records": 6528,
+  "repair": {
+    "records": 6528,
+    "ten_rounds_zero_applied": 6243,
+    "records_with_applied": 285,
+    "records_with_candidates": 285,
+    "total_seconds": 760.3374219849989,
+    "prepare_seconds": 348.7783509439989,
+    "evaluate_seconds": 225.42334187700018,
+    "order_seconds": 0.48327867799999974,
+    "commit_seconds": 0.07549280300000023,
+    "cleanup_seconds": 185.57695768300044
+  },
+  "repair_by_scale": {
+    "128": {
+      "records": 1152,
+      "ten_rounds_zero_applied": 1104
+    },
+    "256": {
+      "records": 2304,
+      "ten_rounds_zero_applied": 2211
+    },
+    "512": {
+      "records": 3072,
+      "ten_rounds_zero_applied": 2928
+    }
+  },
+  "comparisons": [
+    {
+      "ranks": 128,
+      "seed": -1,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": 3.7994671396776036
+    },
+    {
+      "ranks": 128,
+      "seed": 17,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": 4.216819562445129
+    },
+    {
+      "ranks": 128,
+      "seed": 41,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": -3.322163522627797
+    },
+    {
+      "ranks": 256,
+      "seed": -1,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": 2.7122327596554308
+    },
+    {
+      "ranks": 256,
+      "seed": 17,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": -1.7245880711622252
+    },
+    {
+      "ranks": 256,
+      "seed": 41,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": -5.3514982913891895
+    },
+    {
+      "ranks": 512,
+      "seed": -1,
+      "pairs": 1,
+      "complete": false,
+      "paired_reduction_pct": 3.664000468198325
+    },
+    {
+      "ranks": 512,
+      "seed": 17,
+      "pairs": 3,
+      "complete": true,
+      "paired_reduction_pct": 0.6322916215633634
+    },
+    {
+      "ranks": 512,
+      "seed": 41,
+      "pairs": 2,
+      "complete": false,
+      "paired_reduction_pct": -1.4793742490222528
+    }
+  ],
+  "fixed_rank_repair": [
+    {
+      "ranks": 128,
+      "seed": -1,
+      "rank": 19,
+      "samples": 3,
+      "phase_seconds": 0.388879939,
+      "four_operation_seconds": 0.340215001,
+      "fraction_of_fixed_compute": 0.14382675011310822,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 128,
+      "seed": 17,
+      "rank": 3,
+      "samples": 3,
+      "phase_seconds": 0.409276363,
+      "four_operation_seconds": 0.35449728700000005,
+      "fraction_of_fixed_compute": 0.14485180681015578,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 128,
+      "seed": 41,
+      "rank": 62,
+      "samples": 3,
+      "phase_seconds": 0.374464047,
+      "four_operation_seconds": 0.324667422,
+      "fraction_of_fixed_compute": 0.13952084603119733,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 256,
+      "seed": -1,
+      "rank": 155,
+      "samples": 3,
+      "phase_seconds": 0.103484725,
+      "four_operation_seconds": 0.079728343,
+      "fraction_of_fixed_compute": 0.05996135306843445,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 256,
+      "seed": 17,
+      "rank": 222,
+      "samples": 3,
+      "phase_seconds": 0.186764347,
+      "four_operation_seconds": 0.15234303999999999,
+      "fraction_of_fixed_compute": 0.11956178943032726,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 256,
+      "seed": 41,
+      "rank": 170,
+      "samples": 3,
+      "phase_seconds": 0.11196778,
+      "four_operation_seconds": 0.08174527399999999,
+      "fraction_of_fixed_compute": 0.055541615558884455,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 512,
+      "seed": -1,
+      "rank": 454,
+      "samples": 1,
+      "phase_seconds": 0.082636594,
+      "four_operation_seconds": 0.071909101,
+      "fraction_of_fixed_compute": 0.08602725403893836,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 512,
+      "seed": 17,
+      "rank": 359,
+      "samples": 3,
+      "phase_seconds": 0.062817207,
+      "four_operation_seconds": 0.037212508000000005,
+      "fraction_of_fixed_compute": 0.05510432243628314,
+      "calls": 30,
+      "candidates": 0,
+      "applied": 0
+    },
+    {
+      "ranks": 512,
+      "seed": 41,
+      "rank": 436,
+      "samples": 2,
+      "phase_seconds": 0.145980546,
+      "four_operation_seconds": 0.129783981,
+      "fraction_of_fixed_compute": 0.1354189899967498,
+      "calls": 30.0,
+      "candidates": 0,
+      "applied": 0
+    }
+  ],
+  "coverage": [
+    {
+      "phase": "generation",
+      "operation": "combine",
+      "records": 6528,
+      "native_seconds": 0.4970904759998314,
+      "scoped_seconds": 0.497706623,
+      "ratio": 1.0012395067496098,
+      "all_pass": true
+    },
+    {
+      "phase": "generation",
+      "operation": "split",
+      "records": 6528,
+      "native_seconds": 276.96269955749705,
+      "scoped_seconds": 277.316148718,
+      "ratio": 1.0012761615952894,
+      "all_pass": true
+    },
+    {
+      "phase": "generation",
+      "operation": "swap",
+      "records": 6528,
+      "native_seconds": 794.7045618027183,
+      "scoped_seconds": 795.673279081,
+      "ratio": 1.0012189652920631,
+      "all_pass": true
+    },
+    {
+      "phase": "generation",
+      "operation": "swap2",
+      "records": 6528,
+      "native_seconds": 195.84233442046312,
+      "scoped_seconds": 196.111202122,
+      "ratio": 1.0013728783530513,
+      "all_pass": true
+    },
+    {
+      "phase": "optimization",
+      "operation": "combine",
+      "records": 6528,
+      "native_seconds": 214.47272590778192,
+      "scoped_seconds": 214.728674782,
+      "ratio": 1.0011933865862652,
+      "all_pass": true
+    },
+    {
+      "phase": "optimization",
+      "operation": "split",
+      "records": 6528,
+      "native_seconds": 156.56400584254328,
+      "scoped_seconds": 156.757412872,
+      "ratio": 1.0012353224383594,
+      "all_pass": true
+    },
+    {
+      "phase": "optimization",
+      "operation": "swap",
+      "records": 6528,
+      "native_seconds": 236.4518312057487,
+      "scoped_seconds": 236.731989055,
+      "ratio": 1.0011848411062105,
+      "all_pass": true
+    },
+    {
+      "phase": "optimization",
+      "operation": "swap2",
+      "records": 6528,
+      "native_seconds": 233.75041776167114,
+      "scoped_seconds": 234.029672522,
+      "ratio": 1.0011946706363262,
+      "all_pass": true
+    },
+    {
+      "phase": "repair",
+      "operation": "combine",
+      "records": 6528,
+      "native_seconds": 0,
+      "scoped_seconds": 0,
+      "ratio": null,
+      "all_pass": true
+    },
+    {
+      "phase": "repair",
+      "operation": "split",
+      "records": 6528,
+      "native_seconds": 254.43637161728412,
+      "scoped_seconds": 254.765476219,
+      "ratio": 1.001293465237002,
+      "all_pass": true
+    },
+    {
+      "phase": "repair",
+      "operation": "swap",
+      "records": 6528,
+      "native_seconds": 318.99992262136215,
+      "scoped_seconds": 319.394682858,
+      "ratio": 1.001237493204995,
+      "all_pass": true
+    },
+    {
+      "phase": "repair",
+      "operation": "swap2",
+      "records": 6528,
+      "native_seconds": 185.91880162942158,
+      "scoped_seconds": 186.177262908,
+      "ratio": 1.0013901836517514,
+      "all_pass": true
+    }
+  ],
+  "failed": [
+    {
+      "path": "route_cost_profile/p512/sparse_seed41_natural/repeat_3/failure_reason.txt",
+      "reason": "Invalid completed run (/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/route_cost_profile/p512/sparse_seed41_natural/repeat_3): native operation coverage mismatch: rank=268 repair/split native=0.018510125459564652 scoped=0.025996876999999995"
+    },
+    {
+      "path": "route_cost_profile/p512/sparse_natural/repeat_2/failure_reason.txt",
+      "reason": "Invalid completed run (/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/route_cost_profile/p512/sparse_natural/repeat_2): native operation coverage mismatch: rank=385 repair/split native=0.020684481781620412 scoped=0.024372704999999998"
+    },
+    {
+      "path": "route_cost_profile/p512/sparse_natural/repeat_1/failure_reason.txt",
+      "reason": "Invalid completed run (/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/route_cost_profile/p512/sparse_natural/repeat_1): native operation coverage mismatch: rank=462 repair/split native=0.031153792024725846 scoped=0.037222274"
+    }
+  ],
+  "evidence_limit": "Rank-wall sums describe cost composition, not critical-path savings. Zero applied operations do not prove every mesh/cache state unchanged; stopping needs an exact state/progress contract. Failed timing checks remain invalid."
+}
