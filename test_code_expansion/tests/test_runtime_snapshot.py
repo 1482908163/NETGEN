@@ -17,7 +17,7 @@ tree=ast.parse((ROOT/'tests/test_generation_cost_runner.py').read_text())
 mock_code=next(call.args[0].value for call in ast.walk(tree) if isinstance(call,ast.Call)
     and isinstance(call.func,ast.Attribute) and call.func.attr=='write_text'
     and call.args and isinstance(call.args[0],ast.Constant)
-    and isinstance(call.args[0].value,str) and '# phase_full_cost_v2 cost_' in call.args[0].value)
+    and isinstance(call.args[0].value,str) and '# phase_full_cost_v3 cost_' in call.args[0].value)
 
 with tempfile.TemporaryDirectory() as tmp:
     tmp=Path(tmp);project=tmp/'repo'/'test_code_expansion';live=project/'strong_scaling'

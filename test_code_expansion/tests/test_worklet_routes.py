@@ -18,15 +18,29 @@ def fixture(route,repeat,mode='natural'):
         rows=fixture('batch_parallel',repeat,mode)
         for row in rows:
             row['metadata'].update(kernel_scheduler='cost_profile',volume_native_profile='phase_operations_v1',
-                                   volume_cost_profile='phase_full_cost_v2')
+                                   volume_cost_profile='phase_full_cost_v3',volume_repair_fixedpoint='disabled')
             for phase in PHASES:
                 for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
                     row['metrics'][f'native_{phase}_{op}_seconds']=0
                 for op in OPERATIONS:
+                    row['metrics'][f'native_{phase}_{op}_calls']=0
                     for field in FIELDS:row['metrics'][f'cost_{phase}_{op}_{field}']=0
+                for field in ('calls','rounds','checks','stable_rounds','potential_skipped','skipped','verified','mismatches','snapshot_seconds','reference_rounds'):
+                    row['metrics'][f'repair_fixed_{phase}_{field}']=0
             values=(.02,.004,.01,.001,.003,.002,1,4,1,6,2,2,1,0,0,.02,0,0,0,.01,0)
             row['metrics'].update({'cost_generation_swap_'+field:value for field,value in zip(FIELDS,values)})
             row['metrics']['native_generation_swap_seconds']=.02
+            row['metrics']['native_generation_swap_calls']=1
+        return rows
+    if route in ('repair_fixed_profile','repair_fixed'):
+        rows=fixture('cost_profile',repeat,mode)
+        if route=='repair_fixed':
+            for row in rows:
+                row['metadata']['volume_repair_fixedpoint']='reference_verify_v1' if repeat==0 else 'exact_state_stop_v1'
+                for phase in ('generation','repair'):
+                    values=(1,10 if repeat==0 else 1,1,1,9,0 if repeat==0 else 9,1 if repeat==0 else 0,0,.001,9 if repeat==0 else 0)
+                    fields=('calls','rounds','checks','stable_rounds','potential_skipped','skipped','verified','mismatches','snapshot_seconds','reference_rounds')
+                    row['metrics'].update({f'repair_fixed_{phase}_{f}':v for f,v in zip(fields,values)})
         return rows
     if route in ('combine_profile','combine_waves'):
         rows=fixture('split_profile',repeat,mode)

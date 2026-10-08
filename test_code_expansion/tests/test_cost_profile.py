@@ -42,11 +42,35 @@ def main():
         for row in missing:
             for field in FIELDS:row['metrics']['cost_generation_swap_'+field]=0
         try:inspect(missing)
-        except ValueError as error:assert 'native operation coverage mismatch' in str(error)
+        except ValueError as error:assert 'native operation call coverage mismatch' in str(error)
         else:raise AssertionError('native timer exposes a dropped diagnostic parameter')
         for row in missing:row['metadata']['volume_cost_profile']='phase_full_cost_v1'
         historical,_=inspect(missing)
         assert not historical['cost_coverage_complete'] and historical['cost_coverage_gap_count']==2
-    print('PASS: all-rank cost export, coherent same-rank totals, 12 invalid cost/coverage cases')
+        for row in missing:row['metadata']['volume_cost_profile']='phase_full_cost_v2'
+        try:inspect(missing)
+        except ValueError as error:assert 'native operation coverage mismatch' in str(error)
+        else:raise AssertionError('v2 time rejection must remain unchanged')
+        clocks=copy.deepcopy(rows);clocks[0]['metrics']['native_generation_swap_seconds']=.012
+        clock_result,_=inspect(clocks)
+        assert clock_result['cost_coverage_complete'] and clock_result['cost_clock_gap_count']==1
+        missing_call=copy.deepcopy(rows);del missing_call[0]['metrics']['native_generation_swap_calls']
+        try:inspect(missing_call)
+        except ValueError:pass
+        else:raise AssertionError('v3 requires independent native calls')
+        fixed=fixture('repair_fixed',1)
+        fixed_result,_=inspect(fixed)
+        assert fixed_result['repair_fixed_skipped']>0
+        for field,value in [('mismatches',1),('skipped',8),('verified',1),('snapshot_seconds',float('nan'))]:
+            bad=copy.deepcopy(fixed);bad[0]['metrics']['repair_fixed_repair_'+field]=value
+            try:inspect(bad)
+            except ValueError:pass
+            else:raise AssertionError('invalid fixed-point '+field)
+        reference=fixture('repair_fixed',0);inspect(reference)
+        bad=copy.deepcopy(reference);bad[0]['metrics']['repair_fixed_repair_verified']=0
+        try:inspect(bad)
+        except ValueError:pass
+        else:raise AssertionError('incomplete reference continuation')
+    print('PASS: all-rank costs, independent call coverage, historical rejection and fixed-point verification failures')
 
 if __name__=='__main__':main()

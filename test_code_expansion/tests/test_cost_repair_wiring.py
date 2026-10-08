@@ -14,10 +14,13 @@ while depth:
 body=source[start:end]
 prefix=r'''
 #include "volume_cost_profile.hpp"
+#include "repair_fixed_point.hpp"
 #include <algorithm>
 #include <cassert>
 #include <string>
 #include <vector>
+#include <memory>
+#include <stdexcept>
 namespace netgen {
 using std::min;
 struct VolumeKernelStats { void Add(int,int) {} };
@@ -26,17 +29,29 @@ struct MeshingParameters {
   VolumeResources *volume_resources=nullptr;
   VolumeKernelStats *volume_kernel_stats=nullptr,*volume_legal_split_stats=nullptr;
   VolumeCostStats *volume_cost_stats=nullptr;
+  VolumeRepairFixedPointStats *volume_repair_fixed_stats=nullptr;
+  bool volume_repair_fixed_point=false,volume_repair_fixed_verify=false;
   int volume_cost_phase=0,nthreads=1;
   bool volume_parallel_repair=false,parallel_meshing=false;
   bool volume_repair_frontier=false,volume_candidate_schedule=false,volume_legal_split_prune=false;
 };
 struct Mesh {
+  struct Array : std::vector<int> {using std::vector<int>::vector;size_t Size() const {return size();}};
+  Array values{0},pointelements;
+  const Array &Points() const {return values;}
+  const Array &VolumeElements() const {return values;}
+  const Array &SurfaceElements() const {return values;}
+  const Array &LineSegments() const {return values;}
+  const Array &OpenElements() const {return values;}
+  const Array &LockedPoints() const {return values;}
   int marks=0;
+  int round=0;
+  bool persistent=false,change_once=false,change_every=false,deferred=false;
   std::vector<std::string> operations;
   int GetNE() const { return 7; }
   int GetNP() const { return 5; }
   void CalcSurfacesOfNode() {}
-  int MarkIllegalElements(int) { ++marks;return marks<4; }
+  int MarkIllegalElements(int) { ++marks;return persistent ? 1 : marks<4; }
 };
 struct VolumeResourceTeam {
   VolumeResourceTeam(VolumeResources*,int,int,int) {}
@@ -63,6 +78,12 @@ struct MeshOptimize3d {
   }
   void operation(int op,const char*name) {
     VolumeCostScope scope(mp.volume_cost_stats,mp.volume_cost_phase,op,OPT_LEGAL,mesh.GetNP(),mesh.GetNE());
+    if(op==1) {
+      ++mesh.round;
+      if(mesh.change_every || (mesh.change_once && mesh.round==1) || (mesh.deferred && mesh.round==2)) {
+        ++mesh.values[0];scope.Count(VolumeCostStats::applied);
+      }
+    }
     mesh.operations.push_back(name);
   }
   void SplitImprove() {operation(1,"split");}
@@ -90,6 +111,38 @@ int main() {
       }
     }
   }
+  for(bool change:{false,true}) {
+    Mesh original;original.persistent=true;original.change_once=change;
+    MeshingParameters control;RemoveIllegalElements(original,control,0);
+    assert(original.round==10);
+    for(bool verify:{false,true}) {
+      VolumeCostStats costs;VolumeRepairFixedPointStats fixed;
+      MeshingParameters candidate;
+      candidate.volume_cost_stats=&costs;candidate.volume_cost_phase=1;
+      candidate.volume_repair_fixed_stats=&fixed;candidate.volume_repair_fixed_point=true;
+      candidate.volume_repair_fixed_verify=verify;
+      Mesh tested;tested.persistent=true;tested.change_once=change;
+      RemoveIllegalElements(tested,candidate,0);
+      assert(tested.values==original.values);
+      assert(tested.round==(verify ? 10 : change ? 2 : 1));
+      const int b=VolumeRepairFixedPointStats::width;
+      assert(fixed.values[b+VolumeRepairFixedPointStats::potential_skipped].load()==(change?8:9));
+      assert(fixed.values[b+VolumeRepairFixedPointStats::skipped].load()==(verify?0:change?8:9));
+      assert(fixed.values[b+VolumeRepairFixedPointStats::verified].load()==verify);
+    }
+  }
+  VolumeCostStats costs;VolumeRepairFixedPointStats fixed;
+  MeshingParameters candidate;candidate.volume_cost_stats=&costs;
+  candidate.volume_repair_fixed_stats=&fixed;candidate.volume_repair_fixed_point=true;
+  Mesh changing;changing.persistent=true;changing.change_every=true;
+  RemoveIllegalElements(changing,candidate,0);
+  assert(changing.round==10 && changing.values[0]==10);
+  candidate.volume_repair_fixed_verify=true;
+  Mesh delayed;delayed.persistent=true;delayed.deferred=true;
+  bool rejected=false;
+  try {RemoveIllegalElements(delayed,candidate,0);}
+  catch(const std::runtime_error&) {rejected=true;}
+  assert(rejected && fixed.values[VolumeRepairFixedPointStats::mismatches].load()==1);
 }
 '''
 with tempfile.TemporaryDirectory() as tmp:

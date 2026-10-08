@@ -1,0 +1,65 @@
+[
+  {
+    "path": "route_cost_profile/p512/sparse_natural/repeat_1/rank_profiles.jsonl.gz",
+    "blob_sha": "4879943f4e9027b2567b9f4fc7e2e9fe55d94b4f",
+    "rank_records": 512,
+    "cost_records": 6144,
+    "partitions_and_counts_consistent": true,
+    "clock_gaps": [
+      {
+        "rank": 462,
+        "phase": "repair",
+        "operation": "split",
+        "native_seconds": 0.031153792024725846,
+        "scoped_seconds": 0.037222274,
+        "calls": 10,
+        "applied": 0,
+        "prepare_seconds": 0.018264343000000002,
+        "cleanup_seconds": 0.011285417999999998
+      }
+    ],
+    "reclassified_success": false
+  },
+  {
+    "path": "route_cost_profile/p512/sparse_natural/repeat_2/rank_profiles.jsonl.gz",
+    "blob_sha": "038a2c4f52161feb4e3422ae15f81b43f9ac9638",
+    "rank_records": 512,
+    "cost_records": 6144,
+    "partitions_and_counts_consistent": true,
+    "clock_gaps": [
+      {
+        "rank": 385,
+        "phase": "repair",
+        "operation": "split",
+        "native_seconds": 0.020684481781620412,
+        "scoped_seconds": 0.024372704999999998,
+        "calls": 10,
+        "applied": 0,
+        "prepare_seconds": 0.010237928,
+        "cleanup_seconds": 0.00897081
+      }
+    ],
+    "reclassified_success": false
+  },
+  {
+    "path": "route_cost_profile/p512/sparse_seed41_natural/repeat_3/rank_profiles.jsonl.gz",
+    "blob_sha": "a1ff25cdb664b249985aa1aa42fcbe80f85bf537",
+    "rank_records": 512,
+    "cost_records": 6144,
+    "partitions_and_counts_consistent": true,
+    "clock_gaps": [
+      {
+        "rank": 268,
+        "phase": "repair",
+        "operation": "split",
+        "native_seconds": 0.018510125459564652,
+        "scoped_seconds": 0.025996876999999995,
+        "calls": 10,
+        "applied": 0,
+        "prepare_seconds": 0.009479451,
+        "cleanup_seconds": 0.011149893
+      }
+    ],
+    "reclassified_success": false
+  }
+]

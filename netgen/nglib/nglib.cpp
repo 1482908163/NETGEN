@@ -420,16 +420,20 @@ namespace nglib
 
    // Called only by the host, between completed kernel operations.
    // Existing host timers are inclusive; child timers must not be summed.
-   static void ReadVolumeOperationTimers(double *seconds)
+   static void ReadVolumeOperationTimers(double *seconds,double *calls=nullptr)
    {
      const char *names[]={"Mesh::ImproveMesh","MeshOptimize3d::CombineImprove",
        "MeshOptimize3d::SplitImprove","MeshOptimize3d::SwapImprove",
        "MeshOptimize3d::SwapImprove2","UpdateBadness","Meshing3::Delaunay1",
        "Delaunay - remove outer","Delaunay - remove intersecting","Delaunay - find openel"};
      std::fill_n(seconds,10,0.0);
+     if(calls)std::fill_n(calls,10,0.0);
      for(const auto &timer:ngcore::NgProfiler::timers) {
        if(timer.name.empty())continue;
-       for(int i=0;i<10;++i)if(timer.name==names[i])seconds[i]+=timer.tottime;
+       for(int i=0;i<10;++i)if(timer.name==names[i]) {
+         seconds[i]+=timer.tottime;
+         if(calls)calls[i]+=timer.count;
+       }
      }
    }
 
@@ -443,12 +447,14 @@ namespace nglib
        VolumeKernelStats *front_match=nullptr, bool front_topology=false, bool front_verify=false,
        VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false,
        VolumeCombineStats *combine=nullptr, bool combine_waves=false, bool combine_verify=false,
-       VolumeCostStats *cost=nullptr)
+       VolumeCostStats *cost=nullptr,VolumeRepairFixedPointStats *fixed=nullptr,
+       int fixed_mode=0,double *native_calls=nullptr)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
       if(native_profile)std::fill_n(native_profile,30,0.0);
+      if(native_calls)std::fill_n(native_calls,30,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -469,6 +475,9 @@ namespace nglib
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
          local.volume_cost_stats = cost;
+         local.volume_repair_fixed_stats = fixed;
+         local.volume_repair_fixed_point = fixed_mode>0;
+         local.volume_repair_fixed_verify = fixed_mode==2;
          local.volume_combine_stats = combine;
          local.volume_combine_waves = combine_waves;
          local.volume_combine_verify = combine_verify;
@@ -495,13 +504,15 @@ namespace nglib
          auto measure = [&](int phase, auto fn) {
             local.volume_cost_phase=phase;
             double before[10]={},after[10]={};
-            if(native_profile)ReadVolumeOperationTimers(before);
+            double calls_before[10]={},calls_after[10]={};
+            if(native_profile)ReadVolumeOperationTimers(before,native_calls ? calls_before : nullptr);
             auto start=std::chrono::steady_clock::now();
             auto result=fn();
             seconds[phase]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
             if(native_profile) {
-               ReadVolumeOperationTimers(after);
+               ReadVolumeOperationTimers(after,native_calls ? calls_after : nullptr);
                for(int i=0;i<10;++i)native_profile[10*phase+i]=after[i]-before[i];
+               if(native_calls)for(int i=0;i<10;++i)native_calls[10*phase+i]=calls_after[i]-calls_before[i];
             }
             return result;
          };
@@ -596,6 +607,30 @@ namespace nglib
        recovery[i]=recovery_stats.values[i].load();batch[i]=batch_stats.values[i].load();
      }
      for(int i=0;i<VolumeCostStats::count;++i)cost[i]=cost_stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+       double *recovery,double *batch,double *profile,double *native_calls,
+       double *cost,int cost_count,double *fixed,int fixed_count)
+   {
+     static_assert(NG_VOLUME_REPAIR_FIXED_COUNT==VolumeRepairFixedPointStats::count,"repair fixed ABI mismatch");
+     // Independent native counts are host counts. This entry creates its own
+     // operation teams; it must not run domains inside an external worker team.
+     if(!details || !recovery || !batch || !profile || !native_calls || !cost || !fixed ||
+        cost_count!=VolumeCostStats::count || fixed_count!=VolumeRepairFixedPointStats::count || mode<0 || mode>2 || ngcore::task_manager)return NG_ERROR;
+     VolumeRecoveryStats recovery_stats;VolumeKernelStats batch_stats;
+     VolumeCostStats cost_stats;VolumeRepairFixedPointStats fixed_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,
+         nullptr,false,nullptr,false,false,nullptr,false,false,nullptr,false,false,
+         nullptr,false,false,&cost_stats,mode ? &fixed_stats : nullptr,mode,native_calls);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<VolumeCostStats::count;++i)cost[i]=cost_stats.values[i].load();
+     for(int i=0;i<VolumeRepairFixedPointStats::count;++i)fixed[i]=fixed_stats.values[i].load();
      return result;
    }
 

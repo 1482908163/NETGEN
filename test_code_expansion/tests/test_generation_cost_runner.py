@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory() as directory:
     launcher.write_text('#!/bin/bash\nshift 2\nexec "$@"\n');launcher.chmod(0o755)
     binary=tmp/'mock_mesh'
     binary.write_text('''#!/usr/bin/env python3
-# phase_full_cost_v2 cost_
+# phase_full_cost_v3 cost_ exact_state_stop_v1 reference_verify_v1 repair_fixed_
 # --profile-core-only --algorithm research_1 global_id_bits mesh_phase_v3
 # mesh_comm_v1 --communication-only --kernel-threads --kernel-scheduler repair_v2
 # volume_audit_v1 node_coop_v2 node_work_v1 node_stage_metrics_v1 node_timeline_v1
@@ -47,7 +47,7 @@ for row in rows:
     if route in ('batch_parallel','cost_profile'):row['metrics']['recovery_batch_parallel_calls']=1 if route in ('batch_parallel','cost_profile') else 0
     row['metadata']['refinement_threads']='1'
     if os.environ.get('MOCK_COST_FAILURE')=='1' and (route,repeat,seed)==('cost_profile',1,17):
-        row['metrics']['native_generation_swap_seconds']=.03
+        row['metrics']['native_generation_swap_calls']=2
 if mode=='split':
     for row in rows:row['metadata'].pop('mesh_quality',None)
 (Path(value('--profile-dir'))/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\\n' for r in rows))
@@ -87,7 +87,7 @@ if mode=='split':
             assert ('exit_code=1' if failure=='validation' else 'exit_code=7') in reason
             if failure=='validation':
                 assert reason.startswith('analysis_validation_failure\n')
-                assert 'native operation coverage mismatch' in reason
+                assert 'native operation call coverage mismatch' in reason
                 assert (bad/'rank_profiles.jsonl.gz').exists()
                 assert not (bad/'rank_profiles.jsonl').exists()
             assert (out/'route_batch_parallel/p2/sparse_natural/repeat_2/SUCCESS').exists()

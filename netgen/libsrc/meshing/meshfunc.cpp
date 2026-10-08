@@ -1015,12 +1015,36 @@ namespace netgen
     dummymp.volume_legal_split_prune=options.volume_legal_split_prune;
     dummymp.volume_legal_split_stats=options.volume_legal_split_stats;
     MeshOptimize3d optmesh(mesh3d, dummymp, OPT_LEGAL);
+    auto *fixed=options.volume_repair_fixed_stats;
+    const int phase=options.volume_cost_phase;
+    const bool fixed_enabled=options.volume_repair_fixed_point && fixed &&
+        options.volume_cost_stats && !options.volume_resources && !options.volume_repair_frontier;
+    if(fixed)fixed->Add(phase,VolumeRepairFixedPointStats::calls);
+    std::unique_ptr<RepairMeshState> verify_state;
+    int verify_illegal=-1;
+    auto applied = [&] {
+      double count=0;
+      if(options.volume_cost_stats)for(int op=1;op<4;++op)
+        count+=options.volume_cost_stats->values[(phase*4+op)*VolumeCostStats::width+VolumeCostStats::applied].load();
+      return count;
+    };
     int it = 10;
     while (nillegal && (it--) > 0)
       {
 	if(grouped) repair_team.Checkpoint(mesh3d.GetNE());
 	if (multithread.terminate)
 	  break;
+
+        std::unique_ptr<RepairMeshState> before;
+        const double applied_before=fixed_enabled ? applied() : 0;
+        if(fixed_enabled && !verify_state) {
+          const auto stamp=std::chrono::steady_clock::now();
+          before=std::make_unique<RepairMeshState>(mesh3d);
+          fixed->Add(phase,VolumeRepairFixedPointStats::snapshot_seconds,
+              std::chrono::duration<double>(std::chrono::steady_clock::now()-stamp).count());
+        }
+        if(fixed)fixed->Add(phase,VolumeRepairFixedPointStats::rounds);
+        if(verify_state)fixed->Add(phase,VolumeRepairFixedPointStats::reference_rounds);
 
 	PrintMessage (5, nillegal, " illegal tets");
         if(stats) stats->Add(7,1);
@@ -1043,6 +1067,23 @@ namespace netgen
 	oldn = nillegal;
 	nillegal = mark();
         nillegal_min = min(nillegal_min, nillegal);
+        if(before && nillegal==oldn && applied()==applied_before && !multithread.terminate) {
+          const auto stamp=std::chrono::steady_clock::now();
+          const bool equal=before->Equal(mesh3d);
+          fixed->Add(phase,VolumeRepairFixedPointStats::snapshot_seconds,
+              std::chrono::duration<double>(std::chrono::steady_clock::now()-stamp).count());
+          fixed->Add(phase,VolumeRepairFixedPointStats::checks);
+          if(equal && it>0) {
+            fixed->Add(phase,VolumeRepairFixedPointStats::stable_rounds);
+            fixed->Add(phase,VolumeRepairFixedPointStats::potential_skipped,it);
+            if(options.volume_repair_fixed_verify) {
+              verify_state=std::move(before);verify_illegal=nillegal;
+            } else {
+              fixed->Add(phase,VolumeRepairFixedPointStats::skipped,it);
+              break;
+            }
+          }
+        }
         // A restricted search is never allowed to stop the global repair early.
         if(dummymp.volume_repair_frontier && nillegal>=oldn) {
           dummymp.volume_repair_frontier=false;
@@ -1056,6 +1097,13 @@ namespace netgen
 	if (oldn != nillegal)
 	  it = 10;
       }
+    if(verify_state) {
+      fixed->Add(phase,VolumeRepairFixedPointStats::verified);
+      if(nillegal!=verify_illegal || !verify_state->Equal(mesh3d)) {
+        fixed->Add(phase,VolumeRepairFixedPointStats::mismatches);
+        throw std::runtime_error("repair fixed-point reference state mismatch");
+      }
+    }
     PrintMessage (5, nillegal, " illegal tets");
   }
 }

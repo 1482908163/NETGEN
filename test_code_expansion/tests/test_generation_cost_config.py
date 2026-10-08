@@ -15,3 +15,7 @@ probe='\nprintf "%s\\n" "$PROCESS_COUNTS" "$PARTITION_SEEDS" "$WORKLET_ROUTES" "
 result=subprocess.run(['bash'],input=prefix+probe,env=env,text=True,capture_output=True,check=True)
 assert result.stdout.splitlines()[-8:]==['128 256 512','-1 17 41','batch_parallel cost_profile','3','natural','4','4','1'],result.stdout
 print('PASS: production full-cost preset, 3 scales/seeds, 2 routes, natural timing and quality warmup')
+env['EXPERIMENT_PRESET']='repair_fixed'
+result=subprocess.run(['bash'],input=prefix+probe,env=env,text=True,capture_output=True,check=True)
+assert result.stdout.splitlines()[-8:]==['128 256 512','-1 17 41','batch_parallel repair_fixed_profile repair_fixed','3','natural','4','4','1'],result.stdout
+print('PASS: exact-state repair preset reuses the full matrix with three matched routes')

@@ -522,6 +522,16 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshCostProfile(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,double *seconds,double *details,
     double *recovery,double *batch,double *profile,double *cost,int cost_count);
 
+// Preserve the old API. mode=0 cost control, 1 exact-state stop, 2 reference
+// continuation (warmup only). native_calls[30] mirrors profile[30].
+// fixed[30]: 3 phases x calls, rounds, checks, stable_rounds, potential_skipped,
+// skipped, verified, mismatches, snapshot_seconds, reference_rounds.
+enum {NG_VOLUME_REPAIR_FIXED_COUNT=3*10};
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count);
+
 // Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
 // batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
 // attempts, applied, waves, parallel_waves, parallel_attempts, planning_seconds,
