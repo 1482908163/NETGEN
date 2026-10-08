@@ -1,0 +1,29 @@
+{
+  "schema": "scheduler_snapshot_v1",
+  "job_id": "6074485",
+  "time": 1791470850.577269,
+  "note": "Read during the job; state/reason may not be final.",
+  "sacct": {
+    "command": [
+      "sacct",
+      "-j",
+      "6074485",
+      "--format=JobID,State,ExitCode,NodeList,Reason,MaxRSS,ReqMem",
+      "-P"
+    ],
+    "exit_code": 0,
+    "stdout": "JobID|State|ExitCode|NodeList|Reason|MaxRSS|ReqMem\n6074485|FAILED|1:0|cn[4089-4216]|None||7625G\n6074485.batch|FAILED|1:0|cn4089||68016K|\n6074485.0|COMPLETED|0:0|cn[4089-4216]||173160K|\n6074485.1|COMPLETED|0:0|cn[4089-4216]||167600K|\n6074485.2|COMPLETED|0:0|cn[4089-4216]||164668K|\n6074485.3|COMPLETED|0:0|cn[4089-4216]||167440K|\n6074485.4|COMPLETED|0:0|cn[4089-4216]||172864K|\n6074485.5|COMPLETED|0:0|cn[4089-4216]||162172K|\n6074485.6|COMPLETED|0:0|cn[4089-4216]||164392K|\n6074485.7|COMPLETED|0:0|cn[4089-4216]||166528K|\n6074485.8|COMPLETED|0:0|cn[4089-4216]||166512K|\n6074485.9|COMPLETED|0:0|cn[4089-4216]||166116K|\n6074485.10|COMPLETED|0:0|cn[4089-4216]||161.50M|\n6074485.11|COMPLETED|0:0|cn[4089-4216]||163672K|\n6074485.12|COMPLETED|0:0|cn[4089-4216]||153052K|\n6074485.13|COMPLETED|0:0|cn[4089-4216]||163604K|\n6074485.14|COMPLETED|0:0|cn[4089-4216]||163824K|\n6074485.15|COMPLETED|0:0|cn[4089-4216]||166432K|\n6074485.16|COMPLETED|0:0|cn[4089-4216]||162220K|\n6074485.17|COMPLETED|0:0|cn[4089-4216]||163028K|\n6074485.18|COMPLETED|0:0|cn[4089-4216]||159140K|\n",
+    "stderr": ""
+  },
+  "scontrol": {
+    "command": [
+      "scontrol",
+      "show",
+      "job",
+      "6074485"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "slurm_load_jobs error: Invalid job id specified\n"
+  }
+}

@@ -1,0 +1,19 @@
+A1/B1/C1: 18 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> cost_profile seed=-1 natural: 3.80% reduction; wins=2/3; validated=True
+batch_parallel -> cost_profile seed=17 natural: 4.22% reduction; wins=2/3; validated=True
+batch_parallel -> cost_profile seed=41 natural: -3.32% reduction; wins=0/3; validated=True
+全成本诊断沿用 batch_parallel 算法；比较只用于衡量诊断开销，不能作为算法加速。所有进程的准备/评价/排序/提交/收尾见 route_cost_profile/p*/analysis/volume_operation_costs.csv；输入点/单元是逐调用累计输入量，不能当唯一工作量。v2 同时核对原生计时器覆盖，v1 漏计记录只保留为部分证据。
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+Refinement batch_parallel -> cost_profile seed=-1 natural: exercised=True; compute max 2.683329 -> 2.703808s; refine on each run's slowest rank 0.379462 -> 0.381609s
+Refinement batch_parallel -> cost_profile seed=17 natural: exercised=True; compute max 2.771227 -> 2.806632s; refine on each run's slowest rank 0.393686 -> 0.398108s
+Refinement batch_parallel -> cost_profile seed=41 natural: exercised=True; compute max 2.660686 -> 2.689139s; refine on each run's slowest rank 0.356597 -> 0.403294s
+Recovery batch batch_parallel -> cost_profile seed=-1 natural: exercised=False
+Recovery batch batch_parallel -> cost_profile seed=17 natural: exercised=True
+Recovery batch batch_parallel -> cost_profile seed=41 natural: exercised=False
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 cost_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+Recovery point work not exercised in every pair: no batch recovery speedup claim is supported.
+Recovery path not exercised in every pair: do not claim a recovery speedup from total-time differences.

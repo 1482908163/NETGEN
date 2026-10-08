@@ -1,0 +1,29 @@
+{
+  "schema": "scheduler_snapshot_v1",
+  "job_id": "6074483",
+  "time": 1791470848.7223256,
+  "note": "Read during the job; state/reason may not be final.",
+  "sacct": {
+    "command": [
+      "sacct",
+      "-j",
+      "6074483",
+      "--format=JobID,State,ExitCode,NodeList,Reason,MaxRSS,ReqMem",
+      "-P"
+    ],
+    "exit_code": 0,
+    "stdout": "JobID|State|ExitCode|NodeList|Reason|MaxRSS|ReqMem\n6074483|FAILED|1:0|cn[8728-8759]|None||1952000M\n6074483.batch|FAILED|1:0|cn8728||28756K|\n6074483.0|COMPLETED|0:0|cn[8728-8759]||602132K|\n6074483.1|COMPLETED|0:0|cn[8728-8759]||524972K|\n6074483.2|COMPLETED|0:0|cn[8728-8759]||527300K|\n6074483.3|COMPLETED|0:0|cn[8728-8759]||523912K|\n6074483.4|COMPLETED|0:0|cn[8728-8759]||526704K|\n6074483.5|COMPLETED|0:0|cn[8728-8759]||526768K|\n6074483.6|COMPLETED|0:0|cn[8728-8759]||0|\n6074483.7|COMPLETED|0:0|cn[8728-8759]||0|\n6074483.8|COMPLETED|0:0|cn[8728-8759]||0|\n6074483.9|COMPLETED|0:0|cn[8728-8759]||0|\n6074483.10|COMPLETED|0:0|cn[8728-8759]||213168K|\n6074483.11|COMPLETED|0:0|cn[8728-8759]||0|\n6074483.12|COMPLETED|0:0|cn[8728-8759]||230360K|\n6074483.13|COMPLETED|0:0|cn[8728-8759]||0|\n",
+    "stderr": ""
+  },
+  "scontrol": {
+    "command": [
+      "scontrol",
+      "show",
+      "job",
+      "6074483"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "slurm_load_jobs error: Invalid job id specified\n"
+  }
+}

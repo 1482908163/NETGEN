@@ -1,0 +1,29 @@
+{
+  "schema": "scheduler_snapshot_v1",
+  "job_id": "6074615",
+  "time": 1791471544.194456,
+  "note": "Read during the job; state/reason may not be final.",
+  "sacct": {
+    "command": [
+      "sacct",
+      "-j",
+      "6074615",
+      "--format=JobID,State,ExitCode,NodeList,Reason,MaxRSS,ReqMem",
+      "-P"
+    ],
+    "exit_code": 0,
+    "stdout": "JobID|State|ExitCode|NodeList|Reason|MaxRSS|ReqMem\n6074615|RUNNING|0:0|cn[3203-3330]|None||7625G\n6074615.batch|RUNNING|0:0|cn3203|||\n6074615.0|COMPLETED|0:0|cn[3203-3330]||442636K|\n6074615.1|COMPLETED|0:0|cn[3203-3330]||131720K|\n6074615.2|COMPLETED|0:0|cn[3203-3330]||136776K|\n6074615.3|COMPLETED|0:0|cn[3203-3330]||167444K|\n6074615.4|COMPLETED|0:0|cn[3203-3330]||169660K|\n6074615.5|COMPLETED|0:0|cn[3203-3330]||166176K|\n6074615.6|COMPLETED|0:0|cn[3203-3330]||163728K|\n6074615.7|COMPLETED|0:0|cn[3203-3330]||162672K|\n6074615.8|COMPLETED|0:0|cn[3203-3330]||161904K|\n",
+    "stderr": ""
+  },
+  "scontrol": {
+    "command": [
+      "scontrol",
+      "show",
+      "job",
+      "6074615"
+    ],
+    "exit_code": 0,
+    "stdout": "JobId=6074615 JobName=mesh_p512\n   UserId=hnu_lhz(66704) GroupId=ecology_mt(1882) MCS_label=N/A\n   Priority=1 Nice=0 Account=ecology QOS=normal WCKey=(null)\n   JobState=RUNNING Reason=None Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:05:59 TimeLimit=UNLIMITED TimeMin=N/A\n   SubmitTime=2026-10-08T22:53:05 EligibleTime=2026-10-08T22:53:05\n   AccrueTime=2026-10-08T22:53:05\n   StartTime=2026-10-08T22:53:05 EndTime=Unknown Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-08T22:53:05 Scheduler=Main\n   Partition=mt_module AllocNode:Sid=ln3:1560241\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=cn[3203-3330]\n   BatchHost=cn3203\n   NumNodes=128 NumCPUs=2048 NumTasks=512 CPUs/Task=4 ReqB:S:C:T=0:0:*:*\n   TRES=cpu=2048,node=128,billing=2048\n   Socks/Node=* NtasksPerN:B:S:C=4:0:*:* CoreSpec=*\n   MinCPUsNode=16 MinMemoryNode=0 MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)\n   Command=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/runtime_scripts/run_experiments.sh\n   WorkDir=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion\n   StdErr=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/p512/job-6074615.log\n   StdIn=/dev/null\n   StdOut=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/p512/job-6074615.log\n   Power=\n   \n\n",
+    "stderr": ""
+  }
+}
