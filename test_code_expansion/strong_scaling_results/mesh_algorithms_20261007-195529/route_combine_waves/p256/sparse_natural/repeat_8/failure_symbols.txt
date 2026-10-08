@@ -1,0 +1,33 @@
+failure_symbols_v1
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p256/sparse_natural/repeat_8
+binary: hash matched=True; expected=c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712; actual=c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712
+kernel: hash matched=True; expected=c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3; actual=c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3
+core: hash matched=False; expected=None; actual=7e115ccaddb810b8c3506ac9313d231e2d693d40fac9f210a01219989fcf650b
+kernel (_ZNK6netgen6LocalH4GetHENS_5PointILi3EdEE+0x24)
+netgen::LocalH::GetH(netgen::Point<3, double>) const
+??:?
+kernel (_ZNK6netgen4Mesh4GetHERKNS_7Point3dEi+0x4c)
+netgen::Mesh::GetH(netgen::Point3d const&, int) const
+??:?
+kernel (+0x191d18)
+double netgen::CombineImproveEdge<ngcore::CompressedTable<netgen::SurfaceElementIndex, netgen::PointIndex> >(netgen::Mesh&, ngcore::CompressedTable<netgen::SurfaceElementIndex, netgen::PointIndex> const&, ngcore::Array<netgen::Vec<3, double>, netgen::PointIndex>&, ngcore::Array<bool, netgen::PointIndex>&, netgen::PointIndex, netgen::PointIndex, double, bool)
+:?
+kernel (+0x18e4f8)
+std::_Function_handler<void (ngcore::TaskInfo&), ngcore::ParallelFor<unsigned long, netgen::MeshOptimize2d::CombineImprove()::{lambda(auto:1)#4}>(ngcore::T_Range<unsigned long>, netgen::MeshOptimize2d::CombineImprove()::{lambda(auto:1)#4}, int, ngcore::TotalCosts)::{lambda(ngcore::TaskInfo&)#1}>::_M_invoke(std::_Any_data const&, ngcore::TaskInfo&)
+improve2.cpp:?
+core (_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0)
+ELF unavailable, expected hash absent, or hash mismatch
+kernel (_ZN6netgen14MeshOptimize2d14CombineImproveEv+0xf10)
+netgen::MeshOptimize2d::CombineImprove()
+??:?
+kernel (_ZNK6netgen14NetgenGeometry15OptimizeSurfaceERNS_4MeshERKNS_17MeshingParametersE+0x1f0)
+netgen::NetgenGeometry::OptimizeSurface(netgen::Mesh&, netgen::MeshingParameters const&) const
+??:?
+kernel (_ZNK6netgen14NetgenGeometry11MeshSurfaceERNS_4MeshERKNS_17MeshingParametersE+0x1bd4)
+netgen::NetgenGeometry::MeshSurface(netgen::Mesh&, netgen::MeshingParameters const&) const
+??:?
+kernel (_ZN5nglib26Ng_OCC_GenerateSurfaceMeshEPPvS1_PNS_21Ng_Meshing_ParametersE+0x10c)
+nglib::Ng_OCC_GenerateSurfaceMesh(void**, void**, nglib::Ng_Meshing_Parameters*)
+??:?
+binary ()
+No resolvable ELF-relative offset

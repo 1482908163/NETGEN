@@ -1,0 +1,37 @@
+{
+  "schema": "failure_symbols_v1",
+  "run": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_batch_parallel/p256/sparse_seed41_split/repeat_2",
+  "time": 1791457983.278177,
+  "identities": {
+    "binary": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "expected_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "actual_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "matched": true
+    },
+    "kernel": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+      "expected_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "actual_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "matched": true
+    },
+    "core": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libngcore.so",
+      "expected_sha256": null,
+      "actual_sha256": "7e115ccaddb810b8c3506ac9313d231e2d693d40fac9f210a01219989fcf650b",
+      "matched": false
+    }
+  },
+  "source_revision": "22b98e2f0d4975aed1cb3b598fef3abe86905c09",
+  "root_messages": [
+    "double free or corruption (out)",
+    "double free or corruption (out)"
+  ],
+  "sources": [
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_batch_parallel/p256/sparse_seed41_split/repeat_2/node_coop_stderr.txt",
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_batch_parallel/p256/sparse_seed41_split/repeat_2/run.log"
+  ],
+  "frames": [],
+  "scheduler_snapshot": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/p256/scheduler_diagnostics.json",
+  "note": "Frames and scheduler snapshots are evidence, not a root-cause or OOM diagnosis."
+}

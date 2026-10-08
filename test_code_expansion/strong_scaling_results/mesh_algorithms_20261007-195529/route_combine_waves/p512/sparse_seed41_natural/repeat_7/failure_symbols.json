@@ -1,0 +1,320 @@
+{
+  "schema": "failure_symbols_v1",
+  "run": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p512/sparse_seed41_natural/repeat_7",
+  "time": 1791457990.7368703,
+  "identities": {
+    "binary": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "expected_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "actual_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "matched": true
+    },
+    "kernel": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+      "expected_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "actual_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "matched": true
+    },
+    "core": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libngcore.so",
+      "expected_sha256": null,
+      "actual_sha256": "7e115ccaddb810b8c3506ac9313d231e2d693d40fac9f210a01219989fcf650b",
+      "matched": false
+    }
+  },
+  "source_revision": "22b98e2f0d4975aed1cb3b598fef3abe86905c09",
+  "root_messages": [
+    "[cn10344:42003:0:42003] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x60)",
+    "[cn10344:42003:0:42003] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x60)"
+  ],
+  "sources": [
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p512/sparse_seed41_natural/repeat_7/node_coop_stderr.txt",
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p512/sparse_seed41_natural/repeat_7/run.log"
+  ],
+  "frames": [
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x1b6048",
+      "offset": "0x1b6048",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::LocalH::ClearFlagsRec(netgen::GradingBox*)\n:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x21f12c",
+      "offset": "0x21f12c",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::Meshing3::BlockFillLocalH(netgen::Mesh&, netgen::MeshingParameters const&)\n:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x166470",
+      "offset": "0x166470",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::Meshing3::Delaunay(netgen::Mesh&, int, netgen::MeshingParameters const&)\n:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x20d694",
+      "offset": "0x20d694",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::MeshDomain(netgen::MeshingData&)\n:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x20e078",
+      "offset": "0x20e078",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}::operator()(int) const\nmeshfunc.cpp:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x20e5e8",
+      "offset": "0x20e5e8",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "std::_Function_handler<void (ngcore::TaskInfo&), ngcore::ParallelFor<unsigned long, netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}>(ngcore::T_Range<unsigned long>, netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}, int, ngcore::TotalCosts)::{lambda(ngcore::TaskInfo&)#1}>::_M_invoke(std::_Any_data const&, ngcore::TaskInfo&)\nmeshfunc.cpp:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "core",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libngcore.so",
+      "location": "_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0",
+      "skipped": "ELF unavailable, expected hash absent, or hash mismatch"
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740",
+      "offset": "0x20b614",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)\n??:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "+0x484da8",
+      "offset": "0x484da8",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "nglib::GenerateVolumeKernelImpl(void**, nglib::Ng_Meshing_Parameters*, int, int, double*, double*, netgen::VolumeResources const*, netgen::VolumeFrontSearchStats*, netgen::VolumeRecoveryStats*, bool, double*, netgen::VolumeKernelStats*, netgen::VolumeKernelStats*, bool, netgen::VolumeKernelStats*, bool, netgen::VolumeKernelStats*, bool, bool, netgen::VolumeKernelStats*, bool, bool, netgen::VolumeKernelStats*, bool, bool, netgen::VolumeCombineStats*, bool, bool)\nnglib.cpp:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "_ZN5nglib33Ng_GenerateVolumeMeshCombineWavesEPPvPNS_21Ng_Meshing_ParametersEiiiPdS4_S4_S4_S4_S4_+0x138",
+      "offset": "0x4856c8",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1b6048",
+          "0x21f12c",
+          "0x166470",
+          "0x20d694",
+          "0x20e078",
+          "0x20e5e8",
+          "0x20b614",
+          "0x484da8",
+          "0x4856c8"
+        ],
+        "exit_code": 0,
+        "stdout": "nglib::Ng_GenerateVolumeMeshCombineWaves(void**, nglib::Ng_Meshing_Parameters*, int, int, int, double*, double*, double*, double*, double*, double*)\n??:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "binary",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "location": "",
+      "skipped": "No resolvable ELF-relative offset"
+    }
+  ],
+  "scheduler_snapshot": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/p512/scheduler_diagnostics.json",
+  "note": "Frames and scheduler snapshots are evidence, not a root-cause or OOM diagnosis."
+}

@@ -1,0 +1,116 @@
+{
+  "schema": "failure_symbols_v1",
+  "run": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p256/sparse_seed17_natural/repeat_8",
+  "time": 1791457986.9881492,
+  "identities": {
+    "binary": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "expected_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "actual_sha256": "c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712",
+      "matched": true
+    },
+    "kernel": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+      "expected_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "actual_sha256": "c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3",
+      "matched": true
+    },
+    "core": {
+      "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libngcore.so",
+      "expected_sha256": null,
+      "actual_sha256": "7e115ccaddb810b8c3506ac9313d231e2d693d40fac9f210a01219989fcf650b",
+      "matched": false
+    }
+  },
+  "source_revision": "22b98e2f0d4975aed1cb3b598fef3abe86905c09",
+  "root_messages": [
+    "[cn483:954808:0:954808] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x52434cda0)",
+    "[cn483:954808:0:954808] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x52434cda0)"
+  ],
+  "sources": [
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p256/sparse_seed17_natural/repeat_8/node_coop_stderr.txt",
+    "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_waves/p256/sparse_seed17_natural/repeat_8/run.log"
+  ],
+  "frames": [
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "_ZN6netgen4Mesh18CalcSurfacesOfNodeEv+0x830",
+      "offset": "0x1d61c0",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1d61c0",
+          "0x2bede0",
+          "0x48cc9c"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::Mesh::CalcSurfacesOfNode()\n??:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "_ZNK6netgen14NetgenGeometry11MeshSurfaceERNS_4MeshERKNS_17MeshingParametersE+0x1bbc",
+      "offset": "0x2bede0",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1d61c0",
+          "0x2bede0",
+          "0x48cc9c"
+        ],
+        "exit_code": 0,
+        "stdout": "netgen::NetgenGeometry::MeshSurface(netgen::Mesh&, netgen::MeshingParameters const&) const\n??:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "kernel",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so",
+      "location": "_ZN5nglib26Ng_OCC_GenerateSurfaceMeshEPPvS1_PNS_21Ng_Meshing_ParametersE+0x10c",
+      "offset": "0x48cc9c",
+      "resolution": {
+        "command": [
+          "addr2line",
+          "-a",
+          "-C",
+          "-f",
+          "-i",
+          "-e",
+          "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
+          "0x1d61c0",
+          "0x2bede0",
+          "0x48cc9c"
+        ],
+        "exit_code": 0,
+        "stdout": "nglib::Ng_OCC_GenerateSurfaceMesh(void**, void**, nglib::Ng_Meshing_Parameters*)\n??:?",
+        "stderr": "addr2line: DWARF error: can't find .debug_ranges section.\n"
+      },
+      "has_source_line": false
+    },
+    {
+      "object": "binary",
+      "logged_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "location": "",
+      "skipped": "No resolvable ELF-relative offset"
+    }
+  ],
+  "scheduler_snapshot": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/p256/scheduler_diagnostics.json",
+  "note": "Frames and scheduler snapshots are evidence, not a root-cause or OOM diagnosis."
+}

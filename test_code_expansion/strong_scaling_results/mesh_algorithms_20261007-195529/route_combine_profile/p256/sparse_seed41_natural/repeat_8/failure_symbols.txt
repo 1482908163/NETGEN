@@ -1,0 +1,33 @@
+failure_symbols_v1
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261007-195529/route_combine_profile/p256/sparse_seed41_natural/repeat_8
+binary: hash matched=True; expected=c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712; actual=c0e724b0015b83e7f0e5846a354167dc188041aa5da9177227d320784785d712
+kernel: hash matched=True; expected=c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3; actual=c09431419e5a35a99d999e706ac0f32a9dbc862cf065fdcf321201473db63de3
+core: hash matched=False; expected=None; actual=7e115ccaddb810b8c3506ac9313d231e2d693d40fac9f210a01219989fcf650b
+kernel (+0x1bc780)
+std::_Function_handler<void (ngcore::TaskInfo&), ngcore::ParallelForRange<netgen::SurfaceElementIndex, netgen::Mesh::Compress()::{lambda(auto:1)#4}>(ngcore::T_Range<netgen::SurfaceElementIndex>, netgen::Mesh::Compress()::{lambda(auto:1)#4}, int, ngcore::TotalCosts)::{lambda(ngcore::TaskInfo&)#1}>::_M_invoke(std::_Any_data const&, ngcore::TaskInfo&)
+meshclass.cpp:?
+core (_ZN6ngcore11TaskManager9CreateJobERKSt8functionIFvRNS_8TaskInfoEEEi+0xf0)
+ELF unavailable, expected hash absent, or hash mismatch
+kernel (_ZN6netgen4Mesh8CompressEv+0x7b0)
+netgen::Mesh::Compress()
+??:?
+kernel (+0x166cec)
+netgen::Meshing3::Delaunay(netgen::Mesh&, int, netgen::MeshingParameters const&)
+:?
+kernel (+0x20d694)
+netgen::MeshDomain(netgen::MeshingData&)
+:?
+kernel (+0x20e078)
+netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}::operator()(int) const
+meshfunc.cpp:?
+kernel (+0x20e5e8)
+std::_Function_handler<void (ngcore::TaskInfo&), ngcore::ParallelFor<unsigned long, netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}>(ngcore::T_Range<unsigned long>, netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)::{lambda(int)#1}, int, ngcore::TotalCosts)::{lambda(ngcore::TaskInfo&)#1}>::_M_invoke(std::_Any_data const&, ngcore::TaskInfo&)
+meshfunc.cpp:?
+kernel (_ZN6netgen10MeshVolumeERKNS_17MeshingParametersERNS_4MeshE+0x740)
+netgen::MeshVolume(netgen::MeshingParameters const&, netgen::Mesh&)
+??:?
+kernel (_ZN5nglib21Ng_GenerateVolumeMeshEPPvPNS_21Ng_Meshing_ParametersE+0x3c)
+nglib::Ng_GenerateVolumeMesh(void**, nglib::Ng_Meshing_Parameters*)
+??:?
+binary ()
+No resolvable ELF-relative offset
