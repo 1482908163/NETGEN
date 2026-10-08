@@ -49,4 +49,6 @@ test_code_expansion/strong_scaling_results/**/scheduler_logs/
 
 # 保留本轮全成本诊断的压缩原始记录，支持上传后逐进程复算。
 !/test_code_expansion/strong_scaling_results/**/route_cost_profile/**/rank_profiles.jsonl.gz
+/test_code_expansion/strong_scaling_results/**/runtime_scripts/
+/test_code_expansion/strong_scaling_results/**/runtime_scripts.*/
 

@@ -7,7 +7,7 @@
 # resolved from the current checkout so that a renamed/moved clone still works.
 
 SCALING_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPOSITORY_ROOT="$(cd "${SCALING_SCRIPT_DIR}/.." && pwd)"
+REPOSITORY_ROOT="${STRONG_SCALING_PROJECT_DIR:-$(cd "${SCALING_SCRIPT_DIR}/.." && pwd)}"
 
 export PROJECT_ROOT="${PROJECT_ROOT:-${REPOSITORY_ROOT}}"
 export PROJ_DIR="${PROJ_DIR:-${PROJECT_ROOT}}"

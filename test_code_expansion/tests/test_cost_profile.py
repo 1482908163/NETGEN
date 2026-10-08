@@ -23,6 +23,7 @@ def main():
         result,sink=inspect(rows)
         assert len(sink)==2*3*4 and {r['rank'] for r in sink}=={0,1}
         assert result['cost_active_ranks']==2
+        assert result['cost_coverage_complete']
         assert result['slowest_compute_cost_generation_swap_commit_seconds']==.003
         cases=[('prepare_seconds',.03),('conform_seconds',.03),('team_evaluate_seconds',.01),
                ('candidates',7),('commit_attempts',3),('applied',3),('team_evaluations',2),
@@ -37,6 +38,15 @@ def main():
         except ValueError:pass
         else:raise AssertionError('missing one rank field')
         assert all(len(signature)==2 for signature in json.loads(result['cost_work_signature']))
+        missing=copy.deepcopy(rows)
+        for row in missing:
+            for field in FIELDS:row['metrics']['cost_generation_swap_'+field]=0
+        try:inspect(missing)
+        except ValueError as error:assert 'native operation coverage mismatch' in str(error)
+        else:raise AssertionError('native timer exposes a dropped diagnostic parameter')
+        for row in missing:row['metadata']['volume_cost_profile']='phase_full_cost_v1'
+        historical,_=inspect(missing)
+        assert not historical['cost_coverage_complete'] and historical['cost_coverage_gap_count']==2
     print('PASS: all-rank cost export, coherent same-rank totals, 12 invalid cost/coverage cases')
 
 if __name__=='__main__':main()

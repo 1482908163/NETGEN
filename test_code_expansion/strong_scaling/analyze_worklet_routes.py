@@ -162,6 +162,12 @@ def analyze(root,ranks,selected=ROUTES):
                     if {k:v for k,v in qa.items() if k!='scheduler'}!={k:v for k,v in qb.items() if k!='scheduler'}:
                         gate['quality_pass']=False
                         gate['quality_issues']+=';full_cost_diagnostic_changed_mesh'
+                    for mode in plan['timings']:
+                        for repeat in range(1,plan['repeats']+1):
+                            run=indexed.get((candidate,algorithm,seed,mode,repeat))
+                            if run and not run.get('cost_coverage_complete',False):
+                                gate['quality_pass']=False
+                                gate['quality_issues']+=';incomplete_operation_cost_coverage'
                 # Splitting changes interior meshing. Do not silently waive a
                 # conservative quality nonregression failure to claim a speedup.
                 for mode in plan['timings']:
@@ -276,7 +282,7 @@ def analyze(root,ranks,selected=ROUTES):
            'Only validated comparisons support performance claims. Decomposition quality changes need review.']
     lines.extend(f'{r["control"]} -> {r["candidate"]} seed={r["seed"]} {r["timing"]}: {r["paired_reduction_pct"]:.2f}% reduction; wins={r["paired_wins"]}/{r["paired_count"]}; validated={r["validated"]}' for r in comparisons)
     if 'cost_profile' in plans:
-        lines.append('全成本诊断沿用 batch_parallel 算法；比较只用于衡量诊断开销，不能作为算法加速。所有进程的准备/评价/排序/提交/收尾见 route_cost_profile/p*/analysis/volume_operation_costs.csv；输入点/单元是逐调用累计输入量，不能当唯一工作量。')
+        lines.append('全成本诊断沿用 batch_parallel 算法；比较只用于衡量诊断开销，不能作为算法加速。所有进程的准备/评价/排序/提交/收尾见 route_cost_profile/p*/analysis/volume_operation_costs.csv；输入点/单元是逐调用累计输入量，不能当唯一工作量。v2 同时核对原生计时器覆盖，v1 漏计记录只保留为部分证据。')
     lines.extend(f"Recovery {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: exercised={r['recovery_exercised']}; compute max {r['control_compute_max_seconds']:.6f} -> {r['candidate_compute_max_seconds']:.6f}s; recovery on each run's slowest rank {r['control_slowest_recovery_seconds']:.6f} -> {r['candidate_slowest_recovery_seconds']:.6f}s" for r in comparisons if r['candidate']=='recovery_global')
     lines.extend(f"边合并 {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: 配对核心降时={r['paired_reduction_pct']:.2f}%；有效并行覆盖={r['combine_waves_exercised']}（各次最慢进程可不同，固定进程详见明细）" for r in comparisons if r['candidate'] in ('combine_profile','combine_waves'))
     lines.extend(f"幽灵依赖 {r['control']} -> {r['candidate']} seed={r['seed']} {r['timing']}: 核心 {r['control_seconds']:.6f} -> {r['candidate_seconds']:.6f}s；同进程交换阶段合计最大值 {r['control_adjacency_exchange_stage_sum_seconds']:.6f} -> {r['candidate_adjacency_exchange_stage_sum_seconds']:.6f}s；质量/覆盖={r['validated']}" for r in comparisons if r['candidate'] in ('ghost_staged','ghost_pipeline'))

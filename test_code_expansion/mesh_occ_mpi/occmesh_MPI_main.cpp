@@ -497,7 +497,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklet_policy",research.worklets()?research.worklet_policy:"none");
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     if(research.kernel_scheduler=="cost_profile") {
-        profiler.add_metadata("volume_cost_profile","phase_full_cost_v1");
+        profiler.add_metadata("volume_cost_profile","phase_full_cost_v2");
         profiler.add_metadata("volume_native_profile","phase_operations_v1");
     }
 
@@ -587,7 +587,7 @@ int main(int argc, char **argv) {
         (research.model_path.empty()?"geometric_proxy":"phase_seconds")));
     profiler.add_metadata("balance_method",research.communication_only?"none":research.mesh_tasks>0?"task_queue":(research.resource_path.empty()?"boundary":"node_mapping"));
     for(const char *key:{"MESH_INPUT_SHA256","MESH_BINARY_SHA256","MESH_SOURCE_REVISION","MESH_MODEL_SHA256","EXPERIMENT_STAGE",
-                        "MESH_PARTITION_SIGNATURE","MESH_PREFLIGHT_SHA256","RANKS_PER_NODE","MESH_CAPACITY_SHA256","MESH_KERNEL_SHA256","MESH_NGCORE_SHA256","CPUS_PER_TASK"}) {
+                        "MESH_PARTITION_SIGNATURE","MESH_PREFLIGHT_SHA256","RANKS_PER_NODE","MESH_CAPACITY_SHA256","MESH_KERNEL_SHA256","MESH_NGCORE_SHA256","MESH_RUNTIME_SHA256","CPUS_PER_TASK"}) {
         const char *v=std::getenv(key);profiler.add_metadata(key,v?v:"unset");
     }
     profiler.add_metadata("cut_growth",std::to_string(research.cost.cut_growth));

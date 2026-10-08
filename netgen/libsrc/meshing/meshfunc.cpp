@@ -557,7 +557,7 @@ namespace netgen
     }
     { VolumeKernelTimer time(mp.volume_kernel_stats,2);
       RemoveIllegalElements (mesh, mp, domain); }
-    ConformToFreeSegments (mesh, domain);
+    ConformToFreeSegments (mesh, mp, domain);
   }
 
   void MergeMeshes( Mesh & mesh, Array<MeshingData> & md )
@@ -800,6 +800,11 @@ namespace netgen
 
   void ConformToFreeSegments (Mesh & mesh, int domain)
   {
+    ConformToFreeSegments(mesh, MeshingParameters(), domain);
+  }
+
+  void ConformToFreeSegments (Mesh & mesh, const MeshingParameters & options, int domain)
+  {
     auto geo = mesh.GetGeometry();
     if(!geo) return;
     auto n_solids = geo->GetNSolids();
@@ -934,6 +939,9 @@ namespace netgen
       }
 
       MeshingParameters dummymp;
+      // Preserve default algorithm parameters; forward diagnostics only.
+      dummymp.volume_cost_stats=options.volume_cost_stats;
+      dummymp.volume_cost_phase=options.volume_cost_phase;
       MeshOptimize3d optmesh(mesh, dummymp, OPT_CONFORM);
 
       for ([[maybe_unused]] auto i : Range(3)) {
@@ -997,6 +1005,10 @@ namespace netgen
     int nillegal_min = nillegal;
 
     MeshingParameters dummymp;
+    // Both generation-domain repair and the standalone repair phase use this
+    // default parameter object. Do not drop their full-operation statistics.
+    dummymp.volume_cost_stats=options.volume_cost_stats;
+    dummymp.volume_cost_phase=options.volume_cost_phase;
     dummymp.volume_candidate_schedule=options.volume_repair_frontier ? 1 : 0;
     dummymp.volume_repair_frontier=options.volume_repair_frontier;
     dummymp.volume_kernel_stats=stats;

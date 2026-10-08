@@ -10,7 +10,8 @@ if [[ "${MESH_EXPERIMENT_DRIVER_READY:-0}" != 1 ]]; then
     exec "${SCRIPT_DIR}/run_experiments.sh" "$@"
 fi
 
-REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPOSITORY_ROOT="${STRONG_SCALING_PROJECT_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+export STRONG_SCALING_PROJECT_DIR="${REPOSITORY_ROOT}"
 MESH_SOURCE_REVISION="$(git -C "${REPOSITORY_ROOT}" rev-parse HEAD)"
 [[ -n "${MESH_SOURCE_REVISION}" ]] || { echo "Cannot record source revision" >&2; exit 2; }
 export MESH_SOURCE_REVISION
@@ -26,6 +27,26 @@ read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
 ((${#counts[@]}>0)) || exit 2
 for p in "${counts[@]}"; do [[ "${p}" =~ ^[1-9][0-9]*$ ]] || exit 2; done
 mkdir -p "${RUN_ROOT}"
+RUN_ROOT="$(cd "${RUN_ROOT}" && pwd)"
+export RUN_ROOT
+# Jobs read a frozen copy of every companion shell/Python file. A checkout
+# update or missing live module must not invalidate a running batch.
+source_script_dir="${SCRIPT_DIR}"
+export MESH_RUNTIME_MANIFEST="${RUN_ROOT}/runtime_manifest.json"
+export MESH_RUNTIME_SHA256
+MESH_RUNTIME_SHA256="$(python3 "${source_script_dir}/runtime_snapshot.py" capture \
+    --source "${source_script_dir}" --snapshot "${RUN_ROOT}/runtime_scripts" \
+    --manifest "${MESH_RUNTIME_MANIFEST}" --project "${REPOSITORY_ROOT}" \
+    --revision "${MESH_SOURCE_REVISION}")"
+SCRIPT_DIR="${RUN_ROOT}/runtime_scripts"
+export STRONG_SCALING_DIR="${SCRIPT_DIR}"
+if [[ "${MPI_LAUNCHER}" == "${source_script_dir}/"* ]]; then
+    launcher_relative="${MPI_LAUNCHER#"$source_script_dir"/}"
+    [[ "$launcher_relative" != */* && -x "${SCRIPT_DIR}/$launcher_relative" ]] || {
+        echo "MPI launcher is not present in the frozen runtime" >&2;exit 2;
+    }
+    export MPI_LAUNCHER="${SCRIPT_DIR}/$launcher_relative"
+fi
 if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     for p in "${counts[@]}"; do
         (( p>=2 && TASK_COUNT>=p-1 )) || { echo "任务数须不少于进程数减一，且至少两进程。" >&2;exit 2; }

@@ -18,7 +18,7 @@ def fixture(route,repeat,mode='natural'):
         rows=fixture('batch_parallel',repeat,mode)
         for row in rows:
             row['metadata'].update(kernel_scheduler='cost_profile',volume_native_profile='phase_operations_v1',
-                                   volume_cost_profile='phase_full_cost_v1')
+                                   volume_cost_profile='phase_full_cost_v2')
             for phase in PHASES:
                 for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
                     row['metrics'][f'native_{phase}_{op}_seconds']=0
@@ -26,6 +26,7 @@ def fixture(route,repeat,mode='natural'):
                     for field in FIELDS:row['metrics'][f'cost_{phase}_{op}_{field}']=0
             values=(.02,.004,.01,.001,.003,.002,1,4,1,6,2,2,1,0,0,.02,0,0,0,.01,0)
             row['metrics'].update({'cost_generation_swap_'+field:value for field,value in zip(FIELDS,values)})
+            row['metrics']['native_generation_swap_seconds']=.02
         return rows
     if route in ('combine_profile','combine_waves'):
         rows=fixture('split_profile',repeat,mode)

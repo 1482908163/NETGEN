@@ -33,6 +33,7 @@ DLL_HEADER MESHING3_RESULT OptimizeVolume (const MeshingParameters & mp, Mesh& m
 DLL_HEADER void RemoveIllegalElements (Mesh & mesh3d, int domain = 0);
 DLL_HEADER void RemoveIllegalElements (Mesh & mesh3d, const MeshingParameters & mp, int domain = 0);
 DLL_HEADER void ConformToFreeSegments (Mesh & mesh3d, int domain);
+DLL_HEADER void ConformToFreeSegments (Mesh & mesh3d, const MeshingParameters & options, int domain);
 
 
 enum MESHING_STEP { 

@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 # Slurm/yhbatch executes a spool copy such as /tmp/slurmd/job*/slurm_script.
-# The submitter exports the original directory so worker jobs can find the
-# companion environment and analysis scripts beside the repository source.
+# The submitter exports a frozen batch directory containing all companions.
 invoked_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_DIR="${STRONG_SCALING_DIR:-${invoked_script_dir}}"
 SCRIPT_DIR="$(cd "${SCRIPT_DIR}" && pwd)"
 export STRONG_SCALING_DIR="${SCRIPT_DIR}"
+export STRONG_SCALING_PROJECT_DIR="${STRONG_SCALING_PROJECT_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+if [[ -n "${MESH_RUNTIME_MANIFEST:-}" ]]; then
+    python3 "${SCRIPT_DIR}/runtime_snapshot.py" verify --snapshot "${SCRIPT_DIR}" \
+        --manifest "${MESH_RUNTIME_MANIFEST}" --expected-sha "${MESH_RUNTIME_SHA256:?}" >/dev/null
+fi
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
@@ -94,7 +98,7 @@ default_cpus=1;default_rpn=16
 CPUS_PER_TASK="${CPUS_PER_TASK:-${default_cpus}}"
 export CPUS_PER_TASK KERNEL_THREADS KERNEL_SCHEDULER KERNEL_THREAD_COUNTS KERNEL_SCHEDULERS
 BALANCE_METHOD="${BALANCE_METHOD:-none}"
-CALIBRATION_ROOT="${CALIBRATION_ROOT:-${SCRIPT_DIR}/../strong_scaling_results/mesh_algorithms_20260908-135236}"
+CALIBRATION_ROOT="${CALIBRATION_ROOT:-${STRONG_SCALING_PROJECT_DIR}/strong_scaling_results/mesh_algorithms_20260908-135236}"
 MIN_GAIN_SECONDS="${MIN_GAIN_SECONDS:-0.35}"
 MIN_GAIN_FRACTION="${MIN_GAIN_FRACTION:-0.05}"
 CLOSURE_GROWTH="${CLOSURE_GROWTH:-0}"
@@ -494,7 +498,7 @@ fi
 [[ "${EXPERIMENT_PRESET}" != abc2 || "${WORKLETS_PER_OWNER}" == 0 ]] || markers+=("mandatory_home_v2" "original_owner_v1")
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
-[[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v1" "phase_operations_v1" "cost_")
+[[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v2" "phase_operations_v1" "cost_")
 [[ "$EXPERIMENT_PRESET" != refine_bulk && "${EXPERIMENT_PRESET}" != legal_prune && "${EXPERIMENT_PRESET}" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline && "${EXPERIMENT_PRESET}" != generation_cost ]] || markers+=("first_encounter_bulk_v1" "refinement_threads")
 [[ "$EXPERIMENT_PRESET" != legal_prune ]] || markers+=("exact_rejection_v1" "legal_split_policy" "legal_split_")
 [[ "$EXPERIMENT_PRESET" != recovery_batch && "${EXPERIMENT_PRESET}" != recovery_scale && "${EXPERIMENT_PRESET}" != smooth_balance && "${EXPERIMENT_PRESET}" != split_reuse && "${EXPERIMENT_PRESET}" != front_topology && "${EXPERIMENT_PRESET}" != front_bound && "${EXPERIMENT_PRESET}" != combine_waves && "${EXPERIMENT_PRESET}" != ghost_pipeline && "${EXPERIMENT_PRESET}" != generation_cost ]] || markers+=("batch_serial_v1" "batch_parallel_v1" "recovery_batch_")
@@ -612,7 +616,7 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "MESH_NGCORE_SHA256=${MESH_NGCORE_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "NODE_CPU_BIND=${NODE_CPU_BIND}" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "MESH_NGCORE_SHA256=${MESH_NGCORE_SHA256:-none}" "MESH_RUNTIME_SHA256=${MESH_RUNTIME_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "NODE_CPU_BIND=${NODE_CPU_BIND}" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2
