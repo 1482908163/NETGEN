@@ -1,0 +1,19 @@
+A1/B1/C1: 27 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+batch_parallel -> repair_fixed_profile seed=-1 natural: -1.11% reduction; wins=1/3; validated=True
+batch_parallel -> repair_fixed_profile seed=17 natural: 6.18% reduction; wins=2/3; validated=True
+batch_parallel -> repair_fixed_profile seed=41 natural: 3.59% reduction; wins=2/3; validated=True
+repair_fixed_profile -> repair_fixed seed=-1 natural: 10.48% reduction; wins=2/3; validated=True
+repair_fixed_profile -> repair_fixed seed=17 natural: 1.92% reduction; wins=3/3; validated=True
+repair_fixed_profile -> repair_fixed seed=41 natural: 7.52% reduction; wins=3/3; validated=True
+batch_parallel -> repair_fixed seed=-1 natural: 5.75% reduction; wins=2/3; validated=True
+batch_parallel -> repair_fixed seed=17 natural: 7.27% reduction; wins=3/3; validated=True
+batch_parallel -> repair_fixed seed=41 natural: 10.84% reduction; wins=2/3; validated=True
+cost_profile 和 repair_fixed_profile 沿用 batch_parallel 算法，用于衡量诊断开销，比较不能作为算法加速；repair_fixed 才改变修复终止条件。各路线 p*/analysis/volume_operation_costs.csv 保留全部进程的准备/评价/排序/提交/收尾，累计输入量不能当唯一工作量。v3 用独立原生调用次数检查覆盖，两种时钟的差异仍逐项输出；旧 v2 拒绝规则不变，v1 漏计记录只作部分证据。
+修复终止：预热执行完整参考轮次并核对最终主要网格记录，正式运行只在精确状态不变且本轮实际修改为零时提前结束。route_runs.csv 保留 repair_fixed_skipped、repair_fixed_snapshot_seconds 等指标；快照成本计入阶段及核心耗时。用 repair_fixed_profile 比较算法效果，同时用 batch_parallel 比较净收益。
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+分区多样性 batch_parallel: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 repair_fixed_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 repair_fixed: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。

@@ -1,0 +1,43 @@
+512
+sparse
+natural
+3
+1
+-i
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+-l
+2
+-r
+2
+--maxh
+1000
+--minh
+0
+-adj
+--partition-variant
+metis_seed
+--communication-only
+--kernel-threads
+4
+--kernel-scheduler
+batch_parallel
+--async-global-ids
+--ghost-exchange
+legacy
+PARTITION_SEEDS=-1 17 41
+PLACEMENT_ROTATION=0
+RANKS_PER_NODE=4
+SOURCE_REVISION=d10b03b5fdcd54f8f99d737474512710a4800f25
+OMP_NUM_THREADS=1
+CPUS_PER_TASK=4
+MESH_KERNEL_SHA256=8e07a514734f0f49dd8a8e810dca872a67329941066834aef8a1855e0761eb5b
+MESH_NGCORE_SHA256=f9ca07595afdd48c070bd91bb1ec4a4ccf7a81e34dcf2153a099f3c01f5cb49e
+MESH_RUNTIME_SHA256=8fdadceca15768d89e94998ca1d95cc0b22a34adc87971033966d0a3d4176064
+KERNEL_ORDER=interleaved_v2
+NODE_CPU_BIND=cores
+QUALITY_WARMUP=1
+COMMUNICATION_ABLATION=1
+EXPERIMENT_STAGE=communication
+MODEL_SHA256=none
+9999de352d0f96f92db98977c56a49cb350fe683ec2654993395d5a4a2a6f139  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi
+8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
