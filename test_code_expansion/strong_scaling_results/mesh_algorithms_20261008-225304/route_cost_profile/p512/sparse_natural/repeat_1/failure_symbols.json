@@ -1,18 +1,18 @@
 {
   "schema": "failure_symbols_v1",
   "run": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/route_cost_profile/p512/sparse_natural/repeat_1",
-  "time": 1791544976.8551831,
+  "time": 1791559005.608161,
   "identities": {
     "binary": {
       "path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
       "expected_sha256": "9862b70eacbf91963d1a284a14af57b3d37874f00a9017755dd913e4f44b75d2",
-      "actual_sha256": "9999de352d0f96f92db98977c56a49cb350fe683ec2654993395d5a4a2a6f139",
+      "actual_sha256": "5fd69c64b4708b8cbcfa24c7744ec0e6571ca268a373633844c6660c5ebc33bf",
       "matched": false
     },
     "kernel": {
       "path": "/vol8/home/hnu_lhz/cjz/NETGEN/install/lib/libnglib.so",
       "expected_sha256": "6333857be3d85f978b629d09b07ae694280207db54f1f15cbfc84a175efb0ec1",
-      "actual_sha256": "8e07a514734f0f49dd8a8e810dca872a67329941066834aef8a1855e0761eb5b",
+      "actual_sha256": "5b4decae555ca3aa4bb08d01f2d730700698ddb026e1c2c32399dc7512faa0eb",
       "matched": false
     },
     "core": {
