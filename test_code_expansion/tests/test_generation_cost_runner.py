@@ -16,6 +16,7 @@ with tempfile.TemporaryDirectory() as directory:
     binary.write_text('''#!/usr/bin/env python3
 # phase_full_cost_v3 cost_ exact_state_stop_v1 reference_verify_v1 repair_fixed_
 # --split-active-evaluation original_ranges_v1 split_active_
+# --front-distance distance_original_v1 distance_memo_v1 distance_exact_replay_v1 front_distance_
 # --profile-core-only --algorithm research_1 global_id_bits mesh_phase_v3
 # mesh_comm_v1 --communication-only --kernel-threads --kernel-scheduler repair_v2
 # volume_audit_v1 node_coop_v2 node_work_v1 node_stage_metrics_v1 node_timeline_v1

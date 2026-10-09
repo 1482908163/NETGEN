@@ -182,6 +182,8 @@ int Meshing3 :: AddConnectedPair (const INDEX_2 & apair)
 MESHING3_RESULT Meshing3 :: 
 GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 {
+  front_distance_mode=mp.volume_front_distance_mode;
+  front_distance_stats=mp.volume_front_distance_stats;
   front_bound=mp.volume_front_bound;
   front_bound_verify=mp.volume_front_bound_verify;
   front_bound_stats=mp.volume_front_bound_stats;

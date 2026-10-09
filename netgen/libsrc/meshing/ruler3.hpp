@@ -153,6 +153,37 @@ public:
     for(int i=1;i<=freefaceinequ.Size();++i)
       if(!saved[i-1].empty())std::memcpy(&(*freefaceinequ.Get(i))(0,0),saved[i-1].data(),saved[i-1].size());
   }
+  FreeZoneReplayState SaveFrontReplayState() const {
+    auto saved=SaveFreeZoneReplayState();
+    saved.emplace_back(3*sizeof(double)*transfreezone.Size());
+    for(int i=1;i<=transfreezone.Size();++i) {
+      const auto &p=transfreezone.Get(i);
+      const double coordinates[]={p.X(),p.Y(),p.Z()};
+      std::memcpy(saved.back().data()+3*sizeof(double)*(i-1),coordinates,sizeof(coordinates));
+    }
+    // Before its first transformation the box is uninitialized and cannot be
+    // observed by geometry. Do not read it until transformed vertices exist.
+    saved.emplace_back(transfreezone.Size() ? 6*sizeof(double) : 0);
+    if(!saved.back().empty()) {
+      const double bounds[]={fzbox.Mini(1),fzbox.Maxi(1),fzbox.Mini(2),fzbox.Maxi(2),fzbox.Mini(3),fzbox.Maxi(3)};
+      std::memcpy(saved.back().data(),bounds,sizeof(bounds));
+    }
+    return saved;
+  }
+  void RestoreFrontReplayState(const FreeZoneReplayState &saved) {
+    RestoreFreeZoneReplayState(saved);
+    const auto &vertices=saved[freefaceinequ.Size()];
+    transfreezone.SetSize(vertices.size()/(3*sizeof(double)));
+    for(int i=1;i<=transfreezone.Size();++i) {
+      double coordinates[3];
+      std::memcpy(coordinates,vertices.data()+sizeof(coordinates)*(i-1),sizeof(coordinates));
+      for(int k=1;k<=3;++k)transfreezone.Elem(i).X(k)=coordinates[k-1];
+    }
+    if(!saved.back().empty()) {
+      double bounds[6];std::memcpy(bounds,saved.back().data(),sizeof(bounds));
+      fzbox=Box3d(bounds[0],bounds[1],bounds[2],bounds[3],bounds[4],bounds[5]);
+    }
+  }
   ///
   void SetFreeZoneTransformation (const Vector & allp,
 				  int tolclass);

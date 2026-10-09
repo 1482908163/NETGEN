@@ -21,6 +21,7 @@ fi
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
+#   front_distance  : 固定修复与活跃分裂相同，仅比较前沿距离复用；预热逐次规则回放
 #   split_active    : 原基线、修复终止、修复终止加活跃分裂评价；预热逐边精确对照
 #   repair_fixed    : 基线、诊断对照与精确状态修复终止；预热继续原轮次验证
 #   combine_waves : 三规模、三分区，原域内边合并有序并行提交与逐波串行重放
@@ -40,6 +41,13 @@ fi
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+# Keep fixed repair and active split identical; isolate generation matching.
+if [[ "$EXPERIMENT_PRESET" == front_distance ]]; then
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-split_active front_distance}"
+    EXPERIMENT_PRESET=generation_cost
+fi
+FRONT_DISTANCE="${FRONT_DISTANCE:-0}"
+[[ "$FRONT_DISTANCE" =~ ^[01]$ ]] || { echo "FRONT_DISTANCE must be 0 or 1" >&2;exit 2; }
 if [[ "$EXPERIMENT_PRESET" == split_active ]]; then
     export WORKLET_ROUTES="${WORKLET_ROUTES:-batch_parallel repair_fixed split_active}"
     EXPERIMENT_PRESET=generation_cost
@@ -338,7 +346,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -348,7 +356,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
             factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;ready=0;ghost_exchange=legacy;adaptive_worklets=0;binding=none;scheduler=repair
-            fixed_mode=0;active_mode=0
+            fixed_mode=0;active_mode=0;distance_mode=0
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -379,6 +387,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed_profile) scheduler=cost_profile;async_ids=1;binding=cores ;;
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
+                front_distance) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;distance_mode=1 ;;
                 legal_prune) scheduler=legal_prune;async_ids=1;binding=cores ;;
                 refine_serial) scheduler=refine_serial;async_ids=1;binding=cores ;;
                 refine_parallel) scheduler=refine_parallel;async_ids=1;binding=cores ;;
@@ -390,7 +399,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
             esac
             # Keep startup diagnostics even if a child exits before creating plan.json.
             launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
-            if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" \
+            if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" GHOST_EXCHANGE="$ghost_exchange" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
                 route_failures=$((route_failures+1))
@@ -518,6 +527,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
+[[ "$KERNEL_SCHEDULER" != cost_profile ]] || markers+=("--front-distance" "distance_original_v1" "distance_memo_v1" "distance_exact_replay_v1" "front_distance_")
 [[ "$KERNEL_SCHEDULER" != cost_profile ]] || markers+=("--split-active-evaluation" "original_ranges_v1" "split_active_")
 [[ "$SPLIT_ACTIVE_EVALUATION" == 0 ]] || markers+=("--split-active-evaluation" "active_queue_v1" "active_exact_replay_v1" "split_active_")
 [[ "$REPAIR_FIXED_POINT" == 0 ]] || markers+=("exact_state_stop_v1" "reference_verify_v1" "repair_fixed_")
@@ -625,7 +635,7 @@ else
 fi
 if ((KERNEL_THREADS>0)); then
     common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
-    [[ "$KERNEL_SCHEDULER" != cost_profile ]] || common+=(--repair-fixed-point "$REPAIR_FIXED_POINT" --split-active-evaluation "$SPLIT_ACTIVE_EVALUATION")
+    [[ "$KERNEL_SCHEDULER" != cost_profile ]] || common+=(--repair-fixed-point "$REPAIR_FIXED_POINT" --split-active-evaluation "$SPLIT_ACTIVE_EVALUATION" --front-distance "$FRONT_DISTANCE")
 fi
 [[ "$PREFIX_GLOBAL_IDS" == 0 ]] || common+=(--prefix-global-ids)
 [[ "$FUSED_GLOBAL_IDS" == 0 ]] || common+=(--fused-global-ids)
@@ -786,6 +796,7 @@ SIGNATURE
                 [[ "$a" != sparse ]] || args+=(--verify-faces)
                 [[ "$REPAIR_FIXED_POINT" == 0 ]] || args+=(--repair-fixed-point 2)
                 [[ "$SPLIT_ACTIVE_EVALUATION" == 0 ]] || args+=(--split-active-evaluation 2)
+                [[ "$FRONT_DISTANCE" == 0 ]] || args+=(--front-distance 2)
             fi
             rc=0;finalize_error=""
             timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?

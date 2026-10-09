@@ -3,6 +3,7 @@
 #include "conservative_box_index.hpp"
 #include "front_face_index.hpp"
 #include "front_quality_bound.hpp"
+#include "front_distance_cache.hpp"
 #include <functional>
 #include <cstring>
 
@@ -57,34 +58,39 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
     int tolerance,double sloppy,int rotation,float& error)
 {
-  if(!front_bound || !front_bound_verify)
+  if(!(front_bound && front_bound_verify) && front_distance_mode!=2)
     return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<Point3d,PointIndex> original_points(points);
   Array<MiniElement2d> original_faces(faces);
   Array<int> before_found(foundmap),before_can(canuse);
   Array<string> before_problems(problems);
   std::vector<vnetrule::FreeZoneReplayState> before_zones;
-  for(const auto &rule:rules)before_zones.push_back(rule->SaveFreeZoneReplayState());
+  for(const auto &rule:rules)before_zones.push_back(rule->SaveFrontReplayState());
   const double before_other=minother,before_without=minwithoutother;
   const int result=ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<int> optimized_found(foundmap),optimized_can(canuse);
   Array<string> optimized_problems(problems);
   std::vector<vnetrule::FreeZoneReplayState> optimized_zones;
-  for(const auto &rule:rules)optimized_zones.push_back(rule->SaveFreeZoneReplayState());
+  for(const auto &rule:rules)optimized_zones.push_back(rule->SaveFrontReplayState());
   const double optimized_other=minother,optimized_without=minwithoutother;
   auto *stats=front_bound_stats;
   const bool saved_bound=front_bound;
+  const int saved_distance=front_distance_mode;
+  auto *distance_stats=front_distance_stats;
   auto *saved_match=front_match_stats;
   struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
     front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
+    front_distance_mode=saved_distance;front_distance_stats=distance_stats;
     foundmap=optimized_found;canuse=optimized_can;problems=optimized_problems;
     minother=optimized_other;minwithoutother=optimized_without;
-    for(int i=0;i<rules.Size();++i)rules[i]->RestoreFreeZoneReplayState(optimized_zones[i]);
+    for(int i=0;i<rules.Size();++i)rules[i]->RestoreFrontReplayState(optimized_zones[i]);
   }};
   front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
+  front_distance_mode=0;front_distance_stats=nullptr;
+  const auto reference_start=std::chrono::steady_clock::now();
   foundmap=before_found;canuse=before_can;problems=before_problems;
   minother=before_other;minwithoutother=before_without;
-  for(int i=0;i<rules.Size();++i)rules[i]->RestoreFreeZoneReplayState(before_zones[i]);
+  for(int i=0;i<rules.Size();++i)rules[i]->RestoreFrontReplayState(before_zones[i]);
   NgArray<Element> original_elements;
   NgArray<INDEX> original_deleted;
   float original_error=0;
@@ -112,11 +118,20 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   for(auto i:foundmap.Range())
     if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
   for(int i=0;i<rules.Size();++i)
-    if(rules[i]->SaveFreeZoneReplayState()!=optimized_zones[i])same=false;
+    if(rules[i]->SaveFrontReplayState()!=optimized_zones[i])same=false;
+  if(saved_distance==2) {
+    if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
+    for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
+  }
+  if(distance_stats) {
+    distance_stats->Add(8,1);
+    distance_stats->Add(10,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
+  }
   if(stats)stats->Add(10,1);
   if(!same) {
     if(stats)stats->Add(11,1);
-    throw NgException("front quality bound ApplyRules replay mismatch");
+    if(distance_stats)distance_stats->Add(9,1);
+    throw NgException("front optimization ApplyRules replay mismatch");
   }
   return result;
 }
@@ -152,6 +167,19 @@ int Meshing3 :: ApplyRulesImpl
     }
   } diagnostics(front_match_stats);
   MatchDiagnostics bound_diagnostics(front_bound_stats);
+  struct DistanceDiagnostics {
+    VolumeKernelStats *stats;double values[12]={};
+    std::chrono::steady_clock::time_point start;
+    explicit DistanceDiagnostics(VolumeKernelStats *s):stats(s) {
+      if(stats){start=std::chrono::steady_clock::now();values[0]=1;}
+    }
+    ~DistanceDiagnostics(){if(stats){
+      values[7]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+      for(int i=0;i<12;++i)stats->Add(i,values[i]);
+    }}
+  } distance_diagnostics(front_distance_stats);
+  std::unique_ptr<FrontDistanceCache> distance_cache;
+  if(front_distance_mode)distance_cache.reset(new FrontDistanceCache(lpoints.Size()));
   Array<Point3d,PointIndex> bound_points;
   std::unique_ptr<FrontFaceIndex> incidence_index;
   // Built lazily: a successful single-face rule needs no incidence index.
@@ -376,6 +404,17 @@ int Meshing3 :: ApplyRulesImpl
       if(front_bound)for(int e=1;e<=rule->GetNE();++e)
         if(rule->GetElement(e).GetNP()!=4)tetrahedral_rule=false;
       if(front_match_stats)diagnostics.values[11]++;
+      if(front_distance_stats)distance_diagnostics.values[5]++;
+      auto point_distance=[&](int reference,PointIndex local)->double {
+        if(front_distance_stats)distance_diagnostics.values[1]++;
+        auto compute=[&]()->double {
+          return Dist2(lpoints[local],rule->GetPoint(reference))*rule->PointDistFactor(reference);
+        };
+        if(distance_cache) return distance_cache->Get(std::uint64_t(rim)+1,
+            std::size_t(reference-1),std::size_t(int(local)-PointIndex::BASE),compute,distance_diagnostics.values);
+        if(front_distance_stats)distance_diagnostics.values[3]++;
+        return compute();
+      };
       loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
       if (loktestmode)
@@ -512,10 +551,7 @@ int Meshing3 :: ApplyRulesImpl
 				ok = 0;
 			      else
 				{
-				  const Point3d & lp = lpoints[locpi];
-				  const Point3d & rp = rule->GetPoint(refpi);
-
-				  if ( Dist2 (lp, rp) * rule->PointDistFactor(refpi) > minerr)
+				  if ( point_distance(refpi,locpi) > minerr)
 				    {
 				      impossible = 0;
 				      ok = 0;
@@ -638,10 +674,7 @@ int Meshing3 :: ApplyRulesImpl
 				}
 			      else
 				{
-				  const Point3d & lp = lpoints[locpi];
-				  const Point3d & rp = rule->GetPoint(npok);
-
-				  if ( Dist2 (lp, rp) * rule->PointDistFactor(npok) > minerr)
+				  if ( point_distance(npok,locpi) > minerr)
 				    {
 				      ok = 0;
 				      impossible = 0;
@@ -682,6 +715,7 @@ int Meshing3 :: ApplyRulesImpl
 		    {
 		      NgProfiler::RegionTimer regfa2(302);		      
 
+                      if(front_distance_stats)distance_diagnostics.values[6]++;
                       if(front_bound_stats)bound_diagnostics.values[1]++;
 		      // all points are mapped
 		      

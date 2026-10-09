@@ -32,6 +32,8 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  int front_distance_mode = 0;
+  VolumeKernelStats *front_distance_stats = nullptr;
   bool front_bound = false, front_bound_verify = false;
   VolumeKernelStats *front_bound_stats = nullptr;
   bool front_topology = false, front_verify = false;

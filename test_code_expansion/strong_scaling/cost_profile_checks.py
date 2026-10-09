@@ -92,6 +92,7 @@ def validate(rows,metadata,result,slowest_rank,sink=None,compute=None):
     result['cost_work_signature']=json.dumps(signature,separators=(',',':'))
     result['cost_active_ranks']=sum(any(row['metrics'][f'cost_{phase}_{op}_calls'] for phase in PHASES for op in OPERATIONS) for row in rows)
     validate_active_split(rows,metadata,result,slowest_rank)
+    validate_front_distance(rows,metadata,result,slowest_rank)
     if contract=='phase_full_cost_v3':
         mode=metadata.get('volume_repair_fixedpoint')
         if mode not in ('disabled','exact_state_stop_v1','reference_verify_v1'):
@@ -150,3 +151,35 @@ def validate_active_split(rows,metadata,result,slowest_rank):
         for f,value in v.items():totals[f]+=value
     result['volume_split_evaluation']=mode
     result.update({'split_active_'+f:v for f,v in totals.items()})
+
+
+DISTANCE_FIELDS=('calls','queries','hits','computed','fallback','rules','candidates',
+    'apply_seconds','verified','mismatches','reference_seconds','allocated_cells')
+
+def validate_front_distance(rows,metadata,result,slowest_rank):
+    mode=metadata.get('volume_front_distance')
+    if mode is None:return # Historical profiles keep their recorded contracts.
+    if mode not in ('distance_original_v1','distance_memo_v1','distance_exact_replay_v1'):
+        raise ValueError('unknown front distance contract')
+    totals={f:0 for f in DISTANCE_FIELDS}
+    for row in rows:
+        v={f:row['metrics'].get('front_distance_'+f) for f in DISTANCE_FIELDS}
+        for f,value in v.items():
+            if not isinstance(value,(int,float)) or not math.isfinite(value) or value<0 or (not f.endswith('_seconds') and int(value)!=value):
+                raise ValueError('invalid front distance counter: '+f)
+        if v['queries']!=v['hits']+v['computed'] or v['fallback']>v['computed'] or v['mismatches'] or v['verified']>v['calls']:
+            raise ValueError('front distance conservation mismatch')
+        if v['calls']==0 and any(v.values()):raise ValueError('front distance counters without calls')
+        if v['apply_seconds']>1.05*row['metrics']['kernel_front_seconds']+1e-3:raise ValueError('front distance timing exceeds front phase')
+        if v['allocated_cells']>65536*v['calls']:raise ValueError('front distance memory coverage mismatch')
+        if mode=='distance_original_v1' and any(v[f] for f in ('hits','fallback','verified','reference_seconds','allocated_cells')):
+            raise ValueError('original front entered distance cache')
+        if mode=='distance_exact_replay_v1':
+            if row['repeat']!=0 or v['verified']!=v['calls']:raise ValueError('front distance exact replay incomplete')
+        elif v['verified'] or v['reference_seconds']:raise ValueError('front distance reference entered formal run')
+        if row['rank']==slowest_rank:result.update({'slowest_compute_front_distance_'+f:value for f,value in v.items()})
+        for f,value in v.items():totals[f]+=value
+    import json
+    result['front_distance_work_signature']=json.dumps([[row['rank']]+[row['metrics']['front_distance_'+f] for f in ('calls','queries','rules','candidates')] for row in rows],separators=(',',':'))
+    result['volume_front_distance']=mode
+    result.update({'front_distance_'+f:v for f,v in totals.items()})
