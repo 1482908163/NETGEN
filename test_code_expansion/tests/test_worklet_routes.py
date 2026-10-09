@@ -13,6 +13,9 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route in ('incidence_profile','incidence_ordered'):
+        from test_incidence_validation import fixture as incidence_fixture
+        return incidence_fixture(route,repeat,mode)
     if route=='front_transform':
         rows=fixture('split_active',repeat,mode)
         from cost_profile_checks import TRANSFORM_FIELDS
@@ -257,7 +260,7 @@ def main():
                 for repeat in range(0 if mode=='natural' else 1,3):
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
-                    if route in ('split_active','front_distance','front_transform'):
+                    if route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered'):
                         certificates=[];profiles.inspect(d/'rank_profiles.jsonl',certificate_sink=certificates)
                         profiles.write_csv(d/'algorithm_certificate.csv',certificates)
         assert routes.analyze(root,2)

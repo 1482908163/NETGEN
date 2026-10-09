@@ -17,6 +17,70 @@
 namespace netgen
 {
 
+// Transaction-local construction: no mesh timestamp or inter-operation cache.
+// The unchanged original builder defines domain/deletion/point-mask semantics.
+static Table<ElementIndex,PointIndex> CreateOptimizationIncidence(
+    const Mesh &mesh,const MeshingParameters &mp,int operation,
+    std::optional<TBitArray<PointIndex>> points=std::nullopt)
+{
+  auto original=[&] { return mesh.CreatePoint2ElementTable(points,mp.only3D_domain_nr); };
+  auto *stats=mp.volume_incidence_stats;
+  if(!stats)return original();
+  using S=VolumeIncidenceStats;
+  using Clock=std::chrono::steady_clock;
+  const int base=(mp.volume_cost_phase*S::operations+operation)*S::width;
+  const auto begin=Clock::now();
+  const std::size_t np=mesh.GetNP(),ne=mesh.GetNE();
+  const std::size_t shards=std::min(std::max(std::size_t(1),ne),
+      std::size_t(ngcore::task_manager ? std::max(1,ngcore::TaskManager::GetNumThreads()) : 1));
+  stats->Add(base+S::calls,1);stats->Add(base+S::input_points,np);stats->Add(base+S::input_elements,ne);
+  Table<ElementIndex,PointIndex> table;
+  const bool ordered=mp.volume_incidence_mode>0 && netgen_incidence::OrderedPlan::Fits(np,shards);
+  if(ordered) {
+    netgen_incidence::OrderedPlan plan(np,shards);
+    stats->Max(base+S::scratch_peak_bytes,plan.ScratchBytes());
+    auto execute=[](std::size_t count,auto function) {
+      ngcore::ParallelForRange(ngcore::Range(count),[&](auto range) {
+        for(auto i:range)function(std::size_t(i));
+      });
+    };
+    auto visit=[&](std::size_t shard,auto add) {
+      for(auto ei:mesh.VolumeElements().Range().Split(int(shard),int(shards))) {
+        const auto &el=mesh[ei];
+        if(el.IsDeleted() || (mp.only3D_domain_nr && el.GetIndex()!=mp.only3D_domain_nr))continue;
+        for(auto pi:el.PNums())if(!points || (*points)[pi])
+          add(std::size_t(int(pi)-PointIndex::BASE),ei);
+      }
+    };
+    plan.Count(visit,execute);
+    table=Table<ElementIndex,PointIndex>(FlatArray<std::size_t,PointIndex>(np,plan.Sizes().data()));
+    plan.Fill(visit,[&](std::size_t point,std::size_t slot,ElementIndex ei) {
+      table[PointIndex(point+PointIndex::BASE)][slot]=ei;
+    },execute);
+    stats->Add(base+S::ordered_builds,1);
+    stats->Add(base+S::avoided_atomic_updates,2*double(table.AsArray().Size()));
+  } else {
+    table=original();
+    if(mp.volume_incidence_mode>0)stats->Add(base+S::fallback_builds,1);
+  }
+  stats->Add(base+S::entries,table.AsArray().Size());
+  stats->Add(base+S::build_seconds,std::chrono::duration<double>(Clock::now()-begin).count());
+  if(mp.volume_incidence_mode==2) {
+    const auto stamp=Clock::now();
+    auto reference=original();
+    bool same=table.Size()==reference.Size();
+    if(same)for(auto pi:table.Range()) {
+      if(table[pi].Size()!=reference[pi].Size()) {same=false;break;}
+      for(auto j:ngcore::Range(table[pi].Size()))if(table[pi][j]!=reference[pi][j]) {same=false;break;}
+      if(!same)break;
+    }
+    stats->Add(base+S::reference_seconds,std::chrono::duration<double>(Clock::now()-stamp).count());
+    stats->Add(base+S::verified,1);
+    if(!same) {stats->Add(base+S::mismatches,1);throw NgException("ordered incidence exact replay mismatch");}
+  }
+  return table;
+}
+
 // Restrict repair candidates to the vertex stars of illegal tetrahedra.
 // Rebuilt after every mutation phase, so no stale edge/index cache survives.
 static void RestrictRepairFrontier(Mesh & mesh, const MeshingParameters & mp,
@@ -494,7 +558,7 @@ void MeshOptimize3d :: CombineImprove ()
       (*testout) << "Total badness = " << totalbad << endl;
     }
 
-  auto elementsonnode = mesh.CreatePoint2ElementTable(nullopt, mp.only3D_domain_nr);
+  auto elementsonnode = CreateOptimizationIncidence(mesh,mp,0);
 
   Array<std::tuple<PointIndex,PointIndex>> edges;
   BuildEdgeList(mesh, elementsonnode, edges);
@@ -887,7 +951,7 @@ void MeshOptimize3d :: SplitImprove ()
   double bad = 0.0;
   double badmax = 0.0;
 
-  auto elementsonnode = mesh.CreatePoint2ElementTable(nullopt, mp.only3D_domain_nr);
+  auto elementsonnode = CreateOptimizationIncidence(mesh,mp,1);
 
   const char * savetask = multithread.task;
   multithread.task = "Optimize Volume: Split Improve";
@@ -1568,7 +1632,7 @@ void MeshOptimize3d :: SwapImprove (const TBitArray<ElementIndex> * working_elem
           }
       });
 
-  auto elementsonnode = mesh.CreatePoint2ElementTable(free_points, mp.only3D_domain_nr );
+  auto elementsonnode = CreateOptimizationIncidence(mesh,mp,2,free_points);
 
   NgArray<ElementIndex> hasbothpoints;
 
@@ -2752,7 +2816,7 @@ void MeshOptimize3d :: SwapImprove2 (bool conform_segments)
 
   // find elements on node
 
-  auto elementsonnode = mesh.CreatePoint2ElementTable(nullopt, mp.only3D_domain_nr);
+  auto elementsonnode = CreateOptimizationIncidence(mesh,mp,3);
   // todo: respect mp.only3D_domain_nr
   
   for (SurfaceElementIndex sei = 0; sei < nse; sei++)

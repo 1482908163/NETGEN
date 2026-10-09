@@ -115,3 +115,8 @@ python3 "${ROOT}/tests/test_front_transform_validation.py"
 python3 "${ROOT}/tests/test_front_transform_replay.py"
 python3 "${ROOT}/tests/test_front_transform_runner.py"
 python3 "${ROOT}/tests/test_front_transform_recovery.py"
+
+"${CXX}" -std=c++17 -Wall -Wextra -Werror -pthread -I "${ROOT}/../netgen/libsrc/meshing" "${ROOT}/tests/test_ordered_incidence.cpp" -o "${BUILD}/test_ordered_incidence"
+"${BUILD}/test_ordered_incidence"
+python3 "${ROOT}/tests/test_incidence_validation.py"
+python3 "${ROOT}/tests/test_incidence_runner.py"

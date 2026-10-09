@@ -550,6 +550,13 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
     double *recovery,double *batch,double *profile,double *native_calls,
     double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,int distance_mode,double *distance,int transform_mode,double *transform);
 
+   // Stable transaction-local point/element transpose; incidence is phase/op/field.
+   enum {NG_VOLUME_INCIDENCE_COUNT=3*4*12};
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshOrderedIncidence(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count);
+
 // Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
 // batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
 // attempts, applied, waves, parallel_waves, parallel_attempts, planning_seconds,

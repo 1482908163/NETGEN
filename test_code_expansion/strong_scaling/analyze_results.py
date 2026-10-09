@@ -369,7 +369,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
                 volume_front_transform=metadata.get("volume_front_transform"),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_"))}))
+                **({"volume_incidence_build":metadata["volume_incidence_build"]} if "volume_incidence_build" in metadata else {}),
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","incidence_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -540,6 +541,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
     if metadata.get('kernel_scheduler')=='cost_profile':
         from cost_profile_checks import validate
         validate(rows,metadata,result,slowest_compute_rank,cost_sink,compute)
+        from incidence_checks import validate as validate_incidence
+        validate_incidence(rows,metadata,result,slowest_compute_rank)
     # Preserve a coherent view of ONE rank rather than summing stage maxima.
     if int(metadata.get('kernel_threads',0))>0:
         for key,value in rows[slowest_compute_rank]['metrics'].items():
@@ -1228,7 +1231,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','incidence_'))})
             critical_sink.append(item)
     return result, detail
 

@@ -14,6 +14,7 @@ while depth:
 body=source[start:end]
 prefix=r'''
 #include "volume_cost_profile.hpp"
+#include "ordered_incidence.hpp"
 #include "repair_fixed_point.hpp"
 #include <algorithm>
 #include <cassert>
@@ -29,6 +30,8 @@ struct MeshingParameters {
   VolumeResources *volume_resources=nullptr;
   VolumeKernelStats *volume_kernel_stats=nullptr,*volume_legal_split_stats=nullptr;
   VolumeCostStats *volume_cost_stats=nullptr;
+  VolumeIncidenceStats *volume_incidence_stats=nullptr;
+  int volume_incidence_mode=0;
   VolumeRepairFixedPointStats *volume_repair_fixed_stats=nullptr;
   bool volume_repair_fixed_point=false,volume_repair_fixed_verify=false;
   int volume_cost_phase=0,nthreads=1;
@@ -77,6 +80,10 @@ struct MeshOptimize3d {
     assert(mp.nthreads==1 && !mp.parallel_meshing);
   }
   void operation(int op,const char*name) {
+    if(mp.volume_incidence_stats) {
+      assert(mp.volume_incidence_mode==2);
+      mp.volume_incidence_stats->Add((mp.volume_cost_phase*4+op)*12,1);
+    }
     VolumeCostScope scope(mp.volume_cost_stats,mp.volume_cost_phase,op,OPT_LEGAL,mesh.GetNP(),mesh.GetNE());
     if(op==1) {
       ++mesh.round;
@@ -97,14 +104,16 @@ int main() {
   using namespace netgen;
   MeshingParameters mp;mp.nthreads=4;mp.parallel_meshing=true;mp.volume_parallel_repair=true;
   Mesh reference;RemoveIllegalElements(reference,mp,0);
-  for(int phase:{0,1}) {
+  for(int phase:{0,1,2}) {
     VolumeCostStats stats;mp.volume_cost_stats=&stats;mp.volume_cost_phase=phase;
+    VolumeIncidenceStats incidence;mp.volume_incidence_stats=&incidence;mp.volume_incidence_mode=2;
     Mesh tested;RemoveIllegalElements(tested,mp,0);
     assert(tested.operations==reference.operations && tested.marks==reference.marks);
     assert((tested.operations==std::vector<std::string>{"split","swap","swap2"}));
     for(int p=0;p<3;++p)for(int op=0;op<4;++op) {
       const int base=(p*4+op)*VolumeCostStats::width;
       assert(stats.values[base+VolumeCostStats::calls].load()==(p==phase && op!=0?1:0));
+      assert(incidence.values[(p*4+op)*12].load()==(p==phase && op!=0?1:0));
       if(p==phase && op!=0) {
         const double total=stats.values[base+VolumeCostStats::total_seconds].load();
         assert(total>0 && total==stats.values[base+VolumeCostStats::legal_seconds].load());

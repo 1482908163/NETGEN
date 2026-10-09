@@ -13,6 +13,7 @@
 #include <chrono>
 #include <memory>
 #include "volume_cost_profile.hpp"
+#include "ordered_incidence.hpp"
 #include "repair_fixed_point.hpp"
 #include <core/taskmanager.hpp>
 
@@ -1798,6 +1799,8 @@ namespace netgen
     VolumeFrontSearchStats * volume_front_search = nullptr;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     VolumeCostStats *volume_cost_stats = nullptr;
+    VolumeIncidenceStats *volume_incidence_stats = nullptr;
+    int volume_incidence_mode = 0; // 0 original / 1 ordered shards / 2 exact table replay
     VolumeRepairFixedPointStats *volume_repair_fixed_stats = nullptr;
     bool volume_repair_fixed_point = false;
     bool volume_repair_fixed_verify = false;
