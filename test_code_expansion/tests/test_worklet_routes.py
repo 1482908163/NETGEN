@@ -13,12 +13,24 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route=='split_active':
+        rows=fixture('repair_fixed',repeat,mode)
+        from cost_profile_checks import ACTIVE_FIELDS,FIELDS
+        for row in rows:
+            row['metadata']['volume_split_evaluation']='active_exact_replay_v1' if repeat==0 else 'active_queue_v1'
+            values=(1,6,2,4,2,.001,.01,.016,.006,6 if repeat==0 else 0,0,.01 if repeat==0 else 0)
+            row['metrics'].update({'split_active_'+f:v for f,v in zip(ACTIVE_FIELDS,values)})
+            values=(.02,.004,.01,.001,.003,.002,1,4,1,6,2,2,1,0,.02,0,0,0,0,.01,0)
+            row['metrics'].update({'cost_generation_split_'+f:v for f,v in zip(FIELDS,values)})
+            row['metrics'].update(native_generation_split_seconds=.02,native_generation_split_calls=1)
+        return rows
     if route=='cost_profile':
-        from cost_profile_checks import PHASES,OPERATIONS,FIELDS
+        from cost_profile_checks import PHASES,OPERATIONS,FIELDS,ACTIVE_FIELDS
         rows=fixture('batch_parallel',repeat,mode)
         for row in rows:
             row['metadata'].update(kernel_scheduler='cost_profile',volume_native_profile='phase_operations_v1',
-                                   volume_cost_profile='phase_full_cost_v3',volume_repair_fixedpoint='disabled')
+                                   volume_cost_profile='phase_full_cost_v3',volume_repair_fixedpoint='disabled',volume_split_evaluation='original_ranges_v1')
+            row['metrics'].update({'split_active_'+f:0 for f in ACTIVE_FIELDS})
             for phase in PHASES:
                 for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
                     row['metrics'][f'native_{phase}_{op}_seconds']=0
@@ -226,6 +238,9 @@ def main():
                 for repeat in range(0 if mode=='natural' else 1,3):
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
+                    if route=='split_active':
+                        certificates=[];profiles.inspect(d/'rank_profiles.jsonl',certificate_sink=certificates)
+                        profiles.write_csv(d/'algorithm_certificate.csv',certificates)
         assert routes.analyze(root,2)
         # A diagnostic route must preserve all quality details even when an
         # aggregate nonregression gate would accept an apparent improvement.

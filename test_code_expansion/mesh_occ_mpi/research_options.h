@@ -29,6 +29,7 @@ struct ResearchOptions {
     double task_cut_growth = 0.10;
     int kernel_threads = 0; // 0: preserve the historical nglib entry
     std::string kernel_scheduler = "static";
+    int split_active_evaluation=0; // 0 original / 1 active queue / 2 exact replay
     int repair_fixed_point=0; // 0 control / 1 exact-state stop / 2 reference check
     bool communication_only = false; // 固化通信基线，绕过历史均衡和模型。
     bool verify_faces = false;

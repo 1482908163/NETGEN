@@ -17,6 +17,8 @@ class MeshOptimize3d
   bool HasBadElement(FlatArray<ElementIndex> els);
   bool HasIllegalElement(FlatArray<ElementIndex> els);
   bool NeedsOptimization(FlatArray<ElementIndex> els);
+  bool PrepareSplitCavity(Table<ElementIndex,PointIndex>& incidence, PointIndex a, PointIndex b,
+      ArrayMem<ElementIndex,20>& cavity, double& bad1, double& badmax, bool* pruned);
 
 public:
 
@@ -39,7 +41,7 @@ public:
   // Valid only within one SplitImprove evaluation/ordered-commit transaction.
   struct SplitProposal { Point3d point; double badness=0; bool valid=false; };
   void SplitImprove ();
-  double SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only=false, bool * pruned=nullptr, SplitProposal *proposal=nullptr, bool reuse=false);
+  double SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only=false, bool * pruned=nullptr, SplitProposal *proposal=nullptr, bool reuse=false, bool *eligible=nullptr);
 
   void SplitImprove2 ();
   double SplitImprove2Element (ElementIndex ei, const Table<ElementIndex, PointIndex> & elements_of_point, bool check_only);

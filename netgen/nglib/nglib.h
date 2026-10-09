@@ -532,6 +532,14 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
     double *recovery,double *batch,double *profile,double *native_calls,
     double *cost,int cost_count,double *fixed,int fixed_count);
 
+   // Same cost/fixed arrays as RepairFixedPoint; active[12]: calls, edges,
+   // active, rejected, dispatched, screen/evaluate/worker/worker-max seconds,
+   // verified edges, mismatches, reference seconds. active_mode 0/1/2.
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshActiveSplit(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active);
+
 // Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
 // batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
 // attempts, applied, waves, parallel_waves, parallel_attempts, planning_seconds,

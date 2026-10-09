@@ -91,6 +91,7 @@ def validate(rows,metadata,result,slowest_rank,sink=None,compute=None):
     result['cost_coverage_gap_seconds']=gap_seconds
     result['cost_work_signature']=json.dumps(signature,separators=(',',':'))
     result['cost_active_ranks']=sum(any(row['metrics'][f'cost_{phase}_{op}_calls'] for phase in PHASES for op in OPERATIONS) for row in rows)
+    validate_active_split(rows,metadata,result,slowest_rank)
     if contract=='phase_full_cost_v3':
         mode=metadata.get('volume_repair_fixedpoint')
         if mode not in ('disabled','exact_state_stop_v1','reference_verify_v1'):
@@ -114,3 +115,38 @@ def validate(rows,metadata,result,slowest_rank,sink=None,compute=None):
                     result.update({f'slowest_compute_repair_fixed_{phase}_{f}':v for f,v in values.items()})
                 for f,v in values.items():totals[f]+=v
         result.update({'repair_fixed_'+f:v for f,v in totals.items()})
+
+
+ACTIVE_FIELDS=('calls','edges','active','rejected','dispatched','screen_seconds','evaluate_seconds',
+    'worker_seconds','worker_max_seconds','verified','mismatches','reference_seconds')
+
+def validate_active_split(rows,metadata,result,slowest_rank):
+    mode=metadata.get('volume_split_evaluation')
+    if mode is None:return # Historical profiles retain their existing contract.
+    if mode not in ('original_ranges_v1','active_queue_v1','active_exact_replay_v1'):
+        raise ValueError('unknown active split evaluation contract')
+    totals={f:0 for f in ACTIVE_FIELDS}
+    for row in rows:
+        v={f:row['metrics'].get('split_active_'+f) for f in ACTIVE_FIELDS}
+        for f,value in v.items():
+            if not isinstance(value,(int,float)) or not math.isfinite(value) or value<0 or (not f.endswith('_seconds') and int(value)!=value):
+                raise ValueError('invalid active split counter: '+f)
+        if v['active']+v['rejected']!=v['edges'] or v['mismatches'] or v['worker_max_seconds']>v['worker_seconds']+1e-7:
+            raise ValueError('active split conservation mismatch')
+        if v['calls']==0 and any(v.values()):raise ValueError('active split counters without calls')
+        if v['calls']>sum(row['metrics'][f'cost_{p}_split_calls'] for p in PHASES) or v['edges']>sum(row['metrics'][f'cost_{p}_split_evaluated_items'] for p in PHASES):
+            raise ValueError('active split exceeds native operation coverage')
+        if v['screen_seconds']>v['evaluate_seconds']+1e-7 or v['worker_max_seconds']>v['evaluate_seconds']+1e-7:
+            raise ValueError('active split components exceed evaluation time')
+        if mode=='original_ranges_v1':
+            if any(v[f] for f in ('dispatched','screen_seconds','verified','mismatches','reference_seconds')):
+                raise ValueError('original split route entered active queue')
+        else:
+            if v['dispatched']!=v['active']:raise ValueError('active split tasks missing or duplicated')
+            if mode=='active_exact_replay_v1':
+                if row['repeat']!=0 or v['verified']!=v['edges']:raise ValueError('active split exact replay incomplete')
+            elif v['verified'] or v['reference_seconds']:raise ValueError('active split reference entered formal run')
+        if row['rank']==slowest_rank:result.update({'slowest_compute_split_active_'+f:value for f,value in v.items()})
+        for f,value in v.items():totals[f]+=value
+    result['volume_split_evaluation']=mode
+    result.update({'split_active_'+f:v for f,v in totals.items()})

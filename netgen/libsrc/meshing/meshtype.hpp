@@ -1772,6 +1772,8 @@ namespace netgen
     bool volume_combine_waves = false;
     bool volume_combine_verify = false;
     VolumeCombineStats *volume_combine_stats = nullptr;
+    int volume_split_evaluation_mode = 0; // 0 original / 1 compact active / 2 exact replay
+    VolumeKernelStats *volume_split_evaluation_stats = nullptr;
     bool volume_split_active = false;
     bool volume_split_reuse = false;
     bool volume_split_verify = false;

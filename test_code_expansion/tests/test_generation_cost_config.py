@@ -19,3 +19,8 @@ env['EXPERIMENT_PRESET']='repair_fixed'
 result=subprocess.run(['bash'],input=prefix+probe,env=env,text=True,capture_output=True,check=True)
 assert result.stdout.splitlines()[-8:]==['128 256 512','-1 17 41','batch_parallel repair_fixed_profile repair_fixed','3','natural','4','4','1'],result.stdout
 print('PASS: exact-state repair preset reuses the full matrix with three matched routes')
+
+env['EXPERIMENT_PRESET']='split_active'
+result=subprocess.run(['bash'],input=prefix+probe,env=env,text=True,capture_output=True,check=True)
+assert result.stdout.splitlines()[-8:]==['128 256 512','-1 17 41','batch_parallel repair_fixed split_active','3','natural','4','4','1'],result.stdout
+print('PASS: active split preset, three matched routes and the proven parallel scale matrix')

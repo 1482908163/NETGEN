@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") ||
                 !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
@@ -245,6 +245,10 @@ int main(int argc, char **argv) {
                     research.repair_fixed_point=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.repair_fixed_point<0 || research.repair_fixed_point>2)
                         throw std::runtime_error("invalid repair fixed-point mode");
+                }
+                else if(option=="--split-active-evaluation") {
+                    research.split_active_evaluation=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.split_active_evaluation<0 || research.split_active_evaluation>2)throw std::runtime_error("invalid active split mode");
                 }
                 else if(option=="--ghost-exchange") research.ghost_exchange=value;
                 else if(option=="--algorithm") research.algorithm=value;
@@ -423,6 +427,7 @@ int main(int argc, char **argv) {
          research.algorithm!="sparse" && research.algorithm!="combined") ||
         (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
         (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
+        (research.split_active_evaluation && (research.kernel_scheduler!="cost_profile" || (research.split_active_evaluation==2 && !validate_volume))) ||
         (research.repair_fixed_point && (research.kernel_scheduler!="cost_profile" || (research.repair_fixed_point==2 && !validate_volume))) ||
         (research.partition_variant!="metis_seed" && research.partition_variant!="cell_order_v1") ||
         research.rank_shift>=p ||
@@ -504,6 +509,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("worklet_decomposition",research.worklets()?(research.worklets_per_owner==1?"original_owner_v1":research.adaptive_worklets?"heavy_q75_q90_v1":"uniform_v1"):"none");
     if(research.kernel_scheduler=="cost_profile") {
         profiler.add_metadata("volume_cost_profile","phase_full_cost_v3");
+        profiler.add_metadata("volume_split_evaluation",research.split_active_evaluation==2 ? "active_exact_replay_v1" : research.split_active_evaluation==1 ? "active_queue_v1" : "original_ranges_v1");
         profiler.add_metadata("volume_repair_fixedpoint",research.repair_fixed_point==2 ? "reference_verify_v1" :
             research.repair_fixed_point==1 ? "exact_state_stop_v1" : "disabled");
         profiler.add_metadata("volume_native_profile","phase_operations_v1");
@@ -948,6 +954,7 @@ int main(int argc, char **argv) {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
             double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={},recovery_stats[6]={},native_profile[30]={},legal_split[3]={},recovery_batch[6]={},smooth_stats[8]={},split_stats[12]={},front_match[12]={},front_bound_stats[12]={},combine_stats[16]={};
             double operation_cost[nglib::NG_VOLUME_COST_PROFILE_COUNT]={};
+            double active_split[12]={};
             double native_calls[30]={},repair_fixed[nglib::NG_VOLUME_REPAIR_FIXED_COUNT]={};
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
@@ -968,10 +975,10 @@ int main(int argc, char **argv) {
                     ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
                     : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
                 : research.kernel_scheduler=="cost_profile"
-                ? nglib::Ng_GenerateVolumeMeshRepairFixedPoint(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
+                ? nglib::Ng_GenerateVolumeMeshActiveSplit(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
                     kernel_seconds,kernel_details,recovery_stats,recovery_batch,native_profile,
                     native_calls,operation_cost,nglib::NG_VOLUME_COST_PROFILE_COUNT,
-                    repair_fixed,nglib::NG_VOLUME_REPAIR_FIXED_COUNT)
+                    repair_fixed,nglib::NG_VOLUME_REPAIR_FIXED_COUNT,research.split_active_evaluation,active_split)
                 : research.kernel_scheduler=="combine_profile" || research.kernel_scheduler=="combine_waves"
                 ? nglib::Ng_GenerateVolumeMeshCombineWaves(submesh,&nmp,research.kernel_threads,
                     research.kernel_scheduler=="combine_waves",research.kernel_scheduler=="combine_waves" && validate_volume,
@@ -1038,6 +1045,8 @@ int main(int argc, char **argv) {
                 for(int phase=0;phase<3;++phase)for(int op=0;op<4;++op)for(int field=0;field<21;++field)
                     profiler.set_metric(std::string("cost_")+phases[phase]+"_"+ops[op]+"_"+fields[field],
                         operation_cost[(phase*4+op)*21+field]);
+                const char *active_fields[]={"calls","edges","active","rejected","dispatched","screen_seconds","evaluate_seconds","worker_seconds","worker_max_seconds","verified","mismatches","reference_seconds"};
+                for(int f=0;f<12;++f)profiler.set_metric(std::string("split_active_")+active_fields[f],active_split[f]);
                 const char *fixed_fields[]={"calls","rounds","checks","stable_rounds","potential_skipped",
                     "skipped","verified","mismatches","snapshot_seconds","reference_rounds"};
                 for(int phase=0;phase<3;++phase) {

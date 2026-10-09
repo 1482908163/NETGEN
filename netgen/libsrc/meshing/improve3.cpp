@@ -7,6 +7,7 @@
 #include "meshing.hpp"
 #include "ordered_cavity_waves.hpp"
 #include "combine_wave_verify.hpp"
+#include "split_active_queue.hpp"
 
 #ifdef SOLIDGEOM
 #include <csg.hpp>
@@ -646,22 +647,20 @@ void MeshOptimize3d :: CombineImprove ()
 
 
 
-double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only, bool * pruned, SplitProposal *proposal, bool reuse)
+bool MeshOptimize3d::PrepareSplitCavity(Table<ElementIndex,PointIndex>& elementsonnode,
+    PointIndex pi1,PointIndex pi2,ArrayMem<ElementIndex,20>& hasbothpoints,
+    double& bad1,double& bad1_max,bool* pruned)
 {
-  if(pruned) *pruned=false;
-  double d_badness = 0.0;
-  // int cnt = 0;
-
-  ArrayMem<ElementIndex, 20> hasbothpoints;
-
-  if (mesh.BoundaryEdge (pi1, pi2)) return 0.0;
+  if(pruned)*pruned=false;
+  hasbothpoints.SetSize(0);
+  if (mesh.BoundaryEdge (pi1, pi2)) return false;
 
   for (ElementIndex ei : elementsonnode[pi1])
     {
       Element & el = mesh[ei];
 
-      if(el.IsDeleted()) return 0.0;
-      if (mesh[ei].GetType() != TET) return 0.0;
+      if(el.IsDeleted()) return false;
+      if (mesh[ei].GetType() != TET) return false;
 
       bool has1 = el.PNums().Contains(pi1);
       bool has2 = el.PNums().Contains(pi2);
@@ -674,10 +673,10 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
   if(mp.only3D_domain_nr)
       for(auto ei : hasbothpoints)
           if(mp.only3D_domain_nr != mesh[ei].GetIndex())
-              return 0.0;
+              return false;
 
   if (!NeedsOptimization(hasbothpoints))
-    return 0.0;
+    return false;
 
   // OPT_LEGAL admits this cavity only when HasIllegalElement is true.
   // The unchanged late legality loop below rejects every such cavity at
@@ -685,11 +684,11 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
   // Keep NeedsOptimization above: it preserves the original legality cache reads.
   if(mp.volume_legal_split_prune && goal==OPT_LEGAL) {
     if(pruned) *pruned=true;
-    return 0.0;
+    return false;
   }
 
-  double bad1 = 0.0;
-  double bad1_max = 0.0;
+  bad1 = 0.0;
+  bad1_max = 0.0;
   for (ElementIndex ei : hasbothpoints)
     {
       double bad = mesh[ei].GetBadness();
@@ -698,13 +697,29 @@ double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elem
     }
 
   if(bad1_max < 100.0)
-      return 0.0;
+      return false;
 
   bool puretet = 1;
   for (ElementIndex ei : hasbothpoints)
       if (mesh[ei].GetType() != TET)
           puretet = 0;
-  if (!puretet) return 0.0;
+  if (!puretet) return false;
+
+  return true;
+}
+
+double MeshOptimize3d :: SplitImproveEdge (Table<ElementIndex,PointIndex> & elementsonnode, NgArray<PointIndices<3>> &locfaces, double badmax, PointIndex pi1, PointIndex pi2, PointIndex ptmp, bool check_only, bool * pruned, SplitProposal *proposal, bool reuse, bool *eligible)
+{
+  if(pruned) *pruned=false;
+  double d_badness = 0.0;
+  // int cnt = 0;
+
+  ArrayMem<ElementIndex, 20> hasbothpoints;
+
+  if(eligible)*eligible=false;
+  double bad1=0.0,bad1_max=0.0;
+  if(!PrepareSplitCavity(elementsonnode,pi1,pi2,hasbothpoints,bad1,bad1_max,pruned))return 0.0;
+  if(eligible)*eligible=true;
 
   Point3d pnew;
   double bad2;
@@ -909,25 +924,87 @@ void MeshOptimize3d :: SplitImprove ()
   cost.Stage(VolumeCostStats::evaluate_seconds);
   tsearch.Start();
   { VolumeKernelTimer evaluation_timer(split_stats,5);
-  ForVolumeCandidates(mp, edges, elementsonnode, [&] (auto myrange)
-  {
-    int pruned_count=0;
-    NgArray<PointIndices<3>> locfaces;
-
-    for(auto i : myrange)
-    {
-      auto [p0,p1] = edges[i];
-      bool pruned=false;
-      double d_badness = SplitImproveEdge (elementsonnode, locfaces, badmax, p0, p1, ptmp, true, &pruned, reuse ? &proposals[i] : nullptr, false);
-      pruned_count+=pruned;
-      if(d_badness<0.0)
-      {
-        int index = improvement_counter++;
-        candidate_edges[index] = make_tuple(d_badness, i);
-      }
+  auto *active_stats=goal==OPT_QUALITY ? mp.volume_split_evaluation_stats : nullptr;
+  const int active_mode=goal==OPT_QUALITY ? mp.volume_split_evaluation_mode : 0;
+  using Clock=std::chrono::steady_clock;
+  auto elapsed=[](auto start){return std::chrono::duration<double>(Clock::now()-start).count();};
+  if(active_stats) {active_stats->Add(0,1);active_stats->Add(1,edges.Size());}
+  std::vector<double> observed(active_mode==2 ? edges.Size() : 0,0.0);
+  auto evaluate_one=[&](size_t i,NgArray<PointIndices<3>>& local_faces,bool* was_pruned=nullptr) {
+    auto [p0,p1]=edges[i];bool pruned=false,eligible=false;
+    double delta=SplitImproveEdge(elementsonnode,local_faces,badmax,p0,p1,ptmp,true,&pruned,
+        reuse ? &proposals[i] : nullptr,false,&eligible);
+    if(was_pruned)*was_pruned=pruned;
+    if(active_mode==2)observed[i]=delta;
+    if(delta<0.0)candidate_edges[improvement_counter++]=make_tuple(delta,int(i));
+    return eligible;
+  };
+  auto eval_start=active_stats ? Clock::now() : Clock::time_point{};
+  if(!active_mode) {
+    std::vector<double> worker_seconds(active_stats ? std::max(mp.nthreads,ngcore::TaskManager::GetNumThreads()) : 0,0.0);
+    ForVolumeCandidates(mp,edges,elementsonnode,[&](auto range) {
+      auto start=active_stats ? Clock::now() : Clock::time_point{};
+      NgArray<PointIndices<3>> local_faces;
+      size_t accepted=0;int pruned_count=0;
+      for(auto i:range) {bool pruned=false;accepted+=evaluate_one(i,local_faces,&pruned);pruned_count+=pruned;}
+      if(prune_stats)prune_stats->Add(2,pruned_count);
+      if(active_stats) {active_stats->Add(2,accepted);active_stats->Add(3,range.Size()-accepted);}
+      if(active_stats)worker_seconds[ngcore::TaskManager::GetThreadId()]+=elapsed(start);
+    });
+    if(active_stats) {
+      for(auto seconds:worker_seconds)active_stats->Add(7,seconds);
+      active_stats->Add(8,*std::max_element(worker_seconds.begin(),worker_seconds.end()));
     }
-    if(prune_stats) prune_stats->Add(2,pruned_count);
-  });
+  } else {
+    // Only OPT_QUALITY: screening reads topology and cached badness, and does
+    // not call LegalTet or mutate the mesh. Commit retains the original path.
+    ngcore::RegionTaskManager team(mp.volume_recovery_active && mp.volume_recovery_parallel && mp.parallel_meshing ? mp.nthreads : 0);
+    std::vector<unsigned char> mask(edges.Size(),0);
+    auto screen_start=Clock::now();
+    ParallelForRange(Range(edges),[&](auto range) {
+      ArrayMem<ElementIndex,20> cavity;
+      for(auto i:range) {
+        auto [a,b]=edges[i];double old_bad=0,max_bad=0;
+        mask[i]=PrepareSplitCavity(elementsonnode,a,b,cavity,old_bad,max_bad,nullptr);
+      }
+    },ngcore::TasksPerThread(4));
+    auto active=ActiveSplitIndices(mask);
+    if(active_stats) {
+      active_stats->Add(2,active.size());active_stats->Add(3,edges.Size()-active.size());
+      active_stats->Add(5,elapsed(screen_start));
+    }
+    const int workers=ngcore::TaskManager::GetNumThreads();
+    std::vector<double> work_seconds(workers,0.0);
+    std::vector<size_t> claims(workers,0);
+    std::atomic<size_t> next{0};
+    ngcore::ParallelJob([&](ngcore::TaskInfo) {
+      const int worker=ngcore::TaskManager::GetThreadId();
+      auto start=Clock::now();NgArray<PointIndices<3>> local_faces;
+      ClaimActiveSplitIndices(next,active,[&](size_t i) {evaluate_one(i,local_faces);++claims[worker];});
+      work_seconds[worker]+=elapsed(start);
+    },workers);
+    if(active_stats)for(int w=0;w<workers;++w) {
+      active_stats->Add(4,claims[w]);active_stats->Add(7,work_seconds[w]);
+    }
+    if(active_stats)active_stats->Add(8,*std::max_element(work_seconds.begin(),work_seconds.end()));
+  }
+  if(active_stats)active_stats->Add(6,elapsed(eval_start));
+  if(active_mode==2) {
+    // Differential certificate includes rejected edges and exact FP bytes.
+    // Run before sorting/commit, on the same original topology/coordinates.
+    auto start=Clock::now();std::vector<double> reference(edges.Size(),0.0);
+    ForVolumeCandidates(mp,edges,elementsonnode,[&](auto range) {
+      NgArray<PointIndices<3>> local_faces;
+      for(auto i:range) {
+        auto [a,b]=edges[i];reference[i]=SplitImproveEdge(elementsonnode,local_faces,badmax,a,b,ptmp,true);
+      }
+    });
+    if(active_stats) {active_stats->Add(9,edges.Size());active_stats->Add(11,elapsed(start));}
+    if(!ExactSplitValues(observed,reference)) {
+      if(active_stats)active_stats->Add(10,1);
+      throw NgException("active split evaluation differs from original candidates");
+    }
+  }
   }
   tsearch.Stop();
   cost.Stage(VolumeCostStats::order_seconds);

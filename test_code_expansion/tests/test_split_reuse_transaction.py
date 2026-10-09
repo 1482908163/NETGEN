@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 ROOT=Path(__file__).resolve().parents[2]
 src=(ROOT/'netgen/libsrc/meshing/improve3.cpp').read_text()
-a=src.index('double MeshOptimize3d :: SplitImproveEdge');b=src.index('\nvoid MeshOptimize3d :: SplitImprove ()',a)
+a=src.index('bool MeshOptimize3d::PrepareSplitCavity');b=src.index('\nvoid MeshOptimize3d :: SplitImprove ()',a)
 function=src[a:b]
 # Same function with reuse disabled is the original recomputation path.
 prefix=r'''
@@ -83,7 +83,8 @@ struct MeshOptimize3d {
  Mesh& mesh;Params mp;int goal=OPT_QUALITY;
  struct SplitProposal {Point3d point;double badness=0;bool valid=false;};
  bool NeedsOptimization(const Arr<ElementIndex>& es){return !es.empty();}
- double SplitImproveEdge(Table<ElementIndex,PointIndex>&,NgArray<PointIndices<3>>&,double,PointIndex,PointIndex,PointIndex,bool,bool*,SplitProposal*,bool);
+ bool PrepareSplitCavity(Table<ElementIndex,PointIndex>&,PointIndex,PointIndex,ArrayMem<ElementIndex,20>&,double&,double&,bool*);
+ double SplitImproveEdge(Table<ElementIndex,PointIndex>&,NgArray<PointIndices<3>>&,double,PointIndex,PointIndex,PointIndex,bool,bool*,SplitProposal*,bool,bool* eligible=nullptr);
 };
 '''
 suffix=r'''

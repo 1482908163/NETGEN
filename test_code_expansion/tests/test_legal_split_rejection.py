@@ -11,7 +11,7 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[2]
 source=(ROOT/'netgen/libsrc/meshing/improve3.cpp').read_text()
 def method(name):
-    start=source.index('bool MeshOptimize3d :: '+name) if name!='SplitImproveEdge' else source.index('double MeshOptimize3d :: '+name)
+    start=source.index('bool MeshOptimize3d::PrepareSplitCavity') if name=='PrepareSplitCavity' else source.index('bool MeshOptimize3d :: '+name) if name!='SplitImproveEdge' else source.index('double MeshOptimize3d :: '+name)
     begin=source.index('{',start);depth=1;end=begin+1
     while depth:
         depth+=(source[end]=='{')-(source[end]=='}');end+=1
@@ -23,6 +23,8 @@ prefix=r'''
 #include <cassert>
 #include <iostream>
 #include <vector>
+#include <stdexcept>
+using NgException=std::runtime_error;
 using std::max;
 using PointIndex=int;
 struct ElementIndex { int v; ElementIndex(int x=0):v(x){} bool operator==(ElementIndex b)const{return v==b.v;} };
@@ -37,7 +39,7 @@ template<class T> using NgArray=List<T>;
 template<class T> using FlatArray=List<T>;
 template<class T,class I> struct Table:std::vector<List<T>>{using std::vector<List<T>>::vector;};
 template<int N> using PointIndices=std::array<int,N>;
-struct Point3d {double x=0,y=0,z=0;double& X(){return x;}double& Y(){return y;}double& Z(){return z;}};
+struct Point3d {double x=0,y=0,z=0;double& X(){return x;}double& Y(){return y;}double& Z(){return z;}double X()const{return x;}double Y()const{return y;}double Z()const{return z;}};
 template<int N> using Point=Point3d;
 Point3d Center(Point3d a,Point3d b){return {(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2};}
 enum {TET=4,TRIG=3,OPT_LEGAL=1,OPT_QUALITY=2,OPT_REST=3};
@@ -59,7 +61,8 @@ struct Mesh {
  PointIndex AddPoint(Point3d p){++mutations;points.push_back(p);return int(points.size())-1;}
  void AddVolumeElement(Element e){++mutations;els.push_back(e);}
 };
-struct Parameters {bool volume_legal_split_prune=false;int only3D_domain_nr=0;};
+struct Stats {void Add(int,int){}};
+struct Parameters {bool volume_legal_split_prune=false;int only3D_domain_nr=0;bool volume_split_active=false,volume_split_verify=false;Stats* volume_split_stats=nullptr;};
 struct Vector {std::vector<double> a;explicit Vector(int n):a(n){}double& operator()(int i){return a[i];}};
 static int expensive=0;
 struct PointFunction1 {
@@ -75,7 +78,9 @@ struct MeshOptimize3d {
  bool HasBadElement(FlatArray<ElementIndex>);
  bool HasIllegalElement(FlatArray<ElementIndex>);
  bool NeedsOptimization(FlatArray<ElementIndex>);
- double SplitImproveEdge(Table<ElementIndex,PointIndex>&,NgArray<PointIndices<3>>&,double,PointIndex,PointIndex,PointIndex,bool,bool*);
+ struct SplitProposal {Point3d point;double badness=0;bool valid=false;};
+ bool PrepareSplitCavity(Table<ElementIndex,PointIndex>&,PointIndex,PointIndex,ArrayMem<ElementIndex,20>&,double&,double&,bool*);
+ double SplitImproveEdge(Table<ElementIndex,PointIndex>&,NgArray<PointIndices<3>>&,double,PointIndex,PointIndex,PointIndex,bool,bool*,SplitProposal* proposal=nullptr,bool reuse=false,bool* eligible=nullptr);
 };
 '''
 suffix=r'''
@@ -113,6 +118,6 @@ int main(){
 '''
 with tempfile.TemporaryDirectory() as directory:
     tmp=Path(directory);cpp=tmp/'candidate.cpp';exe=tmp/'candidate'
-    cpp.write_text(prefix+'\n'.join(method(name) for name in ('HasBadElement','HasIllegalElement','NeedsOptimization','SplitImproveEdge'))+suffix)
+    cpp.write_text(prefix+'\n'.join(method(name) for name in ('HasBadElement','HasIllegalElement','NeedsOptimization','PrepareSplitCavity','SplitImproveEdge'))+suffix)
     subprocess.run(['g++','-std=c++17','-Wall','-Wextra','-Werror','-Wno-missing-field-initializers',str(cpp),'-o',str(exe)],check=True)
     subprocess.run([str(exe)],check=True)

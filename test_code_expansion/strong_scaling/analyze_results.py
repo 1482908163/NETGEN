@@ -350,7 +350,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
     return lines,issues
 
 
-def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None, certificate_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -361,6 +361,13 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
         raise ValueError("missing or duplicate rank rows")
     rows.sort(key=lambda row:row["rank"])
     metadata = rows[0]["metadata"]
+    if certificate_sink is not None and metadata.get("volume_cost_profile")=="phase_full_cost_v3":
+        for row in rows:
+            certificate_sink.append(dict(rank=row["rank"],ranks=n,repeat=row["repeat"],
+                source_revision=metadata.get("MESH_SOURCE_REVISION"),binary_sha256=metadata.get("MESH_BINARY_SHA256"),
+                volume_repair_fixedpoint=metadata.get("volume_repair_fixedpoint"),
+                volume_split_evaluation=metadata.get("volume_split_evaluation"),
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -414,7 +421,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
     face_bytes = sum(s.get("receive_bytes", 0) for r in rows for name, s in r["stages"].items()
                      if name == "face_allgatherv" or name.startswith("face_sparse_"))
     split = metadata["timing_mode"] == "split"
-    result = dict(combine_commit_policy=metadata.get('combine_commit_policy'),combine_commit_verification=metadata.get('combine_commit_verification'),ghost_exchange_policy=metadata.get("ghost_exchange_policy","legacy_v1"),ghost_plan_verification=metadata.get("ghost_plan_verification","off"),legal_split_policy=metadata.get('legal_split_policy'),volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
+    result = dict(source_revision=metadata.get("MESH_SOURCE_REVISION"),binary_sha256=metadata.get("MESH_BINARY_SHA256"),combine_commit_policy=metadata.get('combine_commit_policy'),combine_commit_verification=metadata.get('combine_commit_verification'),ghost_exchange_policy=metadata.get("ghost_exchange_policy","legacy_v1"),ghost_plan_verification=metadata.get("ghost_plan_verification","off"),legal_split_policy=metadata.get('legal_split_policy'),volume_refinement=metadata.get("volume_refinement"),refinement_threads=int(metadata.get("refinement_threads",1)),volume_native_profile=metadata.get("volume_native_profile"),recovery_evaluation=metadata.get("recovery_evaluation"),front_search=metadata.get("front_search"),volume_exchange_policy=metadata.get("volume_exchange_policy"),adjacency_audit_schema=metadata.get("adjacency_audit_schema"),adjacency_id_path=metadata.get("adjacency_id_path"),node_cpu_bind=metadata.get("node_cpu_bind"),node_affinity_layout=metadata.get("node_affinity_layout"),kernel_scheduler=metadata.get("kernel_scheduler"),global_numbering=metadata.get("global_numbering"),algorithm=metadata["algorithm"], timing=metadata["timing_mode"], ranks=n,
                   partition_seed=int(metadata.get("partition_seed",-1)),
                   repeat=rows[0]["repeat"], core_seconds=max(r["metrics"]["core_seconds"] for r in rows),
                   face_pipeline_seconds=max(seconds(r, "face_pipeline_total") for r in rows),
@@ -1535,8 +1542,9 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                cost_rows=[]
-                result,_=inspect(profile_path(args.root),cost_sink=cost_rows)
+                cost_rows=[];certificates=[]
+                result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates)
+                if certificates:write_csv(args.root/"algorithm_certificate.csv",certificates)
                 if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
                 if 'mesh_quality' in result:
                     q=result['mesh_quality']
@@ -1613,6 +1621,9 @@ def main():
                         "adjacency_exchange_stage_sum_critical_rank","coop_timeline_critical_rank","slowest_compute_rank","slowest_local_volume_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
+            if present and any(not isinstance(v,(int,float)) for v in present):
+                summary[name]=present[0] if all(v==present[0] for v in present) else None
+                continue
             summary[name+"_median"] = st.median(present) if present else None
         critical=[int(r["slowest_compute_rank"]) for r in group if r.get("slowest_compute_rank") is not None]
         if critical:
