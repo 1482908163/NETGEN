@@ -1,0 +1,13 @@
+A1/B1/C1: 18 measured runs; 6 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+split_active -> front_transform seed=-1 natural: -0.67% reduction; wins=1/3; validated=False
+split_active -> front_transform seed=17 natural: 1.20% reduction; wins=3/3; validated=False
+split_active -> front_transform seed=41 natural: -0.34% reduction; wins=1/3; validated=False
+cost_profile 和 repair_fixed_profile 沿用 batch_parallel 算法，用于衡量诊断开销，比较不能作为算法加速；repair_fixed 才改变修复终止条件。各路线 p*/analysis/volume_operation_costs.csv 保留全部进程的准备/评价/排序/提交/收尾，累计输入量不能当唯一工作量。v3 用独立原生调用次数检查覆盖，两种时钟的差异仍逐项输出；旧 v2 拒绝规则不变，v1 漏计记录只作部分证据。
+自由区变换：对照保留稠密原实现，候选预编译固定规则算子的逐位相等关系，仅在两组完整矩阵相同时复用原乘法结果。原稠密乘法、两步混合及平面更新均保留，非有限输入或不支持的浮点环境回退。预热完整状态精确回放；实际乘法减少不等同于核心收益，应核对编译成本、固定进程匹配耗时和同轮配对。
+活跃分裂评价：先执行原只读拒绝条件，再将活跃候选逐项动态领取，保持排序与串行提交。预热逐边比较包括拒绝边的双精度字节，正式运行不执行参考路径。筛选时间计入评价和核心耗时；algorithm_certificate.csv 保留每个进程的参考验证和修复终止计数。repair_fixed 对照隔离本轮收益，batch_parallel 对照衡量累计净收益；活跃任务未执行时禁止声称加速。
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+分区多样性 split_active: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 front_transform: 有效种子报告=0/3; 不同逐进程表面分配指纹=0。相同指纹不能视为独立分区覆盖。

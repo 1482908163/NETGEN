@@ -1,0 +1,29 @@
+{
+  "schema": "scheduler_snapshot_v1",
+  "job_id": "6078927",
+  "time": 1791566890.4074967,
+  "note": "Read during the job; state/reason may not be final.",
+  "sacct": {
+    "command": [
+      "sacct",
+      "-j",
+      "6078927",
+      "--format=JobID,State,ExitCode,NodeList,Reason,MaxRSS,ReqMem",
+      "-P"
+    ],
+    "exit_code": 0,
+    "stdout": "JobID|State|ExitCode|NodeList|Reason|MaxRSS|ReqMem\n6078927|RUNNING|0:0|cn[8728-8759]|None||1952000M\n6078927.batch|RUNNING|0:0|cn8728|||\n6078927.0|COMPLETED|0:0|cn[8728-8759]||511572K|\n6078927.1|COMPLETED|0:0|cn[8728-8759]||525036K|\n6078927.2|COMPLETED|0:0|cn[8728-8759]||527664K|\n6078927.3|COMPLETED|0:0|cn[8728-8759]||520808K|\n",
+    "stderr": ""
+  },
+  "scontrol": {
+    "command": [
+      "scontrol",
+      "show",
+      "job",
+      "6078927"
+    ],
+    "exit_code": 0,
+    "stdout": "JobId=6078927 JobName=mesh_p128\n   UserId=hnu_lhz(66704) GroupId=ecology_mt(1882) MCS_label=N/A\n   Priority=1 Nice=0 Account=ecology QOS=normal WCKey=(null)\n   JobState=RUNNING Reason=None Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:04:56 TimeLimit=UNLIMITED TimeMin=N/A\n   SubmitTime=2026-10-10T01:22:56 EligibleTime=2026-10-10T01:22:56\n   AccrueTime=2026-10-10T01:22:56\n   StartTime=2026-10-10T01:23:14 EndTime=Unknown Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-10T01:23:14 Scheduler=Main\n   Partition=mt_module AllocNode:Sid=ln3:830004\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=cn[8728-8759]\n   BatchHost=cn8728\n   NumNodes=32 NumCPUs=512 NumTasks=128 CPUs/Task=4 ReqB:S:C:T=0:0:*:*\n   TRES=cpu=512,node=32,billing=512\n   Socks/Node=* NtasksPerN:B:S:C=4:0:*:* CoreSpec=*\n   MinCPUsNode=16 MinMemoryNode=0 MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)\n   Command=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261010-012256/runtime_scripts/run_experiments.sh\n   WorkDir=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion\n   StdErr=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261010-012256/p128/job-6078927.log\n   StdIn=/dev/null\n   StdOut=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261010-012256/p128/job-6078927.log\n   Power=\n   \n\n",
+    "stderr": ""
+  }
+}
