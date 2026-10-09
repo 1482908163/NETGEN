@@ -37,6 +37,7 @@ struct vnetrule {
 using NgException=std::runtime_error;double minother=10,minwithoutother=11;
 struct Meshing3 {
  bool front_bound=false;bool front_bound_verify=false;
+ int front_transform_mode=0;VolumeKernelStats *front_transform_stats=nullptr;
  int front_distance_mode=2,fault=0;VolumeKernelStats distance;
  VolumeKernelStats *front_distance_stats=&distance,*front_bound_stats=nullptr,*front_match_stats=nullptr;
  Array<int> foundmap{0},canuse{0};Array<string> problems{"before"};

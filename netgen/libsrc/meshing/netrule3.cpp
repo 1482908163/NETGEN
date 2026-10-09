@@ -40,6 +40,13 @@ int vnetrule :: TestFlag (char flag) const
 
 void vnetrule :: SetFreeZoneTransformation (const Vector & allp, int tolclass)
 {
+  SetFreeZoneTransformationPlanned(allp,tolclass,0,nullptr);
+}
+
+void vnetrule::SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
+    int mode,double *stats)
+{
+  auto add=[&](int index,double value){stats[index]+=value;};
   int i, j;
   // double nx, ny, nz, v1x, v1y, v1z, v2x, v2y, v2z;
   double nl;
@@ -53,6 +60,27 @@ void vnetrule :: SetFreeZoneTransformation (const Vector & allp, int tolclass)
   
   int np = points.Size();
   int nfp = freezone.Size();
+  const double dense_terms=6.0*np*nfp;
+  if(stats){add(1,1);add(2,dense_terms);}
+  bool planned=false;
+  if(mode) {
+    if(!front_transform_plan) {
+      const auto start=std::chrono::steady_clock::now();
+      front_transform_plan.reset(new FrontTransformPlan(nfp,np,
+          [&](int row,int col){return (*oldutofreezone)(row,col);},
+          [&](int row,int col){return (*oldutofreezonelimit)(row,col);}));
+      if(stats){add(6,1);add(7,
+          std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());}
+    }
+    planned=!front_transform_plan->Identical() || front_transform_plan->CanApply(
+        [&](int point,int coordinate){return allp(3*point+coordinate);});
+  }
+  if(stats) {
+    const double evaluated=planned?front_transform_plan->EvaluatedTerms():dense_terms;
+    add(3,evaluated);add(4,dense_terms-evaluated);
+    if(mode && !planned)add(5,1);
+  }
+  const bool shared=planned && front_transform_plan->Identical();
   Vector vp(np), vfp1(nfp), vfp2(nfp);
 
 
@@ -62,7 +90,8 @@ void vnetrule :: SetFreeZoneTransformation (const Vector & allp, int tolclass)
 	vp(j-1) = allp(i+3*j-3-1);
 
       oldutofreezone->Mult (vp, vfp1);
-      oldutofreezonelimit->Mult (vp, vfp2);
+      if(shared)for(int k=0;k<nfp;++k)vfp2(k)=vfp1(k);
+      else oldutofreezonelimit->Mult (vp, vfp2);
 
       vfp1 *= lam1;
       vfp1.Add (lam2, vfp2);

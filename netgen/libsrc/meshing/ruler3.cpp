@@ -58,7 +58,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
     int tolerance,double sloppy,int rotation,float& error)
 {
-  if(!(front_bound && front_bound_verify) && front_distance_mode!=2)
+  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2)
     return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<Point3d,PointIndex> original_points(points);
   Array<MiniElement2d> original_faces(faces);
@@ -76,17 +76,21 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   auto *stats=front_bound_stats;
   const bool saved_bound=front_bound;
   const int saved_distance=front_distance_mode;
+  const int saved_transform=front_transform_mode;
+  auto *transform_stats=front_transform_stats;
   auto *distance_stats=front_distance_stats;
   auto *saved_match=front_match_stats;
   struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
     front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
     front_distance_mode=saved_distance;front_distance_stats=distance_stats;
+    front_transform_mode=saved_transform;front_transform_stats=transform_stats;
     foundmap=optimized_found;canuse=optimized_can;problems=optimized_problems;
     minother=optimized_other;minwithoutother=optimized_without;
     for(int i=0;i<rules.Size();++i)rules[i]->RestoreFrontReplayState(optimized_zones[i]);
   }};
   front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
   front_distance_mode=0;front_distance_stats=nullptr;
+  front_transform_mode=0;front_transform_stats=nullptr;
   const auto reference_start=std::chrono::steady_clock::now();
   foundmap=before_found;canuse=before_can;problems=before_problems;
   minother=before_other;minwithoutother=before_without;
@@ -119,7 +123,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
   for(int i=0;i<rules.Size();++i)
     if(rules[i]->SaveFrontReplayState()!=optimized_zones[i])same=false;
-  if(saved_distance==2) {
+  if(saved_distance==2 || saved_transform==2) {
     if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
     for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
   }
@@ -128,9 +132,14 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     distance_stats->Add(10,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
   if(stats)stats->Add(10,1);
+  if(transform_stats) {
+    transform_stats->Add(8,1);
+    transform_stats->Add(10,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
+  }
   if(!same) {
     if(stats)stats->Add(11,1);
     if(distance_stats)distance_stats->Add(9,1);
+    if(transform_stats)transform_stats->Add(9,1);
     throw NgException("front optimization ApplyRules replay mismatch");
   }
   return result;
@@ -178,6 +187,17 @@ int Meshing3 :: ApplyRulesImpl
       for(int i=0;i<12;++i)stats->Add(i,values[i]);
     }}
   } distance_diagnostics(front_distance_stats);
+  struct TransformDiagnostics {
+    VolumeKernelStats *stats;double values[12]={};
+    std::chrono::steady_clock::time_point start;
+    explicit TransformDiagnostics(VolumeKernelStats *s):stats(s) {
+      if(stats){values[0]=1;start=std::chrono::steady_clock::now();}
+    }
+    ~TransformDiagnostics(){if(stats){
+      values[11]=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+      for(int i=0;i<12;++i)stats->Add(i,values[i]);
+    }}
+  } transform_diagnostics(front_transform_stats);
   std::unique_ptr<FrontDistanceCache> distance_cache;
   if(front_distance_mode)distance_cache.reset(new FrontDistanceCache(lpoints.Size()));
   Array<Point3d,PointIndex> bound_points;
@@ -858,7 +878,8 @@ int Meshing3 :: ApplyRulesImpl
                       }
                       // This legacy transformation partially retains coefficients
                       // for degenerate faces. Always perform it in original order.
-                      rule->SetFreeZoneTransformation(allp,tolerance+int(sloppy));
+                      rule->SetFreeZoneTransformationPlanned(allp,tolerance+int(sloppy),
+                          front_transform_mode,front_transform_stats?transform_diagnostics.values:nullptr);
                       if(!skip_geometry) {
                         if(front_bound_stats)bound_diagnostics.values[5]++;
 

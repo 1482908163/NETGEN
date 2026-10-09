@@ -14,6 +14,7 @@ with tempfile.TemporaryDirectory() as directory:
     launcher.write_text('#!/bin/bash\nshift 2\nexec "$@"\n');launcher.chmod(0o755)
     binary=tmp/'mock_mesh'
     binary.write_text('''#!/usr/bin/env python3
+# --front-transform dense_rule_operator_v1 compiled_rule_operator_v1 transform_exact_replay_v1 front_transform_
 # phase_full_cost_v3 cost_ exact_state_stop_v1 reference_verify_v1 repair_fixed_
 # --split-active-evaluation original_ranges_v1 split_active_
 # --front-distance distance_original_v1 distance_memo_v1 distance_exact_replay_v1 front_distance_

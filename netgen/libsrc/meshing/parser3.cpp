@@ -81,6 +81,7 @@ int vnetrule :: NeighbourTrianglePoint (const threeint & t1, const threeint & t2
 
 void vnetrule :: LoadRule (istream & ist)
 {
+  front_transform_plan.reset();
   char buf[256];
   char ch, ok;
   Point3d p;

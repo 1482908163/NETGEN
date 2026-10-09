@@ -93,6 +93,7 @@ def validate(rows,metadata,result,slowest_rank,sink=None,compute=None):
     result['cost_active_ranks']=sum(any(row['metrics'][f'cost_{phase}_{op}_calls'] for phase in PHASES for op in OPERATIONS) for row in rows)
     validate_active_split(rows,metadata,result,slowest_rank)
     validate_front_distance(rows,metadata,result,slowest_rank)
+    validate_front_transform(rows,metadata,result,slowest_rank)
     if contract=='phase_full_cost_v3':
         mode=metadata.get('volume_repair_fixedpoint')
         if mode not in ('disabled','exact_state_stop_v1','reference_verify_v1'):
@@ -183,3 +184,39 @@ def validate_front_distance(rows,metadata,result,slowest_rank):
     result['front_distance_work_signature']=json.dumps([[row['rank']]+[row['metrics']['front_distance_'+f] for f in ('calls','queries','rules','candidates')] for row in rows],separators=(',',':'))
     result['volume_front_distance']=mode
     result.update({'front_distance_'+f:v for f,v in totals.items()})
+
+TRANSFORM_FIELDS=('calls','transforms','dense_terms','evaluated_terms','skipped_terms','fallback',
+    'compiled_rules','compile_seconds','verified','mismatches','reference_seconds','apply_seconds')
+
+def validate_front_transform(rows,metadata,result,slowest_rank):
+    mode=metadata.get('volume_front_transform')
+    if mode is None:return # Recorded historical contracts remain usable.
+    if mode not in ('dense_rule_operator_v1','compiled_rule_operator_v1','transform_exact_replay_v1'):
+        raise ValueError('unknown front transform contract')
+    totals={f:0 for f in TRANSFORM_FIELDS}
+    for row in rows:
+        v={f:row['metrics'].get('front_transform_'+f) for f in TRANSFORM_FIELDS}
+        for f,value in v.items():
+            if not isinstance(value,(int,float)) or not math.isfinite(value) or value<0 or (not f.endswith('_seconds') and int(value)!=value):
+                raise ValueError('invalid front transform counter: '+f)
+        if v['dense_terms']!=v['evaluated_terms']+v['skipped_terms'] or v['fallback']>v['transforms'] or v['compiled_rules']>v['transforms'] or v['mismatches'] or v['verified']>v['calls']:
+            raise ValueError('front transform conservation mismatch')
+        if v['calls']!=row['metrics']['front_distance_calls']:raise ValueError('front transform ApplyRules coverage mismatch')
+        if v['transforms']!=row['metrics']['front_distance_candidates']:raise ValueError('front transform candidate coverage mismatch')
+        if v['calls']==0 and any(v.values()):raise ValueError('front transform counters without calls')
+        if v['transforms']==0 and any(v[f] for f in ('dense_terms','evaluated_terms','skipped_terms','compiled_rules','compile_seconds','fallback')):
+            raise ValueError('front transform terms without candidates')
+        if v['apply_seconds']>1.05*row['metrics']['kernel_front_seconds']+1e-3:raise ValueError('front transform timing exceeds front phase')
+        if v['compile_seconds']>v['apply_seconds']+1e-6:raise ValueError('front transform compile time exceeds matching')
+        if mode=='dense_rule_operator_v1' and any(v[f] for f in ('skipped_terms','fallback','compiled_rules','compile_seconds','verified','reference_seconds')):
+            raise ValueError('dense front entered compiled transform')
+        if mode=='transform_exact_replay_v1':
+            if row['repeat']!=0 or v['verified']!=v['calls']:raise ValueError('front transform exact replay incomplete')
+        elif v['verified'] or v['reference_seconds']:raise ValueError('front transform reference entered formal run')
+        if row['rank']==slowest_rank:result.update({'slowest_compute_front_transform_'+f:value for f,value in v.items()})
+        for f,value in v.items():totals[f]+=value
+    import json
+    result['front_transform_work_signature']=json.dumps([[row['rank']]+[row['metrics']['front_transform_'+f] for f in ('calls','transforms','dense_terms')] for row in rows],separators=(',',':'))
+    result['front_transform_certificate_signature']=json.dumps([[row['rank']]+[row['metrics']['front_transform_'+f] for f in TRANSFORM_FIELDS] for row in rows],separators=(',',':'))
+    result['volume_front_transform']=mode
+    result.update({'front_transform_'+f:v for f,v in totals.items()})

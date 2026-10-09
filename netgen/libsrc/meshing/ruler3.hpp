@@ -2,9 +2,12 @@
 #define FILE_RULER3
 #include <vector>
 #include <cstring>
+#include <memory>
+#include "front_transform_plan.hpp"
 
 namespace netgen
 {
+struct VolumeKernelStats;
 
 /**
   3D element generation rule.
@@ -51,6 +54,7 @@ private:
   /** transformation matrix: deviation old point to dev. freezone, 
     quality class to infinity */
   DenseMatrix * oldutofreezonelimit;
+  std::unique_ptr<FrontTransformPlan> front_transform_plan;
 
   // can be deleted:
   // BaseMatrix *outf, *outfl;
@@ -187,6 +191,8 @@ public:
   ///
   void SetFreeZoneTransformation (const Vector & allp,
 				  int tolclass);
+  void SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
+      int mode,double *stats);
   ///
   int IsInFreeZone (const Point3d & p) const;
   /**

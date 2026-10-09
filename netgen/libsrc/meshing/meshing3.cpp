@@ -183,6 +183,8 @@ MESHING3_RESULT Meshing3 ::
 GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 {
   front_distance_mode=mp.volume_front_distance_mode;
+  front_transform_mode=mp.volume_front_transform_mode;
+  front_transform_stats=mp.volume_front_transform_stats;
   front_distance_stats=mp.volume_front_distance_stats;
   front_bound=mp.volume_front_bound;
   front_bound_verify=mp.volume_front_bound_verify;

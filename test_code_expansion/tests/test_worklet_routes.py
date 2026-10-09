@@ -13,6 +13,14 @@ import analyze_results as profiles
 import analyze_worklet_routes as routes
 
 def fixture(route,repeat,mode='natural'):
+    if route=='front_transform':
+        rows=fixture('split_active',repeat,mode)
+        from cost_profile_checks import TRANSFORM_FIELDS
+        for row in rows:
+            row['metadata']['volume_front_transform']='transform_exact_replay_v1' if repeat==0 else 'compiled_rule_operator_v1'
+            values=(2,2,120,60,60,0,1,.0001,2 if repeat==0 else 0,0,.006 if repeat==0 else 0,.005)
+            row['metrics'].update({'front_transform_'+f:v for f,v in zip(TRANSFORM_FIELDS,values)})
+        return rows
     if route=='front_distance':
         rows=fixture('split_active',repeat,mode)
         from cost_profile_checks import DISTANCE_FIELDS
@@ -33,13 +41,14 @@ def fixture(route,repeat,mode='natural'):
             row['metrics'].update(native_generation_split_seconds=.02,native_generation_split_calls=1)
         return rows
     if route=='cost_profile':
-        from cost_profile_checks import PHASES,OPERATIONS,FIELDS,ACTIVE_FIELDS,DISTANCE_FIELDS
+        from cost_profile_checks import PHASES,OPERATIONS,FIELDS,ACTIVE_FIELDS,DISTANCE_FIELDS,TRANSFORM_FIELDS
         rows=fixture('batch_parallel',repeat,mode)
         for row in rows:
             row['metadata'].update(kernel_scheduler='cost_profile',volume_native_profile='phase_operations_v1',
-                                   volume_cost_profile='phase_full_cost_v3',volume_repair_fixedpoint='disabled',volume_split_evaluation='original_ranges_v1',volume_front_distance='distance_original_v1')
+                                   volume_cost_profile='phase_full_cost_v3',volume_repair_fixedpoint='disabled',volume_split_evaluation='original_ranges_v1',volume_front_distance='distance_original_v1',volume_front_transform='dense_rule_operator_v1')
             row['metrics'].update({'split_active_'+f:0 for f in ACTIVE_FIELDS})
             row['metrics'].update({'front_distance_'+f:v for f,v in zip(DISTANCE_FIELDS,(2,10,0,10,0,4,2,.005,0,0,0,0))})
+            row['metrics'].update({'front_transform_'+f:v for f,v in zip(TRANSFORM_FIELDS,(2,2,120,120,0,0,0,0,0,0,0,.005))})
             row['metrics']['kernel_front_seconds']=.03
             for phase in PHASES:
                 for op in ('smooth','combine','split','swap','swap2','badness','delaunay_insert','delaunay_outer','delaunay_intersect','delaunay_open'):
@@ -248,7 +257,7 @@ def main():
                 for repeat in range(0 if mode=='natural' else 1,3):
                     d=folder/f'sparse_{mode}'/f'repeat_{repeat}';d.mkdir(parents=True)
                     (d/'SUCCESS').touch();(d/'rank_profiles.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in fixture(route,repeat,mode)))
-                    if route in ('split_active','front_distance'):
+                    if route in ('split_active','front_distance','front_transform'):
                         certificates=[];profiles.inspect(d/'rank_profiles.jsonl',certificate_sink=certificates)
                         profiles.write_csv(d/'algorithm_certificate.csv',certificates)
         assert routes.analyze(root,2)

@@ -368,7 +368,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_repair_fixedpoint=metadata.get("volume_repair_fixedpoint"),
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_"))}))
+                volume_front_transform=metadata.get("volume_front_transform"),
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -1227,7 +1228,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','split_active_','repair_fixed_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_'))})
             critical_sink.append(item)
     return result, detail
 

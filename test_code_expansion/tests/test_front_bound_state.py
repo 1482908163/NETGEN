@@ -11,6 +11,11 @@ h=(ROOT/'netgen/libsrc/meshing/ruler3.hpp').read_text()
 a=h.index('  using FreeZoneReplayState');b=h.index('  void SetFreeZoneTransformation',a);snapshot=h[a:b]
 prefix=r'''
 #include <array>
+#include <memory>
+#include <chrono>
+#include "front_transform_plan.hpp"
+using netgen::FrontTransformPlan;
+struct VolumeKernelStats {double values[12]={};void Add(int i,double value){values[i]+=value;}};
 #include <vector>
 #include <cstring>
 #include <algorithm>
@@ -32,9 +37,11 @@ struct vnetrule {
  NgArray<Point3d> points,freezone,transfreezone;NgArray<int> freesets;
  NgArray<NgArray<threeint>*> freefaces;NgArray<DenseMatrix*> freefaceinequ;
  DenseMatrix *oldutofreezone,*oldutofreezonelimit;Box3d fzbox;
+ std::unique_ptr<FrontTransformPlan> front_transform_plan;
 '''
 suffix=r'''
  void SetFreeZoneTransformation(const Vector&,int);
+ void SetFreeZoneTransformationPlanned(const Vector&,int,int,double*);
 };
 '''
 main=r'''
@@ -73,5 +80,5 @@ int main(){
 with tempfile.TemporaryDirectory() as directory:
     tmp=Path(directory);cpp=tmp/'state.cpp';exe=tmp/'state'
     cpp.write_text(prefix+snapshot+suffix+transform+main)
-    subprocess.run(['g++','-std=c++17','-O2','-Wall','-Wextra','-Werror',str(cpp),'-o',str(exe)],check=True)
+    subprocess.run(['g++','-std=c++17','-O2','-Wall','-Wextra','-Werror','-I',str(ROOT/'netgen/libsrc/meshing'),str(cpp),'-o',str(exe)],check=True)
     subprocess.run([str(exe)],check=True)

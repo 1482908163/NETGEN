@@ -1773,6 +1773,8 @@ namespace netgen
     bool volume_combine_verify = false;
     VolumeCombineStats *volume_combine_stats = nullptr;
     int volume_front_distance_mode = 0; // 0 original / 1 memoized / 2 exact replay
+    int volume_front_transform_mode = 0; // 0 dense / 1 compiled / 2 exact replay
+    VolumeKernelStats *volume_front_transform_stats = nullptr;
     VolumeKernelStats *volume_front_distance_stats = nullptr;
     int volume_split_evaluation_mode = 0; // 0 original / 1 compact active / 2 exact replay
     VolumeKernelStats *volume_split_evaluation_stats = nullptr;

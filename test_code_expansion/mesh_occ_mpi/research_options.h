@@ -29,6 +29,7 @@ struct ResearchOptions {
     double task_cut_growth = 0.10;
     int kernel_threads = 0; // 0: preserve the historical nglib entry
     std::string kernel_scheduler = "static";
+    int front_transform=0; // 0 dense / 1 compiled operator / 2 exact replay
     int front_distance=0; // 0 original / 1 memoized / 2 exact replay
     int split_active_evaluation=0; // 0 original / 1 active queue / 2 exact replay
     int repair_fixed_point=0; // 0 control / 1 exact-state stop / 2 reference check

@@ -545,6 +545,10 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
     double *recovery,double *batch,double *profile,double *native_calls,
     double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,int distance_mode,double *distance);
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontTransform(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,int distance_mode,double *distance,int transform_mode,double *transform);
 
 // Ordered final edge-collapse commits: seconds[3], details[12], recovery[6],
 // batch[6], combine[16], profile[30]. combine: calls, scanned_edges, candidates,
