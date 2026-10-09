@@ -25,6 +25,9 @@ strong_scaling_results/**/application_output/
 # 第二轮 analysis/model_samples.csv.gz 和 models/，供分析及冻结模型复现。
 strong_scaling_results/**/rank_profiles.jsonl
 strong_scaling_results/**/rank_profiles.jsonl.gz
+# 派生补审的原始记录备份留在集群；提交来源哈希和逐字段修改明细。
+strong_scaling_results/**/original_rank_profiles.jsonl
+strong_scaling_results/**/original_rank_profiles.jsonl.gz
 
 # 单次运行日志和状态哨兵只用于集群现场排错。
 strong_scaling_results/**/run.log.gz

@@ -1,0 +1,20 @@
+{
+  "schema": "front_transform_result_evidence_v1",
+  "result_commit": "bc6e3ac81b326a4640e46d02992f5696651699e2",
+  "source_revision": "f5b73b1c0394537bd8159048c1db7d88558bb967",
+  "verified_source_files": 79,
+  "formal_certificate_runs": 54,
+  "per_rank_work_equal_pairs": 27,
+  "formal_reference_counter_runs": 0,
+  "failed_warmups": 9,
+  "retained_tree_checks": {
+    "candidate_warmup_quality_reports": 0,
+    "control_warmup_quality_reports": 9,
+    "raw_rank_profiles": 0
+  },
+  "quality_validated": false,
+  "fixed_apply_wins": 9,
+  "fixed_apply_pairs": 27,
+  "fixed_apply_median_reduction_pct": -0.6246782965227737,
+  "decision": "stop_operator_reuse; recover_missing_audits_from_original_profiles"
+}

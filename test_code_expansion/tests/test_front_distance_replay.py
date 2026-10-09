@@ -37,7 +37,7 @@ struct vnetrule {
 using NgException=std::runtime_error;double minother=10,minwithoutother=11;
 struct Meshing3 {
  bool front_bound=false;bool front_bound_verify=false;
- int front_transform_mode=0;VolumeKernelStats *front_transform_stats=nullptr;
+ int front_transform_mode=0;VolumeKernelStats transform;VolumeKernelStats *front_transform_stats=&transform;
  int front_distance_mode=2,fault=0;VolumeKernelStats distance;
  VolumeKernelStats *front_distance_stats=&distance,*front_bound_stats=nullptr,*front_match_stats=nullptr;
  Array<int> foundmap{0},canuse{0};Array<string> problems{"before"};
@@ -84,6 +84,18 @@ int main() {
   assert(points.back().z==3 && elements[0].index==1 && error==0 && !std::signbit(error));
   assert(engine.distance.values[8]==(fault==10?0:1));
   assert(engine.distance.values[9]==(fault && fault!=10?1:0));
+  for(int i : {8,9,10})assert(engine.transform.values[i]==0);
+ }
+ {
+  Meshing3 engine;VolumeKernelStats bound;
+  engine.front_distance_mode=0;engine.front_transform_mode=0;
+  engine.front_bound=true;engine.front_bound_verify=true;engine.front_bound_stats=&bound;
+  Array<Point3d,PointIndex> points{{0,0,0}};Array<int,PointIndex> allow{2};
+  Array<MiniElement2d> faces{MiniElement2d{}};INDEX_2_HASHTABLE<int> pairs;
+  NgArray<Element> elements;NgArray<INDEX> deleted;float error=1;
+  assert(engine.ApplyRules(points,allow,faces,1,pairs,elements,deleted,2,1,0,error)==1);
+  assert(bound.values[10]==1 && bound.values[11]==0);
+  for(int i : {8,9,10})assert(engine.distance.values[i]==0 && engine.transform.values[i]==0);
  }
  std::cout<<"PASS: actual ApplyRules wrapper rejects 10 output/state mismatches, restores optimized state on exceptions and isolates reference counters\n";
 }

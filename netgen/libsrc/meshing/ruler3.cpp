@@ -127,19 +127,19 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
     for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
   }
-  if(distance_stats) {
+  if(saved_distance==2 && distance_stats) {
     distance_stats->Add(8,1);
     distance_stats->Add(10,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
-  if(stats)stats->Add(10,1);
-  if(transform_stats) {
+  if(saved_bound && front_bound_verify && stats)stats->Add(10,1);
+  if(saved_transform==2 && transform_stats) {
     transform_stats->Add(8,1);
     transform_stats->Add(10,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
   if(!same) {
-    if(stats)stats->Add(11,1);
-    if(distance_stats)distance_stats->Add(9,1);
-    if(transform_stats)transform_stats->Add(9,1);
+    if(saved_bound && front_bound_verify && stats)stats->Add(11,1);
+    if(saved_distance==2 && distance_stats)distance_stats->Add(9,1);
+    if(saved_transform==2 && transform_stats)transform_stats->Add(9,1);
     throw NgException("front optimization ApplyRules replay mismatch");
   }
   return result;
