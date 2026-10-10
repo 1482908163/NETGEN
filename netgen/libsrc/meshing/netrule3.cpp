@@ -225,7 +225,7 @@ int vnetrule :: IsInFreeZone (const Point3d & p) const
 int vnetrule :: IsTriangleInFreeZone (const Point3d & p1, 
 				      const Point3d & p2,
 				      const Point3d & p3, 
-				      const NgArray<int> & pi, int newone)
+				      const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
 {
   int fs;
   int infreeset, cannot = 0;
@@ -257,7 +257,7 @@ int vnetrule :: IsTriangleInFreeZone (const Point3d & p1,
 	      pfi2.Elem(i) = pfi.Get(i);
 	}
 
-      infreeset = IsTriangleInFreeSet(p1, p2, p3, fs, pfi2, newone);
+      infreeset = IsTriangleInFreeSet(p1, p2, p3, fs, pfi2, newone, projection_mode, projection_stats);
       if (infreeset == 1) return 1;
       if (infreeset == -1) cannot = -1;
     }
@@ -269,8 +269,9 @@ int vnetrule :: IsTriangleInFreeZone (const Point3d & p1,
 
 int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
                                      const Point3d & p3, int fs,
-				     const NgArray<int> & pi, int newone)
+				     const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
 {
+  if(projection_stats)projection_stats[1]++;
   int i, ii;
   Vec3d n;
   int allleft, allright;
@@ -302,6 +303,7 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
   if (!newone)
     cnt = 0;
 
+  if(projection_stats && cnt)projection_stats[14]++;
   if (cnt == 1)
     {
       // MARK(triinfz1);
@@ -666,6 +668,13 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
   // MARK(triinfz0);  
 
   
+  // A timer spans the full no-common-point intersection solve, including
+  // separation tests and projection compilation, without timing each plane.
+  struct SolveTimer {
+    double *stats; std::chrono::steady_clock::time_point start;
+    explicit SolveTimer(double *s):stats(s) {if(stats)start=std::chrono::steady_clock::now();}
+    ~SolveTimer(){if(stats)stats[11]+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();}
+  } solve_timer(projection_stats);
   os1 = os2 = os3 = 0;
   activefaces.SetSize(0);
 
@@ -727,6 +736,28 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
   if (allleft || allright) return 0;
 
 
+  if(projection_stats)projection_stats[2]++;
+  // Triangle directions and plane coefficients stay fixed throughout this
+  // numerical solve. Compile their two dot products once, in the original
+  // arithmetic order. Keep hf and all Hessian/gradient accumulation unchanged:
+  // precomputing Hessian increments could change FMA rounding.
+  NgArrayMem<double,64> direction1, direction2;
+  if(projection_mode) {
+    std::chrono::steady_clock::time_point start;
+    if(projection_stats)start=std::chrono::steady_clock::now();
+    direction1.SetSize(activefaces.Size());direction2.SetSize(activefaces.Size());
+    for(int k=1;k<=activefaces.Size();++k) {
+      const int plane=activefaces.Get(k);
+      direction1.Elem(k)=freesetinequ.Get(plane,1)*v1x +
+          freesetinequ.Get(plane,2)*v1y + freesetinequ.Get(plane,3)*v1z;
+      direction2.Elem(k)=freesetinequ.Get(plane,1)*v2x +
+          freesetinequ.Get(plane,2)*v2y + freesetinequ.Get(plane,3)*v2z;
+    }
+    if(projection_stats) {
+      projection_stats[6]+=activefaces.Size();projection_stats[5]+=activefaces.Size();
+      projection_stats[10]+=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
+    }
+  }
   lam1old = lam2old = lam1 = lam2 = 1.0 / 3.0;
 
 
@@ -743,7 +774,8 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
     {
       it++;
 
-      if (it > 1000) return -1;
+      if (it > 1000) {if(projection_stats)projection_stats[15]++;return -1;}
+      if(projection_stats)projection_stats[3]++;
 
       if (lam1 < 0) lam1 = 0;
       if (lam2 < 0) lam2 = 0;
@@ -769,6 +801,7 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
       for (i = 1; i <= activefaces.Size(); i++)
 	{
 	  ii = activefaces.Get(i);
+          if(projection_stats)projection_stats[4]++;
 
 	  hf = freesetinequ.Get(ii, 1) * hpx +
 	    freesetinequ.Get(ii, 2) * hpy +
@@ -782,12 +815,19 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
 	    {
 	      f += hf * hf;
 
+              if(projection_stats)projection_stats[7]++;
+              if(projection_mode) {
+                v1n=direction1.Get(i);v2n=direction2.Get(i);
+              } else {
+                if(projection_stats)projection_stats[5]++;
 	      v1n = freesetinequ.Get(ii, 1) * v1x +
 		freesetinequ.Get(ii, 2) * v1y +
 		freesetinequ.Get(ii, 3) * v1z;
 	      v2n = freesetinequ.Get(ii, 1) * v2x +
 		freesetinequ.Get(ii, 2) * v2y +
 		freesetinequ.Get(ii, 3) * v2z;
+
+              }
 
 	      h11 += 2 * v1n * v1n;
 	      h12 += 2 * v1n * v2n;
@@ -892,7 +932,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 				  const Point3d & p2,
 				  const Point3d & p3, 
 				  const Point3d & p4, 
-				  const NgArray<int> & pi, int newone)
+				  const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
 {
   int fs;
   int infreeset, cannot = 0;
@@ -924,7 +964,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 	      pfi2.Elem(i) = pfi.Get(i);
 	}
 
-      infreeset = IsQuadInFreeSet(p1, p2, p3, p4, fs, pfi2, newone);
+      infreeset = IsQuadInFreeSet(p1, p2, p3, p4, fs, pfi2, newone, projection_mode, projection_stats);
       if (infreeset == 1) return 1;
       if (infreeset == -1) cannot = -1;
     }
@@ -935,7 +975,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 
 int vnetrule :: IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
 				 const Point3d & p3, const Point3d & p4, 
-				 int fs, const NgArray<int> & pi, int newone)
+				 int fs, const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
 {
   int i;
   
@@ -967,26 +1007,26 @@ int vnetrule :: IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
   pi3.Elem(1) = pi.Get(1);
   pi3.Elem(2) = pi.Get(2);
   pi3.Elem(3) = pi.Get(3);
-  res = IsTriangleInFreeSet (p1, p2, p3, fs, pi3, newone);
+  res = IsTriangleInFreeSet (p1, p2, p3, fs, pi3, newone, projection_mode, projection_stats);
   if (res) return res;
 
 
   pi3.Elem(1) = pi.Get(2);
   pi3.Elem(2) = pi.Get(3);
   pi3.Elem(3) = pi.Get(4);
-  res = IsTriangleInFreeSet (p2, p3, p4, fs, pi3, newone);
+  res = IsTriangleInFreeSet (p2, p3, p4, fs, pi3, newone, projection_mode, projection_stats);
   if (res) return res;
 
   pi3.Elem(1) = pi.Get(3);
   pi3.Elem(2) = pi.Get(4);
   pi3.Elem(3) = pi.Get(1);
-  res = IsTriangleInFreeSet (p3, p4, p1, fs, pi3, newone);
+  res = IsTriangleInFreeSet (p3, p4, p1, fs, pi3, newone, projection_mode, projection_stats);
   if (res) return res;
 
   pi3.Elem(1) = pi.Get(4);
   pi3.Elem(2) = pi.Get(1);
   pi3.Elem(3) = pi.Get(2);
-  res = IsTriangleInFreeSet (p4, p1, p2, fs, pi3, newone);
+  res = IsTriangleInFreeSet (p4, p1, p2, fs, pi3, newone, projection_mode, projection_stats);
   return res;
 }
 

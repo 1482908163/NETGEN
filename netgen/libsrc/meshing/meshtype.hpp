@@ -152,6 +152,15 @@ namespace netgen
       while(old<value && !values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
     }
   };
+  struct VolumeFrontProjectionStats {
+    static constexpr int count=16;
+    std::atomic<double> values[count];
+    VolumeFrontProjectionStats() {for(auto &v:values)v.store(0);}
+    void Add(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+  };
   struct VolumeFrontComponentTimer {
     VolumeFrontComponentStats *stats;int index;
     std::chrono::steady_clock::time_point start;
@@ -1823,6 +1832,8 @@ namespace netgen
     VolumeKernelStats * volume_kernel_stats = nullptr;
     VolumeCostStats *volume_cost_stats = nullptr;
     VolumeFrontComponentStats *volume_front_component_stats = nullptr;
+    VolumeFrontProjectionStats *volume_front_projection_stats = nullptr;
+    int volume_front_projection_mode = 0; // 0 original / 1 fixed projections / 2 full replay
     int volume_front_component_mode = 0; // 0 relaxation / 1 union / 2 exact labels
     VolumeIncidenceStats *volume_incidence_stats = nullptr;
     int volume_incidence_mode = 0; // 0 original / 1 ordered shards / 2 exact table replay

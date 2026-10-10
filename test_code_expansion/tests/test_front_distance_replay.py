@@ -27,7 +27,7 @@ struct Point3d {double x=0,y=0,z=0;double X()const{return x;}double Y()const{ret
 struct MiniElement2d {int np=3,p[4]={1,2,3,0};int GetNP()const{return np;}int PNum(int i)const{return p[i-1];}};
 struct Element {int type=4,np=4,index=1,p[4]={1,2,3,4};int GetType()const{return type;}int GetNP()const{return np;}int GetIndex()const{return index;}int PNum(int i)const{return p[i-1];}};
 template<class T>struct INDEX_2_HASHTABLE{};
-struct VolumeKernelStats {double values[12]={};void Add(int i,double v){values[i]+=v;}};
+struct VolumeKernelStats {double values[16]={};void Add(int i,double v){values[i]+=v;}};
 struct vnetrule {
  using FreeZoneReplayState=std::vector<std::vector<unsigned char>>;
  FreeZoneReplayState zone{{0,1,2}};
@@ -35,7 +35,9 @@ struct vnetrule {
  void RestoreFrontReplayState(const FreeZoneReplayState&s){zone=s;}
 };
 using NgException=std::runtime_error;double minother=10,minwithoutother=11;
+using VolumeFrontProjectionStats=VolumeKernelStats;
 struct Meshing3 {
+ int front_projection_mode=0;VolumeFrontProjectionStats projection;VolumeFrontProjectionStats *front_projection_stats=nullptr;
  bool front_bound=false;bool front_bound_verify=false;
  int front_transform_mode=0;VolumeKernelStats transform;VolumeKernelStats *front_transform_stats=&transform;
  int front_distance_mode=2,fault=0;VolumeKernelStats distance;

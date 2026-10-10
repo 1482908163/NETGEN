@@ -201,19 +201,19 @@ public:
     -1 maybe 
    */
   int IsTriangleInFreeZone (const Point3d & p1, const Point3d & p2,
-                            const Point3d & p3, const NgArray<int> & pi, int newone);
+                            const Point3d & p3, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
   ///
   int IsQuadInFreeZone (const Point3d & p1, const Point3d & p2,
 			const Point3d & p3, const Point3d & p4,
-			const NgArray<int> & pi, int newone);
+			const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
   ///
   int IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
-                           const Point3d & p3, int fs, const NgArray<int> & pi, int newone);
+                           const Point3d & p3, int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
 
   ///
   int IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
 		       const Point3d & p3, const Point3d & p4,
-		       int fs, const NgArray<int> & pi, int newone);
+		       int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
   
   ///
   int ConvexFreeZone () const;

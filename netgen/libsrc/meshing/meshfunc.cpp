@@ -1008,6 +1008,8 @@ namespace netgen
     // Both generation-domain repair and the standalone repair phase use this
     // default parameter object. Do not drop their full-operation statistics.
     dummymp.volume_cost_stats=options.volume_cost_stats;
+    dummymp.volume_front_projection_stats=options.volume_front_projection_stats;
+    dummymp.volume_front_projection_mode=options.volume_front_projection_mode;
     dummymp.volume_front_component_stats=options.volume_front_component_stats;
     dummymp.volume_front_component_mode=options.volume_front_component_mode;
     dummymp.volume_incidence_stats=options.volume_incidence_stats;

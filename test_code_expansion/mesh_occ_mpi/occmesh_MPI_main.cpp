@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--front-projection") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
                 !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
@@ -245,6 +245,10 @@ int main(int argc, char **argv) {
                     research.repair_fixed_point=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.repair_fixed_point<0 || research.repair_fixed_point>2)
                         throw std::runtime_error("invalid repair fixed-point mode");
+                }
+                else if(option=="--front-projection") {
+                    research.front_projection=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.front_projection<0 || research.front_projection>2)throw std::runtime_error("invalid front projection mode");
                 }
                 else if(option=="--front-components") {
                     research.front_components=std::stoi(value,&consumed);
@@ -443,6 +447,7 @@ int main(int argc, char **argv) {
          research.algorithm!="sparse" && research.algorithm!="combined") ||
         (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
         (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
+        (research.front_projection>=0 && (research.front_components>=0 || research.incidence_build<1 || research.kernel_scheduler!="cost_profile" || (research.front_projection==2 && !validate_volume))) ||
         (research.front_components>=0 && (research.incidence_build<1 || research.kernel_scheduler!="cost_profile" || (research.front_components==2 && !validate_volume))) ||
         (research.incidence_build>=0 && (research.kernel_scheduler!="cost_profile" || research.front_distance || research.front_transform || (research.incidence_build==2 && !validate_volume))) ||
         (research.front_transform && (research.kernel_scheduler!="cost_profile" || research.front_distance || (research.front_transform==2 && !validate_volume))) ||
@@ -530,6 +535,7 @@ int main(int argc, char **argv) {
     if(research.kernel_scheduler=="cost_profile") {
         profiler.add_metadata("volume_cost_profile","phase_full_cost_v3");
         profiler.add_metadata("volume_front_transform",research.front_transform==2 ? "transform_exact_replay_v1" : research.front_transform==1 ? "compiled_rule_operator_v1" : "dense_rule_operator_v1");
+        if(research.front_projection>=0)profiler.add_metadata("volume_front_projection",research.front_projection==2 ? "fixed_projection_replay_v1" : research.front_projection==1 ? "fixed_projection_v1" : "original_projection_profile_v1");
         if(research.front_components>=0)profiler.add_metadata("volume_front_components",research.front_components==2 ? "union_components_replay_v1" : research.front_components==1 ? "union_components_v1" : "relaxation_components_profile_v1");
         if(research.incidence_build>=0)profiler.add_metadata("volume_incidence_build",research.incidence_build==2 ? "ordered_incidence_replay_v1" : research.incidence_build==1 ? "ordered_incidence_v1" : "original_incidence_profile_v1");
         profiler.add_metadata("volume_front_distance",research.front_distance==2 ? "distance_exact_replay_v1" : research.front_distance==1 ? "distance_memo_v1" : "distance_original_v1");
@@ -979,6 +985,7 @@ int main(int argc, char **argv) {
             double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={},recovery_stats[6]={},native_profile[30]={},legal_split[3]={},recovery_batch[6]={},smooth_stats[8]={},split_stats[12]={},front_match[12]={},front_bound_stats[12]={},combine_stats[16]={};
             double operation_cost[nglib::NG_VOLUME_COST_PROFILE_COUNT]={};
             double active_split[12]={},front_distance[12]={},front_transform[12]={};
+            double projection_stats[nglib::NG_VOLUME_FRONT_PROJECTION_COUNT]={};
             double component_stats[nglib::NG_VOLUME_FRONT_COMPONENT_COUNT]={};
             double incidence_stats[nglib::NG_VOLUME_INCIDENCE_COUNT]={};
             double native_calls[30]={},repair_fixed[nglib::NG_VOLUME_REPAIR_FIXED_COUNT]={};
@@ -1000,6 +1007,12 @@ int main(int argc, char **argv) {
                     : research.kernel_scheduler=="node_scoped"
                     ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
                     : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
+                : research.kernel_scheduler=="cost_profile" && research.front_projection>=0
+                ? nglib::Ng_GenerateVolumeMeshFrontProjection(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
+                    kernel_seconds,kernel_details,recovery_stats,recovery_batch,native_profile,
+                    native_calls,operation_cost,nglib::NG_VOLUME_COST_PROFILE_COUNT,
+                    repair_fixed,nglib::NG_VOLUME_REPAIR_FIXED_COUNT,research.split_active_evaluation,active_split,
+                    front_distance,front_transform,research.incidence_build,incidence_stats,nglib::NG_VOLUME_INCIDENCE_COUNT,research.front_projection,projection_stats,nglib::NG_VOLUME_FRONT_PROJECTION_COUNT)
                 : research.kernel_scheduler=="cost_profile" && research.front_components>=0
                 ? nglib::Ng_GenerateVolumeMeshFrontComponents(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
                     kernel_seconds,kernel_details,recovery_stats,recovery_batch,native_profile,
@@ -1089,7 +1102,11 @@ int main(int argc, char **argv) {
                 for(int f=0;f<12;++f)profiler.set_metric(std::string("front_distance_")+distance_fields[f],front_distance[f]);
                 const char *transform_fields[]={"calls","transforms","dense_terms","evaluated_terms","skipped_terms","fallback","compiled_rules","compile_seconds","verified","mismatches","reference_seconds","apply_seconds"};
                 for(int f=0;f<12;++f)profiler.set_metric(std::string("front_transform_")+transform_fields[f],front_transform[f]);
-                if(research.front_components>=0) {
+                if(research.front_projection>=0) {
+                const char *fields[16]={"calls","triangles","iterative_tests","iterations","plane_visits","derivative_evaluations","compiled_planes","positive_visits","verified","mismatches","compile_seconds","solve_seconds","rules_seconds","reference_seconds","common_tests","limit_exits"};
+                for(int f=0;f<16;++f)profiler.set_metric(std::string("front_projection_")+fields[f],projection_stats[f]);
+            }
+            if(research.front_components>=0) {
                     const char *fields[]={"rebuilds","input_points","input_faces","union_attempts","unions","reference_passes","reference_face_visits","verified","mismatches","label_seconds","reference_seconds","rebuild_seconds","select_seconds","locals_seconds","rules_seconds","iterations"};
                     for(int i=0;i<nglib::NG_VOLUME_FRONT_COMPONENT_COUNT;++i)
                         profiler.set_metric(std::string("front_components_")+fields[i],component_stats[i]);

@@ -127,3 +127,10 @@ python3 "${ROOT}/tests/test_front_components.py"
 python3 "${ROOT}/tests/test_front_components_cli.py"
 python3 "${ROOT}/tests/test_front_components_validation.py"
 python3 "${ROOT}/tests/test_front_components_runner.py"
+
+# Fixed triangle-direction projections and the exact unified batch contract.
+python3 "${ROOT}/tests/test_front_projection_geometry.py"
+python3 "${ROOT}/tests/test_front_projection_replay.py"
+python3 "${ROOT}/tests/test_front_projection_cli.py"
+python3 "${ROOT}/tests/test_front_projection_validation.py"
+python3 "${ROOT}/tests/test_front_projection_runner.py"

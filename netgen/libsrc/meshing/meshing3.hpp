@@ -33,6 +33,8 @@ class Meshing3
   /// tolerance criterion
   double tolfak;
   int front_distance_mode = 0;
+  int front_projection_mode = 0;
+  VolumeFrontProjectionStats *front_projection_stats = nullptr;
   int front_transform_mode = 0;
   VolumeKernelStats *front_transform_stats = nullptr;
   VolumeKernelStats *front_distance_stats = nullptr;

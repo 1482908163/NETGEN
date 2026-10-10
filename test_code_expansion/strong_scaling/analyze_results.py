@@ -369,9 +369,10 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
                 volume_front_transform=metadata.get("volume_front_transform"),
+                **({"volume_front_projection":metadata["volume_front_projection"]} if "volume_front_projection" in metadata else {}),
                 **({"volume_front_components":metadata["volume_front_components"]} if "volume_front_components" in metadata else {}),
                 **({"volume_incidence_build":metadata["volume_incidence_build"]} if "volume_incidence_build" in metadata else {}),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","incidence_"))}))
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","front_projection_","incidence_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -544,6 +545,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
         validate(rows,metadata,result,slowest_compute_rank,cost_sink,compute)
         from incidence_checks import validate as validate_incidence
         validate_incidence(rows,metadata,result,slowest_compute_rank)
+        from front_projection_checks import validate as validate_projection
+        validate_projection(rows,metadata,result,slowest_compute_rank)
         from front_component_checks import validate as validate_components
         validate_components(rows,metadata,result,slowest_compute_rank)
     # Preserve a coherent view of ONE rank rather than summing stage maxima.
@@ -1234,7 +1237,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','incidence_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','front_projection_','incidence_'))})
             critical_sink.append(item)
     return result, detail
 
@@ -1528,6 +1531,7 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--require-projection-mode",type=int,choices=(0,1,2),help="require requested front projection path before SUCCESS")
     parser.add_argument("--require-component-mode",type=int,choices=(0,1,2),help="require requested front component path before SUCCESS")
     parser.add_argument("--require-incidence-mode",type=int,choices=(0,1,2),help="runner: require the requested incidence path before publishing SUCCESS")
     parser.add_argument("--archive-failed", action="store_true", help="losslessly compress failed-run evidence; never mark it successful or delete its mesh")
@@ -1564,6 +1568,12 @@ def main():
                         raise ValueError('requested incidence mode was not executed')
                     if args.require_incidence_mode and not result.get('incidence_ordered_builds',0):
                         raise ValueError('requested ordered incidence path was not exercised')
+                if args.require_projection_mode is not None:
+                    from front_projection_checks import MODES
+                    if result.get('volume_front_projection')!=MODES[args.require_projection_mode]:
+                        raise ValueError('requested front projection mode was not executed')
+                    if not result.get('front_projection_iterative_tests',0) or not result.get('front_projection_compiled_planes' if args.require_projection_mode else 'front_projection_plane_visits',0):
+                        raise ValueError('requested front projection path was not exercised')
                 if args.require_component_mode is not None:
                     from front_component_checks import MODES
                     if result.get('volume_front_components')!=MODES[args.require_component_mode]:
