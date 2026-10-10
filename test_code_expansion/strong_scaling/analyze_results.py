@@ -1525,11 +1525,14 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--require-incidence-mode",type=int,choices=(0,1,2),help="runner: require the requested incidence path before publishing SUCCESS")
     parser.add_argument("--archive-failed", action="store_true", help="losslessly compress failed-run evidence; never mark it successful or delete its mesh")
     parser.add_argument("--require-calibration",action="store_true",help="采样完整后还必须通过分区多样性与节点轮换检查")
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.require_incidence_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
+        parser.error('--require-incidence-mode requires --finish-run only')
     if args.archive_failed:
         if args.finish_run or args.kernel_overview:
             parser.error('--archive-failed is a separate evidence-only action')
@@ -1549,6 +1552,12 @@ def main():
                     raise ValueError("run is still active; finalization skipped")
                 cost_rows=[];certificates=[]
                 result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates)
+                if args.require_incidence_mode is not None:
+                    from incidence_checks import MODES
+                    if result.get('volume_incidence_build')!=MODES[args.require_incidence_mode]:
+                        raise ValueError('requested incidence mode was not executed')
+                    if args.require_incidence_mode and not result.get('incidence_ordered_builds',0):
+                        raise ValueError('requested ordered incidence path was not exercised')
                 if certificates:write_csv(args.root/"algorithm_certificate.csv",certificates)
                 if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
                 if 'mesh_quality' in result:

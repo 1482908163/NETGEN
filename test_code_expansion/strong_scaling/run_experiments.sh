@@ -798,6 +798,16 @@ SIGNATURE
                 echo "Run directory is busy: ${out}" >&2
                 failures=$((failures+1));exec 9>&-;continue
             fi
+            if [[ "$INCIDENCE_BUILD" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
+                warm="${out%/repeat_*}/repeat_0"
+                if ! warm_error="$(python3 "${SCRIPT_DIR}/incidence_checks.py" "$warm" --mode "$INCIDENCE_BUILD" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
+                    rm -f "${out}/SUCCESS"
+                    printf 'dependent_quality_warmup_failure\n%s\n' "$warm_error" > "${out}/failure_reason.txt"
+                    failures=$((failures+1))
+                    printf '%s\t%s\t%s\t2\t%s\t%s\n' "$a" "$mode" "$rep" "$out" "$seed" >> "$status_file"
+                    exec 9>&-;continue
+                fi
+            fi
             if [[ "${RESUME}" == 1 && -f "${out}/SUCCESS" &&
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
@@ -811,6 +821,8 @@ SIGNATURE
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
                   --profile-experiment "${a}" --profile-repeat "${rep}" -o "${out}/mesh/")
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
+            incidence_check=()
+            [[ "$INCIDENCE_BUILD" == -1 ]] || incidence_check=(--require-incidence-mode "$INCIDENCE_BUILD")
             if [[ "${QUALITY_WARMUP}" == 1 && "$rep" == 0 && "$mode" == natural ]]; then
                 args+=(--validate-volume)
                 [[ "$a" != sparse ]] || args+=(--verify-faces)
@@ -819,6 +831,7 @@ SIGNATURE
                 [[ "$FRONT_DISTANCE" == 0 ]] || args+=(--front-distance 2)
                 [[ "$FRONT_TRANSFORM" == 0 ]] || args+=(--front-transform 2)
                 [[ "$INCIDENCE_BUILD" != 1 ]] || args+=(--incidence-build 2)
+                [[ "$INCIDENCE_BUILD" != 1 ]] || incidence_check=(--require-incidence-mode 2)
             fi
             rc=0;finalize_error=""
             timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
@@ -826,7 +839,7 @@ SIGNATURE
             exec 9>&-
             if ((rc==0)); then
                 finalize_error=""
-                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${cleanup_args[@]}" 2>&1)"; then
+                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
                     rc=1
                     printf '%s/%s seed %s repeat %s: %s\n' "${a}" "${mode}" "${seed}" "${rep}" "${finalize_error}" >> "${failure_file}"
                 fi

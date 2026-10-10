@@ -1,12 +1,40 @@
 """Strict transaction-local incidence construction protocol; no performance claims."""
 import json
 import math
+import csv
+from pathlib import Path
 
 PHASES=('generation','repair','optimization')
 OPS=('combine','split','swap','swap2')
 FIELDS=('calls','input_points','input_elements','entries','ordered_builds','fallback_builds',
         'avoided_atomic_updates','verified','mismatches','build_seconds','reference_seconds','scratch_peak_bytes')
 MODES=('original_incidence_profile_v1','ordered_incidence_v1','ordered_incidence_replay_v1')
+
+
+def require_warmup(directory,mode,ranks,source,binary):
+    directory=Path(directory)
+    if not (directory/'SUCCESS').is_file() or (directory/'RUNNING').exists():
+        raise ValueError('incidence quality warmup did not succeed')
+    quality=json.loads((directory/'quality_summary.json').read_text())
+    if not quality.get('structural_pass'):
+        raise ValueError('incidence quality warmup did not pass structural audit')
+    expected=MODES[0] if mode==0 else MODES[2]
+    with (directory/'algorithm_certificate.csv').open() as stream:
+        certificates=list(csv.DictReader(stream))
+    if sorted(int(c['rank']) for c in certificates)!=list(range(ranks)):
+        raise ValueError('incidence warmup certificate ranks incomplete')
+    ordered=0
+    for c in certificates:
+        if (int(c['repeat']),int(c['ranks']),c.get('volume_incidence_build'),c['source_revision'],c['binary_sha256'])!=(0,ranks,expected,source,binary):
+            raise ValueError('incidence warmup certificate mode/source mismatch')
+        for phase in PHASES:
+            for op in OPS:
+                prefix=f'incidence_{phase}_{op}_'
+                if float(c[prefix+'mismatches']) or float(c[prefix+'verified'])!=(float(c[prefix+'calls']) if mode else 0):
+                    raise ValueError('incidence warmup replay incomplete')
+                ordered+=float(c[prefix+'ordered_builds'])
+    if mode and not ordered:
+        raise ValueError('ordered incidence warmup was not exercised')
 
 
 def validate(rows,metadata,result,slowest_rank):
@@ -111,3 +139,18 @@ def check_certificates(certificates,run,repeat,ranks,mode):
                 expected=max(values) if f=='scratch_peak_bytes' else sum(values)
                 if not math.isclose(expected,run[key],rel_tol=1e-12,abs_tol=1e-9):
                     raise ValueError('incidence certificate aggregate mismatch: '+key)
+
+
+if __name__=='__main__':
+    import argparse
+    parser=argparse.ArgumentParser(description='Verify incidence warmup before formal launch')
+    parser.add_argument('directory',type=Path)
+    parser.add_argument('--mode',type=int,choices=(0,1),required=True)
+    parser.add_argument('--ranks',type=int,required=True)
+    parser.add_argument('--source',required=True)
+    parser.add_argument('--binary',required=True)
+    args=parser.parse_args()
+    try:
+        require_warmup(args.directory,args.mode,args.ranks,args.source,args.binary)
+    except (OSError,ValueError,KeyError,TypeError) as error:
+        parser.exit(1,'Invalid incidence warmup: '+str(error)+'\n')
