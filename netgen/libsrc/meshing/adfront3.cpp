@@ -2,6 +2,7 @@
 
 #include <gprim/geomtest3d.hpp>
 #include "adfront3.hpp"
+#include "front_components.hpp"
 
 /* ********************** FrontPoint ********************** */
 
@@ -292,6 +293,7 @@ void AdFront3 :: GetFaceBoundingBox (int i, Box3d & box) const
 
 void AdFront3 :: RebuildInternalTables ()
 {
+  VolumeFrontComponentTimer rebuild_timer(component_stats,11);
   static int timer_a = NgProfiler::CreateTimer ("Adfront3::RebuildInternal A");
   static int timer_b = NgProfiler::CreateTimer ("Adfront3::RebuildInternal B");
   static int timer_c = NgProfiler::CreateTimer ("Adfront3::RebuildInternal C");
@@ -319,10 +321,17 @@ void AdFront3 :: RebuildInternalTables ()
   NgProfiler::StopTimer (timer_a);	  
   NgProfiler::StartTimer (timer_b);	  
 
+  if(component_stats) {
+    component_stats->Add(0,1);component_stats->Add(1,np);
+    component_stats->Add(2,faces.Size());
+  }
+  auto original_labels=[&]() {
   int change;
   do
     {
       change = 0;
+      if(component_stats)component_stats->Add(5,1);
+      if(component_stats)component_stats->Add(6,faces.Size());
       for (int i = 1; i <= faces.Size(); i++)
 	{
 	  const MiniElement2d & el = faces.Get(i).Face();
@@ -347,6 +356,34 @@ void AdFront3 :: RebuildInternalTables ()
     }
   while (change);
 
+  };
+  {
+    VolumeFrontComponentTimer label_timer(component_stats,9);
+    if(!component_mode)original_labels();
+    else {
+      FrontComponents components(np);
+      double joined=0;
+      for(int i=1;i<=faces.Size();++i) {
+        const auto &f=faces.Get(i).Face();
+        joined+=components.Join(int(f.PNum(1))-PointIndex::BASE,int(f.PNum(2))-PointIndex::BASE);
+        joined+=components.Join(int(f.PNum(1))-PointIndex::BASE,int(f.PNum(3))-PointIndex::BASE);
+      }
+      if(component_stats){component_stats->Add(3,2*faces.Size());component_stats->Add(4,joined);}
+      if(component_mode==2) {
+        {VolumeFrontComponentTimer reference_timer(component_stats,10);original_labels();}
+        bool same=true;
+        for(auto pi:points.Range())
+          if(int(points[pi].cluster)!=components.Label(int(pi)-PointIndex::BASE)+PointIndex::BASE)same=false;
+        if(component_stats)component_stats->Add(7,1);
+        if(!same) {
+          if(component_stats)component_stats->Add(8,1);
+          throw NgException("front connected-component labels mismatch");
+        }
+      }
+      for(auto pi:points.Range())
+        points[pi].cluster=PointIndex(components.Label(int(pi)-PointIndex::BASE)+PointIndex::BASE);
+    }
+  }
 
   NgProfiler::StopTimer (timer_b);	  
   NgProfiler::StartTimer (timer_c);	  

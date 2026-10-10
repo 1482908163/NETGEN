@@ -369,8 +369,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
                 volume_front_transform=metadata.get("volume_front_transform"),
+                **({"volume_front_components":metadata["volume_front_components"]} if "volume_front_components" in metadata else {}),
                 **({"volume_incidence_build":metadata["volume_incidence_build"]} if "volume_incidence_build" in metadata else {}),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","incidence_"))}))
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","incidence_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -543,6 +544,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
         validate(rows,metadata,result,slowest_compute_rank,cost_sink,compute)
         from incidence_checks import validate as validate_incidence
         validate_incidence(rows,metadata,result,slowest_compute_rank)
+        from front_component_checks import validate as validate_components
+        validate_components(rows,metadata,result,slowest_compute_rank)
     # Preserve a coherent view of ONE rank rather than summing stage maxima.
     if int(metadata.get('kernel_threads',0))>0:
         for key,value in rows[slowest_compute_rank]['metrics'].items():
@@ -1231,7 +1234,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','incidence_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','incidence_'))})
             critical_sink.append(item)
     return result, detail
 
@@ -1525,12 +1528,15 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--require-component-mode",type=int,choices=(0,1,2),help="require requested front component path before SUCCESS")
     parser.add_argument("--require-incidence-mode",type=int,choices=(0,1,2),help="runner: require the requested incidence path before publishing SUCCESS")
     parser.add_argument("--archive-failed", action="store_true", help="losslessly compress failed-run evidence; never mark it successful or delete its mesh")
     parser.add_argument("--require-calibration",action="store_true",help="采样完整后还必须通过分区多样性与节点轮换检查")
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.require_component_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
+        parser.error("--require-component-mode requires --finish-run only")
     if args.require_incidence_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
         parser.error('--require-incidence-mode requires --finish-run only')
     if args.archive_failed:
@@ -1558,6 +1564,12 @@ def main():
                         raise ValueError('requested incidence mode was not executed')
                     if args.require_incidence_mode and not result.get('incidence_ordered_builds',0):
                         raise ValueError('requested ordered incidence path was not exercised')
+                if args.require_component_mode is not None:
+                    from front_component_checks import MODES
+                    if result.get('volume_front_components')!=MODES[args.require_component_mode]:
+                        raise ValueError('requested front component mode was not executed')
+                    if not result.get('front_components_rebuilds',0) or not result.get('front_components_input_faces',0):
+                        raise ValueError('requested front component path was not exercised')
                 if certificates:write_csv(args.root/"algorithm_certificate.csv",certificates)
                 if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
                 if 'mesh_quality' in result:

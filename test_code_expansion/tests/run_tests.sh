@@ -121,3 +121,9 @@ python3 "${ROOT}/tests/test_front_transform_recovery.py"
 python3 "${ROOT}/tests/test_incidence_validation.py"
 python3 "${ROOT}/tests/test_incidence_cli.py"
 python3 "${ROOT}/tests/test_incidence_runner.py"
+
+# Exact front connected components and production experiment protocol.
+python3 "${ROOT}/tests/test_front_components.py"
+python3 "${ROOT}/tests/test_front_components_cli.py"
+python3 "${ROOT}/tests/test_front_components_validation.py"
+python3 "${ROOT}/tests/test_front_components_runner.py"

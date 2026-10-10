@@ -9,7 +9,7 @@ import tempfile
 
 REQUIRED=('run_experiments.sh','submit_experiments.sh','cluster_env.sh',
           'node_affinity_yhrun.sh','analyze_results.py','analyze_worklet_routes.py',
-          'cost_profile_checks.py','incidence_checks.py','combine_commit_checks.py','diagnose_failures.py',
+          'cost_profile_checks.py','front_component_checks.py','incidence_checks.py','combine_commit_checks.py','diagnose_failures.py',
           'fit_cost_model.py','resource_model.py','runtime_snapshot.py')
 
 def digest(path):

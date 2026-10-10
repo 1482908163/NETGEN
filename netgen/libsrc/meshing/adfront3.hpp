@@ -220,6 +220,8 @@ class AdFront3
   int minval;
   Array<PointIndex, PointIndex> invpindex;
   Array<char, PointIndex> pingroup;
+  VolumeFrontComponentStats *component_stats = nullptr;
+  int component_mode = 0;
   
   ///
   class BoxTree<3> * facetree;
@@ -257,6 +259,8 @@ public:
     return (nff - nff4 == 0);
   }
   ///
+  void SetComponentAlgorithm(int mode,VolumeFrontComponentStats *stats)
+  {component_mode=mode;component_stats=stats;}
   int SelectBaseElement ();
 
   ///

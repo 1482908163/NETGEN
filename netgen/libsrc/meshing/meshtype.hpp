@@ -139,6 +139,29 @@ namespace netgen
       while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
     }
   };
+  struct VolumeFrontComponentStats {
+    static constexpr int count=16;
+    std::atomic<double> values[count];
+    VolumeFrontComponentStats() {for(auto &v:values)v.store(0);}
+    void Add(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(!values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void Max(int i,double value) {
+      double old=values[i].load(std::memory_order_relaxed);
+      while(old<value && !values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
+    }
+  };
+  struct VolumeFrontComponentTimer {
+    VolumeFrontComponentStats *stats;int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeFrontComponentTimer(VolumeFrontComponentStats *s,int i):stats(s),index(i) {
+      if(stats)start=std::chrono::steady_clock::now();
+    }
+    ~VolumeFrontComponentTimer() {
+      if(stats)stats->Add(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+    }
+  };
   struct VolumeCombineStats {
     static constexpr int count=16;
     std::atomic<double> values[count];
@@ -1799,6 +1822,8 @@ namespace netgen
     VolumeFrontSearchStats * volume_front_search = nullptr;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     VolumeCostStats *volume_cost_stats = nullptr;
+    VolumeFrontComponentStats *volume_front_component_stats = nullptr;
+    int volume_front_component_mode = 0; // 0 relaxation / 1 union / 2 exact labels
     VolumeIncidenceStats *volume_incidence_stats = nullptr;
     int volume_incidence_mode = 0; // 0 original / 1 ordered shards / 2 exact table replay
     VolumeRepairFixedPointStats *volume_repair_fixed_stats = nullptr;

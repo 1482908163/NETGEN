@@ -182,6 +182,8 @@ int Meshing3 :: AddConnectedPair (const INDEX_2 & apair)
 MESHING3_RESULT Meshing3 :: 
 GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 {
+  auto *component_stats=mp.volume_front_component_stats;
+  adfront->SetComponentAlgorithm(mp.volume_front_component_mode,component_stats);
   front_distance_mode=mp.volume_front_distance_mode;
   front_transform_mode=mp.volume_front_transform_mode;
   front_transform_stats=mp.volume_front_transform_stats;
@@ -291,7 +293,9 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       // and get local environment of radius (safety * h)
 
 
-      int baseelem = adfront -> SelectBaseElement ();
+      if(component_stats)component_stats->Add(15,1);
+      int baseelem;
+      {VolumeFrontComponentTimer timer(component_stats,12);baseelem=adfront->SelectBaseElement();}
       if (mp.baseelnp && adfront->GetFace (baseelem).GetNP() != mp.baseelnp)
 	{
 	  adfront->IncrementClass (baseelem);	  
@@ -319,11 +323,13 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
       double houter = hmax * (1 + 2 * stat.qualclass);
 
       // meshing3_timer_a.Start();
+      {VolumeFrontComponentTimer timer(component_stats,13);
       stat.qualclass =
         adfront -> GetLocals (baseelem, locpoints, locfaces, 
 			      pindex, findex, connectedpairs,
 			      houter, hinner,
 			      locfacesplit);
+      }
       // meshing3_timer_a.Stop();
 
       // (*testout) << "locfaces = " << endl << locfaces << endl;
@@ -507,10 +513,12 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	  // NgProfiler::StartTimer (meshing3_timer_c);
           // meshing3_timer_c.Start();
 
+          {VolumeFrontComponentTimer timer(component_stats,14);
 	  found = ApplyRules (plainpoints, allowpoint, 
 			      locfaces, locfacesplit, connectedpairs,
 			      locelements, delfaces, 
 			      stat.qualclass, mp.sloppy, rotind, err);
+          }
 
 	  if (found >= 0) impossible = 0;
 	  if (found < 0) found = 0;
