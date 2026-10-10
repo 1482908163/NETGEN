@@ -1,0 +1,20 @@
+实验结果总览 / Experiment result overview
+========================================================
+状态: 完整，可分析
+有效正式运行: 9 / 9
+异常项: 0
+
+优先查看：
+1. 本文件：快速判断实验是否完整及主要指标。
+2. analysis/summary.csv：论文分析用的重复实验中位数。
+3. analysis/issues.txt：仅在异常项不为 0 时查看。
+4. repeat_*/run.log.gz：只在排查某次失败时查看。
+
+核心汇总（时间单位 s，通信量单位 GiB）：
+algorithm timing ranks seed repeats core compute_max face_exchange vertex_wait imbalance recv_GiB vs_baseline vs_sparse
+sparse natural 512 -1 3 2.022 0.817 0.178 - 1.998 0.016 - 1.000
+  负载诊断：最慢rank=454（2/3次）；compute~tet相关=0.833；local_volume~输入surface相关=0.598；top1%单位单元成本=1.322x；top5%单位单元成本=1.179x
+sparse natural 512 17 3 2.270 1.022 0.133 - 2.478 0.016 - 1.000
+  负载诊断：最慢rank=359（3/3次）；compute~tet相关=0.765；local_volume~输入surface相关=0.494；top1%单位单元成本=1.494x；top5%单位单元成本=1.230x
+sparse natural 512 41 3 2.165 0.898 0.204 - 2.169 0.016 - 1.000
+  负载诊断：最慢rank=141（2/3次）；compute~tet相关=0.810；local_volume~输入surface相关=0.584；top1%单位单元成本=1.411x；top5%单位单元成本=1.194x
