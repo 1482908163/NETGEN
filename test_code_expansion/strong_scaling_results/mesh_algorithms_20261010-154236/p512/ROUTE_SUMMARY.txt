@@ -1,0 +1,20 @@
+A1/B1/C1: 27 measured runs; 0 issues.
+a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.
+Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.
+Only validated comparisons support performance claims. Decomposition quality changes need review.
+split_active -> incidence_profile seed=-1 natural: 2.47% reduction; wins=3/3; validated=True
+split_active -> incidence_profile seed=17 natural: -0.89% reduction; wins=1/3; validated=True
+split_active -> incidence_profile seed=41 natural: 3.58% reduction; wins=3/3; validated=True
+incidence_profile -> incidence_ordered seed=-1 natural: 1.50% reduction; wins=3/3; validated=True
+incidence_profile -> incidence_ordered seed=17 natural: -0.66% reduction; wins=1/3; validated=True
+incidence_profile -> incidence_ordered seed=41 natural: 1.95% reduction; wins=3/3; validated=True
+split_active -> incidence_ordered seed=-1 natural: 3.93% reduction; wins=3/3; validated=True
+split_active -> incidence_ordered seed=17 natural: -0.98% reduction; wins=1/3; validated=True
+split_active -> incidence_ordered seed=41 natural: 5.42% reduction; wins=3/3; validated=True
+cost_profile 和 repair_fixed_profile 沿用 batch_parallel 算法，用于衡量诊断开销，比较不能作为算法加速；repair_fixed 才改变修复终止条件。各路线 p*/analysis/volume_operation_costs.csv 保留全部进程的准备/评价/排序/提交/收尾，累计输入量不能当唯一工作量。v3 用独立原生调用次数检查覆盖，两种时钟的差异仍逐项输出；旧 v2 拒绝规则不变，v1 漏计记录只作部分证据。
+有序邻接构建：三路线区分新增诊断与算法净收益；候选预热逐行精确比较原表，正式保留输入与关联工作签名。构建耗时是prepare的子区间，不与父区间相加。
+活跃分裂评价：先执行原只读拒绝条件，再将活跃候选逐项动态领取，保持排序与串行提交。预热逐边比较包括拒绝边的双精度字节，正式运行不执行参考路径。筛选时间计入评价和核心耗时；algorithm_certificate.csv 保留每个进程的参考验证和修复终止计数。repair_fixed 对照隔离本轮收益，batch_parallel 对照衡量累计净收益；活跃任务未执行时禁止声称加速。
+幽灵计划：提前打包/数量发送是依赖拆分机会；是否存在实际传输重叠须由整段耗时验证，不能相减不同慢进程的最大值推算纯通信。
+分区多样性 split_active: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 incidence_profile: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
+分区多样性 incidence_ordered: 有效种子报告=3/3; 不同逐进程表面分配指纹=3。相同指纹不能视为独立分区覆盖。
