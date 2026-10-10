@@ -13,12 +13,14 @@ script=script.replace('from test_cost_profile import fixture','from test_inciden
 script=script.replace("route=value('--kernel-scheduler')", "scheduler=value('--kernel-scheduler')\nlast=lambda key:int(sys.argv[len(sys.argv)-1-sys.argv[::-1].index(key)+1])\nfixed=last('--repair-fixed-point');active=last('--split-active-evaluation')\nassert scheduler=='cost_profile' and fixed in (1,2) and active==fixed\nassert last('--front-distance')==last('--front-transform')==0\nbuild=last('--incidence-build') if '--incidence-build' in sys.argv else -1\nroute='split_active' if build==-1 else 'incidence_profile' if build==0 else 'incidence_ordered'\nassert build==(2 if '--validate-volume' in sys.argv else 1) if build>0 else True")
 script=script.replace("route in ('batch_parallel','cost_profile')", "route in ('split_active','incidence_profile','incidence_ordered')")
 script=script.replace("rows=fixture(route,repeat,mode)", "rows=fixture(route,repeat,mode)\nif os.environ.get('MOCK_INCIDENCE_FAILURE')=='1' and (route,repeat,seed)==('incidence_ordered',1,17):rows[0]['metrics']['incidence_generation_split_ordered_builds']=0")
+script=script.replace("rows=fixture(route,repeat,mode)", "rows=fixture(route,repeat,mode)\nif os.environ.get('MOCK_IGNORED_INCIDENCE')=='1' and route=='incidence_ordered':\n    for row in rows:\n        row['metadata'].pop('volume_incidence_build',None)\n        row['metrics']={k:v for k,v in row['metrics'].items() if not k.startswith('incidence_')}")
+script=script.replace("rows=fixture(route,repeat,mode)", "rows=fixture(route,repeat,mode)\nfor row in rows:\n    for key in ('MESH_SOURCE_REVISION','MESH_BINARY_SHA256'):row['metadata'][key]=os.environ[key]")
 with tempfile.TemporaryDirectory() as tmp:
     tmp=Path(tmp);launcher=tmp/'launcher';launcher.write_text('#!/bin/bash\nshift 2\nexec "$@"\n');launcher.chmod(0o755)
     binary=tmp/'mesh';binary.write_text(script);binary.chmod(0o755)
     source=tmp/'input.step';source.write_text('input');lib=tmp/'lib';lib.mkdir();(lib/'libnglib.so').write_text('library')
     env=dict(os.environ)
-    for k in ('EXPERIMENT_STAGE','WORKLET_ROUTES','KERNEL_REPEAT','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','REPAIR_FIXED_POINT','SPLIT_ACTIVE_EVALUATION','FRONT_DISTANCE','FRONT_TRANSFORM','INCIDENCE_BUILD','REPEATS','MOCK_INCIDENCE_FAILURE','MOCK_COST_FAILURE','MOCK_FAIL'):
+    for k in ('EXPERIMENT_STAGE','WORKLET_ROUTES','KERNEL_REPEAT','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','REPAIR_FIXED_POINT','SPLIT_ACTIVE_EVALUATION','FRONT_DISTANCE','FRONT_TRANSFORM','INCIDENCE_BUILD','REPEATS','MOCK_INCIDENCE_FAILURE','MOCK_IGNORED_INCIDENCE','MOCK_COST_FAILURE','MOCK_FAIL'):
         env.pop(k,None)
     env.update(EXPERIMENT_PRESET='ordered_incidence',MESH_EXPERIMENT_WORKER='1',PROCESS_COUNT='2',PROCESS_COUNTS='2',
         RANKS_PER_NODE='2',CPUS_PER_TASK='2',KERNEL_THREADS='2',WARMUPS='1',LEVELS='0',REFINES='0',
@@ -52,6 +54,20 @@ with tempfile.TemporaryDirectory() as tmp:
     assert 'incidence tasks missing or duplicated' in (bad/'failure_reason.txt').read_text()
     assert (bad/'rank_profiles.jsonl.gz').exists() and (bad/'failure_symbols.json').exists()
     assert (failed/'route_incidence_ordered/p2/sparse_seed41_natural/repeat_3/SUCCESS').exists()
+    # Reproduce this batch's ignored application option: baseline evidence is
+    # internally valid, but must not satisfy the requested candidate contract.
+    ignored=tmp/'ignored';ignored_calls=tmp/'ignored_calls'
+    result=subprocess.run(command,env=dict(env,RUN_ROOT=str(ignored),MOCK_CALLS=str(ignored_calls),MOCK_IGNORED_INCIDENCE='1'),capture_output=True,text=True,timeout=240)
+    assert result.returncode==1,(result.stdout,result.stderr)
+    warm_dir=ignored/'route_incidence_ordered/p2/sparse_natural/repeat_0'
+    assert 'requested incidence mode was not executed' in (warm_dir/'failure_reason.txt').read_text()
+    assert not (warm_dir/'SUCCESS').exists() and not (warm_dir/'algorithm_certificate.csv').exists()
+    skipped=ignored/'route_incidence_ordered/p2/sparse_seed17_natural/repeat_3'
+    assert 'dependent_quality_warmup_failure' in (skipped/'failure_reason.txt').read_text()
+    assert not (skipped/'SUCCESS').exists() and not (skipped/'run.log').exists()
+    attempted=[line.split() for line in ignored_calls.read_text().splitlines()]
+    assert len(attempted)==27 and all(c[2]=='0' for c in attempted if c[0]=='incidence_ordered')
+    assert (ignored/'route_incidence_profile/p2/sparse_seed41_natural/repeat_3/SUCCESS').exists()
     # Equal global work with rank drift must fail even after regenerating valid certificates.
     profile=base/'repeat_1/rank_profiles.jsonl.gz'
     with gzip.open(profile,'rt') as stream:rows=[json.loads(line) for line in stream]
@@ -68,4 +84,4 @@ with tempfile.TemporaryDirectory() as tmp:
     stale=tmp/'stale';stale_calls=tmp/'stale_calls'
     result=subprocess.run(command,env=dict(env,RUN_ROOT=str(stale),MOCK_CALLS=str(stale_calls)),capture_output=True,text=True,timeout=240)
     assert result.returncode!=0 and not stale_calls.exists()
-print('PASS: unified 36-start matrix, strict replay/certificates, formal mode, rotation, failure continuation, per-rank work and stale-binary gates')
+print('PASS: unified matrix, strict replay/certificates, ignored-option rejection before SUCCESS, dependent warmup gate, rotation, failure continuation and per-rank work')
