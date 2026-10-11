@@ -144,3 +144,11 @@ python3 "${ROOT}/tests/test_front_rule_replay.py"
 python3 "${ROOT}/tests/test_front_rule_cli.py"
 python3 "${ROOT}/tests/test_front_rule_validation.py"
 python3 "${ROOT}/tests/test_front_rule_runner.py"
+
+# Candidate-local inverse lookup and complete experiment contract.
+"${CXX}" -std=c++17 -Wall -Wextra -Werror -pthread -I "${ROOT}/../netgen/libsrc/meshing" "${ROOT}/tests/test_front_point_lookup.cpp" -o "${BUILD}/test_front_point_lookup"
+"${BUILD}/test_front_point_lookup"
+python3 "${ROOT}/tests/test_front_lookup_cli.py"
+python3 "${ROOT}/tests/test_front_lookup_replay.py"
+python3 "${ROOT}/tests/test_front_lookup_validation.py"
+python3 "${ROOT}/tests/test_front_lookup_runner.py"

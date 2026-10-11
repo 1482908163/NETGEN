@@ -570,6 +570,11 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
     double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count,int projection_mode,double *projection,int projection_count);
 
    enum {NG_VOLUME_FRONT_RULE_COUNT=32};
+   constexpr int NG_VOLUME_FRONT_LOOKUP_COUNT = 14;
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontLookup(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count,int lookup_mode,double *lookup,int lookup_count);
    NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontRules(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
     double *recovery,double *batch,double *profile,double *native_calls,

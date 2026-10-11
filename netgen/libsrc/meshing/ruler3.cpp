@@ -58,7 +58,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
     int tolerance,double sloppy,int rotation,float& error)
 {
-  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2 && front_rule_mode!=2)
+  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2 && front_rule_mode!=2 && front_lookup_mode!=2)
     return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<Point3d,PointIndex> original_points(points);
   Array<MiniElement2d> original_faces(faces);
@@ -76,6 +76,8 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   auto *stats=front_bound_stats;
   const bool saved_bound=front_bound;
   const int saved_distance=front_distance_mode;
+  const int saved_lookup=front_lookup_mode;
+  auto *lookup_stats=front_lookup_stats;
   const int saved_rule_mode=front_rule_mode;
   auto *rule_stats=front_rule_stats;
   const int saved_projection=front_projection_mode;
@@ -87,6 +89,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
     front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
     front_distance_mode=saved_distance;front_distance_stats=distance_stats;
+    front_lookup_mode=saved_lookup;front_lookup_stats=lookup_stats;
     front_rule_mode=saved_rule_mode;front_rule_stats=rule_stats;
     front_projection_mode=saved_projection;front_projection_stats=projection_stats;
     front_transform_mode=saved_transform;front_transform_stats=transform_stats;
@@ -96,6 +99,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   }};
   front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
   front_distance_mode=0;front_distance_stats=nullptr;
+  front_lookup_mode=0;front_lookup_stats=nullptr;
   front_rule_mode=0;front_rule_stats=nullptr;
   front_projection_mode=0;front_projection_stats=nullptr;
   front_transform_mode=0;front_transform_stats=nullptr;
@@ -131,7 +135,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
   for(int i=0;i<rules.Size();++i)
     if(rules[i]->SaveFrontReplayState()!=optimized_zones[i])same=false;
-  if(saved_distance==2 || saved_transform==2 || saved_projection==2 || saved_rule_mode==2) {
+  if(saved_distance==2 || saved_transform==2 || saved_projection==2 || saved_rule_mode==2 || saved_lookup==2) {
     if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
     for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
   }
@@ -152,7 +156,12 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     rule_stats->Add(VolumeFrontRuleStats::verified,1);
     rule_stats->Add(VolumeFrontRuleStats::reference_seconds,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
+  if(saved_lookup==2 && lookup_stats) {
+    lookup_stats->Add(VolumeFrontLookupStats::verified,1);
+    lookup_stats->Add(VolumeFrontLookupStats::reference_seconds,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
+  }
   if(!same) {
+    if(saved_lookup==2 && lookup_stats)lookup_stats->Add(VolumeFrontLookupStats::mismatches,1);
     if(saved_rule_mode==2 && rule_stats)rule_stats->Add(VolumeFrontRuleStats::mismatches,1);
     if(saved_projection==2 && projection_stats)projection_stats->Add(9,1);
     if(saved_bound && front_bound_verify && stats)stats->Add(11,1);
@@ -229,6 +238,9 @@ int Meshing3 :: ApplyRulesImpl
       for(int i=0;i<16;++i)stats->Add(i,values[i]);
     }}
   } projection_diagnostics(front_projection_stats);
+  FrontLookupCounters lookup_diagnostics(front_lookup_stats);
+  FrontPointLookup point_lookup(lpoints.Size(),PointIndex::BASE);
+  using LC=VolumeFrontLookupStats;
   std::unique_ptr<FrontDistanceCache> distance_cache;
   if(front_distance_mode)distance_cache.reset(new FrontDistanceCache(lpoints.Size()));
   Array<Point3d,PointIndex> bound_points;
@@ -772,6 +784,7 @@ int Meshing3 :: ApplyRulesImpl
 
                       rule_cost.Switch(RC::setup_seconds);
                       rule_cost.Count(RC::mappings);
+                      lookup_diagnostics.Count(LC::candidates);
                       if(front_distance_stats)distance_diagnostics.values[6]++;
                       if(front_bound_stats)bound_diagnostics.values[1]++;
 		      // all points are mapped
@@ -981,6 +994,7 @@ int Meshing3 :: ApplyRulesImpl
 			}
 
                       rule_cost.Switch(RC::face_scan_seconds);
+                      bool lookup_ready=false;
 		      for (int qi=0;qi<(front_search?static_cast<int>(face_candidates.size()):lfaces.Size()) && ok;++qi)
 			{
                           const int i=1+(front_search?face_candidates[qi]:qi);
@@ -995,16 +1009,18 @@ int Meshing3 :: ApplyRulesImpl
 				triin = 0;
 			      else
 				{
-				  int li, lj;
-				  for (li = 1; li <= lfacei.GetNP(); li++)
-				    {
-				      int lpii = 0;
-				      PointIndex pi = lfacei.PNum(li);
-				      for (lj = 1; lj <= rule->GetNOldP(); lj++)
-					if (pmap.Get(lj) == pi)
-					  lpii = lj;
-				      lpi.Elem(li) = lpii;
-				    }
+                                  const int old_points=rule->GetNOldP();
+                                  auto mapped_point=[&](int j){return int(pmap.Get(j));};
+                                  if(!lookup_ready) {
+                                    lookup_diagnostics.Count(LC::queried_candidates);
+                                    if(front_lookup_mode>0)point_lookup.Build(old_points,mapped_point,lookup_diagnostics);
+                                    lookup_ready=true;
+                                  }
+                                  lookup_diagnostics.Count(LC::queries,lfacei.GetNP());
+                                  lookup_diagnostics.Count(LC::baseline_comparisons,double(lfacei.GetNP())*old_points);
+                                  for(int li=1;li<=lfacei.GetNP();++li)
+                                    lpi.Elem(li)=point_lookup.Resolve(int(lfacei.PNum(li)),old_points,mapped_point,
+                                        front_lookup_mode>0,lookup_diagnostics);
 
 
 				  if(front_bound_stats)bound_diagnostics.values[7]++;

@@ -36,8 +36,10 @@ struct vnetrule {
 };
 using NgException=std::runtime_error;double minother=10,minwithoutother=11;
 using VolumeFrontProjectionStats=VolumeKernelStats;
+struct VolumeFrontLookupStats {enum {verified=11,mismatches=12,reference_seconds=13};double values[14]={};void Add(int i,double v){values[i]+=v;}};
 struct VolumeFrontRuleStats {enum {verified=16,mismatches=17,reference_seconds=19};double values[32]={};void Add(int i,double v){values[i]+=v;}};
 struct Meshing3 {
+ int front_lookup_mode=0;VolumeFrontLookupStats lookup_stats;VolumeFrontLookupStats *front_lookup_stats=nullptr;
  int front_rule_mode=0;VolumeFrontRuleStats rule_stats;VolumeFrontRuleStats *front_rule_stats=nullptr;
  int front_projection_mode=0;VolumeFrontProjectionStats projection;VolumeFrontProjectionStats *front_projection_stats=nullptr;
  bool front_bound=false;bool front_bound_verify=false;

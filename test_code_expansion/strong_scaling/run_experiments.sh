@@ -21,6 +21,7 @@ fi
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
+#   front_lookup : 原线性编号查找/候选反向映射；预热完整规则重放，正式无细分计时
 #   front_rules : 有序邻接基础/规则总计/完整规则成本分解；预热完整状态重放
 #   front_projection : 有序邻接基础/原相交诊断/固定方向投影；预热完整规则状态重放
 #   front_components : 有序邻接基础/原连通诊断/并查集；预热逐点比较分量编号
@@ -46,6 +47,13 @@ fi
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+if [[ "$EXPERIMENT_PRESET" == front_lookup ]]; then
+    export LOOKUP_PROTOCOL_REQUIRED=1
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-lookup_linear lookup_inverse}"
+    EXPERIMENT_PRESET=generation_cost
+fi
+FRONT_LOOKUP="${FRONT_LOOKUP:--1}"
+[[ "$FRONT_LOOKUP" =~ ^(-1|0|1)$ ]] || { echo "FRONT_LOOKUP must be -1, 0 or 1" >&2;exit 2; }
 if [[ "$EXPERIMENT_PRESET" == front_rules ]]; then
     export RULE_PROTOCOL_REQUIRED=1
     export WORKLET_ROUTES="${WORKLET_ROUTES:-incidence_ordered rules_totals rules_stages}"
@@ -269,6 +277,9 @@ default_final_validation=0
 QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
 COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
 export QUALITY_WARMUP COMMUNICATION_ABLATION
+if [[ "${LOOKUP_PROTOCOL_REQUIRED:-0}" == 1 || "$FRONT_LOOKUP" != -1 ]]; then
+    [[ "$QUALITY_WARMUP" == 1 ]] || { echo "front_lookup requires QUALITY_WARMUP=1" >&2;exit 2; }
+fi
 if [[ "${RULE_PROTOCOL_REQUIRED:-0}" == 1 || "$FRONT_RULES" != -1 ]]; then
     [[ "$QUALITY_WARMUP" == 1 ]] || { echo "front_rules requires QUALITY_WARMUP=1" >&2;exit 2; }
 fi
@@ -290,7 +301,7 @@ COST_WEIGHTS="${COST_WEIGHTS:-1,1,1,1}"
 # The small rule-cost experiment must not spend two hours on each dead step.
 # Large production presets retain their old budget; explicit overrides win.
 default_timeout_seconds=7200
-[[ "${RULE_PROTOCOL_REQUIRED:-0}" != 1 ]] || default_timeout_seconds=600
+[[ "${RULE_PROTOCOL_REQUIRED:-0}" != 1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" != 1 ]] || default_timeout_seconds=600
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-${default_timeout_seconds}}"
 ALLOCATION_FAIL_FAST="${ALLOCATION_FAIL_FAST:-1}"
 [[ "$ALLOCATION_FAIL_FAST" =~ ^[01]$ && "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || exit 2
@@ -374,10 +385,12 @@ propagate_allocation_stop() {
         > "$parent/ALLOCATION_STOPPED.txt"
     # Do not leave a previous complete comparison looking current after a retry.
     rm -f "$parent/route_comparisons.csv" "$parent/rule_cost_fixed_rank_pairs.csv" \
-        "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json"
+        "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json" \
+        "$parent/front_lookup_fixed_rank_pairs.csv" "$parent/front_lookup_summary.csv" "$parent/front_lookup_sources.json"
     printf '实验未完成：当前作业分配停止复用，见 ALLOCATION_STOPPED.txt。\n' > "$parent/route_issues.txt"
     cp "$parent/route_issues.txt" "$parent/ROUTE_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/RULE_COST_SUMMARY.txt"
+    cp "$parent/route_issues.txt" "$parent/FRONT_LOOKUP_SUMMARY.txt"
     cat "$parent/ALLOCATION_STOPPED.txt" >&2
 }
 
@@ -421,7 +434,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -431,7 +444,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
             factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;ready=0;ghost_exchange=legacy;adaptive_worklets=0;binding=none;scheduler=repair
-            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1
+            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1;lookup_mode=-1
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -463,6 +476,8 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
                 incidence_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=0 ;;
+                lookup_linear) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;lookup_mode=0 ;;
+                lookup_inverse) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;lookup_mode=1 ;;
                 rules_totals) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;rule_mode=0 ;;
                 rules_stages) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;rule_mode=1 ;;
                 projection_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;projection_mode=0 ;;
@@ -483,7 +498,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
             esac
             # Keep startup diagnostics even if a child exits before creating plan.json.
             launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
-            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" \
+            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" FRONT_LOOKUP="$lookup_mode" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" GHOST_EXCHANGE="$ghost_exchange" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
                 :
@@ -625,6 +640,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
+[[ "$FRONT_LOOKUP" == -1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-lookup" "linear_face_lookup_v1" "inverse_face_lookup_v1" "inverse_face_lookup_replay_v1" "front_lookup_")
 [[ "$FRONT_RULES" == -1 && "${RULE_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-rules" "rule_totals_v1" "rule_stages_v1" "rule_stages_replay_v1" "front_rules_")
 [[ "$FRONT_PROJECTION" == -1 && "${PROJECTION_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-projection" "original_projection_profile_v1" "fixed_projection_v1" "fixed_projection_replay_v1" "front_projection_")
 [[ "$FRONT_COMPONENTS" == -1 && "${COMPONENT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-components" "relaxation_components_profile_v1" "union_components_v1" "union_components_replay_v1" "front_components_")
@@ -737,6 +753,7 @@ else
 fi
 if ((KERNEL_THREADS>0)); then
     common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
+    [[ "$FRONT_LOOKUP" == -1 ]] || common+=(--front-lookup "$FRONT_LOOKUP")
     [[ "$FRONT_RULES" == -1 ]] || common+=(--front-rules "$FRONT_RULES")
     [[ "$FRONT_PROJECTION" == -1 ]] || common+=(--front-projection "$FRONT_PROJECTION")
     [[ "$FRONT_COMPONENTS" == -1 ]] || common+=(--front-components "$FRONT_COMPONENTS")
@@ -894,6 +911,16 @@ SIGNATURE
                     exec 9>&-;continue
                 fi
             fi
+            if [[ "$FRONT_LOOKUP" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
+                warm="${out%/repeat_*}/repeat_0"
+                if ! warm_error="$(python3 "${SCRIPT_DIR}/front_lookup_checks.py" "$warm" --mode "$FRONT_LOOKUP" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
+                    rm -f "${out}/SUCCESS"
+                    printf 'dependent_quality_warmup_failure\n%s\n' "$warm_error" > "${out}/failure_reason.txt"
+                    failures=$((failures+1))
+                    printf '%s\t%s\t%s\t2\t%s\t%s\n' "$a" "$mode" "$rep" "$out" "$seed" >> "$status_file"
+                    exec 9>&-;continue
+                fi
+            fi
             if [[ "$FRONT_RULES" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
                 warm="${out%/repeat_*}/repeat_0"
                 if ! warm_error="$(python3 "${SCRIPT_DIR}/front_rule_checks.py" "$warm" --mode "$FRONT_RULES" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
@@ -928,7 +955,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv"
             if [[ -f "${out}/failure_reason.txt" ]]; then cp "${out}/failure_reason.txt" "${out}/previous_failure_reason.txt";fi
             rm -f "${out}/failure_reason.txt" "${out}"/failure_rank_*.txt
             export MESH_FAILURE_DIR="${out}"
@@ -938,6 +965,8 @@ SIGNATURE
                   --profile-experiment "${a}" --profile-repeat "${rep}" -o "${out}/mesh/")
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
             component_check=()
+            lookup_check=()
+            [[ "$FRONT_LOOKUP" == -1 ]] || lookup_check=(--require-lookup-mode "$FRONT_LOOKUP")
             rule_check=()
             [[ "$FRONT_RULES" == -1 ]] || rule_check=(--require-rule-mode "$FRONT_RULES")
             projection_check=()
@@ -946,6 +975,8 @@ SIGNATURE
             incidence_check=()
             [[ "$INCIDENCE_BUILD" == -1 ]] || incidence_check=(--require-incidence-mode "$INCIDENCE_BUILD")
             if [[ "${QUALITY_WARMUP}" == 1 && "$rep" == 0 && "$mode" == natural ]]; then
+                [[ "$FRONT_LOOKUP" != 1 ]] || args+=(--front-lookup 2)
+                [[ "$FRONT_LOOKUP" != 1 ]] || lookup_check=(--require-lookup-mode 2)
                 [[ "$FRONT_RULES" != 1 ]] || args+=(--front-rules 2)
                 [[ "$FRONT_RULES" != 1 ]] || rule_check=(--require-rule-mode 2)
                 [[ "$FRONT_PROJECTION" != 1 ]] || args+=(--front-projection 2)
@@ -976,7 +1007,7 @@ SIGNATURE
             fi
             if ((rc==0)); then
                 finalize_error=""
-                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
+                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
                     rc=1
                     printf '%s/%s seed %s repeat %s: %s\n' "${a}" "${mode}" "${seed}" "${rep}" "${finalize_error}" >> "${failure_file}"
                 fi
