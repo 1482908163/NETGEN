@@ -287,7 +287,13 @@ RESUME="${RESUME:-1}"
 BALANCE_SWEEPS="${BALANCE_SWEEPS:-4}"
 CUT_GROWTH="${CUT_GROWTH:-0.05}"
 COST_WEIGHTS="${COST_WEIGHTS:-1,1,1,1}"
-TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-7200}"
+# The small rule-cost experiment must not spend two hours on each dead step.
+# Large production presets retain their old budget; explicit overrides win.
+default_timeout_seconds=7200
+[[ "${RULE_PROTOCOL_REQUIRED:-0}" != 1 ]] || default_timeout_seconds=600
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-${default_timeout_seconds}}"
+ALLOCATION_FAIL_FAST="${ALLOCATION_FAIL_FAST:-1}"
+[[ "$ALLOCATION_FAIL_FAST" =~ ^[01]$ && "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || exit 2
 START_DELAY_SECONDS="${START_DELAY_SECONDS:-120}"
 PARTITION="${PARTITION:-mt_module}"
 SBATCH_COMMAND="${SBATCH_COMMAND:-yhbatch}"
@@ -302,6 +308,7 @@ INPUT_PATH="${INPUT_PATH:-/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inpu
 export EXPERIMENT_PRESET PROCESS_COUNTS ALGORITHMS TIMING_MODES RANKS_PER_NODE
 export REPEATS WARMUPS LEVELS REFINES MAXH MINH VERIFY_FACES CLEANUP_RESULTS RESUME
 export BALANCE_SWEEPS CUT_GROWTH COST_WEIGHTS TIMEOUT_SECONDS START_DELAY_SECONDS
+export ALLOCATION_FAIL_FAST
 export PARTITION SBATCH_COMMAND SBATCH_EXTRA_ARGS MPI_LAUNCHER MPI_EXTRA_ARGS DRY_RUN INPUT_PATH
 export EXPERIMENT_STAGE CALIBRATION_ROOT MIN_GAIN_SECONDS MIN_GAIN_FRACTION CLOSURE_GROWTH
 export PARTITION_SEEDS SEARCH_SECONDS
@@ -355,6 +362,25 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
 fi
 export PARTITION_VARIANT PLACEMENT_ROTATION BALANCE_METHOD TASK_COUNT TASK_CUT_GROWTH
 
+# Exit 75 is reserved by this driver for an allocation safety stop. Ordinary
+# algorithm/quality failures still return 1 and continue the experiment matrix.
+propagate_allocation_stop() {
+    local child="$1" parent="$2"
+    mkdir -p "$parent"
+    if [[ -f "$child/ALLOCATION_STOPPED.json" ]]; then
+        cp "$child/ALLOCATION_STOPPED.json" "$parent/ALLOCATION_STOPPED.json"
+    fi
+    printf '当前规模因启动故障、超时或进程被杀停止后续实验；已有结果保留。\n来源：%s\n' "$child" \
+        > "$parent/ALLOCATION_STOPPED.txt"
+    # Do not leave a previous complete comparison looking current after a retry.
+    rm -f "$parent/route_comparisons.csv" "$parent/rule_cost_fixed_rank_pairs.csv" \
+        "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json"
+    printf '实验未完成：当前作业分配停止复用，见 ALLOCATION_STOPPED.txt。\n' > "$parent/route_issues.txt"
+    cp "$parent/route_issues.txt" "$parent/ROUTE_SUMMARY.txt"
+    cp "$parent/route_issues.txt" "$parent/RULE_COST_SUMMARY.txt"
+    cat "$parent/ALLOCATION_STOPPED.txt" >&2
+}
+
 # 登录节点：转入提交驱动；计算作业：继续执行下方 worker（工作进程）逻辑。
 if [[ "${MESH_EXPERIMENT_WORKER:-0}" != 1 ]]; then
     export MESH_EXPERIMENT_DRIVER_READY=1
@@ -381,6 +407,10 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 bash "${SCRIPT_DIR}/run_experiments.sh" || rc=$?
             printf '每分区任务因子=%s，退出码=%s，结果=factor_%s/p%s/ROUTE_SUMMARY.txt\n' \
                 "$factor" "$rc" "$factor" "$PROCESS_COUNT" >> "$sweep_summary"
+            if ((rc==75)); then
+                propagate_allocation_stop "${sweep_root}/factor_${factor}/p${PROCESS_COUNT}" "${sweep_root}/p${PROCESS_COUNT}"
+                exit 75
+            fi
             ((rc==0)) || sweep_failures=$((sweep_failures+1))
         done
         ((sweep_failures==0)) || exit 1
@@ -453,11 +483,18 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
             esac
             # Keep startup diagnostics even if a child exits before creating plan.json.
             launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
-            if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" \
+            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" GHOST_EXCHANGE="$ghost_exchange" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
+                :
+            else
+                route_rc=$?
                 route_failures=$((route_failures+1))
                 printf 'Route failed: %s repeat=%s; see route_launch_errors.log\n' "$route" "$rr" >> "${route_root}/p${PROCESS_COUNT}/route_launch_failures.txt"
+                if ((route_rc==75)); then
+                    propagate_allocation_stop "${route_root}/route_${route}/p${PROCESS_COUNT}" "${route_root}/p${PROCESS_COUNT}"
+                    exit 75
+                fi
             fi
         done
     done
@@ -482,9 +519,16 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
                 " ${ALGORITHMS//,/ } " != *" baseline "* ]]; then
               variant_algorithms="baseline ${ALGORITHMS}"
           fi
-          if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$kr" KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
+          if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$kr" KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
                ALGORITHMS="$variant_algorithms" RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
+              :
+          else
+              kernel_rc=$?
               kernel_failures=$((kernel_failures+1))
+              if ((kernel_rc==75)); then
+                  propagate_allocation_stop "$variant/p${PROCESS_COUNT}" "$kernel_root/p${PROCESS_COUNT}"
+                  exit 75
+              fi
           fi
         done
       done
@@ -711,7 +755,7 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     (( PROCESS_COUNT>=2 && TASK_COUNT>=PROCESS_COUNT-1 )) || { echo "TASK_COUNT 必须不少于进程数减一。" >&2;exit 2; }
     common+=(--mesh-tasks "${TASK_COUNT}" --task-cut-growth "${TASK_CUT_GROWTH}")
 fi
-config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "MESH_NGCORE_SHA256=${MESH_NGCORE_SHA256:-none}" "MESH_RUNTIME_SHA256=${MESH_RUNTIME_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "NODE_CPU_BIND=${NODE_CPU_BIND}" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
+config_text="$(printf '%s\n' "${PROCESS_COUNT}" "${ALGORITHMS}" "${TIMING_MODES}" "${REPEATS}" "${WARMUPS}" "TIMEOUT_SECONDS=${TIMEOUT_SECONDS}" "ALLOCATION_FAIL_FAST=${ALLOCATION_FAIL_FAST}" "${common[@]}" "PARTITION_SEEDS=${PARTITION_SEEDS}" "PLACEMENT_ROTATION=${PLACEMENT_ROTATION}" "RANKS_PER_NODE=${RANKS_PER_NODE}" "SOURCE_REVISION=${MESH_SOURCE_REVISION}" "OMP_NUM_THREADS=${OMP_NUM_THREADS}" "CPUS_PER_TASK=${CPUS_PER_TASK}" "MESH_KERNEL_SHA256=${MESH_KERNEL_SHA256:-none}" "MESH_NGCORE_SHA256=${MESH_NGCORE_SHA256:-none}" "MESH_RUNTIME_SHA256=${MESH_RUNTIME_SHA256:-none}" "KERNEL_ORDER=interleaved_v2" "NODE_CPU_BIND=${NODE_CPU_BIND}" "QUALITY_WARMUP=${QUALITY_WARMUP}" "COMMUNICATION_ABLATION=${COMMUNICATION_ABLATION}" "EXPERIMENT_STAGE=${EXPERIMENT_STAGE}" "MODEL_SHA256=${MESH_MODEL_SHA256}"; sha256sum "${BINARY}" "${INPUT_PATH}")"
 if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != "${config_text}" ]]; then
     echo "Existing results use another configuration; choose a new RUN_ROOT." >&2
     exit 2
@@ -921,6 +965,15 @@ SIGNATURE
             timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
             rm -f "${out}/RUNNING"
             exec 9>&-
+            allocation_stopped=0
+            if ((rc!=0)) && [[ "$ALLOCATION_FAIL_FAST" == 1 ]]; then
+                guard_rc=0
+                rm -f "$pdir/ALLOCATION_STOPPED.json"
+                timeout --kill-after=5s 15s python3 "${SCRIPT_DIR}/allocation_stop.py" --run "$out" --exit-code "$rc" \
+                    --timeout-seconds "$TIMEOUT_SECONDS" --output "$pdir/ALLOCATION_STOPPED.json" || guard_rc=$?
+                # A broken guard must not silently continue launching steps.
+                ((guard_rc==1)) || allocation_stopped=1
+            fi
             if ((rc==0)); then
                 finalize_error=""
                 if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
@@ -932,7 +985,7 @@ SIGNATURE
                 failures=$((failures+1))
                 # Parse immediately while the recorded ELF identity still exists.
                 # Diagnosis errors must not prevent subsequent routes/repeats.
-                python3 "${SCRIPT_DIR}/diagnose_failures.py" --run "${out}" --binary "${BINARY}" \
+                timeout --kill-after=5s 60s python3 "${SCRIPT_DIR}/diagnose_failures.py" --run "${out}" --binary "${BINARY}" \
                     --kernel "${NETGEN_INSTALL_LIB}/libnglib.so" --core "${NETGEN_INSTALL_LIB}/libngcore.so" \
                     --expected-binary "${MESH_BINARY_SHA256}" --expected-kernel "${MESH_KERNEL_SHA256:-none}" \
                     --expected-core "${MESH_NGCORE_SHA256:-none}" > "${out}/failure_diagnostics.log" 2>&1 || true
@@ -955,11 +1008,15 @@ FAILURE
                 # Keep failed raw measurements uploadable even when validation
                 # refuses SUCCESS. No mesh cleanup or success reclassification.
                 if [[ "${CLEANUP_RESULTS}" == 1 ]]; then
-                    python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --archive-failed \
+                    timeout --kill-after=5s 60s python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --archive-failed \
                         > "${out}/failure_archive.log" 2>&1 || true
                 fi
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"
+            if ((allocation_stopped)); then
+                printf '停止当前作业分配；不再启动后续种子、路线或重复。结果：%s\n' "$pdir" >&2
+                exit 75
+            fi
         done
     done
   done
