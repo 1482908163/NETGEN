@@ -1,0 +1,121 @@
+launcher_or_uninstrumented_failure
+exit_code=137
+finalization_error=
+log_tail:
+
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn3760 [126]: pmixp_coll_ring.c:741: 0x40000c006f60: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn3760 [126]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:759: 0x40000c006f60: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:762: my peerid: 126:cn3760
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:769: neighbor id: next 127:cn3761, prev 125:cn3759
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:778: Context ptr=0x40000c006fe0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:778: Context ptr=0x40000c007018, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:778: Context ptr=0x40000c007050, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=0/prev=121/fwd=120
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:791: 	 neighbor contribs [128]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:824: 		 done contrib: cn[3003-3013,3646-3704,3706-3718,3720-3726,3728-3731,3733-3735,3737-3759,3761]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:826: 		 wait contrib: cn[3645,3705,3719,3727,3732,3736]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn3760 [126]: pmixp_coll_ring.c:831: 	 buf (offset/size): 266457/551919
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+yhrun: error: cn3739: task 421: Exited with exit code 15
+yhrun: error: cn3745: task 445: Exited with exit code 15
+yhrun: error: cn3738: task 418: Exited with exit code 15
+yhrun: error: cn3008: task 22: Exited with exit code 15
+yhrun: error: cn3006: task 13: Exited with exit code 15
+yhrun: error: cn3751: task 469: Exited with exit code 15
+yhrun: error: cn3007: task 19: Exited with exit code 15
+yhrun: error: cn3710: task 305: Exited with exit code 15
+yhrun: error: cn3699: task 260: Exited with exit code 15
+yhrun: error: cn3649: task 63: Exited with exit code 15
+yhrun: error: cn3005: task 9: Exited with exit code 15
+yhrun: error: cn3009: task 24: Exited with exit code 15
+yhrun: error: cn3651: task 70: Exited with exit code 15
+yhrun: error: cn3653: task 76: Exited with exit code 15
+yhrun: error: cn3707: task 294: Exited with exit code 15
+yhrun: error: cn3647: task 52: Exited with exit code 15
+yhrun: error: cn3696: task 249: Exited with exit code 15
+yhrun: error: cn3011: task 32: Exited with exit code 15
+yhrun: error: cn3694: task 242: Exited with exit code 15
+yhrun: error: cn3698: task 259: Exited with exit code 15
+yhrun: error: cn3725: task 365: Exited with exit code 15
+yhrun: error: cn3740: task 426: Exited with exit code 15
+yhrun: error: cn3723: task 358: Exited with exit code 15
+yhrun: error: cn3715: task 325: Exited with exit code 15
+yhrun: error: cn3731: task 391: Exited with exit code 15
+yhrun: error: cn3743: task 436: Exited with exit code 15
+yhrun: error: cn3716: task 328: Exited with exit code 15
+yhrun: error: cn3683: task 196: Exited with exit code 15
+yhrun: error: cn3681: task 189: Exited with exit code 15
+yhrun: error: cn3693: task 237: Exited with exit code 15
+yhrun: error: cn3004: task 4: Exited with exit code 15
+yhrun: error: cn3744: task 441: Exited with exit code 15
+yhrun: error: cn3664: task 122: Exited with exit code 15
+yhrun: error: cn3753: task 476: Exited with exit code 15
+yhrun: error: cn3654: task 81: Exited with exit code 15
+yhrun: error: cn3659: task 102: Exited with exit code 15
+yhrun: error: cn3686: task 210: Exited with exit code 15
+yhrun: error: cn3730: task 385: Exited with exit code 15
+yhrun: error: cn3658: task 98: Exited with exit code 15
+yhrun: error: cn3759: task 502: Exited with exit code 15
+yhrun: error: cn3657: task 94: Exited with exit code 15
+yhrun: error: cn3671: task 150: Exited with exit code 15
+yhrun: error: cn3724: task 360: Exited with exit code 15
+yhrun: error: cn3722: task 354: Exited with exit code 15
+yhrun: error: cn3660: task 104: Exited with exit code 15
+yhrun: error: cn3666: task 130: Exited with exit code 15
+yhrun: error: cn3687: task 212: Exited with exit code 15
+yhrun: error: cn3662: task 113: Exited with exit code 15
+yhrun: error: cn3668: task 138: Exited with exit code 15
+yhrun: error: cn3676: task 170: Exited with exit code 15
+yhrun: error: cn3688: task 219: Exited with exit code 15
+yhrun: error: cn3665: task 124: Exited with exit code 15
+yhrun: error: cn3650: task 66: Exited with exit code 15
+yhrun: error: cn3689: task 222: Exited with exit code 15
+yhrun: error: cn3713: task 318: Exited with exit code 15
+yhrun: error: cn3733: task 398: Exited with exit code 15
+yhrun: error: cn3742: task 433: Exited with exit code 15
+yhrun: error: cn3755: task 484: Exited with exit code 15
+yhrun: error: cn3758: task 496: Exited with exit code 15
+yhrun: error: cn3675: task 166: Exited with exit code 15
+yhrun: error: cn3757: task 495: Exited with exit code 15
+yhrun: error: cn3003: task 2: Exited with exit code 15
+yhrun: error: cn3711: task 311: Exited with exit code 15
+yhrun: error: cn3714: task 322: Exited with exit code 15
+yhrun: error: cn3661: task 110: Exited with exit code 15
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+yhrun: error: cn3669: task 140: Killed
+yhrun: error: cn3648: task 57: Exited with exit code 15
+yhrun: error: cn3721: task 351: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3747 [113]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:454]
+yhrun: error: cn3669: task 142: Exited with exit code 15
+yhrun: error: cn3690: task 224: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3714 [80]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:322]
+yhrun: error: cn3684: task 202: Exited with exit code 15
+yhrun: error: cn3747: tasks 452-453: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3732 [98]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:393]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3760 [126]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:505]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3648 [14]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:57]
+yhrun: error: cn3667: task 134: Exited with exit code 15
+yhrun: error: cn3732: task 392: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3669 [35]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:142]
+yhrun: error: cn3690: task 226: Exited with exit code 15
+yhrun: error: cn3760: task 507: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3712 [78]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:315]
+yhrun: error: cn3712: task 314: Exited with exit code 15
+yhrun: error: cn3703: task 276: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn3712 [78]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:312]
+yhrun: error: cn3703: task 278: Exited with exit code 15
+yhrun: error: cn3703: task 279: Killed
+yhrun: error: cn3741: task 429: Exited with exit code 15
+yhrun: error: cn3741: tasks 428,430: Killed

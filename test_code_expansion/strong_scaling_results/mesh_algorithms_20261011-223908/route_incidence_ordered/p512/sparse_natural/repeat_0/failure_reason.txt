@@ -1,0 +1,79 @@
+launcher_or_uninstrumented_failure
+exit_code=137
+finalization_error=
+log_tail:
+mixp_coll_ring.c:778: Context ptr=0x400038006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:778: Context ptr=0x400038006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:778: Context ptr=0x400038007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:787: 	 seq=0 contribs: loc=1/prev=65/fwd=66
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:791: 	 neighbor contribs [128]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:824: 		 done contrib: cn[3003-3013,7416-7424,7488-7532]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:826: 		 wait contrib: cn[7426-7487]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7425 [20]: pmixp_coll_ring.c:831: 	 buf (offset/size): 1254/3686
+Abort(873582351): Fatal error in internal_Init_thread: Other MPI error, error stack:
+internal_Init_thread(60): MPI_Init_thread(argc=0xffffe26fbefc, argv=0xffffe26fbef0, required=1, provided=0xffffe26fbf14) failed
+MPII_Init_thread(224)...: 
+MPIR_pmi_barrier(341)...: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn7426 [21]: pmixp_coll_ring.c:741: 0x400018006f20: collective timeout seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn7426 [21]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:759: 0x400018006f20: COLL_FENCE_RING state seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:762: my peerid: 21:cn7426
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:769: neighbor id: next 22:cn7427, prev 20:cn7425
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:778: Context ptr=0x400018006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:778: Context ptr=0x400018006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:778: Context ptr=0x400018007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:787: 	 seq=0 contribs: loc=1/prev=66/fwd=67
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:791: 	 neighbor contribs [128]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:824: 		 done contrib: cn[3003-3013,7416-7425,7488-7532]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:826: 		 wait contrib: cn[7427-7487]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7426 [21]: pmixp_coll_ring.c:831: 	 buf (offset/size): 1273/3705
+Abort(940691215): Fatal error in internal_Init_thread: Other MPI error, error stack:
+internal_Init_thread(60): MPI_Init_thread(argc=0xffffdfcad34c, argv=0xffffdfcad340, required=1, provided=0xffffdfcad364) failed
+MPII_Init_thread(224)...: 
+MPIR_pmi_barrier(341)...: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7488 [83]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:334]
+yhrun: launch/slurm: launch_p_step_launch: StepId=6086315.0 aborted before step completely launched.
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+slurmstepd: error: *** STEP 6086315.0 ON cn3003 CANCELLED AT 2026-10-11T23:13:11 ***
+yhrun: error: cn7492: tasks 349-350: Killed
+yhrun: error: cn7492: task 351: Exited with exit code 15
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn7442 [37]: pmixp_coll_ring.c:741: 0x40001c006f20: collective timeout seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn7442 [37]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:759: 0x40001c006f20: COLL_FENCE_RING state seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:762: my peerid: 37:cn7442
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:769: neighbor id: next 38:cn7443, prev 36:cn7441
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:778: Context ptr=0x40001c006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:778: Context ptr=0x40001c006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:778: Context ptr=0x40001c007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:787: 	 seq=0 contribs: loc=1/prev=82/fwd=83
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:791: 	 neighbor contribs [128]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:824: 		 done contrib: cn[3003-3013,7416-7441,7488-7532]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:826: 		 wait contrib: cn[7443-7487]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7442 [37]: pmixp_coll_ring.c:831: 	 buf (offset/size): 1577/4009
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn7453 [48]: pmixp_coll_ring.c:741: 0x400044006f20: collective timeout seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn7453 [48]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:759: 0x400044006f20: COLL_FENCE_RING state seq=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:762: my peerid: 48:cn7453
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:769: neighbor id: next 49:cn7454, prev 47:cn7452
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:778: Context ptr=0x400044006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:778: Context ptr=0x400044006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:778: Context ptr=0x400044007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:787: 	 seq=0 contribs: loc=1/prev=93/fwd=94
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:791: 	 neighbor contribs [128]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:824: 		 done contrib: cn[3003-3013,7416-7452,7488-7532]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:826: 		 wait contrib: cn[7454-7487]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn7453 [48]: pmixp_coll_ring.c:831: 	 buf (offset/size): 1786/4218
+yhrun: error: cn7491: task 345: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7492 [87]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:350]
+yhrun: error: cn7491: task 346: Exited with exit code 15
+yhrun: error: cn7442: task 150: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7453 [48]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6086315.0:192]
+yhrun: First task exited 300s ago
+yhrun: StepId=6086315.0 tasks 0-327,332-511: exited abnormally
+yhrun: StepId=6086315.0 tasks 328-331: unknown
+yhrun: launch/slurm: _step_signal: Terminating StepId=6086315.0
+yhrun: error: Timed out waiting for job step to complete
