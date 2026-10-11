@@ -13,6 +13,7 @@
 #include <chrono>
 #include <memory>
 #include "volume_cost_profile.hpp"
+#include "front_rule_cost.hpp"
 #include "ordered_incidence.hpp"
 #include "repair_fixed_point.hpp"
 #include <core/taskmanager.hpp>
@@ -1832,6 +1833,8 @@ namespace netgen
     VolumeKernelStats * volume_kernel_stats = nullptr;
     VolumeCostStats *volume_cost_stats = nullptr;
     VolumeFrontComponentStats *volume_front_component_stats = nullptr;
+    VolumeFrontRuleStats *volume_front_rule_stats = nullptr;
+    int volume_front_rule_mode = 0; // 0 total/counters / 1 partition / 2 replay
     VolumeFrontProjectionStats *volume_front_projection_stats = nullptr;
     int volume_front_projection_mode = 0; // 0 original / 1 fixed projections / 2 full replay
     int volume_front_component_mode = 0; // 0 relaxation / 1 union / 2 exact labels

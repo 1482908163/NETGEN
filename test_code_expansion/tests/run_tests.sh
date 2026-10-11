@@ -134,3 +134,12 @@ python3 "${ROOT}/tests/test_front_projection_replay.py"
 python3 "${ROOT}/tests/test_front_projection_cli.py"
 python3 "${ROOT}/tests/test_front_projection_validation.py"
 python3 "${ROOT}/tests/test_front_projection_runner.py"
+
+# Complete rule cost partition and exact observation protocol.
+"${CXX}" -std=c++17 -Wall -Wextra -Werror -pthread -I "${ROOT}/../netgen/libsrc/meshing" "${ROOT}/tests/test_front_rule_cost.cpp" -o "${BUILD}/test_front_rule_cost"
+"${BUILD}/test_front_rule_cost"
+python3 "${ROOT}/tests/test_front_rule_geometry.py"
+python3 "${ROOT}/tests/test_front_rule_replay.py"
+python3 "${ROOT}/tests/test_front_rule_cli.py"
+python3 "${ROOT}/tests/test_front_rule_validation.py"
+python3 "${ROOT}/tests/test_front_rule_runner.py"

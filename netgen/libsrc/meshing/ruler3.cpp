@@ -58,7 +58,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
     int tolerance,double sloppy,int rotation,float& error)
 {
-  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2)
+  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2 && front_rule_mode!=2)
     return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<Point3d,PointIndex> original_points(points);
   Array<MiniElement2d> original_faces(faces);
@@ -76,6 +76,8 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   auto *stats=front_bound_stats;
   const bool saved_bound=front_bound;
   const int saved_distance=front_distance_mode;
+  const int saved_rule_mode=front_rule_mode;
+  auto *rule_stats=front_rule_stats;
   const int saved_projection=front_projection_mode;
   auto *projection_stats=front_projection_stats;
   const int saved_transform=front_transform_mode;
@@ -85,6 +87,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
     front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
     front_distance_mode=saved_distance;front_distance_stats=distance_stats;
+    front_rule_mode=saved_rule_mode;front_rule_stats=rule_stats;
     front_projection_mode=saved_projection;front_projection_stats=projection_stats;
     front_transform_mode=saved_transform;front_transform_stats=transform_stats;
     foundmap=optimized_found;canuse=optimized_can;problems=optimized_problems;
@@ -93,6 +96,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   }};
   front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
   front_distance_mode=0;front_distance_stats=nullptr;
+  front_rule_mode=0;front_rule_stats=nullptr;
   front_projection_mode=0;front_projection_stats=nullptr;
   front_transform_mode=0;front_transform_stats=nullptr;
   const auto reference_start=std::chrono::steady_clock::now();
@@ -127,7 +131,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
   for(int i=0;i<rules.Size();++i)
     if(rules[i]->SaveFrontReplayState()!=optimized_zones[i])same=false;
-  if(saved_distance==2 || saved_transform==2 || saved_projection==2) {
+  if(saved_distance==2 || saved_transform==2 || saved_projection==2 || saved_rule_mode==2) {
     if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
     for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
   }
@@ -144,7 +148,12 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     projection_stats->Add(8,1);
     projection_stats->Add(13,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
+  if(saved_rule_mode==2 && rule_stats) {
+    rule_stats->Add(VolumeFrontRuleStats::verified,1);
+    rule_stats->Add(VolumeFrontRuleStats::reference_seconds,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
+  }
   if(!same) {
+    if(saved_rule_mode==2 && rule_stats)rule_stats->Add(VolumeFrontRuleStats::mismatches,1);
     if(saved_projection==2 && projection_stats)projection_stats->Add(9,1);
     if(saved_bound && front_bound_verify && stats)stats->Add(11,1);
     if(saved_distance==2 && distance_stats)distance_stats->Add(9,1);
@@ -170,6 +179,8 @@ int Meshing3 :: ApplyRulesImpl
  )
 
 {
+  FrontRuleCost rule_cost(front_rule_stats,front_rule_mode);
+  using RC=VolumeFrontRuleStats;
   // Aggregate counters once per call; no atomics in the backtracking loop.
   struct MatchDiagnostics {
     VolumeKernelStats *stats;
@@ -413,6 +424,7 @@ int Meshing3 :: ApplyRulesImpl
   // check each rule:
   // tstart.Stop();
   // tloop.Start();
+  rule_cost.Switch(RC::mapping_seconds);
   for (int rim = 0; rim < rules.Size(); rim++)
     {
       int base = (lfaces[0].GetNP() == 3) ? 100 : 200;
@@ -455,6 +467,7 @@ int Meshing3 :: ApplyRulesImpl
         if(front_distance_stats)distance_diagnostics.values[3]++;
         return compute();
       };
+      rule_cost.Count(RC::rules);
       loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
       if (loktestmode)
@@ -554,6 +567,7 @@ int Meshing3 :: ApplyRulesImpl
                   }
 		  
 		  
+		  rule_cost.Count(RC::face_trials);
 		  if (fnearness.Get(locfi) > rule->GetFNearness (nfok) ||
 		      fused.Get(locfi) ||
 		      actfnp != lfaces[locfi-1].GetNP() )
@@ -700,6 +714,7 @@ int Meshing3 :: ApplyRulesImpl
 			    {
 			      ok = 1;
 			      locpi++;
+                      rule_cost.Count(RC::point_trials);
 			      
 			      if (pused[locpi] || 
 				  pnearness[locpi] > rule->GetPNearness(npok))
@@ -755,6 +770,8 @@ int Meshing3 :: ApplyRulesImpl
 		    {
 		      NgProfiler::RegionTimer regfa2(302);		      
 
+                      rule_cost.Switch(RC::setup_seconds);
+                      rule_cost.Count(RC::mappings);
                       if(front_distance_stats)distance_diagnostics.values[6]++;
                       if(front_bound_stats)bound_diagnostics.values[1]++;
 		      // all points are mapped
@@ -827,6 +844,7 @@ int Meshing3 :: ApplyRulesImpl
 		      
 
 		      
+                      if(!ok)rule_cost.Count(RC::edge_rejected);
 		      for (int i = rule->GetNOldF() + 1; i <= rule->GetNF(); i++)
 			fmapi.Set(i, 0);
 		      
@@ -898,13 +916,16 @@ int Meshing3 :: ApplyRulesImpl
                       }
                       // This legacy transformation partially retains coefficients
                       // for degenerate faces. Always perform it in original order.
+                      rule_cost.Switch(RC::transform_seconds);
                       rule->SetFreeZoneTransformationPlanned(allp,tolerance+int(sloppy),
                           front_transform_mode,front_transform_stats?transform_diagnostics.values:nullptr);
+                      rule_cost.Switch(RC::point_seconds);
                       if(!skip_geometry) {
                         if(front_bound_stats)bound_diagnostics.values[5]++;
 
 		      if (!rule->ConvexFreeZone())
 			{
+                          rule_cost.Count(RC::nonconvex);
 			  ok = 0;
 			  problems[rim] = "Freezone not convex";
 
@@ -942,6 +963,7 @@ int Meshing3 :: ApplyRulesImpl
 			      if (rule->fzbox.IsIn (lp))
 				{
 				  if(front_bound_stats)bound_diagnostics.values[6]++;
+                          rule_cost.Count(RC::point_tests);
 				  if (rule->IsInFreeZone(lp))
 				    {
 				      if (loktestmode)
@@ -950,6 +972,7 @@ int Meshing3 :: ApplyRulesImpl
 						     << " in Freezone" << endl;
 					  problems[rim] = "locpoint " + ToString(i) + " in Freezone";
 					}
+				      rule_cost.Count(RC::point_rejected);
 				      ok = 0;
 				      break;
 				    }
@@ -957,6 +980,7 @@ int Meshing3 :: ApplyRulesImpl
 			    }
 			}
 
+                      rule_cost.Switch(RC::face_scan_seconds);
 		      for (int qi=0;qi<(front_search?static_cast<int>(face_candidates.size()):lfaces.Size()) && ok;++qi)
 			{
                           const int i=1+(front_search?face_candidates[qi]:qi);
@@ -990,23 +1014,25 @@ int Meshing3 :: ApplyRulesImpl
 					(
 					 lpoints[lfacei.PNum(1)],
 					 lpoints[lfacei.PNum(2)],
-					 lpoints[lfacei.PNum(3)], lpi, 1, front_projection_mode, front_projection_stats?projection_diagnostics.values:nullptr
+					 lpoints[lfacei.PNum(3)], lpi, 1, front_projection_mode, front_projection_stats?projection_diagnostics.values:nullptr, front_rule_stats?&rule_cost:nullptr
 					 );
 				    }
 				  else
 				    {
+                              rule_cost.Count(RC::quad_tests);
 				      triin = rule->IsQuadInFreeZone 
 					(
 					 lpoints[lfacei.PNum(1)],
 					 lpoints[lfacei.PNum(2)],
 					 lpoints[lfacei.PNum(3)], 
 					 lpoints[lfacei.PNum(4)], 
-					 lpi, 1, front_projection_mode, front_projection_stats?projection_diagnostics.values:nullptr
+					 lpi, 1, front_projection_mode, front_projection_stats?projection_diagnostics.values:nullptr, front_rule_stats?&rule_cost:nullptr
 					 );
 				    }
 				}
 
 
+			      const bool face_was_ok=ok;
 			      if (triin == -1)
 				{
 				  ok = 0;
@@ -1121,13 +1147,16 @@ int Meshing3 :: ApplyRulesImpl
 				    }
 #endif
 				}
+                          if(face_was_ok && !ok)rule_cost.Count(RC::face_rejected);
 			    }
 			   
 			}
 
 		      
+                      rule_cost.Switch(RC::evaluate_seconds);
 		      if (ok)
 			{
+                          rule_cost.Count(RC::evaluated);
 			  err = 0;
 			  for (int i = 1; i <= rule->GetNOldP(); i++)
 			    {
@@ -1307,9 +1336,11 @@ int Meshing3 :: ApplyRulesImpl
 				       << "minteterr = " << minteterr << endl;
 
 
+                          rule_cost.Switch(RC::selection_seconds);
 			  if (ok && teterr < tolerance)
 			    {
 			      canuse[rim] ++;
+                              rule_cost.Count(RC::usable);
 			      /*
 			      (*testout) << "can use rule " << rule->Name() 
 					 << ", err = " << teterr << endl;
@@ -1339,6 +1370,7 @@ int Meshing3 :: ApplyRulesImpl
 			      if (loktestmode)
 				(*testout) << "use rule" << endl;
 
+			      rule_cost.Count(RC::best_updates);
 			      found = rim+1;
 			      minteterr = teterr;
 			      
@@ -1381,6 +1413,7 @@ int Meshing3 :: ApplyRulesImpl
 			}
 		      
                       } // !skip_geometry: backtracking remains identical
+                      rule_cost.Switch(RC::mapping_seconds);
 		      npok = rule->GetNOldP();
 		      incnpok = 0;
 		    }
@@ -1402,6 +1435,7 @@ int Meshing3 :: ApplyRulesImpl
       if (loktestmode)
 	(*testout) << "end rule" << endl;
     }
+  rule_cost.Switch(RC::finish_seconds);
   // tloop.Stop();
   
   if (found)

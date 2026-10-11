@@ -37,6 +37,8 @@ struct vnetrule {
  int IsTriangleInFreeSet(const Point3d&,const Point3d&,const Point3d&,int,const NgArray<int>&,int,int=0,double*=nullptr);
 };
 '''.replace('double*=','double * =')
+prefix='#include "front_rule_cost.hpp"\nusing netgen::FrontRuleCost;\n'+prefix
+prefix=prefix.replace('double * =nullptr','double * =nullptr, FrontRuleCost * =nullptr')
 source=(ROOT/'netgen/libsrc/meshing/netrule3.cpp').read_text()
 method=source[source.index('int vnetrule :: IsTriangleInFreeZone'):source.index('float vnetrule :: CalcPointDist')]
 method=method.replace('      if (isin) return 1;', '      record({double(it),lam1,lam2,hpx,hpy,hpz,f,h11,h12,h22,dflam1,dflam2,double(cntout),double(isin)});\n      if (isin) return 1;')

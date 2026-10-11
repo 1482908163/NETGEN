@@ -225,7 +225,7 @@ int vnetrule :: IsInFreeZone (const Point3d & p) const
 int vnetrule :: IsTriangleInFreeZone (const Point3d & p1, 
 				      const Point3d & p2,
 				      const Point3d & p3, 
-				      const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
+				      const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats, FrontRuleCost *rule_cost)
 {
   int fs;
   int infreeset, cannot = 0;
@@ -257,7 +257,7 @@ int vnetrule :: IsTriangleInFreeZone (const Point3d & p1,
 	      pfi2.Elem(i) = pfi.Get(i);
 	}
 
-      infreeset = IsTriangleInFreeSet(p1, p2, p3, fs, pfi2, newone, projection_mode, projection_stats);
+      infreeset = IsTriangleInFreeSet(p1, p2, p3, fs, pfi2, newone, projection_mode, projection_stats, rule_cost);
       if (infreeset == 1) return 1;
       if (infreeset == -1) cannot = -1;
     }
@@ -269,7 +269,7 @@ int vnetrule :: IsTriangleInFreeZone (const Point3d & p1,
 
 int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
                                      const Point3d & p3, int fs,
-				     const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
+				     const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats, FrontRuleCost *rule_cost)
 {
   if(projection_stats)projection_stats[1]++;
   int i, ii;
@@ -303,6 +303,7 @@ int vnetrule :: IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
   if (!newone)
     cnt = 0;
 
+  FrontRuleCost::Geometry geometry_cost(rule_cost,cnt!=0);
   if(projection_stats && cnt)projection_stats[14]++;
   if (cnt == 1)
     {
@@ -932,7 +933,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 				  const Point3d & p2,
 				  const Point3d & p3, 
 				  const Point3d & p4, 
-				  const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
+				  const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats, FrontRuleCost *rule_cost)
 {
   int fs;
   int infreeset, cannot = 0;
@@ -964,7 +965,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 	      pfi2.Elem(i) = pfi.Get(i);
 	}
 
-      infreeset = IsQuadInFreeSet(p1, p2, p3, p4, fs, pfi2, newone, projection_mode, projection_stats);
+      infreeset = IsQuadInFreeSet(p1, p2, p3, p4, fs, pfi2, newone, projection_mode, projection_stats, rule_cost);
       if (infreeset == 1) return 1;
       if (infreeset == -1) cannot = -1;
     }
@@ -975,7 +976,7 @@ int vnetrule :: IsQuadInFreeZone (const Point3d & p1,
 
 int vnetrule :: IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
 				 const Point3d & p3, const Point3d & p4, 
-				 int fs, const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats)
+				 int fs, const NgArray<int> & pi, int newone, int projection_mode, double *projection_stats, FrontRuleCost *rule_cost)
 {
   int i;
   
@@ -1007,26 +1008,26 @@ int vnetrule :: IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
   pi3.Elem(1) = pi.Get(1);
   pi3.Elem(2) = pi.Get(2);
   pi3.Elem(3) = pi.Get(3);
-  res = IsTriangleInFreeSet (p1, p2, p3, fs, pi3, newone, projection_mode, projection_stats);
+  res = IsTriangleInFreeSet (p1, p2, p3, fs, pi3, newone, projection_mode, projection_stats, rule_cost);
   if (res) return res;
 
 
   pi3.Elem(1) = pi.Get(2);
   pi3.Elem(2) = pi.Get(3);
   pi3.Elem(3) = pi.Get(4);
-  res = IsTriangleInFreeSet (p2, p3, p4, fs, pi3, newone, projection_mode, projection_stats);
+  res = IsTriangleInFreeSet (p2, p3, p4, fs, pi3, newone, projection_mode, projection_stats, rule_cost);
   if (res) return res;
 
   pi3.Elem(1) = pi.Get(3);
   pi3.Elem(2) = pi.Get(4);
   pi3.Elem(3) = pi.Get(1);
-  res = IsTriangleInFreeSet (p3, p4, p1, fs, pi3, newone, projection_mode, projection_stats);
+  res = IsTriangleInFreeSet (p3, p4, p1, fs, pi3, newone, projection_mode, projection_stats, rule_cost);
   if (res) return res;
 
   pi3.Elem(1) = pi.Get(4);
   pi3.Elem(2) = pi.Get(1);
   pi3.Elem(3) = pi.Get(2);
-  res = IsTriangleInFreeSet (p4, p1, p2, fs, pi3, newone, projection_mode, projection_stats);
+  res = IsTriangleInFreeSet (p4, p1, p2, fs, pi3, newone, projection_mode, projection_stats, rule_cost);
   return res;
 }
 

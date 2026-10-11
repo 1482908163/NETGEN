@@ -185,6 +185,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   auto *component_stats=mp.volume_front_component_stats;
   adfront->SetComponentAlgorithm(mp.volume_front_component_mode,component_stats);
   front_distance_mode=mp.volume_front_distance_mode;
+  front_rule_mode=mp.volume_front_rule_mode;
+  front_rule_stats=mp.volume_front_rule_stats;
   front_projection_mode=mp.volume_front_projection_mode;
   front_projection_stats=mp.volume_front_projection_stats;
   front_transform_mode=mp.volume_front_transform_mode;

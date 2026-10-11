@@ -350,7 +350,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
     return lines,issues
 
 
-def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None, certificate_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None, certificate_sink=None, rule_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -369,10 +369,11 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
                 volume_front_transform=metadata.get("volume_front_transform"),
+                **({"volume_front_rules":metadata["volume_front_rules"]} if "volume_front_rules" in metadata else {}),
                 **({"volume_front_projection":metadata["volume_front_projection"]} if "volume_front_projection" in metadata else {}),
                 **({"volume_front_components":metadata["volume_front_components"]} if "volume_front_components" in metadata else {}),
                 **({"volume_incidence_build":metadata["volume_incidence_build"]} if "volume_incidence_build" in metadata else {}),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","front_projection_","incidence_"))}))
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","front_projection_","front_rules_","incidence_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -545,6 +546,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
         validate(rows,metadata,result,slowest_compute_rank,cost_sink,compute)
         from incidence_checks import validate as validate_incidence
         validate_incidence(rows,metadata,result,slowest_compute_rank)
+        from front_rule_checks import validate as validate_rules
+        validate_rules(rows,metadata,result,slowest_compute_rank)
         from front_projection_checks import validate as validate_projection
         validate_projection(rows,metadata,result,slowest_compute_rank)
         from front_component_checks import validate as validate_components
@@ -1237,8 +1240,16 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                         kernel_scheduler=metadata['kernel_scheduler'])
             item.update({stage+'_seconds':seconds(row,stage) for stage in (*COMPUTE,*exchange_names)})
             item.update({k:v for k,v in row['metrics'].items()
-                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','front_projection_','incidence_'))})
+                         if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','front_projection_','front_rules_','incidence_'))})
             critical_sink.append(item)
+    if rule_sink is not None and metadata.get('volume_front_rules') is not None:
+        from front_rule_checks import FIELDS,PREFIX
+        for i,row in enumerate(rows):
+            item={k:result[k] for k in ('source_revision','binary_sha256','algorithm','timing','ranks','partition_seed','repeat','volume_front_rules')}
+            item.update(rank=row['rank'],compute_seconds=compute[i],kernel_front_seconds=row['metrics']['kernel_front_seconds'])
+            item.update({PREFIX+f:row['metrics'][PREFIX+f] for f in FIELDS})
+            item.update({k:row['metrics'][k] for k in ('front_distance_calls','front_distance_rules','front_distance_candidates')})
+            rule_sink.append(item)
     return result, detail
 
 def write_csv(path, rows):
@@ -1531,6 +1542,7 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--require-rule-mode",type=int,choices=(0,1,2),help="require requested front rule path before SUCCESS")
     parser.add_argument("--require-projection-mode",type=int,choices=(0,1,2),help="require requested front projection path before SUCCESS")
     parser.add_argument("--require-component-mode",type=int,choices=(0,1,2),help="require requested front component path before SUCCESS")
     parser.add_argument("--require-incidence-mode",type=int,choices=(0,1,2),help="runner: require the requested incidence path before publishing SUCCESS")
@@ -1539,6 +1551,8 @@ def main():
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.require_rule_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
+        parser.error("--require-rule-mode requires --finish-run only")
     if args.require_component_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
         parser.error("--require-component-mode requires --finish-run only")
     if args.require_incidence_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
@@ -1560,14 +1574,20 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                cost_rows=[];certificates=[]
-                result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates)
+                cost_rows=[];certificates=[];rule_rows=[]
+                result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates,rule_sink=rule_rows)
                 if args.require_incidence_mode is not None:
                     from incidence_checks import MODES
                     if result.get('volume_incidence_build')!=MODES[args.require_incidence_mode]:
                         raise ValueError('requested incidence mode was not executed')
                     if args.require_incidence_mode and not result.get('incidence_ordered_builds',0):
                         raise ValueError('requested ordered incidence path was not exercised')
+                if args.require_rule_mode is not None:
+                    from front_rule_checks import MODES
+                    if result.get('volume_front_rules')!=MODES[args.require_rule_mode]:
+                        raise ValueError('requested front rule mode was not executed')
+                    if not result.get('front_rules_calls',0) or not result.get('front_rules_mappings',0):
+                        raise ValueError('requested front rule path was not exercised')
                 if args.require_projection_mode is not None:
                     from front_projection_checks import MODES
                     if result.get('volume_front_projection')!=MODES[args.require_projection_mode]:
@@ -1581,6 +1601,7 @@ def main():
                     if not result.get('front_components_rebuilds',0) or not result.get('front_components_input_faces',0):
                         raise ValueError('requested front component path was not exercised')
                 if certificates:write_csv(args.root/"algorithm_certificate.csv",certificates)
+                if rule_rows:write_csv(args.root/'rule_cost_certificate.csv',rule_rows)
                 if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
                 if 'mesh_quality' in result:
                     q=result['mesh_quality']

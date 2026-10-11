@@ -4,6 +4,7 @@
 #include <cstring>
 #include <memory>
 #include "front_transform_plan.hpp"
+#include "front_rule_cost.hpp"
 
 namespace netgen
 {
@@ -201,19 +202,19 @@ public:
     -1 maybe 
    */
   int IsTriangleInFreeZone (const Point3d & p1, const Point3d & p2,
-                            const Point3d & p3, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
+                            const Point3d & p3, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr, FrontRuleCost *rule_cost=nullptr);
   ///
   int IsQuadInFreeZone (const Point3d & p1, const Point3d & p2,
 			const Point3d & p3, const Point3d & p4,
-			const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
+			const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr, FrontRuleCost *rule_cost=nullptr);
   ///
   int IsTriangleInFreeSet (const Point3d & p1, const Point3d & p2,
-                           const Point3d & p3, int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
+                           const Point3d & p3, int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr, FrontRuleCost *rule_cost=nullptr);
 
   ///
   int IsQuadInFreeSet (const Point3d & p1, const Point3d & p2,
 		       const Point3d & p3, const Point3d & p4,
-		       int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr);
+		       int fs, const NgArray<int> & pi, int newone, int projection_mode=0, double *projection_stats=nullptr, FrontRuleCost *rule_cost=nullptr);
   
   ///
   int ConvexFreeZone () const;
