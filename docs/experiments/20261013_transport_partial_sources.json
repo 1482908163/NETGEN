@@ -1,0 +1,246 @@
+{
+  "commit": "a99e1f3541c993794683b4d1d12939ca3e6c5b25",
+  "base": "test_code_expansion/strong_scaling_results/mesh_algorithms_20261012-232717",
+  "files": [
+    {
+      "path": "p128/mpi_startup/log_tail.txt",
+      "type": "blob",
+      "size": 46,
+      "sha": "79ea1d1b128e403bca1f5cf405e5ec85c166be36"
+    },
+    {
+      "path": "p128/mpi_startup/receipt.json",
+      "type": "blob",
+      "size": 650,
+      "sha": "1fcc0b7d4dd58b6ce933c706011bc64c0d409ff8"
+    },
+    {
+      "path": "p128/route_issues.txt",
+      "type": "blob",
+      "size": 8138,
+      "sha": "46dd4c66e8303af848d0282bcbbc633dc3c7e48f"
+    },
+    {
+      "path": "p256/mpi_startup/log_tail.txt",
+      "type": "blob",
+      "size": 46,
+      "sha": "c638f1329023e5eea74767a16a2c009e590878d0"
+    },
+    {
+      "path": "p256/mpi_startup/receipt.json",
+      "type": "blob",
+      "size": 651,
+      "sha": "0049cf4267dfb694035ad081a8a2f8c404557a3b"
+    },
+    {
+      "path": "p256/route_issues.txt",
+      "type": "blob",
+      "size": 8136,
+      "sha": "f42311453843d2e33bce0e890829b38ff3ae0a1a"
+    },
+    {
+      "path": "p512/ALLOCATION_STOPPED.json",
+      "type": "blob",
+      "size": 346,
+      "sha": "94391c1f73dc19ac718336bdb25bdee9b6ecdc5b"
+    },
+    {
+      "path": "p512/mpi_startup/log_tail.txt",
+      "type": "blob",
+      "size": 330,
+      "sha": "062a0dea87d7fb6429b5bcd7fc4e6a78b56f3c87"
+    },
+    {
+      "path": "p512/mpi_startup/receipt.json",
+      "type": "blob",
+      "size": 1027,
+      "sha": "1dd48dcf9ec0a5d7dc15334d0f4d5786bab9dd54"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 48724,
+      "sha": "9799d300c9cad3a1ea2ef663c8ab8bd3af735b9a"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 214852,
+      "sha": "dd30e9bdb8b1c28f8b216f76fb7aa53b51938d89"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46622,
+      "sha": "fb1f90bafc6715e000253e25adfd6d0ff6e6bd0f"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46625,
+      "sha": "1578e0393610cb47bfec95cae724f5a89f7bcb8c"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46608,
+      "sha": "ae7669398e6b5ae3514373e35c00f288d47517f9"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed17_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 48612,
+      "sha": "e72d51d3fcced2c9e22bdaa1ef825b3509411383"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed17_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 214848,
+      "sha": "e106fe8c20aeb73bf332bf5b81bb3ec0fc591a5c"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed17_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46609,
+      "sha": "72ee2f18efd34024b59b75c9bf78d457d30d5c16"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed17_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46478,
+      "sha": "170bfd60ff37a774d43a1fd62ae027603fd44324"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed17_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46480,
+      "sha": "cd9ac710db7a4a5dc2fcb39a99b3aafd36f05ee0"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed41_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 48646,
+      "sha": "73d4890906a4c3ba1f5f6df82d93fc8c850c26e3"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed41_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 214828,
+      "sha": "e58f138e410bd71c8e117137419bc51b8b44fe01"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed41_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46478,
+      "sha": "cd844eb587d6752523c03dc960e8627e1282da2d"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed41_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46626,
+      "sha": "c4e65a7e2cac9b17be63c220f846c50b13b34b65"
+    },
+    {
+      "path": "route_ghost_dictionary/p128/sparse_seed41_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 46610,
+      "sha": "3c042e5ac5eed5047c1dbcbbffb792d211b91042"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 95971,
+      "sha": "f42c68c324766c8859c9822266c4779d577f9fbd"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 427551,
+      "sha": "8e93cf5d26f9bf3f129b1586ee75ee14fe117e0d"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91873,
+      "sha": "bb7669f21f59eb258819e5b3c2edc969a778f55c"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91871,
+      "sha": "1f3321489bed9a7da3d7374a48e12d2b73d605cc"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91882,
+      "sha": "e7b64bf653f7c61687b4c290d20bf35c9f2f1129"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed17_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 95946,
+      "sha": "996ae509ce5226ecfbfd60c7a063ff9ff732838c"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed17_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 427591,
+      "sha": "9e21cb41321fa8d6ac56d357812e479e2d107005"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed17_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91628,
+      "sha": "5631993e17cf8e41345af8638979fb1f06a8397c"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed17_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91656,
+      "sha": "6dafd02fcea21b4085359a99af888e0dd5242a7b"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed17_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91901,
+      "sha": "a44ced4e064d98289a0ec93a0315fb6a009befd4"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed41_natural/repeat_0/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 95930,
+      "sha": "d16b06d62be9cd036492eb00d43dbf21746e0581"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed41_natural/repeat_0/quality_summary.json",
+      "type": "blob",
+      "size": 427558,
+      "sha": "6df25c3c0568e24df9e74168ce8448c35d447951"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed41_natural/repeat_1/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91894,
+      "sha": "87f6f1dc6dc9415fe9df1e69e5ae53daf5142335"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed41_natural/repeat_2/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91877,
+      "sha": "f02c4c0d828a3df65b929973503a01b55236e125"
+    },
+    {
+      "path": "route_ghost_dictionary/p256/sparse_seed41_natural/repeat_3/ghost_transport_certificate.csv",
+      "type": "blob",
+      "size": 91657,
+      "sha": "5df3e647c4a64b4147b19f6c06a692c673771892"
+    },
+    {
+      "path": "runtime_manifest.json",
+      "type": "blob",
+      "size": 3370,
+      "sha": "7943c410cb1c762f0492762f56780af05c15f8c7"
+    }
+  ]
+}

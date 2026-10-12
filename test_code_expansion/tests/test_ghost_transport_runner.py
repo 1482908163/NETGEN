@@ -28,6 +28,7 @@ for row in rows:
 if os.environ.get('MOCK_IGNORED_TRANSPORT')=='1' and route=='ghost_dictionary':
     for row in rows:
         row['metadata'].pop('ghost_transport',None)
+        row['stages']={k:v for k,v in row['stages'].items() if not k.startswith('ghost_dictionary_')}
         row['metrics']={k:v for k,v in row['metrics'].items() if not k.startswith('ghost_transport_')}
 if os.environ.get('MOCK_TRANSPORT_FAILURE')=='1' and (route,repeat,seed)==('ghost_dictionary',1,17):rows[0]['metrics']['ghost_transport_payload_send_bytes']+=1
 """)

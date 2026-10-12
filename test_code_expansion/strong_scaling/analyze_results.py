@@ -17,9 +17,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from fit_cost_model import sampling_readiness
 
-COMPUTE = ("part_face_create", "surface_refine", "local_volume_mesh",
-           "volume_refine", "adjacency_build", "vertex_numbering_local", "ghost_dictionary_prepare", "ghost_dictionary_decode", "ghost_dictionary_release")
-PHASES = (COMPUTE[:2], (COMPUTE[2],), (COMPUTE[3],), COMPUTE[4:])
+BASE_COMPUTE = ("part_face_create", "surface_refine", "local_volume_mesh",
+                "volume_refine", "adjacency_build", "vertex_numbering_local")
+TRANSPORT_COMPUTE = ("ghost_dictionary_prepare", "ghost_dictionary_decode", "ghost_dictionary_release")
+COMPUTE = BASE_COMPUTE + TRANSPORT_COMPUTE
+PHASES = (BASE_COMPUTE[:2], (BASE_COMPUTE[2],), (BASE_COMPUTE[3],), BASE_COMPUTE[4:])
 SAMPLE_META = ("feature_schema", "EXPERIMENT_STAGE", "MESH_INPUT_SHA256", "MESH_BINARY_SHA256",
                "MESH_SOURCE_REVISION", "MESH_MODEL_SHA256", "numlevels", "numrefine", "maxh", "minh", "omp_num_threads", "partition_seed",
                "sampling_protocol", "partition_variant", "rank_shift", "RANKS_PER_NODE",
@@ -1069,7 +1071,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
             int(metadata.get("mesh_tasks",-1))!=0 or int(metadata.get("active_workers",0))!=n):
             raise ValueError("invalid communication baseline configuration")
         for r in rows:
-            if any(r["stages"].get(s,{}).get("calls",0)!=1 for s in COMPUTE) or r["metrics"].get("local_volume_elements_before_adjacency",0)<=0:
+            if any(r["stages"].get(s,{}).get("calls",0)!=1 for s in BASE_COMPUTE) or r["metrics"].get("local_volume_elements_before_adjacency",0)<=0:
                 raise ValueError("communication baseline requires one complete local mesh per rank")
             if any(s.startswith(("task_","partition_cost_","partition_node_mapping")) for s in r["stages"]):
                 raise ValueError("historical balancing entered communication baseline")
@@ -1112,7 +1114,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 raise ValueError("invalid within-rank event order")
             if sample["vertex_arrival_elapsed"]>r["metrics"]["core_seconds"]+1e-6:
                 raise ValueError("event endpoint exceeds core interval")
-            if any(r["stages"].get(s, {}).get("calls", 0)!=1 for s in COMPUTE):
+            if any(r["stages"].get(s, {}).get("calls", 0)!=1 for s in BASE_COMPUTE):
                 raise ValueError("phase model requires one complete call of each compute stage")
             samples.append(sample)
         if bundle_map and len(set(bundle_map.values()))!=len(bundle_map):

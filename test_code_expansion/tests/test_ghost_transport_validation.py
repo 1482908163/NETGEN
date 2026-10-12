@@ -36,6 +36,28 @@ def main():
         for route in ('ghost_literal','ghost_dictionary'):
             for repeat in (0,1):
                 ledger=[];r=inspect(fixture(route,repeat),ledger);assert len(ledger)==2 and r[PREFIX+'send_items']==20
+        # Real literal profiles have only the six common compute stages.
+        literal=fixture('ghost_literal',0)
+        assert all(all(name not in row['stages'] for name in profiles.TRANSPORT_COMPUTE) for row in literal)
+        inspect(literal)
+        for name in profiles.BASE_COMPUTE:
+            bad=copy.deepcopy(literal);bad[0]['stages'].pop(name)
+            try:inspect(bad)
+            except ValueError:pass
+            else:raise AssertionError('accepted missing common stage '+name)
+        for name in profiles.TRANSPORT_COMPUTE:
+            bad=copy.deepcopy(literal);bad[0]['stages'][name]=dict(calls=1,seconds=.001)
+            try:inspect(bad)
+            except ValueError:pass
+            else:raise AssertionError('literal executed dictionary '+name)
+        # Reproduce the old mistake: optional stages treated as mandatory.
+        required=profiles.BASE_COMPUTE
+        try:
+            profiles.BASE_COMPUTE=profiles.COMPUTE
+            try:inspect(literal)
+            except ValueError as error:assert 'communication baseline requires' in str(error)
+            else:raise AssertionError('old mandatory-stage bug not reproduced')
+        finally:profiles.BASE_COMPUTE=required
         for key,value in [('calls',0),('send_items',9),('raw_send_bytes',1399),('payload_send_bytes',1401),('metadata_send_bytes',23),('metadata_send_messages',2),('dictionary_send_peers',0),('verified_items',9),('verify_calls',0),('mismatches',1),('full_seconds',.001),('total_seconds',.0001),('prepare_seconds',float('nan'))]:
             bad=fixture('ghost_dictionary',0);bad[0]['metrics'][PREFIX+key]=value
             try:inspect(bad)
@@ -46,6 +68,10 @@ def main():
             try:inspect(bad)
             except ValueError:pass
             else:raise AssertionError('accepted formal '+key)
+        bad=fixture('ghost_dictionary',1);bad[0]['stages']['ghost_dictionary_reference']=dict(calls=1,seconds=.001)
+        try:inspect(bad)
+        except ValueError:pass
+        else:raise AssertionError('accepted formal reference scope')
         bad=fixture('ghost_dictionary',1);bad[0]['stages']['volume_payload_exchange']['send_bytes']+=1
         try:inspect(bad)
         except ValueError:pass

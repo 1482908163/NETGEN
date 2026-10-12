@@ -197,7 +197,8 @@ def fixture(route,repeat,mode='natural'):
         if route=='legal_prune':m['kernel_repair_rounds']=2
         if route in ('front_profile','front_topology','front_bound_profile','front_bound'):m['kernel_front_seconds']=.03
         m['kernel_final_illegal']=187
-        stages={s:dict(seconds=.1,calls=1) for s in profiles.COMPUTE}
+        # Match the six original application scopes independently of analyzer additions.
+        stages={s:dict(seconds=.1,calls=1) for s in ("part_face_create","surface_refine","local_volume_mesh","volume_refine","adjacency_build","vertex_numbering_local")}
         if worklet:
             k=0 if rank==0 else 2
             m.update(tasks_completed=k,task_generated_elements_global=2,task_cross_node_faces_before=1,
@@ -250,9 +251,13 @@ def fixture(route,repeat,mode='natural'):
     return rows
 
 def main():
+    # These protocols have separate fixtures, validation and runner tests.
+    # The historical matrix must not invent unsupported protocol metadata.
+    delegated=('components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary')
+    legacy_routes=tuple(r for r in routes.ROUTES if r not in delegated)
     with tempfile.TemporaryDirectory() as tmp:
         root=Path(tmp)
-        for route in routes.ROUTES:
+        for route in legacy_routes:
             folder=root/('route_'+route)/'p2';folder.mkdir(parents=True)
             plan=dict(ranks=2,repeats=2,algorithms=['sparse'],timings=['natural','split'],partition_seeds=[-1],quality_warmup=True)
             (folder/'plan.json').write_text(json.dumps(plan))
@@ -263,14 +268,14 @@ def main():
                     if route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered'):
                         certificates=[];profiles.inspect(d/'rank_profiles.jsonl',certificate_sink=certificates)
                         profiles.write_csv(d/'algorithm_certificate.csv',certificates)
-        assert routes.analyze(root,2)
+        assert routes.analyze(root,2,selected=legacy_routes)
         # A diagnostic route must preserve all quality details even when an
         # aggregate nonregression gate would accept an apparent improvement.
         cost_audit=root/'route_cost_profile/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original_cost=cost_audit.read_text();changed=fixture('cost_profile',0)
         changed[0]['metrics'].update(quality_shape_min=.951,quality_shape_sum=.951)
         cost_audit.write_text(''.join(json.dumps(r)+'\n' for r in changed))
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'full_cost_diagnostic_changed_mesh' in (root/'p2/route_issues.txt').read_text()
         cost_audit.write_text(original_cost)
         parallel=fixture('recovery_global',1)
@@ -369,7 +374,7 @@ def main():
         saved=misplaced.read_text()
         for wrong,reason in [('b_balanced','route numbering mismatch'),('a_fused','route kernel scheduler mismatch')]:
             misplaced.write_text(''.join(json.dumps(r)+'\n' for r in fixture(wrong,1)))
-            assert not routes.analyze(root,2)
+            assert not routes.analyze(root,2,selected=legacy_routes)
             assert reason in (root/'p2/route_issues.txt').read_text()
         misplaced.write_text(saved)
         bad=fixture('b_balanced',1);bad[0]['metrics']['coop_work_shared_grants']=1
@@ -380,7 +385,7 @@ def main():
         saved=bound.read_text();wrong=fixture('a_bound',1)
         for row in wrong:row['metadata']['node_affinity_layout']='shared_pool'
         bound.write_text(''.join(json.dumps(r)+'\n' for r in wrong))
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'verified disjoint startup affinity' in (root/'p2/route_issues.txt').read_text()
         bound.write_text(saved)
         for route,metric,value,error in [('b_repeat','coop_work_repeat_grants',1,'repeat grants'),
@@ -415,14 +420,14 @@ def main():
         path=root/'route_c_deferred/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original=path.read_text();changed=fixture('c_deferred',0);changed[1]['metrics']['quality_numbering_lo']+=1
         path.write_text(''.join(json.dumps(r)+'\n' for r in changed))
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'global_numbering_changed' in (root/'p2/route_issues.txt').read_text()
         path.write_text(original)
         path=root/'route_async_global/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original=path.read_text();changed=fixture('async_global',0)
         changed[1]['metrics']['quality_adjacency_element_xor_lo']+=1
         path.write_text(''.join(json.dumps(r)+'\n' for r in changed))
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'adjacency_fingerprint_changed' in (root/'p2/route_issues.txt').read_text()
         path.write_text(original)
         for mutation,error in [('path','bypassed temporary IDs'),('coverage','coverage mismatch'),
@@ -445,7 +450,7 @@ def main():
         path=root/'route_front_spatial/p2/sparse_natural/repeat_0/rank_profiles.jsonl'
         original=path.read_text();bad=fixture('front_spatial',0);bad[0]['metrics']['quality_volume_sum_lo']+=1
         path.write_text(''.join(json.dumps(r)+'\n' for r in bad))
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'structural_owned_mesh_changed' in (root/'p2/route_issues.txt').read_text()
         path.write_text(original)
         bad=fixture('critical_worklet',1);bad[0]['metrics']['worklet_remote_claims']=2
@@ -460,7 +465,7 @@ def main():
         path.write_text(original)
         (path.parent/'SUCCESS').unlink()
         (path.parent/'failure_reason.txt').write_text('stage=owner_merge\nreason=fixture original exception\n')
-        assert not routes.analyze(root,2)
+        assert not routes.analyze(root,2,selected=legacy_routes)
         assert 'fixture original exception' in (root/'p2/route_issues.txt').read_text()
         # New policies must not accept a fabricated gain without an actual grant.
         bad=fixture('a_window',1);bad[0]['metrics']['coop_work_net_gain_estimate_seconds']=1

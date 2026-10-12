@@ -9,10 +9,13 @@ PHASES={'prepare':'ghost_dictionary_prepare','metadata':'ghost_dictionary_metada
 
 def validate(rows,metadata,result):
     mode=metadata.get('ghost_transport')
+    codec_stages=tuple(name for phase,name in PHASES.items() if phase!='exchange')+('ghost_dictionary_reference',)
     if mode is None:
+        if any(row['stages'].get(name,{}).get('calls',0) for row in rows for name in codec_stages):raise ValueError('dictionary stages without transport protocol')
         if any(k.startswith(PREFIX) for row in rows for k in row['metrics']):raise ValueError('transport metrics without protocol')
         return
     if mode not in MODES or metadata.get('timing_mode')!='natural' or metadata.get('global_numbering')!='owner_local_v2' or metadata.get('ghost_exchange_policy','legacy_v1')!='legacy_v1' or metadata.get('volume_exchange_policy')!='batch_v1':raise ValueError('invalid ghost transport base')
+    if mode==MODES[0] and any(row['stages'].get(name,{}).get('calls',0) for row in rows for name in codec_stages):raise ValueError('literal transport entered dictionary stages')
     reference=mode==MODES[2]
     if reference and (rows[0]['repeat']!=0 or metadata.get('mesh_quality')!='volume_audit_v1'):raise ValueError('transport reference outside quality warmup')
     signature=[]
@@ -36,7 +39,7 @@ def validate(rows,metadata,result):
                 header=row['stages'].get('ghost_dictionary_metadata',{})
                 if header.get(direction+'_bytes')!=24*peers or header.get(direction+'_messages')!=peers:raise ValueError('transport metadata profile differs from counters')
         if v['verify_calls']!=int(reference) or v['verified_items']!=(v['receive_items'] if reference else 0) or v['verified_peers']!=(m['volume_num_r'] if reference else 0):raise ValueError('transport receive reference coverage incomplete')
-        if not reference and v['reference_seconds']:raise ValueError('transport reference entered formal cost')
+        if not reference and (v['reference_seconds'] or row['stages'].get('ghost_dictionary_reference',{}).get('calls',0)):raise ValueError('transport reference entered formal cost')
         if v['total_seconds']>v['full_seconds']+1e-6 or v['full_seconds']>m['core_seconds']+1e-3 or sum(v[p+'_seconds'] for p in PHASES)>v['total_seconds']+1e-6:raise ValueError('ghost transport timing coverage mismatch')
         expected=('exchange',) if mode==MODES[0] else tuple(PHASES)
         for phase in expected:
