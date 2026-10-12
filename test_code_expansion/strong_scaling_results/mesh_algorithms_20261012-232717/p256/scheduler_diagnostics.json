@@ -1,0 +1,29 @@
+{
+  "schema": "scheduler_snapshot_v1",
+  "job_id": "6090278",
+  "time": 1791818998.849072,
+  "note": "Read during the job; state/reason may not be final.",
+  "sacct": {
+    "command": [
+      "sacct",
+      "-j",
+      "6090278",
+      "--format=JobID,State,ExitCode,NodeList,Reason,MaxRSS,ReqMem",
+      "-P"
+    ],
+    "exit_code": 0,
+    "stdout": "JobID|State|ExitCode|NodeList|Reason|MaxRSS|ReqMem\n6090278|RUNNING|0:0|cn[2456-2519]|None||3812.50G\n6090278.batch|RUNNING|0:0|cn2456|||\n6090278.0|COMPLETED|0:0|cn[2456-2519]||0|\n6090278.1|COMPLETED|0:0|cn[2456-2519]||478508K|\n",
+    "stderr": ""
+  },
+  "scontrol": {
+    "command": [
+      "scontrol",
+      "show",
+      "job",
+      "6090278"
+    ],
+    "exit_code": 0,
+    "stdout": "JobId=6090278 JobName=mesh_p256\n   UserId=hnu_lhz(66704) GroupId=ecology_mt(1882) MCS_label=N/A\n   Priority=1 Nice=0 Account=ecology QOS=normal WCKey=(null)\n   JobState=RUNNING Reason=None Dependency=(null)\n   Requeue=1 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0\n   RunTime=00:02:40 TimeLimit=UNLIMITED TimeMin=N/A\n   SubmitTime=2026-10-12T23:27:18 EligibleTime=2026-10-12T23:27:18\n   AccrueTime=2026-10-12T23:27:18\n   StartTime=2026-10-12T23:27:18 EndTime=Unknown Deadline=N/A\n   SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-12T23:27:18 Scheduler=Main\n   Partition=mt_module AllocNode:Sid=ln3:2775955\n   ReqNodeList=(null) ExcNodeList=(null)\n   NodeList=cn[2456-2519]\n   BatchHost=cn2456\n   NumNodes=64 NumCPUs=1024 NumTasks=256 CPUs/Task=4 ReqB:S:C:T=0:0:*:*\n   TRES=cpu=1024,node=64,billing=1024\n   Socks/Node=* NtasksPerN:B:S:C=4:0:*:* CoreSpec=*\n   MinCPUsNode=16 MinMemoryNode=0 MinTmpDiskNode=0\n   Features=(null) DelayBoot=00:00:00\n   OverSubscribe=NO Contiguous=0 Licenses=(null) Network=(null)\n   Command=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261012-232717/runtime_scripts/run_experiments.sh\n   WorkDir=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion\n   StdErr=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261012-232717/p256/job-6090278.log\n   StdIn=/dev/null\n   StdOut=/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261012-232717/p256/job-6090278.log\n   Power=\n   \n\n",
+    "stderr": ""
+  }
+}

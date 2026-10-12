@@ -1,0 +1,9 @@
+{
+  "schema": "allocation_stop_v1",
+  "reason": "mpi_startup_probe_failed",
+  "job_id": "6090279",
+  "exit_code": 124,
+  "timeout_seconds": 60,
+  "action": "stop_remaining_runs_in_this_allocation",
+  "evidence": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261012-232717/p512/mpi_startup/run.log"
+}

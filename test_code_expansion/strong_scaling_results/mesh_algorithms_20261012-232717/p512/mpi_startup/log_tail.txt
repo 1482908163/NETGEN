@@ -1,0 +1,4 @@
+slurmstepd: error:  mpi/pmix_v3: pmixp_p2p_send: cn7486 [81]: pmixp_utils.c:467: send failed, rc=111, exceeded the retry limit
+slurmstepd: error:  mpi/pmix_v3: _slurm_send: cn7486 [81]: pmixp_server.c:1581: Cannot send message to /tmp/slurmd/stepd.slurm.pmix.6090279.0, size = 119, hostlist:
+(null)
+yhrun: forcing job termination
