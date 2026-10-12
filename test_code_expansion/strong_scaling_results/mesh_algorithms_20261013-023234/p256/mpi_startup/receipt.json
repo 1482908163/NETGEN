@@ -1,0 +1,22 @@
+{
+  "schema": "mpi_startup_check_v1",
+  "identity": {
+    "job": "6090320",
+    "ranks": 256,
+    "binary_sha256": "94030d0b537745ee5b0fdcc4cb788ff3acd34f0940716ea05ef085f2bf4d91cb",
+    "command": [
+      "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261013-023234/runtime_scripts/node_affinity_yhrun.sh",
+      "--mpi=pmix",
+      "-n",
+      "256",
+      "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "--mpi-preflight"
+    ],
+    "cpus": "4",
+    "rpn": "4"
+  },
+  "success": true,
+  "exit_code": 0,
+  "elapsed_seconds": 4.854289531707764,
+  "error": ""
+}
