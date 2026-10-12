@@ -13,6 +13,7 @@
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
 #include "research_mesh.h"
+#include "mpi_startup_probe.h"
 #include "task_mesh.h"
 #include "node_resources.h"
 #include "volume_audit.h"
@@ -68,6 +69,8 @@ void print_help() {
          "--verify-faces : 与全收集核对；独立正确性检查或自然质量预热" << endl <<
          "--profile-natural : 采集自然运行时间，关闭诊断用前置屏障" << endl <<
          "--profile : 开启强扩展指标采集" << endl <<
+         "--ghost-dictionary <0|1|2> : 原载荷/顶点字典/预热接收核对" << endl <<
+         "--mpi-preflight : 仅检查 MPI 初始化、集合通信和结束" << endl <<
          "--ghost-codec-audit : 仅质量预热核对幽灵载荷字典往返，不改变通信" << endl <<
          "--validate-volume : 仅预热轮全量体网格质量与拓扑检查" << endl <<
          "--profile-core-only : 跳过普通网格结果写出和质量评价，仅测试核心算法" << endl <<
@@ -84,13 +87,16 @@ int main(int argc, char **argv) {
     int id; //进程号
     int p = 1;  //进程总数
     int mpi_thread_support=0;
-    MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&mpi_thread_support);
+    const int init_rc=MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&mpi_thread_support);
+    if(init_rc!=MPI_SUCCESS){std::fprintf(stderr,"[MPI_INIT_FAILED] code=%d\n",init_rc);return 2;}
     if(mpi_thread_support<MPI_THREAD_FUNNELED) MPI_Abort(MPI_COMM_WORLD,87);
     MPI_Comm_rank(MPI_COMM_WORLD, &id); //获取进程号
     MPI_Comm_size(MPI_COMM_WORLD, &p);  //获取进程总数
 
     // if(id == 0) cout << "MPI:" << p << endl;
 
+
+    if(argc==2 && !std::strcmp(argv[1],"--mpi-preflight"))return mesh_research::MPIStartupProbe(MPI_COMM_WORLD,mpi_thread_support);
 
     Ng_Init();
 
@@ -221,7 +227,7 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--front-workspace") || !strcmp(argv[i],"--front-lookup") || !strcmp(argv[i],"--front-rules") || !strcmp(argv[i],"--front-projection") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--ghost-dictionary") || !strcmp(argv[i],"--front-workspace") || !strcmp(argv[i],"--front-lookup") || !strcmp(argv[i],"--front-rules") || !strcmp(argv[i],"--front-projection") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
                 !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
@@ -249,6 +255,10 @@ int main(int argc, char **argv) {
                     research.repair_fixed_point=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.repair_fixed_point<0 || research.repair_fixed_point>2)
                         throw std::runtime_error("invalid repair fixed-point mode");
+                }
+                else if(option=="--ghost-dictionary") {
+                    research.ghost_dictionary=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.ghost_dictionary<0 || research.ghost_dictionary>2)throw std::runtime_error("invalid ghost dictionary mode");
                 }
                 else if(option=="--front-workspace") {
                     research.front_workspace=std::stoi(value,&consumed);
@@ -462,6 +472,7 @@ int main(int argc, char **argv) {
     if ((research.algorithm!="baseline" && research.algorithm!="balance" &&
          research.algorithm!="sparse" && research.algorithm!="combined") ||
         (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
+        (research.ghost_dictionary>=0 && (!research.async_global_ids || research.ghost_exchange!="legacy" || research.ready_volume_exchange || research.ghost_codec_audit || !research.communication_only || research.worklets() || research.mesh_tasks || !profile_enabled || !profile_core_only || profile_split || (research.ghost_dictionary==2 && !validate_volume))) ||
         (research.ghost_codec_audit && !validate_volume) ||
         (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
         (research.front_workspace>=0 && (research.front_lookup>=0 || research.front_rules>=0 || research.front_projection>=0 || research.front_components>=0 || research.front_distance!=0 || research.front_transform!=0 || research.incidence_build<1 || research.kernel_scheduler!="cost_profile" || (research.front_workspace==2 && !validate_volume))) ||
@@ -577,6 +588,7 @@ int main(int argc, char **argv) {
             MPI_Abort(MPI_COMM_WORLD,2);return 2;
         }
     }
+    if(research.ghost_dictionary>=0)profiler.add_metadata("ghost_transport",research.ghost_dictionary==2?"vertex_dictionary_reference_v1":research.ghost_dictionary==1?"vertex_dictionary_transport_v1":"literal_transport_v1");
     if(research.ghost_codec_audit)profiler.add_metadata("ghost_codec_audit","vertex_dictionary_audit_v1");
     profiler.add_metadata("ghost_exchange_policy",research.ghost_exchange=="pipeline"?"id_overlap_plan_v1":research.ghost_exchange=="staged"?"staged_plan_v1":"legacy_v1");
     profiler.add_metadata("ghost_plan_verification",research.ghost_exchange!="legacy" && validate_volume?"serial_pack_exact_v1":"off");

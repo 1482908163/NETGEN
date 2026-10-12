@@ -21,6 +21,7 @@ fi
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
+#   ghost_dictionary : 原载荷/真实顶点字典，预热接收核对及快速 MPI 检查
 #   front_workspace : 原临时向量/规则私有工作空间；完整重放及全成本对照
 #   front_lookup : 原线性编号查找/候选反向映射；预热完整规则重放，正式无细分计时
 #   front_rules : 有序邻接基础/规则总计/完整规则成本分解；预热完整状态重放
@@ -48,6 +49,17 @@ fi
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+if [[ "$EXPERIMENT_PRESET" == ghost_dictionary ]]; then
+    export TRANSPORT_PROTOCOL_REQUIRED=1
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-ghost_literal ghost_dictionary}"
+    EXPERIMENT_PRESET=generation_cost
+fi
+GHOST_DICTIONARY="${GHOST_DICTIONARY:--1}"
+[[ "$GHOST_DICTIONARY" =~ ^(-1|0|1)$ ]] || exit 2
+MPI_STARTUP_CHECK="${MPI_STARTUP_CHECK:-${TRANSPORT_PROTOCOL_REQUIRED:-0}}"
+MPI_STARTUP_TIMEOUT="${MPI_STARTUP_TIMEOUT:-60}"
+[[ "$MPI_STARTUP_CHECK" =~ ^(0|1)$ && "$MPI_STARTUP_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || exit 2
+export MPI_STARTUP_CHECK MPI_STARTUP_TIMEOUT
 if [[ "$EXPERIMENT_PRESET" == front_workspace ]]; then
     export WORKSPACE_PROTOCOL_REQUIRED=1
     export WORKLET_ROUTES="${WORKLET_ROUTES:-workspace_temporary workspace_reuse}"
@@ -289,6 +301,9 @@ QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
 COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
 export QUALITY_WARMUP COMMUNICATION_ABLATION
 if [[ "$GHOST_CODEC_AUDIT" == 1 && "$QUALITY_WARMUP" != 1 ]]; then echo "ghost codec audit requires QUALITY_WARMUP=1" >&2;exit 2;fi
+if [[ "${TRANSPORT_PROTOCOL_REQUIRED:-0}" == 1 || "$GHOST_DICTIONARY" != -1 ]]; then
+    [[ "$QUALITY_WARMUP" == 1 && "$GHOST_CODEC_AUDIT" == 0 ]] || { echo "字典通信要求质量预热并关闭独立编码审计" >&2;exit 2; }
+fi
 if [[ "${WORKSPACE_PROTOCOL_REQUIRED:-0}" == 1 || "$FRONT_WORKSPACE" != -1 ]]; then
     [[ "$QUALITY_WARMUP" == 1 ]] || { echo "front_workspace requires QUALITY_WARMUP=1" >&2;exit 2; }
 fi
@@ -316,7 +331,7 @@ COST_WEIGHTS="${COST_WEIGHTS:-1,1,1,1}"
 # The small rule-cost experiment must not spend two hours on each dead step.
 # Large production presets retain their old budget; explicit overrides win.
 default_timeout_seconds=7200
-[[ "${RULE_PROTOCOL_REQUIRED:-0}" != 1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" != 1 && "${WORKSPACE_PROTOCOL_REQUIRED:-0}" != 1 ]] || default_timeout_seconds=600
+[[ "${RULE_PROTOCOL_REQUIRED:-0}" != 1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" != 1 && "${WORKSPACE_PROTOCOL_REQUIRED:-0}" != 1 && "${TRANSPORT_PROTOCOL_REQUIRED:-0}" != 1 ]] || default_timeout_seconds=600
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-${default_timeout_seconds}}"
 ALLOCATION_FAIL_FAST="${ALLOCATION_FAIL_FAST:-1}"
 [[ "$ALLOCATION_FAIL_FAST" =~ ^[01]$ && "$TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]] || exit 2
@@ -403,13 +418,15 @@ propagate_allocation_stop() {
         "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json" \
         "$parent/front_lookup_fixed_rank_pairs.csv" "$parent/front_lookup_summary.csv" "$parent/front_lookup_sources.json" \
         "$parent/front_workspace_fixed_rank_pairs.csv" "$parent/front_workspace_summary.csv" "$parent/front_workspace_sources.json" \
-        "$parent/ghost_codec_rank_audit.csv" "$parent/ghost_codec_summary.csv" "$parent/ghost_codec_sources.json"
+        "$parent/ghost_codec_rank_audit.csv" "$parent/ghost_codec_summary.csv" "$parent/ghost_codec_sources.json" \
+        "$parent/ghost_transport_pairs.csv" "$parent/ghost_transport_summary.csv" "$parent/ghost_transport_sources.json"
     printf '实验未完成：当前作业分配停止复用，见 ALLOCATION_STOPPED.txt。\n' > "$parent/route_issues.txt"
     cp "$parent/route_issues.txt" "$parent/ROUTE_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/RULE_COST_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_LOOKUP_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_WORKSPACE_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/GHOST_CODEC_SUMMARY.txt"
+    cp "$parent/route_issues.txt" "$parent/GHOST_TRANSPORT_SUMMARY.txt"
     cat "$parent/ALLOCATION_STOPPED.txt" >&2
 }
 
@@ -453,17 +470,18 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
     mkdir -p "${route_root}/p${PROCESS_COUNT:?}"
     (( PROCESS_COUNT>=2 )) || exit 2
+    export MPI_STARTUP_PROBE_DIR="${MPI_STARTUP_PROBE_DIR:-${route_root}/p${PROCESS_COUNT}/mpi_startup}"
     for ((rr=1-WARMUPS;rr<=REPEATS;++rr)); do
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
             factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;ready=0;ghost_exchange=legacy;adaptive_worklets=0;binding=none;scheduler=repair
-            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1;lookup_mode=-1;workspace_mode=-1
+            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1;lookup_mode=-1;workspace_mode=-1;transport_mode=-1
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -495,6 +513,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
                 incidence_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=0 ;;
+                ghost_literal|ghost_dictionary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;[[ "$route" != ghost_dictionary ]] || transport_mode=1 ;;
                 workspace_temporary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0 ;;
                 workspace_reuse) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=1 ;;
                 lookup_linear) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;lookup_mode=0 ;;
@@ -519,7 +538,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
             esac
             # Keep startup diagnostics even if a child exits before creating plan.json.
             launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
-            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" FRONT_LOOKUP="$lookup_mode" FRONT_WORKSPACE="$workspace_mode" \
+            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" FRONT_LOOKUP="$lookup_mode" FRONT_WORKSPACE="$workspace_mode" GHOST_DICTIONARY="$transport_mode" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" GHOST_EXCHANGE="$ghost_exchange" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
                 :
@@ -661,6 +680,8 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
+[[ "$GHOST_DICTIONARY" == -1 && "${TRANSPORT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--ghost-dictionary" "literal_transport_v1" "vertex_dictionary_transport_v1" "vertex_dictionary_reference_v1" "ghost_transport_")
+[[ "$MPI_STARTUP_CHECK" == 0 ]] || markers+=("--mpi-preflight" "[MPI_PREFLIGHT_OK]")
 [[ "$GHOST_CODEC_AUDIT" == 0 ]] || markers+=("--ghost-codec-audit" "vertex_dictionary_audit_v1" "ghost_codec_")
 [[ "$FRONT_WORKSPACE" == -1 && "${WORKSPACE_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-workspace" "temporary_workspace_v1" "reused_workspace_v1" "reused_workspace_replay_v1" "front_workspace_")
 [[ "$FRONT_LOOKUP" == -1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-lookup" "linear_face_lookup_v1" "inverse_face_lookup_v1" "inverse_face_lookup_replay_v1" "front_lookup_")
@@ -776,6 +797,7 @@ else
 fi
 if ((KERNEL_THREADS>0)); then
     common+=(--kernel-threads "${KERNEL_THREADS}" --kernel-scheduler "${KERNEL_SCHEDULER}")
+    [[ "$GHOST_DICTIONARY" == -1 ]] || common+=(--ghost-dictionary "$GHOST_DICTIONARY")
     [[ "$FRONT_WORKSPACE" == -1 ]] || common+=(--front-workspace "$FRONT_WORKSPACE")
     [[ "$FRONT_LOOKUP" == -1 ]] || common+=(--front-lookup "$FRONT_LOOKUP")
     [[ "$FRONT_RULES" == -1 ]] || common+=(--front-rules "$FRONT_RULES")
@@ -802,6 +824,17 @@ if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != 
     exit 2
 fi
 printf '%s\n' "${config_text}" > "${pdir}/configuration.txt"
+
+if [[ "$MPI_STARTUP_CHECK" == 1 ]]; then
+    startup_rc=0
+    python3 "${SCRIPT_DIR}/mpi_startup_check.py" --directory "${MPI_STARTUP_PROBE_DIR:-${pdir}/mpi_startup}" \
+        --stop-output "${pdir}/ALLOCATION_STOPPED.json" --ranks "$PROCESS_COUNT" --binary-sha "$MESH_BINARY_SHA256" \
+        --timeout "$MPI_STARTUP_TIMEOUT" -- "${launch[@]}" "${BINARY}" --mpi-preflight || startup_rc=$?
+    if ((startup_rc!=0)); then
+        printf "MPI 启动预检失败，未启动网格。见 mpi_startup/run.log。\n" > "${pdir}/ALLOCATION_STOPPED.txt"
+        exit 75
+    fi
+fi
 
 # 每个并行作业先用一个进程检查其正式分区规模，不生成细网格。
 # 只保留三份粗单元归属与一个摘要；失败立即停止本规模的昂贵采样。
@@ -925,6 +958,12 @@ SIGNATURE
                 echo "Run directory is busy: ${out}" >&2
                 failures=$((failures+1));exec 9>&-;continue
             fi
+            if [[ "$GHOST_DICTIONARY" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
+                warm="${pdir}/${a}_natural/repeat_0";[[ "$seed" == -1 ]] || warm="${pdir}/${a}_seed${seed}_natural/repeat_0"
+                if ! warm_error="$(python3 "${SCRIPT_DIR}/ghost_transport_checks.py" "$warm" --mode "$GHOST_DICTIONARY" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
+                    mkdir -p "$out";printf "dependent_quality_warmup_failure\n%s\n" "$warm_error" > "$out/failure_reason.txt";rm -f "$out/SUCCESS";failures=$((failures+1));exec 9>&-;continue
+                fi
+            fi
             if [[ "$INCIDENCE_BUILD" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
                 warm="${out%/repeat_*}/repeat_0"
                 if ! warm_error="$(python3 "${SCRIPT_DIR}/incidence_checks.py" "$warm" --mode "$INCIDENCE_BUILD" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
@@ -989,7 +1028,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv" "${out}/ghost_codec_certificate.csv"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv" "${out}/ghost_codec_certificate.csv" "${out}/ghost_transport_certificate.csv"
             if [[ -f "${out}/failure_reason.txt" ]]; then cp "${out}/failure_reason.txt" "${out}/previous_failure_reason.txt";fi
             rm -f "${out}/failure_reason.txt" "${out}"/failure_rank_*.txt
             export MESH_FAILURE_DIR="${out}"
@@ -1000,6 +1039,7 @@ SIGNATURE
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
             codec_check=()
             component_check=()
+            transport_check=();[[ "$GHOST_DICTIONARY" == -1 ]] || transport_check=(--require-ghost-transport-mode "$GHOST_DICTIONARY")
             workspace_check=()
             [[ "$FRONT_WORKSPACE" == -1 ]] || workspace_check=(--require-workspace-mode "$FRONT_WORKSPACE")
             lookup_check=()
@@ -1012,6 +1052,7 @@ SIGNATURE
             incidence_check=()
             [[ "$INCIDENCE_BUILD" == -1 ]] || incidence_check=(--require-incidence-mode "$INCIDENCE_BUILD")
             if [[ "${QUALITY_WARMUP}" == 1 && "$rep" == 0 && "$mode" == natural ]]; then
+                if [[ "$GHOST_DICTIONARY" == 1 ]]; then args+=(--ghost-dictionary 2);transport_check=(--require-ghost-transport-mode 2);fi
                 [[ "$FRONT_WORKSPACE" != 1 ]] || args+=(--front-workspace 2)
                 [[ "$FRONT_WORKSPACE" != 1 ]] || workspace_check=(--require-workspace-mode 2)
                 [[ "$FRONT_LOOKUP" != 1 ]] || args+=(--front-lookup 2)
@@ -1047,7 +1088,7 @@ SIGNATURE
             fi
             if ((rc==0)); then
                 finalize_error=""
-                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${codec_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
+                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${codec_check[@]}" "${transport_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
                     rc=1
                     printf '%s/%s seed %s repeat %s: %s\n' "${a}" "${mode}" "${seed}" "${rep}" "${finalize_error}" >> "${failure_file}"
                 fi

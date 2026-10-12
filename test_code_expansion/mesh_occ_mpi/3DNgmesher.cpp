@@ -10,6 +10,7 @@
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
 #include "ghost_vertex_dictionary.h"
+#include "ghost_dictionary_exchange.h"
 #include <cinttypes>
 #include "research_mesh.h"
 #include <string>
@@ -1845,6 +1846,8 @@ GlobalId *com_baryVolumeElements(
 	int numprocs,
 	int mypid, GhostExchangeContext *ghost)
 {
+	const auto full_start=mesh_research::options().ghost_dictionary>=0?mesh_research::ghost_transport::Clock::now():mesh_research::ghost_transport::Clock::time_point{};
+	mesh_research::ghost_transport::Stats transport_stats;
 	nglib::Ng_Mesh *mesh = (nglib::Ng_Mesh *)submesh;
 	std::list<int>::iterator li;
 	std::map<int, std::list<int>>::iterator ib;
@@ -2065,7 +2068,7 @@ GlobalId *com_baryVolumeElements(
 			{
 				src.push_back(peer);
 				r_length.push_back(recv_counts[peer]);
-				recv_by_peer[peer].resize(static_cast<std::size_t>(recv_counts[peer]));
+				if(mesh_research::options().ghost_dictionary<=0)recv_by_peer[peer].resize(static_cast<std::size_t>(recv_counts[peer]));
 				r_data_ves.push_back(recv_by_peer[peer].data());
 				volume_receive_items += static_cast<std::uint64_t>(recv_counts[peer]);
 			}
@@ -2098,19 +2101,34 @@ GlobalId *com_baryVolumeElements(
             netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost codec audit failed");
         }
     }
-	if(!mesh_research::options().ready_volume_exchange) {
+    if(mesh_research::options().ghost_dictionary>0) {
+        try {
+            transport_stats=mesh_research::ghost_transport::Exchange<xdVElement,scaling::StageScope>(comm,mpivetype,pidmap,send_counts,recv_counts,recv_by_peer);
+            if(mesh_research::options().ghost_dictionary==2)mesh_research::ghost_transport::Verify<xdVElement,scaling::StageScope>(comm,mpivetype,pidmap,send_counts,recv_counts,recv_by_peer,transport_stats);
+            for(std::size_t i=0;i<src.size();++i)r_data_ves[i]=recv_by_peer[src[i]].data();
+        }catch(const std::exception &e){std::fprintf(stderr,"[GHOST_TRANSPORT_ERROR] rank=%d %s\n",mypid,e.what());netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost dictionary exchange");}
+    } else if(!mesh_research::options().ready_volume_exchange) {
+        const auto start=mesh_research::options().ghost_dictionary==0?mesh_research::ghost_transport::Clock::now():mesh_research::ghost_transport::Clock::time_point{};
 		scaling::StageScope profile_stage("volume_payload_exchange", "communication");
 		com_sr_volumelement(
 			comm, num_s, num_r,
 			dest.data(), src.data(), s_length.data(), r_length.data(),
 			s_data_ves.data(), r_data_ves.data(), mpivetype, mypid);
+        if(mesh_research::options().ghost_dictionary==0){
+            const auto elapsed=mesh_research::ghost_transport::Elapsed(start);
+            transport_stats.values[mesh_research::ghost_transport::Stats::exchange_seconds]=elapsed;
+            transport_stats.values[mesh_research::ghost_transport::Stats::total_seconds]=elapsed;
+        }
 	}
 	netgen_mpi_checkpoint(
 		comm, "com_baryVolumeElements.payload.end", num_s, num_r);
 	scaling::Profiler::instance().add_communication(
-		"volume_payload_exchange", num_s, num_r,
-		volume_send_items * static_cast<std::uint64_t>(volume_element_type_bytes),
-		volume_receive_items * static_cast<std::uint64_t>(volume_element_type_bytes));
+		"volume_payload_exchange",
+        mesh_research::options().ghost_dictionary>0?static_cast<std::uint64_t>(transport_stats.values[mesh_research::ghost_transport::Stats::payload_send_messages]):num_s,
+        mesh_research::options().ghost_dictionary>0?static_cast<std::uint64_t>(transport_stats.values[mesh_research::ghost_transport::Stats::payload_receive_messages]):num_r,
+		mesh_research::options().ghost_dictionary>0?static_cast<std::uint64_t>(transport_stats.values[mesh_research::ghost_transport::Stats::payload_send_bytes]):volume_send_items * static_cast<std::uint64_t>(volume_element_type_bytes),
+		mesh_research::options().ghost_dictionary>0?static_cast<std::uint64_t>(transport_stats.values[mesh_research::ghost_transport::Stats::payload_receive_bytes]):volume_receive_items * static_cast<std::uint64_t>(volume_element_type_bytes));
+    if(mesh_research::options().ghost_dictionary>0)scaling::Profiler::instance().add_communication("ghost_dictionary_metadata",num_s,num_r,24ull*num_s,24ull*num_r);
 	scaling::Profiler::instance().set_metric(
 		"volume_send_items", static_cast<double>(volume_send_items));
 	scaling::Profiler::instance().set_metric(
@@ -2191,6 +2209,24 @@ GlobalId *com_baryVolumeElements(
 		comm, MPI_Type_free(&mpivetype),
 		"com_baryVolumeElements/MPI_Type_free");
     if(ghost)ghost->plan.packets.clear();
+    if(mesh_research::options().ghost_dictionary>=0){
+        using S=mesh_research::ghost_transport::Stats;auto &v=transport_stats.values;
+        if(mesh_research::options().ghost_dictionary==0){
+            v[S::calls]=1;v[S::send_items]=volume_send_items;v[S::receive_items]=volume_receive_items;
+            v[S::raw_send_bytes]=v[S::payload_send_bytes]=140*double(volume_send_items);
+            v[S::raw_receive_bytes]=v[S::payload_receive_bytes]=140*double(volume_receive_items);
+            v[S::literal_send_peers]=v[S::payload_send_messages]=num_s;v[S::literal_receive_peers]=v[S::payload_receive_messages]=num_r;
+        }
+        // Include final payload-buffer release in the full volume exchange cost.
+        pidmap.clear();decltype(recv_by_peer)().swap(recv_by_peer);
+        decltype(legacy_send_counts)().swap(legacy_send_counts);decltype(legacy_recv_counts)().swap(legacy_recv_counts);
+        decltype(dest)().swap(dest);decltype(src)().swap(src);decltype(s_length)().swap(s_length);decltype(r_length)().swap(r_length);
+        decltype(s_data_ves)().swap(s_data_ves);decltype(r_data_ves)().swap(r_data_ves);
+        v[S::full_seconds]=mesh_research::ghost_transport::Elapsed(full_start)-v[S::reference_seconds];
+        const char *fields[]={"calls","send_items","receive_items","raw_send_bytes","raw_receive_bytes","payload_send_bytes","payload_receive_bytes","metadata_send_bytes","metadata_receive_bytes","dictionary_send_peers","dictionary_receive_peers","literal_send_peers","literal_receive_peers","payload_send_messages","payload_receive_messages","metadata_send_messages","metadata_receive_messages","verify_calls","verified_items","verified_peers","mismatches","retained_wire_bytes_peak","prepare_seconds","metadata_seconds","exchange_seconds","decode_seconds","release_seconds","total_seconds","reference_seconds","full_seconds"};
+        static_assert(sizeof(fields)/sizeof(fields[0])==S::count,"transport metric schema");
+        for(int f=0;f<S::count;++f)scaling::Profiler::instance().set_metric(std::string("ghost_transport_")+fields[f],v[f]);
+    }
 	return newgid;
 }
 

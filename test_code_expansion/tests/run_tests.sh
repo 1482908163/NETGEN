@@ -18,6 +18,8 @@ done
     "${ROOT}/tests/test_sparse_faces.cpp" "${ROOT}/mesh_occ_mpi/scaling_profiler.cpp" \
     -o "${BUILD}/test_sparse_faces"
 "${MPICXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" \
+    "${ROOT}/tests/test_ghost_dictionary_mpi.cpp" -pthread -o "${BUILD}/test_ghost_dictionary_mpi"
+"${MPICXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" \
     "${ROOT}/tests/test_mesh_ids_mpi.cpp" -o "${BUILD}/test_mesh_ids_mpi"
 "${MPICXX}" -std=c++17 -I "${ROOT}/mesh_occ_mpi" "${ROOT}/tests/test_node_resources.cpp" -pthread -o "${BUILD}/test_node_resources"
 "${BUILD}/test_node_resources"
@@ -25,6 +27,7 @@ done
 "${MPICXX}" -std=c++17 -Wall -Wextra -Werror -I "${ROOT}/mesh_occ_mpi" "${ROOT}/tests/test_ghost_plan_mpi.cpp" -pthread -o "${BUILD}/test_ghost_plan_mpi"
 read -r -a extra <<< "${MPI_EXTRA_ARGS:-}"
 for p in ${TEST_PROCESS_COUNTS}; do
+    timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_ghost_dictionary_mpi"
     timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_ghost_plan_mpi"
     timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_ready_neighbors"
     timeout "${TEST_TIMEOUT_SECONDS:-60}" "${MPI_LAUNCHER}" "${extra[@]}" -n "${p}" "${BUILD}/test_mesh_ids_mpi"
@@ -163,3 +166,9 @@ python3 "${ROOT}/tests/test_front_workspace_runner.py"
 # Exact dictionary feasibility audit; formal MPI payloads remain original.
 python3 "${ROOT}/tests/test_ghost_vertex_dictionary.py"
 python3 "${ROOT}/tests/test_ghost_codec_validation.py"
+
+python3 "${ROOT}/tests/test_ghost_dictionary_exchange.py"
+python3 "${ROOT}/tests/test_ghost_transport_validation.py"
+python3 "${ROOT}/tests/test_ghost_transport_runner.py"
+python3 "${ROOT}/tests/test_mpi_startup_check.py"
+python3 "${ROOT}/tests/test_ghost_transport_cli.py"

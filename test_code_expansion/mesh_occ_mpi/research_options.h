@@ -30,6 +30,7 @@ struct ResearchOptions {
     int kernel_threads = 0; // 0: preserve the historical nglib entry
     std::string kernel_scheduler = "static";
     int front_transform=0; // 0 dense / 1 compiled operator / 2 exact replay
+    int ghost_dictionary=-1; // -1 off / 0 literal / 1 dictionary / 2 receive reference
     bool ghost_codec_audit=false; // warmup-only, never changes MPI payloads
     int front_workspace=-1; // -1 off / 0 temporary / 1 reusable / 2 full replay
     int front_lookup=-1; // -1 off / 0 linear / 1 inverse / 2 full replay

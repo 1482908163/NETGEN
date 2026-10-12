@@ -18,7 +18,7 @@ from pathlib import Path
 from fit_cost_model import sampling_readiness
 
 COMPUTE = ("part_face_create", "surface_refine", "local_volume_mesh",
-           "volume_refine", "adjacency_build", "vertex_numbering_local")
+           "volume_refine", "adjacency_build", "vertex_numbering_local", "ghost_dictionary_prepare", "ghost_dictionary_decode", "ghost_dictionary_release")
 PHASES = (COMPUTE[:2], (COMPUTE[2],), (COMPUTE[3],), COMPUTE[4:])
 SAMPLE_META = ("feature_schema", "EXPERIMENT_STAGE", "MESH_INPUT_SHA256", "MESH_BINARY_SHA256",
                "MESH_SOURCE_REVISION", "MESH_MODEL_SHA256", "numlevels", "numrefine", "maxh", "minh", "omp_num_threads", "partition_seed",
@@ -350,7 +350,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
     return lines,issues
 
 
-def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None, certificate_sink=None, rule_sink=None, lookup_sink=None, workspace_sink=None, codec_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost_sink=None, certificate_sink=None, rule_sink=None, lookup_sink=None, workspace_sink=None, codec_sink=None,transport_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -369,6 +369,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 volume_split_evaluation=metadata.get("volume_split_evaluation"),
                 volume_front_distance=metadata.get("volume_front_distance"),
                 volume_front_transform=metadata.get("volume_front_transform"),
+                **({"ghost_transport":metadata["ghost_transport"]} if "ghost_transport" in metadata else {}),
                 **({"ghost_codec_audit":metadata["ghost_codec_audit"]} if "ghost_codec_audit" in metadata else {}),
                 **({"volume_front_workspace":metadata["volume_front_workspace"]} if "volume_front_workspace" in metadata else {}),
                 **({"volume_front_lookup":metadata["volume_front_lookup"]} if "volume_front_lookup" in metadata else {}),
@@ -376,7 +377,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
                 **({"volume_front_projection":metadata["volume_front_projection"]} if "volume_front_projection" in metadata else {}),
                 **({"volume_front_components":metadata["volume_front_components"]} if "volume_front_components" in metadata else {}),
                 **({"volume_incidence_build":metadata["volume_incidence_build"]} if "volume_incidence_build" in metadata else {}),
-                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","front_projection_","front_rules_","front_lookup_","front_workspace_","ghost_codec_","incidence_"))}))
+                **{k:v for k,v in row["metrics"].items() if k.startswith(("repair_fixed_","split_active_","front_distance_","front_transform_","front_components_","front_projection_","front_rules_","front_lookup_","front_workspace_","ghost_codec_","ghost_transport_","incidence_"))}))
     for r in rows:
         if r["ranks"] != n or r["repeat"] != rows[0]["repeat"] or r["metadata"] != metadata:
             raise ValueError("inconsistent run metadata")
@@ -821,7 +822,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
     exchange_names=('vertex_exchange','volume_exchange_pack','volume_neighbor_size_exchange',
         'volume_size_exchange','volume_ready_exchange','volume_payload_exchange','volume_payload_prepare',
         'volume_exchange_unpack','vertex_exchange_unpack','ghost_vertex_post','ghost_vertex_wait',
-        'ghost_count_post','ghost_count_wait','ghost_id_bind')
+        'ghost_count_post','ghost_count_wait','ghost_id_bind','ghost_dictionary_prepare','ghost_dictionary_metadata','ghost_dictionary_decode','ghost_dictionary_release')
     # Sum actual scopes on one rank; this is inclusive work/wait, not pure transfer.
     exchange_totals=[sum(seconds(row,name) for name in exchange_names) for row in rows]
     exchange_critical=max(range(n),key=lambda i:exchange_totals[i])
@@ -1249,6 +1250,14 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
             item.update({k:v for k,v in row['metrics'].items()
                          if k.startswith(('kernel_','native_','recovery_','refine_','legal_split_','smooth_balance_','split_proposal_','front_match_','front_bound_','combine_commit_','ghost_plan_','cost_','front_distance_','front_transform_','split_active_','repair_fixed_','front_components_','front_projection_','front_rules_','front_lookup_','front_workspace_','incidence_'))})
             critical_sink.append(item)
+    from ghost_transport_checks import validate as validate_transport
+    validate_transport(rows,metadata,result)
+    if transport_sink is not None and metadata.get("ghost_transport") is not None:
+        from ghost_transport_checks import FIELDS,PREFIX
+        for row in rows:
+            item={k:result[k] for k in ("source_revision","binary_sha256","algorithm","timing","ranks","partition_seed","repeat","ghost_transport","core_seconds")}
+            item.update(rank=row["rank"],volume_num_s=row["metrics"]["volume_num_s"],volume_num_r=row["metrics"]["volume_num_r"])
+            item.update({PREFIX+f:row["metrics"][PREFIX+f] for f in FIELDS});transport_sink.append(item)
     from ghost_codec_checks import validate as validate_codec
     validate_codec(rows,metadata,result)
     if codec_sink is not None and metadata.get('ghost_codec_audit') is not None:
@@ -1574,6 +1583,7 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
+    parser.add_argument("--require-ghost-transport-mode",type=int,choices=(0,1,2))
     parser.add_argument("--require-ghost-codec-audit",action="store_true",help="require warmup dictionary roundtrip before SUCCESS")
     parser.add_argument("--require-workspace-mode",type=int,choices=(0,1,2),help="require exact reusable transform workspace before SUCCESS")
     parser.add_argument("--require-lookup-mode",type=int,choices=(0,1,2),help="require candidate point lookup before SUCCESS")
@@ -1586,6 +1596,8 @@ def main():
     parser.add_argument("--kernel-overview",action="store_true")
     parser.add_argument("--kernel-ranks",type=int)
     args = parser.parse_args()
+    if args.require_ghost_transport_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
+        parser.error("--require-ghost-transport-mode requires --finish-run")
     if args.require_ghost_codec_audit and (not args.finish_run or args.archive_failed or args.kernel_overview):
         parser.error("--require-ghost-codec-audit requires --finish-run only")
     if args.require_workspace_mode is not None and (not args.finish_run or args.archive_failed or args.kernel_overview):
@@ -1615,8 +1627,12 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                cost_rows=[];certificates=[];rule_rows=[];lookup_rows=[];workspace_rows=[];codec_rows=[]
-                result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates,rule_sink=rule_rows,lookup_sink=lookup_rows,workspace_sink=workspace_rows,codec_sink=codec_rows)
+                cost_rows=[];certificates=[];rule_rows=[];lookup_rows=[];workspace_rows=[];codec_rows=[];transport_rows=[]
+                result,_=inspect(profile_path(args.root),cost_sink=cost_rows,certificate_sink=certificates,rule_sink=rule_rows,lookup_sink=lookup_rows,workspace_sink=workspace_rows,codec_sink=codec_rows,transport_sink=transport_rows)
+                if args.require_ghost_transport_mode is not None:
+                    from ghost_transport_checks import MODES
+                    if result.get("ghost_transport")!=MODES[args.require_ghost_transport_mode]:raise ValueError("requested ghost transport mode was not executed")
+                    if args.require_ghost_transport_mode and not result.get("ghost_transport_dictionary_send_peers",0):raise ValueError("dictionary transport never exercised")
                 if args.require_ghost_codec_audit:
                     from ghost_codec_checks import SCHEMA
                     if result.get("ghost_codec_audit")!=SCHEMA:raise ValueError("requested ghost codec audit was not executed")
@@ -1663,6 +1679,7 @@ def main():
                 if certificates:write_csv(args.root/"algorithm_certificate.csv",certificates)
                 if rule_rows:write_csv(args.root/'rule_cost_certificate.csv',rule_rows)
                 if lookup_rows:write_csv(args.root/'front_lookup_certificate.csv',lookup_rows)
+                if transport_rows:write_csv(args.root/"ghost_transport_certificate.csv",transport_rows)
                 if workspace_rows:write_csv(args.root/'front_workspace_certificate.csv',workspace_rows)
                 if codec_rows:write_csv(args.root/'ghost_codec_certificate.csv',codec_rows)
                 if cost_rows:write_csv(args.root/'operation_cost_profile.csv',cost_rows)
