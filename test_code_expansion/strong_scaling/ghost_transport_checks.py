@@ -44,7 +44,12 @@ def validate(rows,metadata,result):
         expected=('exchange',) if mode==MODES[0] else tuple(PHASES)
         for phase in expected:
             stage=row['stages'].get(PHASES[phase],{})
-            if stage.get('calls')!=1 or v[phase+'_seconds']>1.05*stage.get('seconds',-1)+1e-3:raise ValueError('ghost transport phase scope missing')
+            # The steady-clock interval surrounds construction/destruction of
+            # StageScope; the profiler's interval is inside that scope. A pause
+            # at either boundary can enlarge only the outer interval. Check
+            # genuine scope coverage separately from the coherent outer-clock
+            # phase -> total -> full -> core bounds above.
+            if stage.get('calls')!=1:raise ValueError(f"ghost transport phase scope missing: rank={row['rank']} phase={phase} calls={stage.get('calls')}")
         if reference and row['stages'].get('ghost_dictionary_reference',{}).get('calls')!=1:raise ValueError('ghost transport reference scope missing')
         if mode==MODES[0] and any(v[f] for f in ('prepare_seconds','metadata_seconds','decode_seconds','release_seconds','retained_wire_bytes_peak')):raise ValueError('literal transport entered codec')
         signature.append([row['rank']]+[v[f] for f in WORK])

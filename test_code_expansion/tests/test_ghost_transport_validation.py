@@ -58,6 +58,27 @@ def main():
             except ValueError as error:assert 'communication baseline requires' in str(error)
             else:raise AssertionError('old mandatory-stage bug not reproduced')
         finally:profiles.BASE_COMPUTE=required
+        # A scheduler pause outside the profiler's narrower scope can make the
+        # outer phase exceed 105% + 1ms, without missing work or a missing scope.
+        boundary=fixture('ghost_dictionary',1)
+        boundary[0]['metrics'][PREFIX+'prepare_seconds']=.004
+        boundary[0]['metrics'][PREFIX+'total_seconds']=.027
+        stage=boundary[0]['stages']['ghost_dictionary_prepare']
+        assert .004>1.05*stage['seconds']+1e-3
+        inspect(boundary)
+        for phase,name in PHASES.items():
+            for calls in (None,0,2):
+                bad=copy.deepcopy(boundary)
+                if calls is None:bad[0]['stages'].pop(name)
+                else:bad[0]['stages'][name]['calls']=calls
+                try:inspect(bad)
+                except ValueError as error:
+                    if calls is not None:assert 'phase scope missing' in str(error)
+                else:raise AssertionError('accepted missing/repeated phase '+phase)
+        bad=copy.deepcopy(boundary);bad[0]['metrics'][PREFIX+'total_seconds']=.024
+        try:inspect(bad)
+        except ValueError as error:assert 'timing coverage mismatch' in str(error)
+        else:raise AssertionError('accepted incoherent outer-clock phase total')
         for key,value in [('calls',0),('send_items',9),('raw_send_bytes',1399),('payload_send_bytes',1401),('metadata_send_bytes',23),('metadata_send_messages',2),('dictionary_send_peers',0),('verified_items',9),('verify_calls',0),('mismatches',1),('full_seconds',.001),('total_seconds',.0001),('prepare_seconds',float('nan'))]:
             bad=fixture('ghost_dictionary',0);bad[0]['metrics'][PREFIX+key]=value
             try:inspect(bad)
