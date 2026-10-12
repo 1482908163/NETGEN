@@ -152,3 +152,10 @@ python3 "${ROOT}/tests/test_front_lookup_cli.py"
 python3 "${ROOT}/tests/test_front_lookup_replay.py"
 python3 "${ROOT}/tests/test_front_lookup_validation.py"
 python3 "${ROOT}/tests/test_front_lookup_runner.py"
+
+# Rule-private transform workspace, allocation counts and full replay.
+python3 "${ROOT}/tests/test_front_workspace_geometry.py"
+python3 "${ROOT}/tests/test_front_workspace_replay.py"
+python3 "${ROOT}/tests/test_front_workspace_cli.py"
+python3 "${ROOT}/tests/test_front_workspace_validation.py"
+python3 "${ROOT}/tests/test_front_workspace_runner.py"

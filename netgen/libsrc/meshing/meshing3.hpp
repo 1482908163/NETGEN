@@ -33,6 +33,8 @@ class Meshing3
   /// tolerance criterion
   double tolfak;
   int front_distance_mode = 0;
+  int front_workspace_mode = 0;
+  VolumeFrontWorkspaceStats *front_workspace_stats = nullptr;
   int front_lookup_mode = 0;
   VolumeFrontLookupStats *front_lookup_stats = nullptr;
   int front_rule_mode = 0;

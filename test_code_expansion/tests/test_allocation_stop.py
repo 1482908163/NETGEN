@@ -65,7 +65,7 @@ exec "$@"
     for key in ('EXPERIMENT_STAGE','WORKLET_ROUTES','KERNEL_REPEAT','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES',
                 'STRONG_SCALING_DIR','STRONG_SCALING_PROJECT_DIR','MESH_RUNTIME_MANIFEST','MESH_RUNTIME_SHA256',
                 'REPAIR_FIXED_POINT','SPLIT_ACTIVE_EVALUATION','FRONT_DISTANCE','FRONT_TRANSFORM','FRONT_PROJECTION',
-                'FRONT_RULES','FRONT_LOOKUP','LOOKUP_PROTOCOL_REQUIRED','FRONT_COMPONENTS','INCIDENCE_BUILD','MOCK_RULE_FAILURE','MOCK_IGNORED_RULE',
+                'FRONT_RULES','FRONT_LOOKUP','LOOKUP_PROTOCOL_REQUIRED','FRONT_WORKSPACE','WORKSPACE_PROTOCOL_REQUIRED','FRONT_COMPONENTS','INCIDENCE_BUILD','MOCK_RULE_FAILURE','MOCK_IGNORED_RULE',
                 'MOCK_COST_FAILURE','MOCK_FAIL','RULE_PROTOCOL_REQUIRED'):
         env.pop(key, None)
     env.update(EXPERIMENT_PRESET='front_rules', MESH_EXPERIMENT_WORKER='1', PROCESS_COUNT='2', PROCESS_COUNTS='2',
@@ -129,13 +129,22 @@ exec "$@"
     assert not (root/'route_lookup_inverse').exists()
     assert '未完成' in (root/'p2/FRONT_LOOKUP_SUMMARY.txt').read_text()
 
+    workspace_fixture=ROOT/'tests/test_front_workspace_runner.py'
+    workspace_namespace={'__file__':str(workspace_fixture)}
+    exec(compile(workspace_fixture.read_text().split('with tempfile.TemporaryDirectory() as tmp:')[0],str(workspace_fixture),'exec'),workspace_namespace)
+    binary.write_text(workspace_namespace['script'])
+    result,root,count=run('workspace_pmix','pmix',EXPERIMENT_PRESET='front_workspace')
+    assert result.returncode==75 and count==1,(result.stdout,result.stderr)
+    assert not (root/'route_workspace_reuse').exists()
+    assert '未完成' in (root/'p2/FRONT_WORKSPACE_SUMMARY.txt').read_text()
+
     # Inspect unified defaults before driver submission; no cluster required.
     runner = ROOT/'strong_scaling/run_experiments.sh'
     prefix = runner.read_text().split('# 登录节点：转入提交驱动；')[0]
     probe = tmp/'config.sh';probe.write_text(prefix+'\nprintf "%s\\n" "$TIMEOUT_SECONDS"\n')
     base = dict(env, STRONG_SCALING_DIR=str(ROOT/'strong_scaling'))
     base.pop('TIMEOUT_SECONDS')
-    for preset, explicit, expected in (('front_lookup',None,'600'),('front_lookup','900','900'),('front_rules',None,'600'),('production',None,'7200'),('front_rules','900','900')):
+    for preset, explicit, expected in (('front_workspace',None,'600'),('front_workspace','900','900'),('front_lookup',None,'600'),('front_lookup','900','900'),('front_rules',None,'600'),('production',None,'7200'),('front_rules','900','900')):
         config = dict(base, EXPERIMENT_PRESET=preset)
         if explicit is not None:config['TIMEOUT_SECONDS']=explicit
         result = subprocess.run(['bash',str(probe)],env=config,capture_output=True,text=True)

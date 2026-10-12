@@ -448,7 +448,7 @@ namespace nglib
        VolumeKernelStats *front_bound_stats=nullptr, bool front_bound=false, bool front_bound_verify=false,
        VolumeCombineStats *combine=nullptr, bool combine_waves=false, bool combine_verify=false,
        VolumeCostStats *cost=nullptr,VolumeRepairFixedPointStats *fixed=nullptr,
-       int fixed_mode=0,double *native_calls=nullptr,VolumeKernelStats *active=nullptr,int active_mode=0,VolumeKernelStats *distance=nullptr,int distance_mode=0,VolumeKernelStats *transform=nullptr,int transform_mode=0,VolumeIncidenceStats *incidence=nullptr,int incidence_mode=0,VolumeFrontComponentStats *components=nullptr,int component_mode=0,VolumeFrontProjectionStats *projection=nullptr,int projection_mode=0,VolumeFrontRuleStats *rule_cost=nullptr,int rule_mode=0,VolumeFrontLookupStats *lookup=nullptr,int lookup_mode=0)
+       int fixed_mode=0,double *native_calls=nullptr,VolumeKernelStats *active=nullptr,int active_mode=0,VolumeKernelStats *distance=nullptr,int distance_mode=0,VolumeKernelStats *transform=nullptr,int transform_mode=0,VolumeIncidenceStats *incidence=nullptr,int incidence_mode=0,VolumeFrontComponentStats *components=nullptr,int component_mode=0,VolumeFrontProjectionStats *projection=nullptr,int projection_mode=0,VolumeFrontRuleStats *rule_cost=nullptr,int rule_mode=0,VolumeFrontLookupStats *lookup=nullptr,int lookup_mode=0,VolumeFrontWorkspaceStats *workspace=nullptr,int workspace_mode=0)
    {
       if (!mesh || !mp || !seconds || threads<1 || (schedule<0 || schedule>3))
          return NG_ERROR;
@@ -485,6 +485,8 @@ namespace nglib
          local.volume_front_distance_mode=distance_mode;
          local.volume_front_transform_stats=transform;
          local.volume_front_transform_mode=transform_mode;
+         local.volume_front_workspace_stats=workspace;
+         local.volume_front_workspace_mode=workspace_mode;
          local.volume_front_lookup_stats=lookup;
          local.volume_front_lookup_mode=lookup_mode;
          local.volume_front_rule_stats=rule_cost;
@@ -818,6 +820,38 @@ namespace nglib
      for(int i=0;i<12;++i)transform[i]=transform_stats.values[i].load();
      for(int i=0;i<VolumeIncidenceStats::count;++i)incidence[i]=incidence_stats.values[i].load();
      for(int i=0;i<VolumeFrontProjectionStats::count;++i)projection[i]=projection_stats.values[i].load();
+     return result;
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontWorkspace(Ng_Mesh *mesh,
+       Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+       double *recovery,double *batch,double *profile,double *native_calls,
+       double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count,int workspace_mode,double *workspace,int workspace_count)
+   {
+     static_assert(NG_VOLUME_FRONT_WORKSPACE_COUNT==VolumeFrontWorkspaceStats::count,"front workspace ABI mismatch");
+     static_assert(NG_VOLUME_INCIDENCE_COUNT==VolumeIncidenceStats::count,"ordered incidence ABI mismatch");
+     static_assert(NG_VOLUME_REPAIR_FIXED_COUNT==VolumeRepairFixedPointStats::count,"repair fixed ABI mismatch");
+     // Independent native counts are host counts. This entry creates its own
+     // operation teams; it must not run domains inside an external worker team.
+     if(!details || !recovery || !batch || !profile || !native_calls || !cost || !fixed ||
+        cost_count!=VolumeCostStats::count || fixed_count!=VolumeRepairFixedPointStats::count || mode<0 || mode>2 || !active || active_mode<0 || active_mode>2 || !distance || !transform || !incidence || incidence_count!=VolumeIncidenceStats::count || incidence_mode<1 || incidence_mode>2 || !workspace || workspace_count!=VolumeFrontWorkspaceStats::count || workspace_mode<0 || workspace_mode>2 || ngcore::task_manager)return NG_ERROR;
+     VolumeFrontWorkspaceStats workspace_stats;
+     VolumeRecoveryStats recovery_stats;VolumeKernelStats batch_stats;
+     VolumeCostStats cost_stats;VolumeRepairFixedPointStats fixed_stats;VolumeKernelStats active_stats,distance_stats,transform_stats;VolumeIncidenceStats incidence_stats;
+     auto result=GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,
+         nullptr,nullptr,&recovery_stats,false,profile,nullptr,&batch_stats,true,
+         nullptr,false,nullptr,false,false,nullptr,false,false,nullptr,false,false,
+         nullptr,false,false,&cost_stats,mode ? &fixed_stats : nullptr,mode,native_calls,&active_stats,active_mode,&distance_stats,0,&transform_stats,0,&incidence_stats,incidence_mode,nullptr,0,nullptr,0,nullptr,0,nullptr,0,&workspace_stats,workspace_mode);
+     for(int i=0;i<6;++i) {
+       recovery[i]=recovery_stats.values[i].load();batch[i]=batch_stats.values[i].load();
+     }
+     for(int i=0;i<VolumeCostStats::count;++i)cost[i]=cost_stats.values[i].load();
+     for(int i=0;i<VolumeRepairFixedPointStats::count;++i)fixed[i]=fixed_stats.values[i].load();
+     for(int i=0;i<12;++i)active[i]=active_stats.values[i].load();
+     for(int i=0;i<12;++i)distance[i]=distance_stats.values[i].load();
+     for(int i=0;i<12;++i)transform[i]=transform_stats.values[i].load();
+     for(int i=0;i<VolumeIncidenceStats::count;++i)incidence[i]=incidence_stats.values[i].load();
+     for(int i=0;i<VolumeFrontWorkspaceStats::count;++i)workspace[i]=workspace_stats.values[i].load();
      return result;
    }
 

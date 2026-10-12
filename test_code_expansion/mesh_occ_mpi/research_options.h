@@ -30,6 +30,7 @@ struct ResearchOptions {
     int kernel_threads = 0; // 0: preserve the historical nglib entry
     std::string kernel_scheduler = "static";
     int front_transform=0; // 0 dense / 1 compiled operator / 2 exact replay
+    int front_workspace=-1; // -1 off / 0 temporary / 1 reusable / 2 full replay
     int front_lookup=-1; // -1 off / 0 linear / 1 inverse / 2 full replay
     int front_rules=-1; // -1 off / 0 total / 1 stages / 2 full replay
     int front_projection=-1; // -1 off / 0 original profile / 1 fixed projections / 2 replay

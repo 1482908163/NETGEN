@@ -56,6 +56,10 @@ private:
     quality class to infinity */
   DenseMatrix * oldutofreezonelimit;
   std::unique_ptr<FrontTransformPlan> front_transform_plan;
+  // Rule-private scratch, never shared between Meshing3 instances. All logical
+  // entries are overwritten by the original transform before they are read.
+  Vector workspace_vp,workspace_vfp1,workspace_vfp2;
+  bool workspace_initialized=false;
 
   // can be deleted:
   // BaseMatrix *outf, *outfl;
@@ -193,7 +197,7 @@ public:
   void SetFreeZoneTransformation (const Vector & allp,
 				  int tolclass);
   void SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
-      int mode,double *stats);
+      int mode,double *stats,int workspace_mode=0,double *workspace_stats=nullptr);
   ///
   int IsInFreeZone (const Point3d & p) const;
   /**

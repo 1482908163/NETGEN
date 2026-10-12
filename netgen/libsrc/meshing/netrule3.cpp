@@ -44,7 +44,7 @@ void vnetrule :: SetFreeZoneTransformation (const Vector & allp, int tolclass)
 }
 
 void vnetrule::SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
-    int mode,double *stats)
+    int mode,double *stats,int workspace_mode,double *workspace_stats)
 {
   auto add=[&](int index,double value){stats[index]+=value;};
   int i, j;
@@ -81,9 +81,11 @@ void vnetrule::SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
     if(mode && !planned)add(5,1);
   }
   const bool shared=planned && front_transform_plan->Identical();
-  Vector vp(np), vfp1(nfp), vfp2(nfp);
-
-
+  using WS=VolumeFrontWorkspaceStats;
+  auto count=[&](int field,double value=1){if(workspace_stats)workspace_stats[field]+=value;};
+  count(WS::transforms);count(WS::vector_entries,np+2.0*nfp);
+  count(WS::vector_requests,3);count(WS::baseline_heap_requests,3);
+  auto transform_coordinates=[&](FlatVector &vp,FlatVector &vfp1,FlatVector &vfp2) {
   for (i = 1; i <= 3; i++)
     {
       for (j = 1; j <= np; j++)
@@ -99,6 +101,27 @@ void vnetrule::SetFreeZoneTransformationPlanned(const Vector &allp,int tolclass,
       for (j = 1; j <= nfp; j++)
 	transfreezone.Elem(j).X(i) = vfp1(j-1);
     }
+  };
+  if(workspace_mode) {
+    bool hit=workspace_initialized;
+    if(!workspace_initialized){count(WS::initialized_rules);workspace_initialized=true;}
+    auto resize=[&](Vector &vector,int size) {
+      if(vector.Size()!=size) {
+        hit=false;count(WS::heap_requests);count(WS::allocated_entries,size);
+        vector.SetSize(size);
+      } else count(WS::reused_requests);
+    };
+    resize(workspace_vp,np);resize(workspace_vfp1,nfp);resize(workspace_vfp2,nfp);
+    if(hit)count(WS::workspace_hits);
+    if(workspace_stats)workspace_stats[WS::retained_entries_peak]=std::max(
+        workspace_stats[WS::retained_entries_peak],np+2.0*nfp);
+    transform_coordinates(workspace_vp,workspace_vfp1,workspace_vfp2);
+  } else {
+    // Keep the control's original three allocations and arithmetic intact.
+    Vector vp(np),vfp1(nfp),vfp2(nfp);
+    count(WS::heap_requests,3);count(WS::allocated_entries,np+2.0*nfp);
+    transform_coordinates(vp,vfp1,vfp2);
+  }
 
   // MARK(setfz2);
 

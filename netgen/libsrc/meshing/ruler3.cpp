@@ -58,7 +58,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     INDEX_2_HASHTABLE<int>& pairs,NgArray<Element>& elements,NgArray<INDEX>& deleted,
     int tolerance,double sloppy,int rotation,float& error)
 {
-  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2 && front_rule_mode!=2 && front_lookup_mode!=2)
+  if(!(front_bound && front_bound_verify) && front_distance_mode!=2 && front_transform_mode!=2 && front_projection_mode!=2 && front_rule_mode!=2 && front_lookup_mode!=2 && front_workspace_mode!=2)
     return ApplyRulesImpl(points,allow,faces,split,pairs,elements,deleted,tolerance,sloppy,rotation,error);
   Array<Point3d,PointIndex> original_points(points);
   Array<MiniElement2d> original_faces(faces);
@@ -76,6 +76,8 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   auto *stats=front_bound_stats;
   const bool saved_bound=front_bound;
   const int saved_distance=front_distance_mode;
+  const int saved_workspace=front_workspace_mode;
+  auto *workspace_stats=front_workspace_stats;
   const int saved_lookup=front_lookup_mode;
   auto *lookup_stats=front_lookup_stats;
   const int saved_rule_mode=front_rule_mode;
@@ -89,6 +91,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   struct Restore {std::function<void()> action;~Restore(){action();}} restore{[&] {
     front_bound=saved_bound;front_bound_stats=stats;front_match_stats=saved_match;
     front_distance_mode=saved_distance;front_distance_stats=distance_stats;
+    front_workspace_mode=saved_workspace;front_workspace_stats=workspace_stats;
     front_lookup_mode=saved_lookup;front_lookup_stats=lookup_stats;
     front_rule_mode=saved_rule_mode;front_rule_stats=rule_stats;
     front_projection_mode=saved_projection;front_projection_stats=projection_stats;
@@ -99,6 +102,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
   }};
   front_bound=false;front_bound_stats=nullptr;front_match_stats=nullptr;
   front_distance_mode=0;front_distance_stats=nullptr;
+  front_workspace_mode=0;front_workspace_stats=nullptr;
   front_lookup_mode=0;front_lookup_stats=nullptr;
   front_rule_mode=0;front_rule_stats=nullptr;
   front_projection_mode=0;front_projection_stats=nullptr;
@@ -135,7 +139,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     if(foundmap[i]!=optimized_found[i] || canuse[i]!=optimized_can[i])same=false;
   for(int i=0;i<rules.Size();++i)
     if(rules[i]->SaveFrontReplayState()!=optimized_zones[i])same=false;
-  if(saved_distance==2 || saved_transform==2 || saved_projection==2 || saved_rule_mode==2 || saved_lookup==2) {
+  if(saved_distance==2 || saved_transform==2 || saved_projection==2 || saved_rule_mode==2 || saved_lookup==2 || saved_workspace==2) {
     if(!exact(minother,optimized_other) || !exact(minwithoutother,optimized_without))same=false;
     for(auto i:problems.Range())if(problems[i]!=optimized_problems[i])same=false;
   }
@@ -160,7 +164,12 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex>& points,
     lookup_stats->Add(VolumeFrontLookupStats::verified,1);
     lookup_stats->Add(VolumeFrontLookupStats::reference_seconds,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
   }
+  if(saved_workspace==2 && workspace_stats) {
+    workspace_stats->Add(VolumeFrontWorkspaceStats::verified,1);
+    workspace_stats->Add(VolumeFrontWorkspaceStats::reference_seconds,std::chrono::duration<double>(std::chrono::steady_clock::now()-reference_start).count());
+  }
   if(!same) {
+    if(saved_workspace==2 && workspace_stats)workspace_stats->Add(VolumeFrontWorkspaceStats::mismatches,1);
     if(saved_lookup==2 && lookup_stats)lookup_stats->Add(VolumeFrontLookupStats::mismatches,1);
     if(saved_rule_mode==2 && rule_stats)rule_stats->Add(VolumeFrontRuleStats::mismatches,1);
     if(saved_projection==2 && projection_stats)projection_stats->Add(9,1);
@@ -238,6 +247,7 @@ int Meshing3 :: ApplyRulesImpl
       for(int i=0;i<16;++i)stats->Add(i,values[i]);
     }}
   } projection_diagnostics(front_projection_stats);
+  FrontWorkspaceCounters workspace_diagnostics(front_workspace_stats);
   FrontLookupCounters lookup_diagnostics(front_lookup_stats);
   FrontPointLookup point_lookup(lpoints.Size(),PointIndex::BASE);
   using LC=VolumeFrontLookupStats;
@@ -931,7 +941,8 @@ int Meshing3 :: ApplyRulesImpl
                       // for degenerate faces. Always perform it in original order.
                       rule_cost.Switch(RC::transform_seconds);
                       rule->SetFreeZoneTransformationPlanned(allp,tolerance+int(sloppy),
-                          front_transform_mode,front_transform_stats?transform_diagnostics.values:nullptr);
+                          front_transform_mode,front_transform_stats?transform_diagnostics.values:nullptr,
+                          front_workspace_mode,workspace_diagnostics.Data());
                       rule_cost.Switch(RC::point_seconds);
                       if(!skip_geometry) {
                         if(front_bound_stats)bound_diagnostics.values[5]++;

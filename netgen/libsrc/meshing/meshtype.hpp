@@ -15,6 +15,7 @@
 #include "volume_cost_profile.hpp"
 #include "front_rule_cost.hpp"
 #include "front_point_lookup.hpp"
+#include "front_workspace.hpp"
 #include "ordered_incidence.hpp"
 #include "repair_fixed_point.hpp"
 #include <core/taskmanager.hpp>
@@ -1835,6 +1836,8 @@ namespace netgen
     VolumeCostStats *volume_cost_stats = nullptr;
     VolumeFrontComponentStats *volume_front_component_stats = nullptr;
     VolumeFrontLookupStats *volume_front_lookup_stats = nullptr;
+    VolumeFrontWorkspaceStats *volume_front_workspace_stats = nullptr;
+    int volume_front_workspace_mode = 0; // 0 temporary / 1 reusable / 2 full replay
     int volume_front_lookup_mode = 0; // 0 linear / 1 inverse / 2 full replay
     VolumeFrontRuleStats *volume_front_rule_stats = nullptr;
     int volume_front_rule_mode = 0; // 0 total/counters / 1 partition / 2 replay
