@@ -172,3 +172,8 @@ python3 "${ROOT}/tests/test_ghost_transport_validation.py"
 python3 "${ROOT}/tests/test_ghost_transport_runner.py"
 python3 "${ROOT}/tests/test_mpi_startup_check.py"
 python3 "${ROOT}/tests/test_ghost_transport_cli.py"
+
+python3 "${ROOT}/tests/test_multi_point_algorithms.py"
+python3 "${ROOT}/tests/test_multi_point_cli.py"
+python3 "${ROOT}/tests/test_multi_point_validation.py"
+python3 "${ROOT}/tests/test_multi_point_runner.py"

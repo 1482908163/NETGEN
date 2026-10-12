@@ -254,7 +254,7 @@ def main():
     # These protocols have separate fixtures, validation and runner tests.
     # The historical matrix must not invent unsupported protocol metadata.
     delegated=('components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary')
-    legacy_routes=tuple(r for r in routes.ROUTES if r not in delegated)
+    legacy_routes=tuple(r for r in routes.ROUTES if r not in delegated and r not in routes.MULTI_ROUTES)
     with tempfile.TemporaryDirectory() as tmp:
         root=Path(tmp)
         for route in legacy_routes:

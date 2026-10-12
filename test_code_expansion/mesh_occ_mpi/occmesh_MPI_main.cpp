@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
         else if(!strcmp(argv[i],"--verify-faces")) {
             mesh_research::options().verify_faces = true;
         }
-        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--ghost-dictionary") || !strcmp(argv[i],"--front-workspace") || !strcmp(argv[i],"--front-lookup") || !strcmp(argv[i],"--front-rules") || !strcmp(argv[i],"--front-projection") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
+        else if(!strcmp(argv[i],"--kernel-threads") || !strcmp(argv[i],"--kernel-scheduler") || !strcmp(argv[i],"--ghost-exchange") || !strcmp(argv[i],"--repair-fixed-point") || !strcmp(argv[i],"--split-active-evaluation") || !strcmp(argv[i],"--front-distance") || !strcmp(argv[i],"--front-transform") || !strcmp(argv[i],"--multi-point") || !strcmp(argv[i],"--multi-point-verify") || !strcmp(argv[i],"--ghost-dictionary") || !strcmp(argv[i],"--front-workspace") || !strcmp(argv[i],"--front-lookup") || !strcmp(argv[i],"--front-rules") || !strcmp(argv[i],"--front-projection") || !strcmp(argv[i],"--front-components") || !strcmp(argv[i],"--incidence-build") ||
                 !strcmp(argv[i],"--algorithm") || !strcmp(argv[i],"--balance-sweeps") ||
                 !strcmp(argv[i],"--cut-growth") || !strcmp(argv[i],"--cost-weights") ||
                 !strcmp(argv[i],"--resource-model") || !strcmp(argv[i],"--rank-capacities") ||
@@ -255,6 +255,15 @@ int main(int argc, char **argv) {
                     research.repair_fixed_point=std::stoi(value,&consumed);
                     if(consumed!=value.size() || research.repair_fixed_point<0 || research.repair_fixed_point>2)
                         throw std::runtime_error("invalid repair fixed-point mode");
+                }
+                else if(option=="--multi-point") {
+                    research.multi_point=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || research.multi_point<0 || research.multi_point>7)throw std::runtime_error("invalid multi point mask");
+                }
+                else if(option=="--multi-point-verify") {
+                    int check=std::stoi(value,&consumed);
+                    if(consumed!=value.size() || check<0 || check>1)throw std::runtime_error("invalid multi point verification");
+                    research.multi_point_verify=check;
                 }
                 else if(option=="--ghost-dictionary") {
                     research.ghost_dictionary=std::stoi(value,&consumed);
@@ -472,6 +481,8 @@ int main(int argc, char **argv) {
     if ((research.algorithm!="baseline" && research.algorithm!="balance" &&
          research.algorithm!="sparse" && research.algorithm!="combined") ||
         (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
+        (research.multi_point>=0 && (research.ghost_dictionary!=0 || research.front_workspace!=0 || research.kernel_scheduler!="cost_profile" || research.incidence_build<1 || !research.communication_only || !research.async_global_ids || research.ghost_exchange!="legacy" || research.worklets() || research.mesh_tasks || (research.multi_point_verify && !validate_volume) || (validate_volume && !research.multi_point_verify))) ||
+        (research.multi_point_verify && research.multi_point<0) ||
         (research.ghost_dictionary>=0 && (!research.async_global_ids || research.ghost_exchange!="legacy" || research.ready_volume_exchange || research.ghost_codec_audit || !research.communication_only || research.worklets() || research.mesh_tasks || !profile_enabled || !profile_core_only || profile_split || (research.ghost_dictionary==2 && !validate_volume))) ||
         (research.ghost_codec_audit && !validate_volume) ||
         (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
@@ -588,6 +599,7 @@ int main(int argc, char **argv) {
             MPI_Abort(MPI_COMM_WORLD,2);return 2;
         }
     }
+    if(research.multi_point>=0){profiler.add_metadata("multi_point_policy","exact_local_work_v1");profiler.add_metadata("multi_point_mask",std::to_string(research.multi_point));profiler.add_metadata("multi_point_verification",research.multi_point_verify?"whole_reference_v1":"disabled_v1");}
     if(research.ghost_dictionary>=0)profiler.add_metadata("ghost_transport",research.ghost_dictionary==2?"vertex_dictionary_reference_v1":research.ghost_dictionary==1?"vertex_dictionary_transport_v1":"literal_transport_v1");
     if(research.ghost_codec_audit)profiler.add_metadata("ghost_codec_audit","vertex_dictionary_audit_v1");
     profiler.add_metadata("ghost_exchange_policy",research.ghost_exchange=="pipeline"?"id_overlap_plan_v1":research.ghost_exchange=="staged"?"staged_plan_v1":"legacy_v1");
@@ -1021,6 +1033,7 @@ int main(int argc, char **argv) {
             double kernel_seconds[3]={},kernel_details[12]={},front_search[6]={},recovery_stats[6]={},native_profile[30]={},legal_split[3]={},recovery_batch[6]={},smooth_stats[8]={},split_stats[12]={},front_match[12]={},front_bound_stats[12]={},combine_stats[16]={};
             double operation_cost[nglib::NG_VOLUME_COST_PROFILE_COUNT]={};
             double active_split[12]={},front_distance[12]={},front_transform[12]={};
+            double selector_stats[12]={};
             double workspace_stats[nglib::NG_VOLUME_FRONT_WORKSPACE_COUNT]={};
             double lookup_stats[nglib::NG_VOLUME_FRONT_LOOKUP_COUNT]={};
             double rule_stats[nglib::NG_VOLUME_FRONT_RULE_COUNT]={};
@@ -1046,6 +1059,13 @@ int main(int argc, char **argv) {
                     : research.kernel_scheduler=="node_scoped"
                     ? nglib::Ng_GenerateVolumeMeshCooperative(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details)
                     : nglib::Ng_GenerateVolumeMeshCooperativeGrouped(submesh,&nmp,research.kernel_threads,&callbacks,kernel_seconds,kernel_details))
+                : research.multi_point>=0
+                ? nglib::Ng_GenerateVolumeMeshMultiPoint(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
+                    kernel_seconds,kernel_details,recovery_stats,recovery_batch,native_profile,native_calls,
+                    operation_cost,nglib::NG_VOLUME_COST_PROFILE_COUNT,repair_fixed,nglib::NG_VOLUME_REPAIR_FIXED_COUNT,
+                    research.split_active_evaluation,active_split,front_distance,front_transform,research.incidence_build,
+                    incidence_stats,nglib::NG_VOLUME_INCIDENCE_COUNT,workspace_stats,
+                    (research.multi_point&1)?(research.multi_point_verify?2:1):0,selector_stats)
                 : research.kernel_scheduler=="cost_profile" && research.front_workspace>=0
                 ? nglib::Ng_GenerateVolumeMeshFrontWorkspace(submesh,&nmp,research.kernel_threads,research.repair_fixed_point,
                     kernel_seconds,kernel_details,recovery_stats,recovery_batch,native_profile,
@@ -1159,6 +1179,7 @@ int main(int argc, char **argv) {
                 for(int f=0;f<12;++f)profiler.set_metric(std::string("front_distance_")+distance_fields[f],front_distance[f]);
                 const char *transform_fields[]={"calls","transforms","dense_terms","evaluated_terms","skipped_terms","fallback","compiled_rules","compile_seconds","verified","mismatches","reference_seconds","apply_seconds"};
                 for(int f=0;f<12;++f)profiler.set_metric(std::string("front_transform_")+transform_fields[f],front_transform[f]);
+                if(research.multi_point>=0){const char *fields[]={"calls","score_reads","refreshed_faces","dirty_blocks","visited_blocks","rebuilds","verified","mismatches","reference_seconds","selection_seconds","indexed_faces","point_links"};for(int f=0;f<12;++f)profiler.set_metric(std::string("multi_front_")+fields[f],selector_stats[f]);}
                 if(research.front_workspace>=0) {
                     const char *fields[14]={"calls","transforms","vector_entries","vector_requests","baseline_heap_requests","heap_requests","reused_requests","workspace_hits","allocated_entries","retained_entries_peak","initialized_rules","verified","mismatches","reference_seconds"};
                     for(int f=0;f<14;++f)profiler.set_metric(std::string("front_workspace_")+fields[f],workspace_stats[f]);

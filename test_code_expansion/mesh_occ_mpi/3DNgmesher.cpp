@@ -11,6 +11,7 @@
 #include "mesh_mpi_types.h"
 #include "ghost_vertex_dictionary.h"
 #include "ghost_dictionary_exchange.h"
+#include "ghost_local_work.h"
 #include <cinttypes>
 #include "research_mesh.h"
 #include <string>
@@ -1846,8 +1847,14 @@ GlobalId *com_baryVolumeElements(
 	int numprocs,
 	int mypid, GhostExchangeContext *ghost)
 {
+  try {
 	const auto full_start=mesh_research::options().ghost_dictionary>=0?mesh_research::ghost_transport::Clock::now():mesh_research::ghost_transport::Clock::time_point{};
 	mesh_research::ghost_transport::Stats transport_stats;
+    const bool multi=mesh_research::options().multi_point>=0;
+    const bool pack_fast=multi && (mesh_research::options().multi_point&2);
+    const bool unpack_fast=multi && (mesh_research::options().multi_point&4);
+    const bool multi_check=mesh_research::options().multi_point_verify;
+    double multi_pack[8]={},multi_unpack[8]={};
 	nglib::Ng_Mesh *mesh = (nglib::Ng_Mesh *)submesh;
 	std::list<int>::iterator li;
 	std::map<int, std::list<int>>::iterator ib;
@@ -1863,8 +1870,14 @@ GlobalId *com_baryVolumeElements(
 	MPI_Datatype mpivetype = volume_element_mpi_type(comm);
 
 	int entity[4];
-	if(!ghost) {
-		scaling::StageScope profile_stage("volume_exchange_pack", "compute");
+    if(!ghost) {
+      using Clock=mesh_research::ghost_transport::Clock;
+      const auto begin=multi?Clock::now():Clock::time_point{};
+      scaling::StageScope profile_stage("volume_exchange_pack","compute");
+      std::map<int,VEVector> candidate;
+      if(pack_fast)candidate=mesh_research::PackBoundary<xdVElement>(GhostMeshAccess{mesh},adjbarycs,oldgid,VEgid,mypid,numprocs,multi_pack);
+      if(!pack_fast || multi_check) {
+        const auto stamp=multi_check && pack_fast?Clock::now():Clock::time_point{};
 		for (int i = 0; i < num_keys; ++i)
 		{
 			nglib::Ng_GetVolumeElement(mesh, i + 1, entity, domainidx);
@@ -1887,6 +1900,7 @@ GlobalId *com_baryVolumeElements(
 			}
 			if (pid_tmp.empty())
 				continue;
+            if(multi && !pack_fast)++multi_pack[3];
 
 			for (int k = 0; k < 4; ++k)
 			{
@@ -1901,7 +1915,13 @@ GlobalId *com_baryVolumeElements(
 			for (pt = pid_tmp.begin(); pt != pid_tmp.end(); ++pt)
 				pidmap[*pt].push_back(ve);
 		}
-	}
+        if(multi_check && pack_fast){mesh_research::SamePackets(pidmap,candidate);multi_pack[5]=num_keys;multi_pack[6]=mesh_research::ghost_transport::Elapsed(stamp);}
+      }
+      if(pack_fast)pidmap.swap(candidate);
+      decltype(candidate)().swap(candidate);
+      if(multi){multi_pack[0]=1;if(!pack_fast){multi_pack[1]=num_keys;multi_pack[2]=num_keys;multi_pack[4]=0;for(const auto &entry:pidmap)multi_pack[4]+=entry.second.size();}
+        multi_pack[7]=mesh_research::ghost_transport::Elapsed(begin)-multi_pack[6];}
+    }
 
     if(ghost) {
         if(!ghost->prepared)BuildGhostPlan(*ghost,submesh,adjbarycs,barycvrtx2adjprocsmap,comm,mypid,numprocs);
@@ -2142,6 +2162,35 @@ GlobalId *com_baryVolumeElements(
 	GlobalId *newgid = nullptr;
 	{
 		scaling::StageScope profile_stage("volume_exchange_unpack", "compute");
+        const auto unpack_begin=multi?mesh_research::ghost_transport::Clock::now():mesh_research::ghost_transport::Clock::time_point{};
+        const int original_np=nglib::Ng_GetNP(mesh);
+        if(unpack_fast) {
+          using Plan=mesh_research::GhostAssemblyPlan<GlobalId>;
+          auto plan=Plan::Build<std::unordered_map<GlobalId,int>>(original_np,oldgid,r_data_ves,r_length);
+          if(multi_check){const auto stamp=mesh_research::ghost_transport::Clock::now();
+            auto reference=Plan::Build<std::map<GlobalId,int>>(original_np,oldgid,r_data_ves,r_length);plan.Same(reference);
+            multi_unpack[5]=volume_receive_items;multi_unpack[6]=mesh_research::ghost_transport::Elapsed(stamp);}
+          const int oldne=nglib::Ng_GetNE(mesh);
+          require_local_mesh_capacity(static_cast<GlobalCount>(original_np)+plan.points.size(),comm);
+          require_local_mesh_capacity(static_cast<GlobalCount>(oldne)+volume_receive_items,comm);
+          VEindex vei;for(int e=1;e<=oldne;++e){vei.gid=VEgid[e];vei.Isin=0;VEindexs.push_back(vei);}
+          std::size_t at=0;GlobalCount nextpoint=static_cast<GlobalCount>(original_np)+1;int element=oldne;
+          for(int peer=0;peer<num_r;++peer)for(int j=0;j<r_length[peer];++j,++at) {
+            auto pi=plan.elements[at];
+            for(int k=0;k<4;++k)if(pi[k]>=nextpoint) {
+              if(pi[k]!=nextpoint)throw std::logic_error("ghost assembly first encounter order");
+              auto &point=plan.points[static_cast<std::size_t>(nextpoint-original_np-1)];int actual=-1;
+              nglib::Ng_AddPoint(mesh,point.xyz.data(),actual);if(actual!=nextpoint)throw std::logic_error("ghost assembly insertion index");++nextpoint;
+            }
+            const auto &packet=r_data_ves[peer][j];nglib::Ng_AddVolumeElement(mesh,nglib::NG_TET,pi.data(),packet.domidx);
+            ++element;vei.gid=packet.gid;vei.Isin=1;VEindexs.push_back(vei);
+          }
+          if(at!=plan.elements.size() || static_cast<std::size_t>(nextpoint-original_np-1)!=plan.points.size())throw std::logic_error("ghost assembly coverage");
+          MYCALLOC(newgid,GlobalId *,static_cast<std::size_t>(nglib::Ng_GetNP(mesh))+1,sizeof(GlobalId));
+          for(int i=1;i<=original_np;++i)newgid[i]=oldgid[i];
+          for(std::size_t i=0;i<plan.points.size();++i)newgid[original_np+i+1]=plan.points[i].gid;
+          free(oldgid);
+        } else {
 		const int oldpointnum = nglib::Ng_GetNP(mesh);
 		std::map<GlobalId, int> gid2lid;
 		std::map<int, GlobalId> gids_add;
@@ -2203,6 +2252,11 @@ GlobalId *com_baryVolumeElements(
 			VEindexs.push_back(vei);
 		}
 		free(oldgid);
+        }
+        if(multi){multi_unpack[0]=1;multi_unpack[1]=original_np;multi_unpack[2]=volume_receive_items;
+          multi_unpack[3]=nglib::Ng_GetNP(mesh)-original_np;multi_unpack[4]=4*double(volume_receive_items);
+          multi_unpack[7]=mesh_research::ghost_transport::Elapsed(unpack_begin)-multi_unpack[6];}
+
 	}
 
 	netgen_mpi_check(
@@ -2227,7 +2281,19 @@ GlobalId *com_baryVolumeElements(
         static_assert(sizeof(fields)/sizeof(fields[0])==S::count,"transport metric schema");
         for(int f=0;f<S::count;++f)scaling::Profiler::instance().set_metric(std::string("ghost_transport_")+fields[f],v[f]);
     }
+    if(multi){
+      const char *pack_fields[]={"calls","input_elements","candidate_elements","selected_elements","send_items","verified_elements","reference_seconds","seconds"};
+      const char *unpack_fields[]={"calls","old_points","receive_items","new_points","vertex_references","verified_items","reference_seconds","seconds"};
+      for(int i=0;i<8;++i){scaling::Profiler::instance().set_metric(std::string("multi_pack_")+pack_fields[i],multi_pack[i]);scaling::Profiler::instance().set_metric(std::string("multi_unpack_")+unpack_fields[i],multi_unpack[i]);}
+    }
 	return newgid;
+  }catch(const std::exception &error){
+    if(mesh_research::options().multi_point>=0){
+      std::fprintf(stderr,"[MULTI_POINT_ERROR] rank=%d %s\n",mypid,error.what());std::fflush(stderr);
+      MPI_Abort(comm,MPI_ERR_OTHER);std::abort();
+    }
+    throw;
+  }
 }
 
 void Record_LWR_count(double LWR, GlobalCount *count)

@@ -74,6 +74,10 @@ PAIRS=(('ghost_literal','ghost_dictionary','exact_vertex_dictionary'),('workspac
        ('projection_profile','projection_fixed','fixed_triangle_projection'),
        ('incidence_ordered','projection_fixed','projection_total'))
 
+from analyze_multi_point import ROUTES as MULTI_ROUTES
+ROUTES=ROUTES+tuple(MULTI_ROUTES)
+PAIRS=PAIRS+tuple(('multi_control',r,'multi_point_'+r.removeprefix('multi_')) for r in MULTI_ROUTES if r!='multi_control')
+
 def analyze(root,ranks,selected=ROUTES):
     for name in ('ghost_codec_rank_audit.csv','ghost_codec_summary.csv','ghost_codec_sources.json','GHOST_CODEC_SUMMARY.txt'):
         (root/f'p{ranks}'/name).unlink(missing_ok=True)
@@ -91,6 +95,8 @@ def analyze(root,ranks,selected=ROUTES):
     if rule_report_requested:
         for name in ('rule_cost_fixed_rank_pairs.csv','rule_cost_stage_summary.csv','rule_cost_sources.json','RULE_COST_SUMMARY.txt'):
             (root/f'p{ranks}'/name).unlink(missing_ok=True)
+    multi_report_requested=any(r in MULTI_ROUTES for r in selected)
+    for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json','MULTI_POINT_SUMMARY.txt'):(root/f'p{ranks}'/name).unlink(missing_ok=True)
     indexed={};qualities={};errors=[];flat=[];plans={}
     for route in selected:
         folder=root/('route_'+route)/f'p{ranks}'
@@ -113,18 +119,20 @@ def analyze(root,ranks,selected=ROUTES):
                                 run,_=inspect(profile_path(directory))
                                 if (run['ranks'],run['algorithm'],run['partition_seed'],run['repeat'],run['timing'])!=(ranks,algorithm,seed,repeat,mode):
                                     raise ValueError('run identity differs from plan')
+                                if route in MULTI_ROUTES and (run.get('multi_point_policy')!='exact_local_work_v1' or run.get('multi_point_mask')!=MULTI_ROUTES[route]):raise ValueError('multi point route mask mismatch')
+                                validation_route='ghost_literal' if route in MULTI_ROUTES else route
                                 expected={'repair_fixed_profile':'cost_profile','repair_fixed':'cost_profile','split_active':'cost_profile','front_distance':'cost_profile','front_transform':'cost_profile','incidence_profile':'cost_profile','incidence_ordered':'cost_profile','components_profile':'cost_profile','components_union':'cost_profile','projection_profile':'cost_profile','projection_fixed':'cost_profile','rules_totals':'cost_profile','rules_stages':'cost_profile','lookup_linear':'cost_profile','lookup_inverse':'cost_profile','workspace_temporary':'cost_profile','workspace_reuse':'cost_profile','ghost_literal':'cost_profile','ghost_dictionary':'cost_profile','cost_profile':'cost_profile','combine_profile':'combine_profile','combine_waves':'combine_waves','batch_serial':'batch_serial','ghost_staged':'batch_parallel','ghost_pipeline':'batch_parallel','batch_parallel':'batch_parallel','front_bound_profile':'front_bound_profile','front_bound':'front_bound','front_profile':'front_profile','front_topology':'front_topology','split_profile':'split_profile','split_reuse':'split_reuse','smooth_profile':'smooth_profile','smooth_balanced':'smooth_balanced','legal_prune':'legal_prune','refine_serial':'refine_serial','refine_parallel':'refine_parallel','profile_global':'profile','recovery_global':'recovery','front_spatial':'spatial','spatial_ready':'spatial','a_bound':'node_window','b_bound':'node_window_balanced','b_repeat':'node_window_repeat','a_prefix':'node_window','b_prefix':'node_window_repeat','a_native':'node_native','a_fixed':'node_fixed','a_window':'node_window',
                                           'b_window':'node_window_priority','b_balanced':'node_window_balanced',
-                                          'a_fused':'node_window','b_fused':'node_window_balanced'}.get(route,'repair')
-                                if route in ('repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
-                                    fixed_mode='disabled' if route=='repair_fixed_profile' else 'reference_verify_v1' if repeat==0 else 'exact_state_stop_v1'
-                                    if run.get('volume_repair_fixedpoint')!=fixed_mode:raise ValueError('repair fixed-point route mode mismatch')
-                                    if route in ('repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary') and repeat==0 and run.get('repair_fixed_verified',0)==0:raise ValueError('repair fixed-point reference path not exercised')
-                                if 'split_active' in selected and route=='repair_fixed' and run.get('volume_split_evaluation')!='original_ranges_v1':
+                                          'a_fused':'node_window','b_fused':'node_window_balanced'}.get(validation_route,'repair')
+                                if validation_route in ('repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
+                                    fixed_mode='disabled' if validation_route=='repair_fixed_profile' else 'reference_verify_v1' if repeat==0 else 'exact_state_stop_v1'
+                                    if run.get('volume_repair_fixedpoint')!=fixed_mode:raise ValueError('repair fixed-point validation_route mode mismatch')
+                                    if validation_route in ('repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary') and repeat==0 and run.get('repair_fixed_verified',0)==0:raise ValueError('repair fixed-point reference path not exercised')
+                                if 'split_active' in selected and validation_route=='repair_fixed' and run.get('volume_split_evaluation')!='original_ranges_v1':
                                     raise ValueError('active split control instrumentation differs')
-                                if route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
+                                if validation_route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
                                     active_mode='active_exact_replay_v1' if repeat==0 else 'active_queue_v1'
-                                    if run.get('volume_split_evaluation')!=active_mode:raise ValueError('active split route mode mismatch')
+                                    if run.get('volume_split_evaluation')!=active_mode:raise ValueError('active split validation_route mode mismatch')
                                     if repeat==0 and run.get('split_active_verified',0)==0:raise ValueError('active split reference path not exercised')
                                     import csv
                                     certificates=list(csv.DictReader((directory/'algorithm_certificate.csv').open()))
@@ -136,55 +144,55 @@ def analyze(root,ranks,selected=ROUTES):
                                             raise ValueError('active split certificate source mismatch')
                                         if float(c['split_active_mismatches']) or (repeat==0 and float(c['split_active_verified'])!=float(c['split_active_edges'])):
                                             raise ValueError('active split certificate verification incomplete')
-                                if route in ('incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
+                                if validation_route in ('incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
                                     from incidence_checks import MODES,check_certificates
-                                    incidence_mode=MODES[0] if route=='incidence_profile' else MODES[2] if repeat==0 else MODES[1]
-                                    if run.get('volume_incidence_build')!=incidence_mode:raise ValueError('incidence route mode mismatch')
-                                    if route=='incidence_ordered' and run.get('incidence_ordered_builds',0)==0:raise ValueError('ordered incidence not exercised')
+                                    incidence_mode=MODES[0] if validation_route=='incidence_profile' else MODES[2] if repeat==0 else MODES[1]
+                                    if run.get('volume_incidence_build')!=incidence_mode:raise ValueError('incidence validation_route mode mismatch')
+                                    if validation_route=='incidence_ordered' and run.get('incidence_ordered_builds',0)==0:raise ValueError('ordered incidence not exercised')
                                     import csv
                                     certificates=list(csv.DictReader((directory/'algorithm_certificate.csv').open()))
                                     check_certificates(certificates,run,repeat,ranks,incidence_mode)
-                                if route in ('workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
+                                if validation_route in ('workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
                                     from front_workspace_checks import MODES as LMODES,check_certificates as workspace_certificates
-                                    workspace_mode=LMODES[0] if route in ('workspace_temporary','ghost_literal','ghost_dictionary') else LMODES[2] if repeat==0 else LMODES[1]
-                                    if run.get('volume_front_workspace')!=workspace_mode:raise ValueError('front workspace route mode mismatch')
+                                    workspace_mode=LMODES[0] if validation_route in ('workspace_temporary','ghost_literal','ghost_dictionary') else LMODES[2] if repeat==0 else LMODES[1]
+                                    if run.get('volume_front_workspace')!=workspace_mode:raise ValueError('front workspace validation_route mode mismatch')
                                     workspace_certificates(certificates,run,repeat,ranks,workspace_mode)
-                                if route in ('ghost_literal','ghost_dictionary'):
+                                if validation_route in ('ghost_literal','ghost_dictionary'):
                                     from ghost_transport_checks import MODES as TMODES
-                                    if run.get('ghost_transport')!=TMODES[0 if route=='ghost_literal' else 2 if repeat==0 else 1]:raise ValueError('ghost transport route mismatch')
-                                if route in ('lookup_linear','lookup_inverse'):
+                                    if run.get('ghost_transport')!=TMODES[0 if validation_route=='ghost_literal' else 2 if repeat==0 else 1]:raise ValueError('ghost transport validation_route mismatch')
+                                if validation_route in ('lookup_linear','lookup_inverse'):
                                     from front_lookup_checks import MODES as LMODES,check_certificates as lookup_certificates
-                                    lookup_mode=LMODES[0] if route=='lookup_linear' else LMODES[2] if repeat==0 else LMODES[1]
-                                    if run.get('volume_front_lookup')!=lookup_mode:raise ValueError('front lookup route mode mismatch')
+                                    lookup_mode=LMODES[0] if validation_route=='lookup_linear' else LMODES[2] if repeat==0 else LMODES[1]
+                                    if run.get('volume_front_lookup')!=lookup_mode:raise ValueError('front lookup validation_route mode mismatch')
                                     lookup_certificates(certificates,run,repeat,ranks,lookup_mode)
-                                if route in ('rules_totals','rules_stages'):
+                                if validation_route in ('rules_totals','rules_stages'):
                                     from front_rule_checks import MODES as RMODES,check_certificates as rule_certificates
-                                    rule_mode=RMODES[0] if route=='rules_totals' else RMODES[2] if repeat==0 else RMODES[1]
-                                    if run.get('volume_front_rules')!=rule_mode:raise ValueError('front rule route mode mismatch')
+                                    rule_mode=RMODES[0] if validation_route=='rules_totals' else RMODES[2] if repeat==0 else RMODES[1]
+                                    if run.get('volume_front_rules')!=rule_mode:raise ValueError('front rule validation_route mode mismatch')
                                     rule_certificates(certificates,run,repeat,ranks,rule_mode)
-                                if route in ('projection_profile','projection_fixed'):
+                                if validation_route in ('projection_profile','projection_fixed'):
                                     from front_projection_checks import MODES as PMODES,check_certificates as projection_certificates
-                                    projection_mode=PMODES[0] if route=='projection_profile' else PMODES[2] if repeat==0 else PMODES[1]
-                                    if run.get('volume_front_projection')!=projection_mode:raise ValueError('front projection route mode mismatch')
+                                    projection_mode=PMODES[0] if validation_route=='projection_profile' else PMODES[2] if repeat==0 else PMODES[1]
+                                    if run.get('volume_front_projection')!=projection_mode:raise ValueError('front projection validation_route mode mismatch')
                                     import csv
                                     certificates=list(csv.DictReader((directory/'algorithm_certificate.csv').open()))
                                     projection_certificates(certificates,run,repeat,ranks,projection_mode)
-                                if route in ('components_profile','components_union'):
+                                if validation_route in ('components_profile','components_union'):
                                     from front_component_checks import MODES as CMODES,check_certificates as component_certificates
-                                    component_mode=CMODES[0] if route=='components_profile' else CMODES[2] if repeat==0 else CMODES[1]
-                                    if run.get('volume_front_components')!=component_mode:raise ValueError('front component route mode mismatch')
+                                    component_mode=CMODES[0] if validation_route=='components_profile' else CMODES[2] if repeat==0 else CMODES[1]
+                                    if run.get('volume_front_components')!=component_mode:raise ValueError('front component validation_route mode mismatch')
                                     component_certificates(certificates,run,repeat,ranks,component_mode)
                                     if not run.get('front_components_rebuilds',0) or not run.get('front_components_input_faces',0):raise ValueError('front component rebuild not exercised')
-                                if 'front_distance' in selected and route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
-                                    distance_mode=('distance_exact_replay_v1' if repeat==0 else 'distance_memo_v1') if route=='front_distance' else 'distance_original_v1'
-                                    if run.get('volume_front_distance')!=distance_mode:raise ValueError('front distance route mode mismatch')
-                                    if route=='front_distance' and repeat==0 and run.get('front_distance_verified',0)==0:raise ValueError('front distance reference path not exercised')
+                                if 'front_distance' in selected and validation_route in ('split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary'):
+                                    distance_mode=('distance_exact_replay_v1' if repeat==0 else 'distance_memo_v1') if validation_route=='front_distance' else 'distance_original_v1'
+                                    if run.get('volume_front_distance')!=distance_mode:raise ValueError('front distance validation_route mode mismatch')
+                                    if validation_route=='front_distance' and repeat==0 and run.get('front_distance_verified',0)==0:raise ValueError('front distance reference path not exercised')
                                     import csv
                                     certificates=list(csv.DictReader((directory/'algorithm_certificate.csv').open()))
                                     if sorted(int(c['rank']) for c in certificates)!=list(range(ranks)):raise ValueError('front distance certificate ranks incomplete')
                                     for c in certificates:
                                         if c['volume_front_distance']!=distance_mode:raise ValueError('front distance certificate mode mismatch')
-                                        if float(c['front_distance_mismatches']) or (route=='front_distance' and repeat==0 and float(c['front_distance_verified'])!=float(c['front_distance_calls'])):
+                                        if float(c['front_distance_mismatches']) or (validation_route=='front_distance' and repeat==0 and float(c['front_distance_verified'])!=float(c['front_distance_calls'])):
                                             raise ValueError('front distance certificate verification incomplete')
                                     from cost_profile_checks import DISTANCE_FIELDS
                                     for field in DISTANCE_FIELDS:
@@ -192,9 +200,9 @@ def analyze(root,ranks,selected=ROUTES):
                                             raise ValueError('front distance certificate aggregate mismatch: '+field)
                                     signature=[[int(c['rank'])]+[float(c['front_distance_'+f]) for f in ('calls','queries','rules','candidates')] for c in sorted(certificates,key=lambda c:int(c['rank']))]
                                     if signature!=json.loads(run['front_distance_work_signature']):raise ValueError('front distance certificate per-rank work mismatch')
-                                if 'front_transform' in selected and route in ('split_active','front_transform'):
-                                    transform_mode=('transform_exact_replay_v1' if repeat==0 else 'compiled_rule_operator_v1') if route=='front_transform' else 'dense_rule_operator_v1'
-                                    if run.get('volume_front_transform')!=transform_mode:raise ValueError('front transform route mode mismatch')
+                                if 'front_transform' in selected and validation_route in ('split_active','front_transform'):
+                                    transform_mode=('transform_exact_replay_v1' if repeat==0 else 'compiled_rule_operator_v1') if validation_route=='front_transform' else 'dense_rule_operator_v1'
+                                    if run.get('volume_front_transform')!=transform_mode:raise ValueError('front transform validation_route mode mismatch')
                                     if run.get('volume_front_distance')!='distance_original_v1':raise ValueError('distance cache entered transform experiment')
                                     import csv
                                     certificates=list(csv.DictReader((directory/'algorithm_certificate.csv').open()))
@@ -203,7 +211,7 @@ def analyze(root,ranks,selected=ROUTES):
                                     for c in certificates:
                                         if int(c['ranks'])!=ranks or int(c['repeat'])!=repeat or c['source_revision']!=run['source_revision'] or c['binary_sha256']!=run['binary_sha256'] or c['volume_front_transform']!=transform_mode:
                                             raise ValueError('front transform certificate identity mismatch')
-                                        if float(c['front_transform_mismatches']) or (route=='front_transform' and repeat==0 and float(c['front_transform_verified'])!=float(c['front_transform_calls'])):
+                                        if float(c['front_transform_mismatches']) or (validation_route=='front_transform' and repeat==0 and float(c['front_transform_verified'])!=float(c['front_transform_calls'])):
                                             raise ValueError('front transform certificate verification incomplete')
                                     for field in TRANSFORM_FIELDS:
                                         total=sum(float(c['front_transform_'+field]) for c in certificates)
@@ -214,35 +222,35 @@ def analyze(root,ranks,selected=ROUTES):
                                     if signature!=json.loads(run['front_transform_work_signature']):raise ValueError('front transform certificate per-rank work mismatch')
                                     complete=[[int(c['rank'])]+[float(c['front_transform_'+f]) for f in TRANSFORM_FIELDS] for c in sorted(certificates,key=lambda c:int(c['rank']))]
                                     if complete!=json.loads(run['front_transform_certificate_signature']):raise ValueError('front transform certificate per-rank counters mismatch')
-                                    if route=='front_transform' and repeat==0 and run.get('front_transform_verified',0)==0:raise ValueError('front transform reference path not exercised')
+                                    if validation_route=='front_transform' and repeat==0 and run.get('front_transform_verified',0)==0:raise ValueError('front transform reference path not exercised')
                                 if expected and run.get('kernel_scheduler')!=expected:
-                                    raise ValueError('route kernel scheduler mismatch')
-                                numbering={'repair_fixed_profile':'owner_local_v2','repair_fixed':'owner_local_v2','split_active':'owner_local_v2','front_distance':'owner_local_v2','front_transform':'owner_local_v2','incidence_profile':'owner_local_v2','incidence_ordered':'owner_local_v2','components_profile':'owner_local_v2','components_union':'owner_local_v2','projection_profile':'owner_local_v2','projection_fixed':'owner_local_v2','rules_totals':'owner_local_v2','rules_stages':'owner_local_v2','lookup_linear':'owner_local_v2','lookup_inverse':'owner_local_v2','workspace_temporary':'owner_local_v2','workspace_reuse':'owner_local_v2','ghost_literal':'owner_local_v2','ghost_dictionary':'owner_local_v2','cost_profile':'owner_local_v2','combine_profile':'owner_local_v2','combine_waves':'owner_local_v2','batch_serial':'owner_local_v2','ghost_staged':'owner_local_v2','ghost_pipeline':'owner_local_v2','batch_parallel':'owner_local_v2','front_bound_profile':'owner_local_v2','front_bound':'owner_local_v2','front_profile':'owner_local_v2','front_topology':'owner_local_v2','split_profile':'owner_local_v2','split_reuse':'owner_local_v2','smooth_profile':'owner_local_v2','smooth_balanced':'owner_local_v2','legal_prune':'owner_local_v2','c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2','profile_global':'owner_local_v2','refine_serial':'owner_local_v2','refine_parallel':'owner_local_v2'}.get(route,'eager_v1')
-                                ghost_expected={'ghost_staged':'staged_plan_v1','ghost_pipeline':'id_overlap_plan_v1'}.get(route,'legacy_v1')
+                                    raise ValueError('validation_route kernel scheduler mismatch')
+                                numbering={'repair_fixed_profile':'owner_local_v2','repair_fixed':'owner_local_v2','split_active':'owner_local_v2','front_distance':'owner_local_v2','front_transform':'owner_local_v2','incidence_profile':'owner_local_v2','incidence_ordered':'owner_local_v2','components_profile':'owner_local_v2','components_union':'owner_local_v2','projection_profile':'owner_local_v2','projection_fixed':'owner_local_v2','rules_totals':'owner_local_v2','rules_stages':'owner_local_v2','lookup_linear':'owner_local_v2','lookup_inverse':'owner_local_v2','workspace_temporary':'owner_local_v2','workspace_reuse':'owner_local_v2','ghost_literal':'owner_local_v2','ghost_dictionary':'owner_local_v2','cost_profile':'owner_local_v2','combine_profile':'owner_local_v2','combine_waves':'owner_local_v2','batch_serial':'owner_local_v2','ghost_staged':'owner_local_v2','ghost_pipeline':'owner_local_v2','batch_parallel':'owner_local_v2','front_bound_profile':'owner_local_v2','front_bound':'owner_local_v2','front_profile':'owner_local_v2','front_topology':'owner_local_v2','split_profile':'owner_local_v2','split_reuse':'owner_local_v2','smooth_profile':'owner_local_v2','smooth_balanced':'owner_local_v2','legal_prune':'owner_local_v2','c_prefix':'prefix_neighbor_v1','a_prefix':'prefix_neighbor_v1','b_prefix':'prefix_neighbor_v1','c_fused':'fused_pair_v1','a_fused':'fused_pair_v1','b_fused':'fused_pair_v1','c_deferred':'deferred_pair_v1','async_global':'owner_local_v2','ready_global':'owner_local_v2','spatial_ready':'owner_local_v2','recovery_global':'owner_local_v2','profile_global':'owner_local_v2','refine_serial':'owner_local_v2','refine_parallel':'owner_local_v2'}.get(validation_route,'eager_v1')
+                                ghost_expected={'ghost_staged':'staged_plan_v1','ghost_pipeline':'id_overlap_plan_v1'}.get(validation_route,'legacy_v1')
                                 if run.get('ghost_exchange_policy')!=ghost_expected:
-                                    raise ValueError('route ghost exchange policy mismatch')
+                                    raise ValueError('validation_route ghost exchange policy mismatch')
                                 if numbering and run.get('global_numbering')!=numbering:
-                                    raise ValueError('route numbering mismatch')
-                                if route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
+                                    raise ValueError('validation_route numbering mismatch')
+                                if validation_route in ('a_bound','b_bound','b_repeat','a_prefix','b_prefix','reference_bound','worklet_static_fixed','worklet_owner_fixed','critical_worklet','async_global','front_spatial','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced'):
                                     if run.get('node_cpu_bind')!='cores' or run.get('node_affinity_layout')!='disjoint':
-                                        raise ValueError('bound route lacks verified disjoint startup affinity')
-                                if route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
-                                    policy={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[route]
+                                        raise ValueError('bound validation_route lacks verified disjoint startup affinity')
+                                if validation_route in ('worklet_static_fixed','worklet_owner_fixed','critical_worklet'):
+                                    policy={'worklet_static_fixed':'static','worklet_owner_fixed':'dynamic','critical_worklet':'critical'}[validation_route]
                                     if run.get('worklet_policy')!=policy:
-                                        raise ValueError('route worklet policy mismatch')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
+                                        raise ValueError('validation_route worklet policy mismatch')
+                                if validation_route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') and run.get('adjacency_audit_schema')!='canonical_ghost_v1':
                                     raise ValueError('missing temporary-ID adjacency audit contract')
-                                if route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') and run.get('adjacency_id_path')!='owner_local_v2':
+                                if validation_route in ('async_global','ready_global','spatial_ready','recovery_global','profile_global','refine_serial','refine_parallel','legal_prune','batch_serial','batch_parallel','cost_profile','repair_fixed_profile','repair_fixed','split_active','front_distance','front_transform','incidence_profile','incidence_ordered','components_profile','components_union','projection_profile','projection_fixed','rules_totals','rules_stages','lookup_linear','lookup_inverse','workspace_temporary','workspace_reuse','ghost_literal','ghost_dictionary','combine_profile','combine_waves','ghost_staged','ghost_pipeline','front_bound_profile','front_bound','front_profile','front_topology','split_profile','split_reuse','smooth_profile','smooth_balanced') and run.get('adjacency_id_path')!='owner_local_v2':
                                     raise ValueError('async adjacency did not use temporary IDs')
-                                if route in ('front_spatial','spatial_ready') and run.get('front_search')!='conservative_boxes_v1':
-                                    raise ValueError('route conservative front search mismatch')
-                                if route in ('ready_global','spatial_ready') and run.get('volume_exchange_policy')!='peer_ready_v1':
-                                    raise ValueError('route ready exchange mismatch')
-                                if route=='recovery_global' and run.get('recovery_evaluation')!='parallel_readonly_v1':
+                                if validation_route in ('front_spatial','spatial_ready') and run.get('front_search')!='conservative_boxes_v1':
+                                    raise ValueError('validation_route conservative front search mismatch')
+                                if validation_route in ('ready_global','spatial_ready') and run.get('volume_exchange_policy')!='peer_ready_v1':
+                                    raise ValueError('validation_route ready exchange mismatch')
+                                if validation_route=='recovery_global' and run.get('recovery_evaluation')!='parallel_readonly_v1':
                                     raise ValueError('missing recovery parallel contract')
-                                if route=='profile_global' and run.get('volume_native_profile')!='phase_operations_v1':
+                                if validation_route=='profile_global' and run.get('volume_native_profile')!='phase_operations_v1':
                                     raise ValueError('missing phase operation profile')
-                                if route in ('combine_profile','combine_waves'):
+                                if validation_route in ('combine_profile','combine_waves'):
                                     if repeat==0:
                                         (directory/'combine_verification_summary.json').write_text(json.dumps({k:v for k,v in run.items() if k.startswith('combine_commit_')},indent=2,allow_nan=False)+'\n')
                                 if repeat==0:
@@ -466,6 +474,12 @@ def analyze(root,ranks,selected=ROUTES):
         try:transport_report(root,ranks)
         except (OSError,ValueError,KeyError,TypeError) as error:
             errors.append('ghost transport report: '+str(error));(out/'route_issues.txt').write_text('\n'.join(errors)+'\n')
+    if multi_report_requested and not errors:
+        from analyze_multi_point import analyze as multi_report
+        try:multi_report(root,ranks,selected)
+        except (OSError,ValueError,KeyError,TypeError) as error:
+            errors.append('multi point report: '+str(error))
+            (out/'route_issues.txt').write_text('\n'.join(errors)+'\n')
     if workspace_report_requested and not errors:
         from analyze_ghost_codec import analyze as codec_report
         try:codec_report(root,ranks)
@@ -496,6 +510,9 @@ def analyze(root,ranks,selected=ROUTES):
             (out/'route_issues.txt').write_text('\n'.join(errors)+'\n')
     if rule_report_requested and errors:
         (out/'RULE_COST_SUMMARY.txt').write_text('完整规则成本证据未通过检查，未发布本轮成本筛选表。请查看 route_issues.txt。\n')
+    if multi_report_requested and errors:
+        for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json'):(out/name).unlink(missing_ok=True)
+        (out/'MULTI_POINT_SUMMARY.txt').write_text('多点优化证据未通过完整配对，未发布性能表。见 route_issues.txt。\n')
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',
            'Structural routes preserve original domains: conservative front search, peer-ready exchange, and their composition. Historical whole-domain task routes are explicit controls only.',

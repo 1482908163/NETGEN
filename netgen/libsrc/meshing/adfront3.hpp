@@ -15,6 +15,7 @@
 #include <gprim/adtree.hpp>
 #include "meshtype.hpp"
 #include "geomsearch.hpp"
+#include "front_selection_index.hpp"
 
 namespace netgen
 {
@@ -222,6 +223,15 @@ class AdFront3
   Array<char, PointIndex> pingroup;
   VolumeFrontComponentStats *component_stats = nullptr;
   int component_mode = 0;
+  FrontSelectionIndex selection_index;
+  std::vector<std::vector<int>> selection_incidence;
+  VolumeKernelStats *selection_stats=nullptr;
+  double selection_values[12]={};
+  int selection_mode=-1;
+  bool selection_ready=false;
+  void PrepareSelection();
+  long long SelectionScore(int face,bool count=true);
+  void SelectionPointChanged(PointIndex pi);
   
   ///
   class BoxTree<3> * facetree;
@@ -261,6 +271,14 @@ public:
   ///
   void SetComponentAlgorithm(int mode,VolumeFrontComponentStats *stats)
   {component_mode=mode;component_stats=stats;}
+  void FlushSelectionStats() {
+    if(selection_stats)for(int i=0;i<12;++i)selection_stats->Add(i,selection_values[i]);
+    selection_stats=nullptr;
+  }
+  void SetSelectionAlgorithm(int mode,VolumeKernelStats *stats) {
+    FlushSelectionStats();
+    std::fill_n(selection_values,12,0.0);selection_stats=stats;selection_mode=mode;selection_ready=false;
+  }
   int SelectBaseElement ();
 
   ///
@@ -304,11 +322,11 @@ public:
   INDEX AddConnectedPair (PointIndices<2> pair);
   ///
   void IncrementClass (INDEX fi)
-  { faces[fi-1].IncrementQualClass(); }
+  { faces[fi-1].IncrementQualClass();if(selection_ready)selection_index.Changed(fi); }
 
   ///
   void ResetClass (INDEX fi)
-  { faces[fi-1].ResetQualClass(); }
+  { faces[fi-1].ResetQualClass();if(selection_ready)selection_index.Changed(fi); }
 
   ///
   void SetStartFront (int baseelnp = 0);

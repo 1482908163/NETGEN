@@ -21,6 +21,7 @@ fi
 #   diagnose   : 64/128/256/512 节点，1024–8192 ranks 十亿级负载不均衡诊断
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
+#   multi_point : 原控制/前沿选择/边界打包/顺序装配/组合，一次完成全部消融
 #   ghost_dictionary : 原载荷/真实顶点字典，预热接收核对及快速 MPI 检查
 #   front_workspace : 原临时向量/规则私有工作空间；完整重放及全成本对照
 #   front_lookup : 原线性编号查找/候选反向映射；预热完整规则重放，正式无细分计时
@@ -49,6 +50,14 @@ fi
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+if [[ "$EXPERIMENT_PRESET" == multi_point ]]; then
+    export MULTI_POINT_PROTOCOL_REQUIRED=1 TRANSPORT_PROTOCOL_REQUIRED=1
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-multi_control multi_front multi_pack multi_unpack multi_all}"
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-128 512}"
+    EXPERIMENT_PRESET=generation_cost
+fi
+MULTI_POINT="${MULTI_POINT:--1}"
+[[ "$MULTI_POINT" =~ ^(-1|[0-7])$ ]] || { echo "MULTI_POINT must be -1 or an integer from 0 to 7" >&2;exit 2; }
 if [[ "$EXPERIMENT_PRESET" == ghost_dictionary ]]; then
     export TRANSPORT_PROTOCOL_REQUIRED=1
     export WORKLET_ROUTES="${WORKLET_ROUTES:-ghost_literal ghost_dictionary}"
@@ -346,6 +355,7 @@ MPI_EXTRA_ARGS="${MPI_EXTRA_ARGS:---mpi=pmix}"
 DRY_RUN="${DRY_RUN:-0}"
 INPUT_PATH="${INPUT_PATH:-/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP}"
 
+export MULTI_POINT MULTI_POINT_PROTOCOL_REQUIRED
 export EXPERIMENT_PRESET PROCESS_COUNTS ALGORITHMS TIMING_MODES RANKS_PER_NODE
 export REPEATS WARMUPS LEVELS REFINES MAXH MINH VERIFY_FACES CLEANUP_RESULTS RESUME
 export BALANCE_SWEEPS CUT_GROWTH COST_WEIGHTS TIMEOUT_SECONDS START_DELAY_SECONDS
@@ -417,11 +427,13 @@ propagate_allocation_stop() {
     rm -f "$parent/route_comparisons.csv" "$parent/rule_cost_fixed_rank_pairs.csv" \
         "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json" \
         "$parent/front_lookup_fixed_rank_pairs.csv" "$parent/front_lookup_summary.csv" "$parent/front_lookup_sources.json" \
+        "$parent/multi_point_pairs.csv" "$parent/multi_point_summary.csv" "$parent/multi_point_sources.json" \
         "$parent/front_workspace_fixed_rank_pairs.csv" "$parent/front_workspace_summary.csv" "$parent/front_workspace_sources.json" \
         "$parent/ghost_codec_rank_audit.csv" "$parent/ghost_codec_summary.csv" "$parent/ghost_codec_sources.json" \
         "$parent/ghost_transport_pairs.csv" "$parent/ghost_transport_summary.csv" "$parent/ghost_transport_sources.json"
     printf '实验未完成：当前作业分配停止复用，见 ALLOCATION_STOPPED.txt。\n' > "$parent/route_issues.txt"
     cp "$parent/route_issues.txt" "$parent/ROUTE_SUMMARY.txt"
+    cp "$parent/route_issues.txt" "$parent/MULTI_POINT_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/RULE_COST_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_LOOKUP_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_WORKSPACE_SUMMARY.txt"
@@ -470,7 +482,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|multi_control|multi_front|multi_pack|multi_unpack|multi_all|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -481,7 +493,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
         for ((ri=0;ri<${#routes[@]};++ri)); do
             route="${routes[$(((ri+rr+WARMUPS-1)%${#routes[@]}))]}"
             factor=0;policy=static;deferred=0;fused=0;prefix=0;async_ids=0;ready=0;ghost_exchange=legacy;adaptive_worklets=0;binding=none;scheduler=repair
-            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1;lookup_mode=-1;workspace_mode=-1;transport_mode=-1
+            fixed_mode=0;active_mode=0;distance_mode=0;transform_mode=0;incidence_mode=-1;component_mode=-1;projection_mode=-1;rule_mode=-1;lookup_mode=-1;workspace_mode=-1;transport_mode=-1;multi_mode=-1
             case "$route" in
                 a_static) factor="$WORKLET_FACTOR" ;;
                 a_dynamic) factor="$WORKLET_FACTOR";policy=dynamic ;;
@@ -513,6 +525,8 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
                 incidence_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=0 ;;
+                multi_control|multi_front|multi_pack|multi_unpack|multi_all) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;multi_mode=0
+                    case "$route" in multi_front) multi_mode=1;;multi_pack) multi_mode=2;;multi_unpack) multi_mode=4;;multi_all) multi_mode=7;;esac ;;
                 ghost_literal|ghost_dictionary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;[[ "$route" != ghost_dictionary ]] || transport_mode=1 ;;
                 workspace_temporary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0 ;;
                 workspace_reuse) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=1 ;;
@@ -538,7 +552,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
             esac
             # Keep startup diagnostics even if a child exits before creating plan.json.
             launch_errors="${route_root}/p${PROCESS_COUNT}/route_launch_errors.log"
-            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" FRONT_LOOKUP="$lookup_mode" FRONT_WORKSPACE="$workspace_mode" GHOST_DICTIONARY="$transport_mode" \
+            if EXPERIMENT_STAGE=communication KERNEL_REPEAT="$rr" RUN_ROOT="${route_root}/route_${route}" REPAIR_FIXED_POINT="$fixed_mode" SPLIT_ACTIVE_EVALUATION="$active_mode" FRONT_DISTANCE="$distance_mode" FRONT_TRANSFORM="$transform_mode" INCIDENCE_BUILD="$incidence_mode" FRONT_COMPONENTS="$component_mode" FRONT_PROJECTION="$projection_mode" FRONT_RULES="$rule_mode" FRONT_LOOKUP="$lookup_mode" FRONT_WORKSPACE="$workspace_mode" GHOST_DICTIONARY="$transport_mode" MULTI_POINT="$multi_mode" \
                  WORKLETS_PER_OWNER="$factor" WORKLET_POLICY="$policy" DEFERRED_GLOBAL_IDS="$deferred" FUSED_GLOBAL_IDS="$fused" PREFIX_GLOBAL_IDS="$prefix" ASYNC_GLOBAL_IDS="$async_ids" READY_VOLUME_EXCHANGE="$ready" GHOST_EXCHANGE="$ghost_exchange" ADAPTIVE_WORKLETS="$adaptive_worklets" NODE_CPU_BIND="$binding" KERNEL_SCHEDULER="$scheduler" \
                  bash "${SCRIPT_DIR}/run_experiments.sh" 2> >(tee -a "$launch_errors" >&2); then
                 :
@@ -680,6 +694,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
+[[ "$MULTI_POINT" == -1 && "${MULTI_POINT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--multi-point" "--multi-point-verify" "exact_local_work_v1" "multi_front_" "multi_pack_" "multi_unpack_")
 [[ "$GHOST_DICTIONARY" == -1 && "${TRANSPORT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--ghost-dictionary" "literal_transport_v1" "vertex_dictionary_transport_v1" "vertex_dictionary_reference_v1" "ghost_transport_")
 [[ "$MPI_STARTUP_CHECK" == 0 ]] || markers+=("--mpi-preflight" "[MPI_PREFLIGHT_OK]")
 [[ "$GHOST_CODEC_AUDIT" == 0 ]] || markers+=("--ghost-codec-audit" "vertex_dictionary_audit_v1" "ghost_codec_")
@@ -803,6 +818,7 @@ if ((KERNEL_THREADS>0)); then
     [[ "$FRONT_RULES" == -1 ]] || common+=(--front-rules "$FRONT_RULES")
     [[ "$FRONT_PROJECTION" == -1 ]] || common+=(--front-projection "$FRONT_PROJECTION")
     [[ "$FRONT_COMPONENTS" == -1 ]] || common+=(--front-components "$FRONT_COMPONENTS")
+    [[ "$MULTI_POINT" == -1 ]] || common+=(--multi-point "$MULTI_POINT")
     [[ "$INCIDENCE_BUILD" == -1 ]] || common+=(--incidence-build "$INCIDENCE_BUILD")
     [[ "$KERNEL_SCHEDULER" != cost_profile ]] || common+=(--repair-fixed-point "$REPAIR_FIXED_POINT" --split-active-evaluation "$SPLIT_ACTIVE_EVALUATION" --front-distance "$FRONT_DISTANCE" --front-transform "$FRONT_TRANSFORM")
 fi
@@ -958,6 +974,15 @@ SIGNATURE
                 echo "Run directory is busy: ${out}" >&2
                 failures=$((failures+1));exec 9>&-;continue
             fi
+            if [[ "$MULTI_POINT" != -1 && "$rep" -gt 0 ]]; then
+                warm="${pdir}/${a}_${mode}/repeat_0";[[ "$seed" == -1 ]] || warm="${pdir}/${a}_seed${seed}_${mode}/repeat_0"
+                if ! warm_error="$(python3 "${SCRIPT_DIR}/multi_point_checks.py" "$warm" --mask "$MULTI_POINT" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
+                    rm -f "$out/SUCCESS" "$out/multi_point_certificate.csv"
+                    printf 'dependent_multi_point_warmup_failure\n%s\n' "$warm_error" > "${out}/failure_reason.txt"
+                    failures=$((failures+1));printf '%s\t%s\t%s\t2\t%s\t%s\n' "$a" "$mode" "$rep" "$out" "$seed" >> "$status_file"
+                    exec 9>&-;continue
+                fi
+            fi
             if [[ "$GHOST_DICTIONARY" != -1 && "$QUALITY_WARMUP" == 1 ]] && ((rep>0)); then
                 warm="${pdir}/${a}_natural/repeat_0";[[ "$seed" == -1 ]] || warm="${pdir}/${a}_seed${seed}_natural/repeat_0"
                 if ! warm_error="$(python3 "${SCRIPT_DIR}/ghost_transport_checks.py" "$warm" --mode "$GHOST_DICTIONARY" --ranks "$PROCESS_COUNT" --source "$MESH_SOURCE_REVISION" --binary "$MESH_BINARY_SHA256" 2>&1)"; then
@@ -1028,7 +1053,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv" "${out}/ghost_codec_certificate.csv" "${out}/ghost_transport_certificate.csv"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv" "${out}/ghost_codec_certificate.csv" "${out}/ghost_transport_certificate.csv" "${out}/multi_point_certificate.csv"
             if [[ -f "${out}/failure_reason.txt" ]]; then cp "${out}/failure_reason.txt" "${out}/previous_failure_reason.txt";fi
             rm -f "${out}/failure_reason.txt" "${out}"/failure_rank_*.txt
             export MESH_FAILURE_DIR="${out}"
@@ -1039,6 +1064,8 @@ SIGNATURE
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
             codec_check=()
             component_check=()
+            multi_check=()
+            [[ "$MULTI_POINT" == -1 ]] || multi_check=(--require-multi-point "$MULTI_POINT")
             transport_check=();[[ "$GHOST_DICTIONARY" == -1 ]] || transport_check=(--require-ghost-transport-mode "$GHOST_DICTIONARY")
             workspace_check=()
             [[ "$FRONT_WORKSPACE" == -1 ]] || workspace_check=(--require-workspace-mode "$FRONT_WORKSPACE")
@@ -1052,6 +1079,7 @@ SIGNATURE
             incidence_check=()
             [[ "$INCIDENCE_BUILD" == -1 ]] || incidence_check=(--require-incidence-mode "$INCIDENCE_BUILD")
             if [[ "${QUALITY_WARMUP}" == 1 && "$rep" == 0 && "$mode" == natural ]]; then
+                [[ "$MULTI_POINT" == -1 ]] || args+=(--multi-point-verify 1)
                 if [[ "$GHOST_DICTIONARY" == 1 ]]; then args+=(--ghost-dictionary 2);transport_check=(--require-ghost-transport-mode 2);fi
                 [[ "$FRONT_WORKSPACE" != 1 ]] || args+=(--front-workspace 2)
                 [[ "$FRONT_WORKSPACE" != 1 ]] || workspace_check=(--require-workspace-mode 2)
@@ -1088,7 +1116,7 @@ SIGNATURE
             fi
             if ((rc==0)); then
                 finalize_error=""
-                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${codec_check[@]}" "${transport_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
+                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${codec_check[@]}" "${transport_check[@]}" "${multi_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
                     rc=1
                     printf '%s/%s seed %s repeat %s: %s\n' "${a}" "${mode}" "${seed}" "${rep}" "${finalize_error}" >> "${failure_file}"
                 fi

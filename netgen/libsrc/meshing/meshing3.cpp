@@ -184,6 +184,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 {
   auto *component_stats=mp.volume_front_component_stats;
   adfront->SetComponentAlgorithm(mp.volume_front_component_mode,component_stats);
+  adfront->SetSelectionAlgorithm(mp.volume_front_selection_mode,mp.volume_front_selection_stats);
+  struct SelectionReport {AdFront3 *front;~SelectionReport(){front->FlushSelectionStats();}} selection_report{adfront.get()};
   front_distance_mode=mp.volume_front_distance_mode;
   front_workspace_mode=mp.volume_front_workspace_mode;
   front_workspace_stats=mp.volume_front_workspace_stats;

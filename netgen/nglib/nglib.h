@@ -556,6 +556,10 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshRepairFixedPoint(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
     double *recovery,double *batch,double *profile,double *native_calls,
     double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count);
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshMultiPoint(Ng_Mesh *mesh,
+    Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,
+    double *recovery,double *batch,double *profile,double *native_calls,
+    double *cost,int cost_count,double *fixed,int fixed_count,int active_mode,double *active,double *distance,double *transform,int incidence_mode,double *incidence,int incidence_count,double *workspace,int selector_mode,double *selector);
    enum {NG_VOLUME_FRONT_COMPONENT_COUNT=16};
    NGLIB_API Ng_Result Ng_GenerateVolumeMeshFrontComponents(Ng_Mesh *mesh,
     Ng_Meshing_Parameters *mp,int threads,int mode,double *seconds,double *details,

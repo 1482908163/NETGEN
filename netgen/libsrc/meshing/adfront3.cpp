@@ -106,6 +106,7 @@ PointIndex AdFront3 :: AddPoint (const Point<3> & p, PointIndex globind)
       delpointl.DeleteLast ();
       
       points[pi] = FrontPoint3 (p, globind);
+      if(selection_ready && static_cast<std::size_t>(int(pi))<selection_incidence.size())selection_incidence[int(pi)].clear();
       return pi;
     }
   else
@@ -164,12 +165,16 @@ INDEX AdFront3 :: AddFace (const MiniElement2d & aface)
     points[aface.PNum(i)].cluster = cluster;
 
 
-  for (i = 1; i <= aface.GetNP(); i++)
-    points[aface.PNum(i)].DecFrontNr (minfn+1);
+  for (i = 1; i <= aface.GetNP(); i++) {
+    auto pi=aface.PNum(i);int old=points[pi].FrontNr();points[pi].DecFrontNr(minfn+1);
+    if(old!=points[pi].FrontNr())SelectionPointChanged(pi);
+  }
   
   faces.Append(FrontFace (aface));
   int nfn = faces.Size();
   faces.Elem(nfn).cluster = cluster;
+  if(selection_ready){selection_index.Grow(nfn);selection_incidence.resize(points.Size()+PointIndex::BASE);++selection_values[10];
+    for(auto pi:aface.PNums()){selection_incidence[int(pi)].push_back(nfn);++selection_values[11];}}
 
   if (hashon && hashcreated) 
     hashtable.AddElem(aface, nfn);
@@ -215,6 +220,7 @@ void AdFront3 :: DeleteFace (INDEX fi)
     }
 
   faces.Elem(fi).Invalidate();
+  if(selection_ready)selection_index.Changed(fi);
 }
 
 
@@ -293,6 +299,7 @@ void AdFront3 :: GetFaceBoundingBox (int i, Box3d & box) const
 
 void AdFront3 :: RebuildInternalTables ()
 {
+  selection_ready=false;
   VolumeFrontComponentTimer rebuild_timer(component_stats,11);
   static int timer_a = NgProfiler::CreateTimer ("Adfront3::RebuildInternal A");
   static int timer_b = NgProfiler::CreateTimer ("Adfront3::RebuildInternal B");
@@ -460,6 +467,23 @@ void AdFront3 :: RebuildInternalTables ()
 
 
 
+long long AdFront3::SelectionScore(int face,bool count) {
+  if(!faces.Get(face).Valid())return FrontSelectionIndex::inactive;
+  if(count)++selection_values[1];
+  const auto &f=faces.Get(face);
+  return f.QualClass()+points[f.Face().PNum(1)].FrontNr()+points[f.Face().PNum(2)].FrontNr()+points[f.Face().PNum(3)].FrontNr();
+}
+void AdFront3::PrepareSelection() {
+  selection_index.Reset(faces.Size());selection_incidence.clear();selection_incidence.resize(points.Size()+PointIndex::BASE);
+  for(int f=1;f<=faces.Size();++f)if(faces.Get(f).Valid())for(auto pi:faces.Get(f).Face().PNums()) {
+    selection_incidence[int(pi)].push_back(f);++selection_values[11];
+  }
+  selection_values[10]+=faces.Size();++selection_values[5];selection_ready=true;
+}
+void AdFront3::SelectionPointChanged(PointIndex pi) {
+  if(selection_ready && static_cast<std::size_t>(int(pi))<selection_incidence.size())
+    for(int face:selection_incidence[int(pi)])selection_index.Changed(face);
+}
 int AdFront3 :: SelectBaseElement ()
 {
   /*
@@ -486,6 +510,36 @@ int AdFront3 :: SelectBaseElement ()
     }
     */
   
+  if(selection_mode>=0) {
+    using Clock=std::chrono::steady_clock;
+    const auto begin=Clock::now();++selection_values[0];
+    const int before_last=lasti,before_min=minval;
+    auto linear=[&](int &last,int &minimum){
+      int face=0;
+      for(int i=last+1;i<=faces.Size() && !face;++i)if(faces.Get(i).Valid()) {
+        auto hi=SelectionScore(i,selection_mode==0);if(hi<=minimum){minimum=static_cast<int>(hi);face=i;last=i;}
+      }
+      if(!face){minimum=INT_MAX;for(int i=1;i<=faces.Size();++i)if(faces.Get(i).Valid()) {
+        auto hi=SelectionScore(i,selection_mode==0);if(hi<=minimum){minimum=static_cast<int>(hi);face=i;last=0;}
+      }}return face;
+    };
+    int face=0;double reference=0;
+    if(selection_mode==0)face=linear(lasti,minval);
+    else {
+      if(!selection_ready)PrepareSelection();
+      auto score=[&](int f){return SelectionScore(f);};
+      face=selection_index.First(lasti+1,minval,score,selection_values);
+      if(face){minval=static_cast<int>(SelectionScore(face));lasti=face;}
+      else {face=selection_index.LastMinimum(score,selection_values);minval=face?static_cast<int>(SelectionScore(face)):INT_MAX;if(face)lasti=0;}
+      if(selection_mode==2) {
+        const auto stamp=Clock::now();int last=before_last,minimum=before_min;int expected=linear(last,minimum);
+        reference=std::chrono::duration<double>(Clock::now()-stamp).count();selection_values[8]+=reference;++selection_values[6];
+        if(expected!=face || last!=lasti || minimum!=minval){++selection_values[7];throw NgException("front selection exact replay mismatch");}
+      }
+    }
+    selection_values[9]+=std::chrono::duration<double>(Clock::now()-begin).count()-reference;
+    return face;
+  }
   int fstind = 0;
 
   for (int i = lasti+1; i <= faces.Size() && !fstind; i++)
@@ -820,6 +874,7 @@ void AdFront3 :: GetGroup (int fi,
 
 void AdFront3 :: SetStartFront (int /* baseelnp */)
 {
+  selection_ready=false;
   for (INDEX i = 1; i <= faces.Size(); i++)
     if (faces.Get(i).Valid())
       {

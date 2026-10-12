@@ -10,7 +10,7 @@ import tempfile
 REQUIRED=('run_experiments.sh','submit_experiments.sh','cluster_env.sh',
           'node_affinity_yhrun.sh','analyze_results.py','analyze_worklet_routes.py',
           'cost_profile_checks.py','front_component_checks.py','front_projection_checks.py','front_rule_checks.py','analyze_front_rule_cost.py','incidence_checks.py','combine_commit_checks.py','diagnose_failures.py',
-          'fit_cost_model.py','resource_model.py','runtime_snapshot.py','allocation_stop.py','front_lookup_checks.py','analyze_front_lookup.py','front_workspace_checks.py','analyze_front_workspace.py','ghost_codec_checks.py','analyze_ghost_codec.py','ghost_transport_checks.py','analyze_ghost_transport.py','mpi_startup_check.py')
+          'fit_cost_model.py','resource_model.py','runtime_snapshot.py','allocation_stop.py','front_lookup_checks.py','analyze_front_lookup.py','front_workspace_checks.py','analyze_front_workspace.py','ghost_codec_checks.py','analyze_ghost_codec.py','ghost_transport_checks.py','analyze_ghost_transport.py','mpi_startup_check.py','multi_point_checks.py','analyze_multi_point.py')
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()

@@ -1836,6 +1836,8 @@ namespace netgen
     VolumeCostStats *volume_cost_stats = nullptr;
     VolumeFrontComponentStats *volume_front_component_stats = nullptr;
     VolumeFrontLookupStats *volume_front_lookup_stats = nullptr;
+    VolumeKernelStats *volume_front_selection_stats = nullptr;
+    int volume_front_selection_mode = -1;
     VolumeFrontWorkspaceStats *volume_front_workspace_stats = nullptr;
     int volume_front_workspace_mode = 0; // 0 temporary / 1 reusable / 2 full replay
     int volume_front_lookup_mode = 0; // 0 linear / 1 inverse / 2 full replay
