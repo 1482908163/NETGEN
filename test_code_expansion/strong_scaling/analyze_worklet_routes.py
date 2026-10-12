@@ -75,6 +75,8 @@ PAIRS=(('workspace_temporary','workspace_reuse','rule_private_workspace'),('look
        ('incidence_ordered','projection_fixed','projection_total'))
 
 def analyze(root,ranks,selected=ROUTES):
+    for name in ('ghost_codec_rank_audit.csv','ghost_codec_summary.csv','ghost_codec_sources.json','GHOST_CODEC_SUMMARY.txt'):
+        (root/f'p{ranks}'/name).unlink(missing_ok=True)
     workspace_report_requested=all(r in selected for r in ('workspace_temporary','workspace_reuse'))
     if workspace_report_requested:
         for name in ('front_workspace_fixed_rank_pairs.csv','front_workspace_summary.csv','front_workspace_sources.json','FRONT_WORKSPACE_SUMMARY.txt'):
@@ -454,6 +456,12 @@ def analyze(root,ranks,selected=ROUTES):
     for name,data in (('route_runs.csv',flat),('route_comparisons.csv',comparisons)):
         (out/name).write_text('');write_csv(out/name,data)
     (out/'route_issues.txt').write_text('\n'.join(errors)+('\n' if errors else ''))
+    if workspace_report_requested and not errors:
+        from analyze_ghost_codec import analyze as codec_report
+        try:codec_report(root,ranks)
+        except (OSError,ValueError,KeyError,TypeError) as error:
+            errors.append('ghost codec feasibility report: '+str(error))
+            (out/'route_issues.txt').write_text('\n'.join(errors)+'\n')
     if workspace_report_requested and not errors:
         from analyze_front_workspace import analyze as workspace_report
         try:workspace_report(root,ranks)

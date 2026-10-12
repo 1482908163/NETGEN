@@ -159,3 +159,7 @@ python3 "${ROOT}/tests/test_front_workspace_replay.py"
 python3 "${ROOT}/tests/test_front_workspace_cli.py"
 python3 "${ROOT}/tests/test_front_workspace_validation.py"
 python3 "${ROOT}/tests/test_front_workspace_runner.py"
+
+# Exact dictionary feasibility audit; formal MPI payloads remain original.
+python3 "${ROOT}/tests/test_ghost_vertex_dictionary.py"
+python3 "${ROOT}/tests/test_ghost_codec_validation.py"

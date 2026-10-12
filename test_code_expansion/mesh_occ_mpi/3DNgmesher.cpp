@@ -9,6 +9,7 @@
 #include "scaling_profiler.h"
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
+#include "ghost_vertex_dictionary.h"
 #include <cinttypes>
 #include "research_mesh.h"
 #include <string>
@@ -2081,6 +2082,22 @@ GlobalId *com_baryVolumeElements(
 	netgen_mpi_check(
 		comm, MPI_Type_size(mpivetype, &volume_element_type_bytes),
 		"com_baryVolumeElements/MPI_Type_size");
+    if(mesh_research::options().ghost_codec_audit) {
+        scaling::StageScope stage("ghost_codec_audit","validation");
+        try {
+            mesh_research::ghost_dictionary::Audit audit;
+            audit.Run(pidmap,volume_element_type_bytes);
+            if(audit.values[mesh_research::ghost_dictionary::Audit::items]!=double(volume_send_items))
+                throw std::logic_error("ghost codec audit omitted outgoing elements");
+            const char *fields[]={"calls","peers","items","unique_vertices","raw_bytes","dictionary_bytes","selected_bytes", "profitable_peers","bypass_peers","verified_items","verified_peers","mismatches", "encode_seconds","decode_seconds","max_peer_raw_bytes","max_peer_dictionary_bytes","max_peer_selected_bytes","max_peer_encode_seconds","max_peer_decode_seconds","lifecycle_seconds","max_peer_lifecycle_seconds"};
+            static_assert(sizeof(fields)/sizeof(fields[0])==mesh_research::ghost_dictionary::Audit::count,"ghost audit metric schema");
+            for(int f=0;f<mesh_research::ghost_dictionary::Audit::count;++f)
+                scaling::Profiler::instance().set_metric(std::string("ghost_codec_")+fields[f],audit.values[f]);
+        } catch(const std::exception &error) {
+            std::fprintf(stderr,"[GHOST_CODEC_AUDIT_ERROR] rank=%d %s\n",mypid,error.what());
+            netgen_mpi_check(comm,MPI_ERR_OTHER,"ghost codec audit failed");
+        }
+    }
 	if(!mesh_research::options().ready_volume_exchange) {
 		scaling::StageScope profile_stage("volume_payload_exchange", "communication");
 		com_sr_volumelement(

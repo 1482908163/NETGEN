@@ -68,6 +68,7 @@ void print_help() {
          "--verify-faces : 与全收集核对；独立正确性检查或自然质量预热" << endl <<
          "--profile-natural : 采集自然运行时间，关闭诊断用前置屏障" << endl <<
          "--profile : 开启强扩展指标采集" << endl <<
+         "--ghost-codec-audit : 仅质量预热核对幽灵载荷字典往返，不改变通信" << endl <<
          "--validate-volume : 仅预热轮全量体网格质量与拓扑检查" << endl <<
          "--profile-core-only : 跳过普通网格结果写出和质量评价，仅测试核心算法" << endl <<
          "--profile-dir <目录> : 分析结果根目录，默认 <输出目录>/strong_scaling_results" << endl <<
@@ -192,6 +193,9 @@ int main(int argc, char **argv) {
         }
         else if(!strcmp(argv[i],"--adaptive-worklets")) {
             mesh_research::options().adaptive_worklets = true;
+        }
+        else if(!strcmp(argv[i],"--ghost-codec-audit")) {
+            mesh_research::options().ghost_codec_audit=true;
         }
         else if(!strcmp(argv[i],"--validate-volume")) {
             validate_volume = true;
@@ -458,6 +462,7 @@ int main(int argc, char **argv) {
     if ((research.algorithm!="baseline" && research.algorithm!="balance" &&
          research.algorithm!="sparse" && research.algorithm!="combined") ||
         (research.verify_faces && (!research.sparse() || (profile_enabled && !validate_volume))) ||
+        (research.ghost_codec_audit && !validate_volume) ||
         (validate_volume && (!profile_enabled || !profile_core_only || profile_split || profile_repeat!=0 || !research.communication_only || !isComputeAdj || (research.sparse() && !research.verify_faces))) ||
         (research.front_workspace>=0 && (research.front_lookup>=0 || research.front_rules>=0 || research.front_projection>=0 || research.front_components>=0 || research.front_distance!=0 || research.front_transform!=0 || research.incidence_build<1 || research.kernel_scheduler!="cost_profile" || (research.front_workspace==2 && !validate_volume))) ||
         (research.front_lookup>=0 && (research.front_rules>=0 || research.front_projection>=0 || research.front_components>=0 || research.front_distance!=0 || research.front_transform!=0 || research.incidence_build<1 || research.kernel_scheduler!="cost_profile" || (research.front_lookup==2 && !validate_volume))) ||
@@ -572,6 +577,7 @@ int main(int argc, char **argv) {
             MPI_Abort(MPI_COMM_WORLD,2);return 2;
         }
     }
+    if(research.ghost_codec_audit)profiler.add_metadata("ghost_codec_audit","vertex_dictionary_audit_v1");
     profiler.add_metadata("ghost_exchange_policy",research.ghost_exchange=="pipeline"?"id_overlap_plan_v1":research.ghost_exchange=="staged"?"staged_plan_v1":"legacy_v1");
     profiler.add_metadata("ghost_plan_verification",research.ghost_exchange!="legacy" && validate_volume?"serial_pack_exact_v1":"off");
     profiler.add_metadata("global_numbering",research.async_global_ids?"owner_local_v2":research.prefix_global_ids?"prefix_neighbor_v1":research.deferred_global_ids?(research.overlap_global_ids?"deferred_pair_v1":"fused_pair_v1"):"eager_v1");

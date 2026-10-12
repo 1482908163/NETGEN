@@ -6,9 +6,9 @@ ROOT=Path(__file__).resolve().parents[1]
 tree=ast.parse((ROOT/'tests/test_generation_cost_runner.py').read_text())
 script=next(n.args[0].value for n in ast.walk(tree) if isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute)
  and n.func.attr=='write_text' and n.args and isinstance(n.args[0],ast.Constant) and isinstance(n.args[0].value,str) and '# phase_full_cost_v3 cost_' in n.args[0].value)
-script=script.replace('#!/usr/bin/env python3','#!/usr/bin/env python3\n# --incidence-build original_incidence_profile_v1 ordered_incidence_v1 ordered_incidence_replay_v1 incidence_\n# --front-workspace temporary_workspace_v1 reused_workspace_v1 reused_workspace_replay_v1 front_workspace_',1)
+script=script.replace('#!/usr/bin/env python3','#!/usr/bin/env python3\n# --incidence-build original_incidence_profile_v1 ordered_incidence_v1 ordered_incidence_replay_v1 incidence_\n# --ghost-codec-audit vertex_dictionary_audit_v1 ghost_codec_\n# --front-workspace temporary_workspace_v1 reused_workspace_v1 reused_workspace_replay_v1 front_workspace_',1)
 script=script.replace('# --split-active-evaluation original_ranges_v1 split_active_','# --split-active-evaluation original_ranges_v1 active_queue_v1 active_exact_replay_v1 split_active_')
-script=script.replace('from test_cost_profile import fixture','from test_front_workspace_validation import fixture')
+script=script.replace('from test_cost_profile import fixture','from test_front_workspace_validation import fixture\nfrom test_ghost_codec_validation import attach')
 script=script.replace("route=value('--kernel-scheduler')", """scheduler=value('--kernel-scheduler')
 last=lambda key:int(sys.argv[len(sys.argv)-1-sys.argv[::-1].index(key)+1])
 fixed=last('--repair-fixed-point');active=last('--split-active-evaluation')
@@ -22,6 +22,13 @@ route='workspace_temporary' if rules==0 else 'workspace_reuse'
 assert rules==(2 if '--validate-volume' in sys.argv else 1) if rules>0 else True""")
 script=script.replace("route in ('batch_parallel','cost_profile')","route in ('workspace_temporary','workspace_reuse')")
 script=script.replace('rows=fixture(route,repeat,mode)',"""rows=fixture(route,repeat,mode)
+if '--ghost-codec-audit' in sys.argv:
+    assert repeat==0 and '--validate-volume' in sys.argv
+    attach(rows)
+if os.environ.get('MOCK_IGNORED_CODEC')=='1':
+    for row in rows:
+        row['metadata'].pop('ghost_codec_audit',None)
+        row['metrics']={k:v for k,v in row['metrics'].items() if not k.startswith('ghost_codec_')}
 for row in rows:
     for key in ('MESH_SOURCE_REVISION','MESH_BINARY_SHA256'):row['metadata'][key]=os.environ[key]
 if os.environ.get('MOCK_WORKSPACE_FAILURE')=='1' and (route,repeat,seed)==('workspace_reuse',1,17):rows[0]['metrics']['front_workspace_heap_requests']+=1
@@ -35,7 +42,7 @@ with tempfile.TemporaryDirectory() as tmp:
     binary=tmp/'mesh';binary.write_text(script);binary.chmod(0o755)
     source=tmp/'input.step';source.write_text('input');lib=tmp/'lib';lib.mkdir();(lib/'libnglib.so').write_text('library')
     env=dict(os.environ)
-    for k in ('EXPERIMENT_STAGE','WORKLET_ROUTES','KERNEL_REPEAT','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','REPAIR_FIXED_POINT','SPLIT_ACTIVE_EVALUATION','FRONT_DISTANCE','FRONT_TRANSFORM','FRONT_PROJECTION','FRONT_RULES','FRONT_LOOKUP','LOOKUP_PROTOCOL_REQUIRED','FRONT_WORKSPACE','WORKSPACE_PROTOCOL_REQUIRED','RULE_PROTOCOL_REQUIRED','FRONT_COMPONENTS','INCIDENCE_BUILD','REPEATS','MOCK_WORKSPACE_FAILURE','MOCK_IGNORED_WORKSPACE','MOCK_COST_FAILURE','MOCK_FAIL'):env.pop(k,None)
+    for k in ('EXPERIMENT_STAGE','WORKLET_ROUTES','KERNEL_REPEAT','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','REPAIR_FIXED_POINT','SPLIT_ACTIVE_EVALUATION','FRONT_DISTANCE','FRONT_TRANSFORM','FRONT_PROJECTION','FRONT_RULES','FRONT_LOOKUP','LOOKUP_PROTOCOL_REQUIRED','FRONT_WORKSPACE','WORKSPACE_PROTOCOL_REQUIRED','RULE_PROTOCOL_REQUIRED','FRONT_COMPONENTS','INCIDENCE_BUILD','REPEATS','MOCK_WORKSPACE_FAILURE','MOCK_IGNORED_WORKSPACE','MOCK_COST_FAILURE','MOCK_FAIL','MOCK_IGNORED_CODEC','GHOST_CODEC_AUDIT'):env.pop(k,None)
     env.update(EXPERIMENT_PRESET='front_workspace',MESH_EXPERIMENT_WORKER='1',PROCESS_COUNT='2',PROCESS_COUNTS='2',
         RANKS_PER_NODE='2',CPUS_PER_TASK='2',KERNEL_THREADS='2',WARMUPS='1',LEVELS='0',REFINES='0',LOAD_MODULES='0',CLUSTER_ENV_STRICT='0',
         NETGEN_INSTALL_LIB=str(lib),MPI_LAUNCHER=str(launcher),MPI_EXTRA_ARGS=' ',START_EPOCH='0',BINARY=str(binary),INPUT_PATH=str(source),
@@ -66,6 +73,21 @@ with tempfile.TemporaryDirectory() as tmp:
     warm,_=inspect(base/'repeat_0/rank_profiles.jsonl.gz');formal,_=inspect(base/'repeat_1/rank_profiles.jsonl.gz')
     assert warm['front_workspace_verified']==warm['front_workspace_calls']>0
     assert formal['front_workspace_verified']==formal['front_workspace_reference_seconds']==0
+    from analyze_ghost_codec import analyze as codec_screen
+    receipts=list(csv.DictReader((base/'repeat_0/ghost_codec_certificate.csv').open()))
+    assert len(receipts)==2 and warm['ghost_codec_calls']==2
+    assert 'ghost_codec_audit' not in formal and not (base/'repeat_1/ghost_codec_certificate.csv').exists()
+    assert (tmp/'results/p2/GHOST_CODEC_SUMMARY.txt').is_file()
+    codec_certificate=base/'repeat_0/ghost_codec_certificate.csv';saved=codec_certificate.read_bytes()
+    receipts[0]['ghost_codec_raw_bytes']='999';write_csv(codec_certificate,receipts)
+    try:codec_screen(tmp/'results',2)
+    except ValueError as error:assert 'certificate mismatch' in str(error)
+    else:raise AssertionError('forged codec receipt accepted')
+    codec_certificate.write_bytes(saved)
+    result,issues=run(dict(RUN_ROOT=str(tmp/'codec_missing'),MOCK_CALLS=str(tmp/'codec_missing_calls'),MOCK_IGNORED_CODEC='1'))
+    assert result.returncode==1 and len((tmp/'codec_missing_calls').read_text().splitlines())==6,(result.stdout,result.stderr,issues)
+    reason=tmp/'codec_missing/route_workspace_temporary/p2/sparse_natural/repeat_0/failure_reason.txt'
+    assert 'requested ghost codec audit was not executed' in reason.read_text()
     # A copied per-rank compute time cannot silently alter the cost screen.
     certificate=base/'repeat_1/front_workspace_certificate.csv';original=certificate.read_bytes()
     ledger=list(csv.DictReader(certificate.open()));ledger[0]['compute_seconds']='999'
@@ -95,6 +117,9 @@ with tempfile.TemporaryDirectory() as tmp:
     except ValueError as error:assert 'full quality changed' in str(error)
     else:raise AssertionError('quality drift accepted')
     qpath.write_bytes(qoriginal)
+    result,issues=run(dict(RUN_ROOT=str(tmp/'audit_off'),MOCK_CALLS=str(tmp/'audit_off_calls'),GHOST_CODEC_AUDIT='0',REPEATS='1'))
+    assert result.returncode==0,(result.stdout,result.stderr,issues)
+    assert not (tmp/'audit_off/p2/GHOST_CODEC_SUMMARY.txt').exists()
     # Equal global work cannot hide a redistribution between two ranks.
     profile=base/'repeat_1/rank_profiles.jsonl.gz'
     with gzip.open(profile,'rt') as stream:rows=[json.loads(line) for line in stream]

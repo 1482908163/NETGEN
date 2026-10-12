@@ -53,6 +53,9 @@ if [[ "$EXPERIMENT_PRESET" == front_workspace ]]; then
     export WORKLET_ROUTES="${WORKLET_ROUTES:-workspace_temporary workspace_reuse}"
     EXPERIMENT_PRESET=generation_cost
 fi
+GHOST_CODEC_AUDIT="${GHOST_CODEC_AUDIT:-${WORKSPACE_PROTOCOL_REQUIRED:-0}}"
+[[ "$GHOST_CODEC_AUDIT" =~ ^(0|1)$ ]] || { echo "GHOST_CODEC_AUDIT must be 0 or 1" >&2;exit 2; }
+export GHOST_CODEC_AUDIT
 FRONT_WORKSPACE="${FRONT_WORKSPACE:--1}"
 [[ "$FRONT_WORKSPACE" =~ ^(-1|0|1)$ ]] || { echo "FRONT_WORKSPACE must be -1, 0 or 1" >&2;exit 2; }
 if [[ "$EXPERIMENT_PRESET" == front_lookup ]]; then
@@ -285,6 +288,7 @@ default_final_validation=0
 QUALITY_WARMUP="${QUALITY_WARMUP:-${default_final_validation}}"
 COMMUNICATION_ABLATION="${COMMUNICATION_ABLATION:-${default_final_validation}}"
 export QUALITY_WARMUP COMMUNICATION_ABLATION
+if [[ "$GHOST_CODEC_AUDIT" == 1 && "$QUALITY_WARMUP" != 1 ]]; then echo "ghost codec audit requires QUALITY_WARMUP=1" >&2;exit 2;fi
 if [[ "${WORKSPACE_PROTOCOL_REQUIRED:-0}" == 1 || "$FRONT_WORKSPACE" != -1 ]]; then
     [[ "$QUALITY_WARMUP" == 1 ]] || { echo "front_workspace requires QUALITY_WARMUP=1" >&2;exit 2; }
 fi
@@ -398,12 +402,14 @@ propagate_allocation_stop() {
     rm -f "$parent/route_comparisons.csv" "$parent/rule_cost_fixed_rank_pairs.csv" \
         "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json" \
         "$parent/front_lookup_fixed_rank_pairs.csv" "$parent/front_lookup_summary.csv" "$parent/front_lookup_sources.json" \
-        "$parent/front_workspace_fixed_rank_pairs.csv" "$parent/front_workspace_summary.csv" "$parent/front_workspace_sources.json"
+        "$parent/front_workspace_fixed_rank_pairs.csv" "$parent/front_workspace_summary.csv" "$parent/front_workspace_sources.json" \
+        "$parent/ghost_codec_rank_audit.csv" "$parent/ghost_codec_summary.csv" "$parent/ghost_codec_sources.json"
     printf '实验未完成：当前作业分配停止复用，见 ALLOCATION_STOPPED.txt。\n' > "$parent/route_issues.txt"
     cp "$parent/route_issues.txt" "$parent/ROUTE_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/RULE_COST_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_LOOKUP_SUMMARY.txt"
     cp "$parent/route_issues.txt" "$parent/FRONT_WORKSPACE_SUMMARY.txt"
+    cp "$parent/route_issues.txt" "$parent/GHOST_CODEC_SUMMARY.txt"
     cat "$parent/ALLOCATION_STOPPED.txt" >&2
 }
 
@@ -655,6 +661,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != recovery ]] || markers+=("parallel_readonly_v1" "serial_readonly_v1" "recovery_")
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
+[[ "$GHOST_CODEC_AUDIT" == 0 ]] || markers+=("--ghost-codec-audit" "vertex_dictionary_audit_v1" "ghost_codec_")
 [[ "$FRONT_WORKSPACE" == -1 && "${WORKSPACE_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-workspace" "temporary_workspace_v1" "reused_workspace_v1" "reused_workspace_replay_v1" "front_workspace_")
 [[ "$FRONT_LOOKUP" == -1 && "${LOOKUP_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-lookup" "linear_face_lookup_v1" "inverse_face_lookup_v1" "inverse_face_lookup_replay_v1" "front_lookup_")
 [[ "$FRONT_RULES" == -1 && "${RULE_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--front-rules" "rule_totals_v1" "rule_stages_v1" "rule_stages_replay_v1" "front_rules_")
@@ -982,7 +989,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/algorithm_certificate.csv" "${out}/front_lookup_certificate.csv" "${out}/front_workspace_certificate.csv" "${out}/ghost_codec_certificate.csv"
             if [[ -f "${out}/failure_reason.txt" ]]; then cp "${out}/failure_reason.txt" "${out}/previous_failure_reason.txt";fi
             rm -f "${out}/failure_reason.txt" "${out}"/failure_rank_*.txt
             export MESH_FAILURE_DIR="${out}"
@@ -991,6 +998,7 @@ SIGNATURE
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
                   --profile-experiment "${a}" --profile-repeat "${rep}" -o "${out}/mesh/")
             [[ "${mode}" == natural ]] && args+=(--profile-natural)
+            codec_check=()
             component_check=()
             workspace_check=()
             [[ "$FRONT_WORKSPACE" == -1 ]] || workspace_check=(--require-workspace-mode "$FRONT_WORKSPACE")
@@ -1014,6 +1022,7 @@ SIGNATURE
                 [[ "$FRONT_PROJECTION" != 1 ]] || projection_check=(--require-projection-mode 2)
                 [[ "$FRONT_COMPONENTS" != 1 ]] || args+=(--front-components 2)
                 [[ "$FRONT_COMPONENTS" != 1 ]] || component_check=(--require-component-mode 2)
+                if [[ "$GHOST_CODEC_AUDIT" == 1 ]]; then args+=(--ghost-codec-audit);codec_check=(--require-ghost-codec-audit);fi
                 args+=(--validate-volume)
                 [[ "$a" != sparse ]] || args+=(--verify-faces)
                 [[ "$REPAIR_FIXED_POINT" == 0 ]] || args+=(--repair-fixed-point 2)
@@ -1038,7 +1047,7 @@ SIGNATURE
             fi
             if ((rc==0)); then
                 finalize_error=""
-                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
+                if ! finalize_error="$(python3 "${SCRIPT_DIR}/analyze_results.py" "${out}" --finish-run "${incidence_check[@]}" "${component_check[@]}" "${projection_check[@]}" "${rule_check[@]}" "${lookup_check[@]}" "${workspace_check[@]}" "${codec_check[@]}" "${cleanup_args[@]}" 2>&1)"; then
                     rc=1
                     printf '%s/%s seed %s repeat %s: %s\n' "${a}" "${mode}" "${seed}" "${rep}" "${finalize_error}" >> "${failure_file}"
                 fi
