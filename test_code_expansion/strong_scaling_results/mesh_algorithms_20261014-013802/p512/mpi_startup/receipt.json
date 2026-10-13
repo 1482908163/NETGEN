@@ -1,0 +1,31 @@
+{
+  "schema": "mpi_startup_check_v1",
+  "identity": {
+    "job": "6091624",
+    "ranks": 512,
+    "binary_sha256": "769d7462be7a8bbcfdf5d7a8fdb4f38d38c6b8ac268ee30ed7839f48d0c6c01a",
+    "command": [
+      "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-013802/runtime_scripts/node_affinity_yhrun.sh",
+      "--mpi=pmix",
+      "-n",
+      "512",
+      "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "--mpi-preflight"
+    ],
+    "cpus": "4",
+    "rpn": "4"
+  },
+  "success": false,
+  "exit_code": 124,
+  "elapsed_seconds": 60.01400423049927,
+  "error": "",
+  "stop": {
+    "schema": "allocation_stop_v1",
+    "reason": "mpi_startup_probe_failed",
+    "job_id": "6091624",
+    "exit_code": 124,
+    "timeout_seconds": 60,
+    "action": "stop_remaining_runs_in_this_allocation",
+    "evidence": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-013802/p512/mpi_startup/run.log"
+  }
+}
