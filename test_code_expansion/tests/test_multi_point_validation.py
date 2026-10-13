@@ -2,13 +2,14 @@
 import copy,json,tempfile
 from pathlib import Path
 from test_ghost_transport_validation import fixture as transport,profiles
-from multi_point_checks import GROUPS
-MASKS={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6}
+from multi_point_checks import GROUPS,layouts
+MASKS={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6,'multi_pack_compact':14,'multi_unpack_flat':22,'multi_layout':30}
 
 def fixture(route,repeat,mode='natural'):
     mask=MASKS[route];rows=transport('ghost_literal',repeat,mode)
     for row in rows:
         meta=row['metadata'];meta.update(multi_point_policy='exact_local_work_v1',multi_point_mask=str(mask),multi_point_verification='whole_reference_v1' if repeat==0 else 'disabled_v1')
+        if mask>7:meta.update(layouts(mask))
         m=row['metrics']
         m['local_volume_elements_before_adjacency']=20
         m['refine_initial_elements']=20
@@ -38,6 +39,17 @@ def main():
         def inspect(rows):p.write_text(''.join(json.dumps(r)+'\n' for r in rows));return profiles.inspect(p,multi_sink=[])[0]
         for route in MASKS:
             for repeat in (0,1):inspect(fixture(route,repeat))
+        for key in ('multi_point_pack_layout','multi_point_unpack_layout'):
+            bad=fixture('multi_layout',0);bad[0]['metadata'][key]='legacy'
+            try:inspect(bad)
+            except ValueError:pass
+            else:raise AssertionError('ignored layout '+key)
+        for mask in (8,9,12,16,18,24,28,32):
+            bad=fixture('multi_control',1)
+            for row in bad:row['metadata']['multi_point_mask']=str(mask)
+            try:inspect(bad)
+            except ValueError:pass
+            else:raise AssertionError('invalid dependency mask '+str(mask))
         corruptions=[('multi_front_verified',0),('multi_front_mismatches',1),('multi_pack_verified_elements',0),('multi_unpack_verified_items',0),('multi_pack_send_items',9),('multi_unpack_vertex_references',39),('multi_unpack_new_points',100),('multi_pack_seconds',100),('multi_front_calls',0)]
         for key,value in corruptions:
             bad=fixture('multi_all',0);bad[0]['metrics'][key]=value
@@ -59,5 +71,5 @@ def main():
         try:inspect(bad)
         except ValueError:pass
         else:raise AssertionError('unmarked metrics')
-    print('PASS: six masks, complete warmup references, independent work, formal isolation and requested-mode guards')
+    print('PASS: nine routes and layout execution identities, complete warmup references, independent work, formal isolation and requested-mode guards')
 if __name__=='__main__':main()

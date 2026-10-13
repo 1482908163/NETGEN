@@ -22,6 +22,7 @@ fi
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
 #   multi_point : 原控制/前沿选择/边界打包/顺序装配/组合，一次完成全部消融
+#   multi_layout : 128进程，旧控制/打包/旧组合/紧凑打包/平坦索引/新组合
 #   multi_exchange : 原控制/打包/装配/两者组合，关闭已证伪的前沿索引
 #   ghost_dictionary : 原载荷/真实顶点字典，预热接收核对及快速 MPI 检查
 #   front_workspace : 原临时向量/规则私有工作空间；完整重放及全成本对照
@@ -50,7 +51,13 @@ fi
 #   worklets   : 128/256 ranks，A/B/C 独立对照，质量预热 + 3 次正式重复
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-inplace}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-multi_layout}"
+if [[ "$EXPERIMENT_PRESET" == multi_layout ]]; then
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-multi_control multi_pack multi_exchange multi_pack_compact multi_unpack_flat multi_layout}"
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-128}"
+    export MULTI_LAYOUT_PROTOCOL_REQUIRED=1
+    EXPERIMENT_PRESET=multi_point
+fi
 if [[ "$EXPERIMENT_PRESET" == multi_exchange ]]; then
     export WORKLET_ROUTES="${WORKLET_ROUTES:-multi_control multi_pack multi_unpack multi_exchange}"
     EXPERIMENT_PRESET=multi_point
@@ -62,7 +69,10 @@ if [[ "$EXPERIMENT_PRESET" == multi_point ]]; then
     EXPERIMENT_PRESET=generation_cost
 fi
 MULTI_POINT="${MULTI_POINT:--1}"
-[[ "$MULTI_POINT" =~ ^(-1|[0-7])$ ]] || { echo "MULTI_POINT must be -1 or an integer from 0 to 7" >&2;exit 2; }
+[[ "$MULTI_POINT" =~ ^(-1|[0-9]|[12][0-9]|3[01])$ ]] || { echo "Invalid MULTI_POINT" >&2;exit 2; }
+if ((MULTI_POINT>=0)); then
+    (( !(MULTI_POINT&8) || (MULTI_POINT&2) )) && (( !(MULTI_POINT&16) || (MULTI_POINT&4) )) || { echo "MULTI_POINT layout requires its component bit" >&2;exit 2; }
+fi
 if [[ "$EXPERIMENT_PRESET" == ghost_dictionary ]]; then
     export TRANSPORT_PROTOCOL_REQUIRED=1
     export WORKLET_ROUTES="${WORKLET_ROUTES:-ghost_literal ghost_dictionary}"
@@ -432,7 +442,7 @@ propagate_allocation_stop() {
     rm -f "$parent/route_comparisons.csv" "$parent/rule_cost_fixed_rank_pairs.csv" \
         "$parent/rule_cost_stage_summary.csv" "$parent/rule_cost_sources.json" \
         "$parent/front_lookup_fixed_rank_pairs.csv" "$parent/front_lookup_summary.csv" "$parent/front_lookup_sources.json" \
-        "$parent/multi_point_pairs.csv" "$parent/multi_point_summary.csv" "$parent/multi_point_sources.json" \
+        "$parent/multi_point_pairs.csv" "$parent/multi_point_summary.csv" "$parent/multi_point_sources.json" "$parent/multi_layout_incremental.csv" \
         "$parent/front_workspace_fixed_rank_pairs.csv" "$parent/front_workspace_summary.csv" "$parent/front_workspace_sources.json" \
         "$parent/ghost_codec_rank_audit.csv" "$parent/ghost_codec_summary.csv" "$parent/ghost_codec_sources.json" \
         "$parent/ghost_transport_pairs.csv" "$parent/ghost_transport_summary.csv" "$parent/ghost_transport_sources.json"
@@ -487,7 +497,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -530,8 +540,8 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
                 incidence_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=0 ;;
-                multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;multi_mode=0
-                    case "$route" in multi_front) multi_mode=1;;multi_pack) multi_mode=2;;multi_unpack) multi_mode=4;;multi_all) multi_mode=7;;multi_exchange) multi_mode=6;;esac ;;
+                multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;multi_mode=0
+                    case "$route" in multi_front) multi_mode=1;;multi_pack) multi_mode=2;;multi_unpack) multi_mode=4;;multi_all) multi_mode=7;;multi_exchange) multi_mode=6;;multi_pack_compact) multi_mode=14;;multi_unpack_flat) multi_mode=22;;multi_layout) multi_mode=30;;esac ;;
                 ghost_literal|ghost_dictionary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;[[ "$route" != ghost_dictionary ]] || transport_mode=1 ;;
                 workspace_temporary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0 ;;
                 workspace_reuse) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=1 ;;
@@ -700,6 +710,7 @@ fi
 [[ "$EXPERIMENT_PRESET" != tail_profile ]] || markers+=("phase_operations_v1")
 [[ "$EXPERIMENT_PRESET" != generation_cost ]] || markers+=("phase_full_cost_v3" "phase_operations_v1" "cost_")
 [[ "$MULTI_POINT" == -1 && "${MULTI_POINT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--multi-point" "--multi-point-verify" "exact_local_work_v1" "multi_front_" "multi_pack_" "multi_unpack_")
+((MULTI_POINT<8)) && [[ "${MULTI_LAYOUT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("csr_exact_pack_v1" "flat_gid_index_v1")
 [[ "$GHOST_DICTIONARY" == -1 && "${TRANSPORT_PROTOCOL_REQUIRED:-0}" == 0 ]] || markers+=("--ghost-dictionary" "literal_transport_v1" "vertex_dictionary_transport_v1" "vertex_dictionary_reference_v1" "ghost_transport_")
 [[ "$MPI_STARTUP_CHECK" == 0 ]] || markers+=("--mpi-preflight" "[MPI_PREFLIGHT_OK]")
 [[ "$GHOST_CODEC_AUDIT" == 0 ]] || markers+=("--ghost-codec-audit" "vertex_dictionary_audit_v1" "ghost_codec_")

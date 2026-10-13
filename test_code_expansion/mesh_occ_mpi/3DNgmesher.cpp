@@ -1875,7 +1875,11 @@ GlobalId *com_baryVolumeElements(
       const auto begin=multi?Clock::now():Clock::time_point{};
       scaling::StageScope profile_stage("volume_exchange_pack","compute");
       std::map<int,VEVector> candidate;
-      if(pack_fast)candidate=mesh_research::PackBoundary<xdVElement>(GhostMeshAccess{mesh},adjbarycs,oldgid,VEgid,mypid,numprocs,multi_pack);
+      if(pack_fast) {
+        if(mesh_research::options().multi_point&8)
+          candidate=mesh_research::PackBoundaryCompact<xdVElement>(GhostMeshAccess{mesh},adjbarycs,oldgid,VEgid,mypid,numprocs,multi_pack);
+        else candidate=mesh_research::PackBoundary<xdVElement>(GhostMeshAccess{mesh},adjbarycs,oldgid,VEgid,mypid,numprocs,multi_pack);
+      }
       if(!pack_fast || multi_check) {
         const auto stamp=multi_check && pack_fast?Clock::now():Clock::time_point{};
 		for (int i = 0; i < num_keys; ++i)
@@ -2166,7 +2170,9 @@ GlobalId *com_baryVolumeElements(
         const int original_np=nglib::Ng_GetNP(mesh);
         if(unpack_fast) {
           using Plan=mesh_research::GhostAssemblyPlan<GlobalId>;
-          auto plan=Plan::Build<std::unordered_map<GlobalId,int>>(original_np,oldgid,r_data_ves,r_length);
+          auto plan=(mesh_research::options().multi_point&16)
+            ? Plan::Build<mesh_research::GhostFlatIndex<GlobalId>>(original_np,oldgid,r_data_ves,r_length)
+            : Plan::Build<std::unordered_map<GlobalId,int>>(original_np,oldgid,r_data_ves,r_length);
           if(multi_check){const auto stamp=mesh_research::ghost_transport::Clock::now();
             auto reference=Plan::Build<std::map<GlobalId,int>>(original_np,oldgid,r_data_ves,r_length);plan.Same(reference);
             multi_unpack[5]=volume_receive_items;multi_unpack[6]=mesh_research::ghost_transport::Elapsed(stamp);}

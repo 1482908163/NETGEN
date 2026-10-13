@@ -1262,6 +1262,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, cost
             item={k:result[k] for k in ('source_revision','binary_sha256','algorithm','timing','ranks','partition_seed','repeat','core_seconds','multi_point_policy','multi_point_mask','multi_point_verification')}
             item.update(rank=row['rank'],local_core_seconds=row['metrics']['core_seconds'],local_volume_mesh_seconds=seconds(row,'local_volume_mesh'),
                         volume_exchange_full_seconds=row['metrics']['ghost_transport_full_seconds'])
+            item.update({k:result[k] for k in ('multi_point_pack_layout','multi_point_unpack_layout') if k in result})
             item.update({k:row['metrics'][k] for k in FIELDS});multi_sink.append(item)
     if transport_sink is not None and metadata.get("ghost_transport") is not None:
         from ghost_transport_checks import FIELDS,PREFIX
@@ -1594,7 +1595,7 @@ def main():
     parser.add_argument("root", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true", help="skip mesh cleanup and lossless compression")
     parser.add_argument("--finish-run", action="store_true", help="runner: validate one completed run, then retain its measurements")
-    parser.add_argument("--require-multi-point",type=int,choices=range(8),help="require exact local-work mask before SUCCESS")
+    parser.add_argument("--require-multi-point",type=int,choices=tuple(m for m in range(32) if (not m&8 or m&2) and (not m&16 or m&4)),help="require exact local-work mask before SUCCESS")
     parser.add_argument("--require-ghost-transport-mode",type=int,choices=(0,1,2))
     parser.add_argument("--require-ghost-codec-audit",action="store_true",help="require warmup dictionary roundtrip before SUCCESS")
     parser.add_argument("--require-workspace-mode",type=int,choices=(0,1,2),help="require exact reusable transform workspace before SUCCESS")

@@ -10,11 +10,11 @@ for node in tree.body:
     nodes.append(node)
 scope=dict(__file__=str(ROOT/'tests/test_ghost_transport_runner.py'));exec(compile(ast.Module(body=nodes,type_ignores=[]),'<transport generator>','exec'),scope,scope)
 script=scope['script']
-script=script.replace('# --mpi-preflight [MPI_PREFLIGHT_OK]','# --mpi-preflight [MPI_PREFLIGHT_OK]\n# --multi-point --multi-point-verify exact_local_work_v1 multi_front_ multi_pack_ multi_unpack_')
+script=script.replace('# --mpi-preflight [MPI_PREFLIGHT_OK]','# --mpi-preflight [MPI_PREFLIGHT_OK]\n# --multi-point --multi-point-verify exact_local_work_v1 multi_front_ multi_pack_ multi_unpack_ csr_exact_pack_v1 flat_gid_index_v1')
 script=script.replace('from test_ghost_transport_validation import fixture','from test_multi_point_validation import fixture')
 script=script.replace("route='ghost_literal' if transport==0 else 'ghost_dictionary'", """assert transport==0
-mask=last('--multi-point');assert mask in (0,1,2,4,6,7)
-route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',6:'multi_exchange',7:'multi_all'}[mask]
+mask=last('--multi-point');assert mask in (0,1,2,4,6,7,14,22,30)
+route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',6:'multi_exchange',7:'multi_all',14:'multi_pack_compact',22:'multi_unpack_flat',30:'multi_layout'}[mask]
 if '--validate-volume' in sys.argv:assert last('--multi-point-verify')==1
 else:assert '--multi-point-verify' not in sys.argv""")
 script=script.replace("route in ('ghost_literal','ghost_dictionary')","route.startswith('multi_')")
@@ -32,7 +32,7 @@ def main():
         binary=tmp/'mesh';binary.write_text(script);binary.chmod(0o755)
         source=tmp/'input.step';source.write_text('input');lib=tmp/'lib';lib.mkdir();(lib/'libnglib.so').write_text('library')
         env=dict(os.environ)
-        for k in ('EXPERIMENT_STAGE','KERNEL_REPEAT','WORKLET_ROUTES','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','GHOST_DICTIONARY','TRANSPORT_PROTOCOL_REQUIRED','MPI_STARTUP_CHECK','MPI_STARTUP_PROBE_DIR','GHOST_CODEC_AUDIT','MULTI_POINT','MULTI_POINT_PROTOCOL_REQUIRED','WORKSPACE_PROTOCOL_REQUIRED','LOOKUP_PROTOCOL_REQUIRED','RULE_PROTOCOL_REQUIRED','MOCK_IGNORE_MULTI','MOCK_BAD_MULTI','MOCK_STARTUP_FAIL'):env.pop(k,None)
+        for k in ('EXPERIMENT_STAGE','KERNEL_REPEAT','WORKLET_ROUTES','PARTITION_SEEDS','ALGORITHMS','TIMING_MODES','STRONG_SCALING_DIR','GHOST_DICTIONARY','TRANSPORT_PROTOCOL_REQUIRED','MPI_STARTUP_CHECK','MPI_STARTUP_PROBE_DIR','GHOST_CODEC_AUDIT','MULTI_POINT','MULTI_POINT_PROTOCOL_REQUIRED','WORKSPACE_PROTOCOL_REQUIRED','LOOKUP_PROTOCOL_REQUIRED','RULE_PROTOCOL_REQUIRED','MOCK_IGNORE_MULTI','MOCK_BAD_MULTI','MOCK_STARTUP_FAIL','MULTI_LAYOUT_PROTOCOL_REQUIRED'):env.pop(k,None)
         env.update(EXPERIMENT_PRESET='multi_point',MESH_EXPERIMENT_WORKER='1',PROCESS_COUNT='2',PROCESS_COUNTS='2',RANKS_PER_NODE='2',CPUS_PER_TASK='2',KERNEL_THREADS='2',WARMUPS='1',LEVELS='0',REFINES='0',LOAD_MODULES='0',CLUSTER_ENV_STRICT='0',NETGEN_INSTALL_LIB=str(lib),MPI_LAUNCHER=str(launcher),MPI_EXTRA_ARGS=' ',START_EPOCH='0',BINARY=str(binary),INPUT_PATH=str(source),MOCK_FIXTURES=str(ROOT/'tests'),RESUME='0',TIMEOUT_SECONDS='10',MPI_STARTUP_TIMEOUT='2')
         def run(name,**extra):
             root=tmp/name;calls=tmp/(name+'_calls');probes=tmp/(name+'_probes')
@@ -53,7 +53,7 @@ def main():
         else:raise AssertionError('forged local core accepted')
         path.write_bytes(saved)
         r,root,calls,probes,errors=run('ignored',MOCK_IGNORE_MULTI='1');assert r.returncode==1,(r.stdout,r.stderr,errors)
-        assert len(calls.read_text().splitlines())==51
+        assert len(calls.read_text().splitlines())==51,(len(calls.read_text().splitlines()),r.stdout[-4000:],r.stderr[-4000:],errors)
         assert any('requested multi point mask was not executed' in s for s in errors)
         assert not (root/'p2/multi_point_pairs.csv').exists()
         r,root,calls,probes,errors=run('exchange',EXPERIMENT_PRESET='multi_exchange');assert r.returncode==0,(r.stdout,r.stderr,errors)
@@ -62,10 +62,21 @@ def main():
         assert len(exchange_pairs)==27 and {p['route'] for p in exchange_pairs}=={'multi_pack','multi_unpack','multi_exchange'}
         assert all(int(p['mask']) in (2,4,6) for p in exchange_pairs)
         assert not (root/'route_multi_front').exists() and not (root/'route_multi_all').exists()
+        r,root,calls,probes,errors=run('layout',EXPERIMENT_PRESET='multi_layout');assert r.returncode==0,(r.stdout,r.stderr,errors)
+        assert len(calls.read_text().splitlines())==72 and probes.read_text()=='probe\n'
+        layout_pairs=list(csv.DictReader((root/'p2/multi_point_pairs.csv').open()))
+        assert len(layout_pairs)==45 and {int(p['mask']) for p in layout_pairs}=={2,6,14,22,30}
+        incremental=list(csv.DictReader((root/'p2/multi_layout_incremental.csv').open()))
+        assert len(incremental)==54 and all(float(p['core_reduction_percent'])==0 for p in incremental)
+        # Previous binary markers must be rejected before launching any mesh.
+        binary.write_text(script.replace('csr_exact_pack_v1 flat_gid_index_v1',''))
+        r,root,calls,probes,errors=run('stale_layout_binary',EXPERIMENT_PRESET='multi_layout')
+        assert r.returncode!=0 and not calls.exists(),(r.stdout,r.stderr,errors)
+        binary.write_text(script)
         r,root,calls,probes,errors=run('bad_formal',MOCK_BAD_MULTI='1');assert r.returncode==1,(r.stdout,r.stderr,errors)
         assert len(calls.read_text().splitlines())==60 and (root/'route_multi_all/p2/sparse_seed41_natural/repeat_3/SUCCESS').is_file()
         assert not (root/'p2/multi_point_pairs.csv').exists()
         r,root,calls,probes,errors=run('startup_failure',MOCK_STARTUP_FAIL='1');assert r.returncode==75,(r.stdout,r.stderr,errors)
         assert not calls.exists() and (root/'p2/ALLOCATION_STOPPED.json').is_file()
-    print('PASS: five-route 60 starts/36 pairs; exchange 48 starts/27 pairs without front index; ignored-mode gate, forged receipts and failure continuation')
+    print('PASS: five-route 60 starts/36 pairs; exchange 48 starts/27 pairs; layout 72 starts/45 pairs and 54 incremental contrasts; stale binary rejected; ignored-mode gate, forged receipts and failure continuation')
 if __name__=='__main__':main()

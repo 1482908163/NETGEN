@@ -96,7 +96,7 @@ def analyze(root,ranks,selected=ROUTES):
         for name in ('rule_cost_fixed_rank_pairs.csv','rule_cost_stage_summary.csv','rule_cost_sources.json','RULE_COST_SUMMARY.txt'):
             (root/f'p{ranks}'/name).unlink(missing_ok=True)
     multi_report_requested=any(r in MULTI_ROUTES for r in selected)
-    for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json','MULTI_POINT_SUMMARY.txt'):(root/f'p{ranks}'/name).unlink(missing_ok=True)
+    for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json','multi_layout_incremental.csv','MULTI_POINT_SUMMARY.txt'):(root/f'p{ranks}'/name).unlink(missing_ok=True)
     indexed={};qualities={};errors=[];flat=[];plans={}
     for route in selected:
         folder=root/('route_'+route)/f'p{ranks}'
@@ -511,7 +511,7 @@ def analyze(root,ranks,selected=ROUTES):
     if rule_report_requested and errors:
         (out/'RULE_COST_SUMMARY.txt').write_text('完整规则成本证据未通过检查，未发布本轮成本筛选表。请查看 route_issues.txt。\n')
     if multi_report_requested and errors:
-        for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json'):(out/name).unlink(missing_ok=True)
+        for name in ('multi_point_pairs.csv','multi_point_summary.csv','multi_point_sources.json','multi_layout_incremental.csv'):(out/name).unlink(missing_ok=True)
         (out/'MULTI_POINT_SUMMARY.txt').write_text('多点优化证据未通过完整配对，未发布性能表。见 route_issues.txt。\n')
     lines=[f'A1/B1/C1: {len(flat)} measured runs; {len(errors)} issues.',
            'a_window/b_window keep original domains and borrow node-local CPUs; a_static/a_dynamic/b_remaining/b_critical are historical task routes.',

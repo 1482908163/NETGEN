@@ -10,6 +10,10 @@ FIELDS=tuple('multi_'+group+'_'+f for group,names in GROUPS.items() for f in nam
 WORK=('multi_front_calls','multi_pack_input_elements','multi_pack_selected_elements','multi_pack_send_items',
       'multi_unpack_old_points','multi_unpack_receive_items','multi_unpack_new_points','multi_unpack_vertex_references')
 SCHEMA='exact_local_work_v1'
+VALID_MASKS=tuple(m for m in range(32) if (not m&8 or m&2) and (not m&16 or m&4))
+def layouts(mask):
+    return dict(multi_point_pack_layout='csr_exact_pack_v1' if mask&8 else 'dense_peer_vectors_v1' if mask&2 else 'legacy_pack_v1',
+                multi_point_unpack_layout='flat_gid_index_v1' if mask&16 else 'node_hash_index_v1' if mask&4 else 'legacy_unpack_v1')
 
 def validate(rows,metadata,result):
     if metadata.get('multi_point_policy') is None:
@@ -19,11 +23,14 @@ def validate(rows,metadata,result):
     try:mask=int(metadata['multi_point_mask'])
     except (KeyError,ValueError,TypeError) as e:raise ValueError('invalid multi point mask') from e
     warm=rows[0]['repeat']==0
-    if (metadata['multi_point_policy']!=SCHEMA or mask not in range(8) or metadata.get('multi_point_verification')!=('whole_reference_v1' if warm else 'disabled_v1') or
+    if (metadata['multi_point_policy']!=SCHEMA or mask not in VALID_MASKS or metadata.get('multi_point_verification')!=('whole_reference_v1' if warm else 'disabled_v1') or
         metadata.get('ghost_transport')!='literal_transport_v1' or metadata.get('volume_front_workspace')!='temporary_workspace_v1' or
         metadata.get('kernel_scheduler')!='cost_profile' or metadata.get('global_numbering')!='owner_local_v2' or
         metadata.get('volume_incidence_build')!=('ordered_incidence_replay_v1' if warm else 'ordered_incidence_v1') or
         metadata.get('timing_mode')!='natural' or (warm and metadata.get('mesh_quality')!='volume_audit_v1')):raise ValueError('invalid multi point base/verification')
+    expected_layouts=layouts(mask)
+    for k,v in expected_layouts.items():
+        if (mask>7 or k in metadata) and metadata.get(k)!=v:raise ValueError('multi point layout not executed: '+k)
     signature=[]
     for row in rows:
         m=row['metrics'];v={k:m.get(k) for k in FIELDS}
@@ -47,6 +54,7 @@ def validate(rows,metadata,result):
         signature.append([row['rank']]+[v[k] for k in WORK])
         for k,x in v.items():result[k]=result.get(k,0)+x
     result.update(multi_point_policy=SCHEMA,multi_point_mask=mask,multi_point_verification=metadata['multi_point_verification'])
+    result.update({k:v for k,v in expected_layouts.items() if k in metadata})
     result['multi_point_work_signature']=json.dumps(signature,separators=(',',':'))
     if warm:
         for bit,key in ((1,'multi_front_verified'),(2,'multi_pack_verified_elements'),(4,'multi_unpack_verified_items')):
@@ -73,6 +81,6 @@ def require_warmup(directory,mask,ranks,source,binary):
 
 if __name__=='__main__':
     import argparse
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('directory',type=Path);p.add_argument('--mask',type=int,choices=range(8),required=True);p.add_argument('--ranks',type=int,required=True);p.add_argument('--source',required=True);p.add_argument('--binary',required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('directory',type=Path);p.add_argument('--mask',type=int,choices=VALID_MASKS,required=True);p.add_argument('--ranks',type=int,required=True);p.add_argument('--source',required=True);p.add_argument('--binary',required=True);a=p.parse_args()
     try:require_warmup(a.directory,a.mask,a.ranks,a.source,a.binary)
     except (OSError,ValueError,KeyError,TypeError) as e:p.exit(1,str(e)+'\n')

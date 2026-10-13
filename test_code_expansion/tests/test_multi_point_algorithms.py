@@ -86,6 +86,9 @@ int main(){
       for(int k=0;k<4;++k){packet.Pindex[k]=ids[pi[k]];mesh.point(pi[k],packet.Vertexs[k].xyz);}original[entry.first].push_back(packet);}}
   double values[8]={};auto fast=mesh_research::PackBoundary<Packet>(mesh,adj,ids.data(),gids.data(),0,4,values);
   mesh_research::SamePackets(original,fast);assert(values[1]==80 && values[2]<=80);records+=values[4];
+  double compact_values[8]={};auto compact=mesh_research::PackBoundaryCompact<Packet>(mesh,adj,ids.data(),gids.data(),0,4,compact_values);
+  mesh_research::SamePackets(original,compact);
+  for(int k=1;k<=4;++k)assert(compact_values[k]==values[k]);
   std::vector<Packet*> buffers;std::vector<int> sizes;for(auto &entry:fast){buffers.push_back(entry.second.data());sizes.push_back(entry.second.size());}
   using Plan=mesh_research::GhostAssemblyPlan<std::int64_t>;
   auto plan=Plan::Build<std::unordered_map<std::int64_t,int>>(15,ids.data(),buffers,sizes);
@@ -96,9 +99,36 @@ int main(){
     for(int k=0;k<4;++k){auto it=index.find(packet.Pindex[k]);if(it==index.end()){++np;index[packet.Pindex[k]]=np;Plan::Point p;p.gid=packet.Pindex[k];std::memcpy(p.xyz.data(),packet.Vertexs[k].xyz,3*sizeof(double));points.push_back(p);pi[k]=np;}else pi[k]=it->second;}tets.push_back(pi);}
   Plan expected;expected.elements=tets;expected.points=points;plan.Same(expected);
   auto reference=Plan::Build<std::map<std::int64_t,int>>(15,ids.data(),buffers,sizes);plan.Same(reference);
+  auto flat=Plan::Build<mesh_research::GhostFlatIndex<std::int64_t>>(15,ids.data(),buffers,sizes);flat.Same(reference);
   if(!plan.elements.empty()){auto corrupt=plan;corrupt.elements[0][0]++;bool rejected=false;try{plan.Same(corrupt);}catch(const std::logic_error&){rejected=true;}assert(rejected);}
   if(!fast.empty()){auto corrupt=fast;auto &p=corrupt.begin()->second[0];p.domidx++;bool rejected=false;try{mesh_research::SamePackets(fast,corrupt);}catch(const std::logic_error&){rejected=true;}assert(rejected);}
  }
+ // Force multiple growths, sparse high IDs and duplicates, and verify every
+ // mapping against an independent tree. Zero/negative/extreme IDs are legal.
+ {mesh_research::GhostFlatIndex<std::int64_t> index;std::map<std::int64_t,int> expected;
+  assert(index.Find(0)==0);
+  const std::int64_t extremes[]={0,-1,INT64_MIN,INT64_MAX};
+  for(int i=0;i<4;++i){index.Set(extremes[i],i+1);expected[extremes[i]]=i+1;}
+  for(int i=0;i<100000;++i){auto id=static_cast<std::int64_t>(rng());index.Set(id,i+5);expected[id]=i+5;}
+  for(auto e:expected)assert(index.Find(e.first)==e.second);
+  for(auto e:expected){index.Set(e.first,e.second+7);assert(index.Find(e.first)==e.second+7);}
+  index.reserve(300000);for(auto e:expected)assert(index.Find(e.first)==e.second+7);
+  bool rejected=false;try{index.Set(9,0);}catch(const std::logic_error&){rejected=true;}assert(rejected);}
+ {using Plan=mesh_research::GhostAssemblyPlan<std::int64_t>;
+  std::int64_t oldids[]={0,INT64_MIN,INT64_MAX,0,INT64_MIN,-1};
+  std::vector<Packet> packets(8000);for(auto &packet:packets)for(int k=0;k<4;++k){packet.Pindex[k]=static_cast<std::int64_t>(rng());for(double &x:packet.Vertexs[k].xyz){auto bits=rng();std::memcpy(&x,&bits,sizeof(x));}}
+  for(int i=0;i<6;++i)packets[i].Pindex[0]=oldids[i];
+  std::vector<Packet*> buffers={packets.data(),packets.data()};std::vector<int> counts={8000,8000};
+  auto flat=Plan::Build<mesh_research::GhostFlatIndex<std::int64_t>>(5,oldids,buffers,counts);
+  auto reference=Plan::Build<std::map<std::int64_t,int>>(5,oldids,buffers,counts);flat.Same(reference);
+  assert(flat.elements[1][0]==4 && flat.elements[2][0]==2 && flat.elements[0][0]==3);}
+ {using Plan=mesh_research::GhostAssemblyPlan<std::int64_t>;
+  std::vector<Packet*> buffers;std::vector<int> counts;
+  auto empty=Plan::Build<mesh_research::GhostFlatIndex<std::int64_t>>(0,nullptr,buffers,counts);assert(empty.points.empty()&&empty.elements.empty());
+  Mesh mesh;mesh.points.resize(1);std::map<int,std::vector<int>> adj;std::int64_t ids[1]={0};double v[8]={};
+  auto packets=mesh_research::PackBoundaryCompact<Packet>(mesh,adj,ids,ids,0,1,v);assert(packets.empty());
+  mesh.points.resize(2);mesh.tets.push_back({1,1,1,1});adj[1]={1};bool rejected=false;
+  try{mesh_research::PackBoundaryCompact<Packet>(mesh,adj,ids,ids,0,1,v);}catch(const std::logic_error&){rejected=true;}assert(rejected);}
  std::cout<<"PASS: "<<selections<<" production selector replays and "<<records<<" exact packets; duplicate adjacency/IDs, bit-pattern coordinates, first/last ties, mutation and compaction\n";
 }
 '''

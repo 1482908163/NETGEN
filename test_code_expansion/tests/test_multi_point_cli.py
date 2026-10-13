@@ -16,10 +16,10 @@ with tempfile.TemporaryDirectory() as tmp:
     def run(args,out):
         r=subprocess.run([str(binary),*args],capture_output=True,text=True);assert r.returncode==0 and r.stdout==out,(args,r.returncode,r.stderr,r.stdout)
     run([],'-1 0')
-    for mask in range(8):run(['--multi-point',str(mask)],f'{mask} 0')
+    for mask in (m for m in range(32) if (not m&8 or m&2) and (not m&16 or m&4)):run(['--multi-point',str(mask)],f'{mask} 0')
     run(['--multi-point','1','--multi-point','7','--multi-point-verify','1'],'7 1')
     run(['--multi-point','7','--multi-point-verify','1','--multi-point-verify','0'],'7 0')
-    for flag,values in (('--multi-point',('-1','8','1x','nan')),('--multi-point-verify',('-1','2','1x','nan'))):
+    for flag,values in (('--multi-point',('-1','8','9','12','16','18','24','28','32','1x','nan')),('--multi-point-verify',('-1','2','1x','nan'))):
         for args in ([flag],*([flag,x] for x in values)):
             assert subprocess.run([str(binary),*args],capture_output=True).returncode==2,args
-print('PASS: actual CLI, all eight masks, explicit warmup/reference overrides and malformed values')
+print('PASS: actual CLI, legacy and dependent layout masks, explicit warmup/reference overrides and malformed values')

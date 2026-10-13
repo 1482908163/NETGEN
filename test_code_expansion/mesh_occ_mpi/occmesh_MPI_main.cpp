@@ -70,6 +70,7 @@ void print_help() {
          "--profile-natural : 采集自然运行时间，关闭诊断用前置屏障" << endl <<
          "--profile : 开启强扩展指标采集" << endl <<
          "--ghost-dictionary <0|1|2> : 原载荷/顶点字典/预热接收核对" << endl <<
+         "--multi-point <mask> : bits 1/2/4; 8=csr_exact_pack_v1 (requires 2), 16=flat_gid_index_v1 (requires 4)" << endl <<
          "--mpi-preflight : 仅检查 MPI 初始化、集合通信和结束" << endl <<
          "--ghost-codec-audit : 仅质量预热核对幽灵载荷字典往返，不改变通信" << endl <<
          "--validate-volume : 仅预热轮全量体网格质量与拓扑检查" << endl <<
@@ -258,7 +259,7 @@ int main(int argc, char **argv) {
                 }
                 else if(option=="--multi-point") {
                     research.multi_point=std::stoi(value,&consumed);
-                    if(consumed!=value.size() || research.multi_point<0 || research.multi_point>7)throw std::runtime_error("invalid multi point mask");
+                    if(consumed!=value.size() || research.multi_point<0 || research.multi_point>31 || ((research.multi_point&8) && !(research.multi_point&2)) || ((research.multi_point&16) && !(research.multi_point&4)))throw std::runtime_error("invalid multi point mask");
                 }
                 else if(option=="--multi-point-verify") {
                     int check=std::stoi(value,&consumed);
@@ -599,7 +600,9 @@ int main(int argc, char **argv) {
             MPI_Abort(MPI_COMM_WORLD,2);return 2;
         }
     }
-    if(research.multi_point>=0){profiler.add_metadata("multi_point_policy","exact_local_work_v1");profiler.add_metadata("multi_point_mask",std::to_string(research.multi_point));profiler.add_metadata("multi_point_verification",research.multi_point_verify?"whole_reference_v1":"disabled_v1");}
+    if(research.multi_point>=0){profiler.add_metadata("multi_point_policy","exact_local_work_v1");profiler.add_metadata("multi_point_mask",std::to_string(research.multi_point));
+      profiler.add_metadata("multi_point_pack_layout",(research.multi_point&8)?"csr_exact_pack_v1":(research.multi_point&2)?"dense_peer_vectors_v1":"legacy_pack_v1");
+      profiler.add_metadata("multi_point_unpack_layout",(research.multi_point&16)?"flat_gid_index_v1":(research.multi_point&4)?"node_hash_index_v1":"legacy_unpack_v1");profiler.add_metadata("multi_point_verification",research.multi_point_verify?"whole_reference_v1":"disabled_v1");}
     if(research.ghost_dictionary>=0)profiler.add_metadata("ghost_transport",research.ghost_dictionary==2?"vertex_dictionary_reference_v1":research.ghost_dictionary==1?"vertex_dictionary_transport_v1":"literal_transport_v1");
     if(research.ghost_codec_audit)profiler.add_metadata("ghost_codec_audit","vertex_dictionary_audit_v1");
     profiler.add_metadata("ghost_exchange_policy",research.ghost_exchange=="pipeline"?"id_overlap_plan_v1":research.ghost_exchange=="staged"?"staged_plan_v1":"legacy_v1");
