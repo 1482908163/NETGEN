@@ -13,8 +13,8 @@ script=scope['script']
 script=script.replace('# --mpi-preflight [MPI_PREFLIGHT_OK]','# --mpi-preflight [MPI_PREFLIGHT_OK]\n# --multi-point --multi-point-verify exact_local_work_v1 multi_front_ multi_pack_ multi_unpack_')
 script=script.replace('from test_ghost_transport_validation import fixture','from test_multi_point_validation import fixture')
 script=script.replace("route='ghost_literal' if transport==0 else 'ghost_dictionary'", """assert transport==0
-mask=last('--multi-point');assert mask in (0,1,2,4,7)
-route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',7:'multi_all'}[mask]
+mask=last('--multi-point');assert mask in (0,1,2,4,6,7)
+route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',6:'multi_exchange',7:'multi_all'}[mask]
 if '--validate-volume' in sys.argv:assert last('--multi-point-verify')==1
 else:assert '--multi-point-verify' not in sys.argv""")
 script=script.replace("route in ('ghost_literal','ghost_dictionary')","route.startswith('multi_')")
@@ -45,10 +45,10 @@ def main():
         assert {p['route'] for p in pairs}=={'multi_front','multi_pack','multi_unpack','multi_all'}
         assert all(int(p['control_core_slowest_rank'])==1 for p in pairs)
         sys.path.insert(0,str(ROOT/'strong_scaling'))
-        from analyze_multi_point import analyze,ROUTES
+        from analyze_multi_point import analyze
         from analyze_results import write_csv
         path=root/'route_multi_all/p2/sparse_natural/repeat_1/multi_point_certificate.csv';saved=path.read_bytes();rows=list(csv.DictReader(path.open()));rows[0]['local_core_seconds']='999';write_csv(path,rows)
-        try:analyze(root,2,ROUTES)
+        try:analyze(root,2,['multi_control','multi_front','multi_pack','multi_unpack','multi_all'])
         except ValueError as e:assert 'certificate timing/work mismatch' in str(e)
         else:raise AssertionError('forged local core accepted')
         path.write_bytes(saved)
@@ -56,10 +56,16 @@ def main():
         assert len(calls.read_text().splitlines())==51
         assert any('requested multi point mask was not executed' in s for s in errors)
         assert not (root/'p2/multi_point_pairs.csv').exists()
+        r,root,calls,probes,errors=run('exchange',EXPERIMENT_PRESET='multi_exchange');assert r.returncode==0,(r.stdout,r.stderr,errors)
+        assert len(calls.read_text().splitlines())==48 and probes.read_text()=='probe\n'
+        exchange_pairs=list(csv.DictReader((root/'p2/multi_point_pairs.csv').open()))
+        assert len(exchange_pairs)==27 and {p['route'] for p in exchange_pairs}=={'multi_pack','multi_unpack','multi_exchange'}
+        assert all(int(p['mask']) in (2,4,6) for p in exchange_pairs)
+        assert not (root/'route_multi_front').exists() and not (root/'route_multi_all').exists()
         r,root,calls,probes,errors=run('bad_formal',MOCK_BAD_MULTI='1');assert r.returncode==1,(r.stdout,r.stderr,errors)
         assert len(calls.read_text().splitlines())==60 and (root/'route_multi_all/p2/sparse_seed41_natural/repeat_3/SUCCESS').is_file()
         assert not (root/'p2/multi_point_pairs.csv').exists()
         r,root,calls,probes,errors=run('startup_failure',MOCK_STARTUP_FAIL='1');assert r.returncode==75,(r.stdout,r.stderr,errors)
         assert not calls.exists() and (root/'p2/ALLOCATION_STOPPED.json').is_file()
-    print('PASS: 60 starts, five routes, one startup probe, 36 exact pairs, ignored-mode gate, forged receipts and failure continuation')
+    print('PASS: five-route 60 starts/36 pairs; exchange 48 starts/27 pairs without front index; ignored-mode gate, forged receipts and failure continuation')
 if __name__=='__main__':main()

@@ -3,7 +3,7 @@ import csv,hashlib,json,statistics as st
 from pathlib import Path
 from analyze_results import inspect,profile_path,write_csv
 from multi_point_checks import FIELDS
-ROUTES={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7}
+ROUTES={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6}
 
 def analyze(root,ranks,selected):
     root=Path(root);out=root/f'p{ranks}';selected=[r for r in selected if r in ROUTES]

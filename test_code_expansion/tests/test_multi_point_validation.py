@@ -3,7 +3,7 @@ import copy,json,tempfile
 from pathlib import Path
 from test_ghost_transport_validation import fixture as transport,profiles
 from multi_point_checks import GROUPS
-MASKS={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7}
+MASKS={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6}
 
 def fixture(route,repeat,mode='natural'):
     mask=MASKS[route];rows=transport('ghost_literal',repeat,mode)
@@ -59,5 +59,5 @@ def main():
         try:inspect(bad)
         except ValueError:pass
         else:raise AssertionError('unmarked metrics')
-    print('PASS: five masks, complete warmup references, independent work, formal isolation and requested-mode guards')
+    print('PASS: six masks, complete warmup references, independent work, formal isolation and requested-mode guards')
 if __name__=='__main__':main()
