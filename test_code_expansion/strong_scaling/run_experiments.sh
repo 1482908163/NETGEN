@@ -22,6 +22,7 @@ fi
 #   inplace    : 128/256 ranks，保留原生成域，借核窗口/净收益优先/计数融合消融
 #   generation_cost : 原基线与全成本诊断，三规模三分区自然计时、三次正式重复
 #   multi_point : 原控制/前沿选择/边界打包/顺序装配/组合，一次完成全部消融
+#   multi_layout_followup : 128/256进程，旧打包/新打包单项/两种装配组合复验
 #   multi_layout : 128进程，旧控制/打包/旧组合/紧凑打包/平坦索引/新组合
 #   multi_exchange : 原控制/打包/装配/两者组合，关闭已证伪的前沿索引
 #   ghost_dictionary : 原载荷/真实顶点字典，预热接收核对及快速 MPI 检查
@@ -51,7 +52,13 @@ fi
 #   worklets   : 128/256 ranks，A/B/C 独立对照，质量预热 + 3 次正式重复
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-multi_layout}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-multi_layout_followup}"
+if [[ "$EXPERIMENT_PRESET" == multi_layout_followup ]]; then
+    export WORKLET_ROUTES="${WORKLET_ROUTES:-multi_control multi_pack multi_compact_only multi_pack_compact multi_layout}"
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-128 256}"
+    export MULTI_LAYOUT_PROTOCOL_REQUIRED=1
+    EXPERIMENT_PRESET=multi_point
+fi
 if [[ "$EXPERIMENT_PRESET" == multi_layout ]]; then
     export WORKLET_ROUTES="${WORKLET_ROUTES:-multi_control multi_pack multi_exchange multi_pack_compact multi_unpack_flat multi_layout}"
     export PROCESS_COUNTS="${PROCESS_COUNTS:-128}"
@@ -497,7 +504,7 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
     ((${#routes[@]}>0)) || exit 2
     declare -A seen_routes=()
     for route in "${routes[@]}"; do
-        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
+        case "$route" in reference|a_static|a_dynamic|b_remaining|b_critical|c_deferred|a_fixed|a_native|a_window|b_window|b_balanced|c_fused|a_fused|b_fused|a_bound|b_bound|b_repeat|c_prefix|a_prefix|b_prefix|reference_bound|worklet_static_fixed|worklet_owner_fixed|critical_worklet|async_global|front_spatial|ready_global|spatial_ready|recovery_global|profile_global|refine_serial|refine_parallel|legal_prune|batch_serial|batch_parallel|cost_profile|repair_fixed_profile|repair_fixed|split_active|front_distance|front_transform|incidence_profile|incidence_ordered|components_profile|components_union|projection_profile|projection_fixed|rules_totals|rules_stages|lookup_linear|lookup_inverse|workspace_temporary|workspace_reuse|ghost_literal|ghost_dictionary|multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout|multi_compact_only|smooth_profile|smooth_balanced|split_profile|split_reuse|front_profile|front_topology|front_bound_profile|front_bound|combine_profile|combine_waves|ghost_staged|ghost_pipeline) ;; *) echo "Unknown route: $route" >&2;exit 2;; esac
         [[ -z "${seen_routes[$route]:-}" ]] || { echo "Duplicate route: $route" >&2;exit 2; }
         seen_routes[$route]=1
     done
@@ -540,8 +547,8 @@ if [[ "${EXPERIMENT_STAGE}" == routes ]]; then
                 repair_fixed) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1 ;;
                 split_active) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1 ;;
                 incidence_profile) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=0 ;;
-                multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;multi_mode=0
-                    case "$route" in multi_front) multi_mode=1;;multi_pack) multi_mode=2;;multi_unpack) multi_mode=4;;multi_all) multi_mode=7;;multi_exchange) multi_mode=6;;multi_pack_compact) multi_mode=14;;multi_unpack_flat) multi_mode=22;;multi_layout) multi_mode=30;;esac ;;
+                multi_control|multi_front|multi_pack|multi_unpack|multi_all|multi_exchange|multi_pack_compact|multi_unpack_flat|multi_layout|multi_compact_only) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;multi_mode=0
+                    case "$route" in multi_front) multi_mode=1;;multi_pack) multi_mode=2;;multi_unpack) multi_mode=4;;multi_all) multi_mode=7;;multi_exchange) multi_mode=6;;multi_pack_compact) multi_mode=14;;multi_unpack_flat) multi_mode=22;;multi_layout) multi_mode=30;;multi_compact_only) multi_mode=10;;esac ;;
                 ghost_literal|ghost_dictionary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0;transport_mode=0;[[ "$route" != ghost_dictionary ]] || transport_mode=1 ;;
                 workspace_temporary) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=0 ;;
                 workspace_reuse) scheduler=cost_profile;async_ids=1;binding=cores;fixed_mode=1;active_mode=1;incidence_mode=1;workspace_mode=1 ;;

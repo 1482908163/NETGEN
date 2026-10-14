@@ -13,8 +13,8 @@ script=scope['script']
 script=script.replace('# --mpi-preflight [MPI_PREFLIGHT_OK]','# --mpi-preflight [MPI_PREFLIGHT_OK]\n# --multi-point --multi-point-verify exact_local_work_v1 multi_front_ multi_pack_ multi_unpack_ csr_exact_pack_v1 flat_gid_index_v1')
 script=script.replace('from test_ghost_transport_validation import fixture','from test_multi_point_validation import fixture')
 script=script.replace("route='ghost_literal' if transport==0 else 'ghost_dictionary'", """assert transport==0
-mask=last('--multi-point');assert mask in (0,1,2,4,6,7,14,22,30)
-route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',6:'multi_exchange',7:'multi_all',14:'multi_pack_compact',22:'multi_unpack_flat',30:'multi_layout'}[mask]
+mask=last('--multi-point');assert mask in (0,1,2,4,6,7,10,14,22,30)
+route={0:'multi_control',1:'multi_front',2:'multi_pack',4:'multi_unpack',6:'multi_exchange',7:'multi_all',14:'multi_pack_compact',22:'multi_unpack_flat',30:'multi_layout',10:'multi_compact_only'}[mask]
 if '--validate-volume' in sys.argv:assert last('--multi-point-verify')==1
 else:assert '--multi-point-verify' not in sys.argv""")
 script=script.replace("route in ('ghost_literal','ghost_dictionary')","route.startswith('multi_')")
@@ -68,6 +68,13 @@ def main():
         assert len(layout_pairs)==45 and {int(p['mask']) for p in layout_pairs}=={2,6,14,22,30}
         incremental=list(csv.DictReader((root/'p2/multi_layout_incremental.csv').open()))
         assert len(incremental)==54 and all(float(p['core_reduction_percent'])==0 for p in incremental)
+        r,root,calls,probes,errors=run('followup',EXPERIMENT_PRESET='multi_layout_followup');assert r.returncode==0,(r.stdout,r.stderr,errors)
+        assert len(calls.read_text().splitlines())==60 and probes.read_text()=='probe\n'
+        followup_pairs=list(csv.DictReader((root/'p2/multi_point_pairs.csv').open()))
+        assert len(followup_pairs)==36 and {int(p['mask']) for p in followup_pairs}=={2,10,14,30}
+        followup_incremental=list(csv.DictReader((root/'p2/multi_layout_incremental.csv').open()))
+        assert len(followup_incremental)==45
+        assert {(p['candidate'],p['baseline']) for p in followup_incremental}=={('multi_layout','multi_pack'),('multi_layout','multi_pack_compact'),('multi_compact_only','multi_pack'),('multi_pack_compact','multi_compact_only'),('multi_layout','multi_compact_only')}
         # Previous binary markers must be rejected before launching any mesh.
         binary.write_text(script.replace('csr_exact_pack_v1 flat_gid_index_v1',''))
         r,root,calls,probes,errors=run('stale_layout_binary',EXPERIMENT_PRESET='multi_layout')
@@ -78,5 +85,5 @@ def main():
         assert not (root/'p2/multi_point_pairs.csv').exists()
         r,root,calls,probes,errors=run('startup_failure',MOCK_STARTUP_FAIL='1');assert r.returncode==75,(r.stdout,r.stderr,errors)
         assert not calls.exists() and (root/'p2/ALLOCATION_STOPPED.json').is_file()
-    print('PASS: five-route 60 starts/36 pairs; exchange 48 starts/27 pairs; layout 72 starts/45 pairs and 54 incremental contrasts; stale binary rejected; ignored-mode gate, forged receipts and failure continuation')
+    print('PASS: five-route 60 starts/36 pairs; exchange 48 starts/27 pairs; layout 72 starts/45 pairs and 54 incremental contrasts; followup 60 starts/36 pairs and 45 incremental contrasts; stale binary rejected; ignored-mode gate, forged receipts and failure continuation')
 if __name__=='__main__':main()

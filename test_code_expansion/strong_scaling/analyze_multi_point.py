@@ -3,7 +3,7 @@ import csv,hashlib,json,statistics as st
 from pathlib import Path
 from analyze_results import inspect,profile_path,write_csv
 from multi_point_checks import FIELDS
-ROUTES={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6,'multi_pack_compact':14,'multi_unpack_flat':22,'multi_layout':30}
+ROUTES={'multi_control':0,'multi_front':1,'multi_pack':2,'multi_unpack':4,'multi_all':7,'multi_exchange':6,'multi_pack_compact':14,'multi_unpack_flat':22,'multi_layout':30,'multi_compact_only':10}
 
 def analyze(root,ranks,selected):
     root=Path(root);out=root/f'p{ranks}';selected=[r for r in selected if r in ROUTES]
@@ -59,7 +59,7 @@ def analyze(root,ranks,selected):
     # absolute wins over mask 0 alone cannot establish a new improvement.
     incremental=[]
     lookup={(r['algorithm'],r['seed'],r['repeat'],r['route']):r for r in pairs}
-    for candidate,base in (('multi_pack_compact','multi_exchange'),('multi_unpack_flat','multi_exchange'),('multi_layout','multi_exchange'),('multi_layout','multi_pack'),('multi_layout','multi_pack_compact'),('multi_layout','multi_unpack_flat')):
+    for candidate,base in (('multi_pack_compact','multi_exchange'),('multi_unpack_flat','multi_exchange'),('multi_layout','multi_exchange'),('multi_layout','multi_pack'),('multi_layout','multi_pack_compact'),('multi_layout','multi_unpack_flat'),('multi_compact_only','multi_pack'),('multi_pack_compact','multi_compact_only'),('multi_layout','multi_compact_only')):
         if candidate not in selected or base not in selected:continue
         for algorithm in plan['algorithms']:
             for seed in plan['partition_seeds']:
