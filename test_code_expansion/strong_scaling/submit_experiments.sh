@@ -22,6 +22,8 @@ read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
 read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
 # 所有协作对照采用相同物理核布局，避免把超线程当额外计算核。
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || batch_extra+=(--hint=nomultithread)
+# Unbound rank affinity must not let two independent jobs select the same pool.
+[[ "${NODE_SCALING:-0}" != 1 ]] || batch_extra+=(--exclusive)
 ((${#counts[@]}>0)) || exit 2
 for p in "${counts[@]}"; do [[ "${p}" =~ ^[1-9][0-9]*$ ]] || exit 2; done
 mkdir -p "${RUN_ROOT}"
@@ -46,6 +48,13 @@ if [[ "${EXPERIMENT_STAGE}" == evaluation && "${BALANCE_METHOD}" != task_queue ]
             --target-ranks "${counts[@]}" --levels "${LEVELS}" --refines "${REFINES}" --output "${RUN_ROOT}/models" --require-v3 --require-sampling
     fi
 fi
+if [[ "${NODE_SCALING:-0}" == 1 ]]; then
+    # Check the historical executable/library before allocating cluster time.
+    if [[ "${DRY_RUN}" != 1 ]]; then
+        python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --verify-build
+    fi
+    python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --init
+fi
 printf '%s\n' "${counts[@]}" > "${RUN_ROOT}/requested_process_counts.txt"
 failures=0
 for p in "${counts[@]}"; do
@@ -61,9 +70,13 @@ for p in "${counts[@]}"; do
         if jobid=$("${command[@]}"); then
             printf '%s\t%s\n' "${p}" "${jobid}" >> "${RUN_ROOT}/submitted_jobs.tsv"
         else
+            if [[ "${NODE_SCALING:-0}" == 1 ]]; then
+                python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --mark-ranks "$p" --exit-code 125 || true
+            fi
             failures=$((failures+1));printf '%s\n' "${p}" >> "${RUN_ROOT}/failed_submissions.txt"
         fi
     fi
 done
 printf 'Results: %s\n' "${RUN_ROOT}"
 ((failures==0)) || exit 1
+

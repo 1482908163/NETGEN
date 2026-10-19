@@ -10,13 +10,28 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   borrow_scaling: 64～2048进程，同布局固定核/弹性借核/阶段受限借核
 #   cooperate  : 1/4/16/32/64 节点，每节点4进程/16核，完成贡献消融与扩展验证
 #   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
 #   pilot      : 1/2/4 节点，小规模正确性与流程预检
 #   production : 64/128/256/512 节点，复现正式大规模实验配置
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-cooperate}"
+# 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_scaling}"
+if [[ "${EXPERIMENT_PRESET}" == borrow_scaling ]]; then
+    export NODE_SCALING=1
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-64 128 256 512 1024 2048}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_fixed node_elastic node_phaseaware}"
+    export KERNEL_THREAD_COUNTS="${KERNEL_THREAD_COUNTS:-4}"
+    export PARTITION_SEEDS="${PARTITION_SEEDS:--1 17 41}"
+    export TIMING_MODES="${TIMING_MODES:-natural split}"
+    export REPEATS="${REPEATS:-5}" WARMUPS="${WARMUPS:-1}"
+    export QUALITY_WARMUP=1 COMMUNICATION_ABLATION=0
+    EXPERIMENT_PRESET=cooperate
+fi
+NODE_SCALING="${NODE_SCALING:-0}"
+export NODE_SCALING
 # 默认保持一进程一分区和稀疏通信，比较节点内资源分配。
 # boundary / node_mapping / task_queue 仅供显式复现历史失败方案。
 default_stage=communication
@@ -194,6 +209,18 @@ fi
 
 if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
     kernel_root="${RUN_ROOT:?}";kernel_failures=0
+    if [[ "${NODE_SCALING}" == 1 ]]; then
+        # Always publish completion/failure, including build or launch failures.
+        scaling_finish() {
+            local rc=$?
+            trap - EXIT
+            python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${kernel_root}" \
+                --mark-ranks "${PROCESS_COUNT}" --exit-code "$rc" || rc=1
+            exit "$rc"
+        }
+        trap scaling_finish EXIT
+        python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${kernel_root}" --verify-build
+    fi
     mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
     read -r -a schedulers <<< "${KERNEL_SCHEDULERS}"
     # Interleave strategy runs by repetition; rotate which strategy runs first.
@@ -554,4 +581,5 @@ fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1
+
 

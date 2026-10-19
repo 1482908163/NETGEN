@@ -4,6 +4,7 @@ import argparse
 import csv
 import fcntl
 import gzip
+import hashlib
 import json
 import math
 import os
@@ -591,6 +592,26 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_before=max(r["metrics"].get("partition_cut_before", 0) for r in rows),
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
+    if os.environ.get('NODE_SCALING') == '1':
+        from collections import Counter
+        if metadata.get('timing_boundary') != 'post_coarse_barrier_to_adjacency_complete':
+            raise ValueError('unexpected core timing boundary')
+        workload=[]
+        for row in sorted(rows,key=lambda r:r['rank']):
+            m=row['metrics']
+            if m['coop_node_ranks']!=4 or m['coop_node_cpus']!=16:
+                raise ValueError('borrowing scale requires four ranks and sixteen physical CPUs per node')
+            counts=[m[k] for k in ('local_points_before_adjacency','local_surface_elements_before_adjacency',
+                    'local_volume_elements_before_adjacency','ghost_points_added','ghost_volume_elements_added')]
+            if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or int(v)!=v for v in counts):
+                raise ValueError('invalid per-rank workload counts')
+            workload.append([row['rank'],*map(int,counts)])
+        nodes=Counter(row['metrics']['coop_timeline_node'] for row in rows)
+        if n%4 or len(nodes)!=n//4 or set(nodes.values())!={4}:
+            raise ValueError('observed node grouping differs from requested resource layout')
+        result['scaling_work_sha256']=hashlib.sha256(json.dumps(workload,separators=(',',':')).encode()).hexdigest()
+        for name in ('SOURCE_REVISION','INPUT_SHA256','BINARY_SHA256','KERNEL_SHA256'):
+            result['scaling_'+name.lower()]=metadata['MESH_'+name]
     if int(metadata.get("kernel_threads",0))>0:
         if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once","node_phaseaware"):
             raise ValueError("invalid kernel experiment metadata")
@@ -1297,6 +1318,7 @@ def kernel_overview(root, ranks):
               "逐轮胜出仅比较同一批、同规模、同种子、同计时、同重复编号的正式运行，是波动诊断，不等于统计显著性。",
               "natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。",*issues]
     (out/'RESULT_SUMMARY.txt').write_text('\n'.join(lines)+'\n')
+    (out/'kernel_issues.txt').write_text('\n'.join(issues)+('\n' if issues else ''))
     if issues: raise SystemExit(1)
 
 def main():
@@ -1394,7 +1416,7 @@ def main():
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
         for name in runs[0]:
-            if name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "coop_timeline_critical_rank"):
+            if name.startswith("scaling_") or name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "coop_timeline_critical_rank"):
                 continue
             present = [r[name] for r in group if r.get(name) is not None]
             summary[name+"_median"] = st.median(present) if present else None
@@ -1455,5 +1477,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
