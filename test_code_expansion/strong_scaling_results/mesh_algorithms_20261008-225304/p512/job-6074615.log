@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/runtime_scripts/analyze_results.py", line 1652, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/runtime_scripts/analyze_results.py", line 1587, in main
+    summary[name+"_median"] = st.median(present) if present else None
+  File "/usr/lib/python3.8/statistics.py", line 435, in median
+    return (data[i - 1] + data[i])/2
+TypeError: unsupported operand type(s) for /: 'str' and 'int'
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-225304/route_batch_parallel/p512/RESULT_SUMMARY.txt
+A1/B1/C1: 15 measured runs; 5 issues.

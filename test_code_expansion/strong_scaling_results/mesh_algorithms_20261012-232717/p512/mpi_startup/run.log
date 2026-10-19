@@ -1,0 +1,16 @@
+slurmstepd: error:  mpi/pmix_v3: pmixp_p2p_send: cn7486 [81]: pmixp_utils.c:467: send failed, rc=111, exceeded the retry limit
+slurmstepd: error:  mpi/pmix_v3: _slurm_send: cn7486 [81]: pmixp_server.c:1581: Cannot send message to /tmp/slurmd/stepd.slurm.pmix.6090279.0, size = 119, hostlist:
+(null)
+yhrun: forcing job termination
+yhrun: launch/slurm: launch_p_step_launch: StepId=6090279.0 aborted before step completely launched.
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+slurmstepd: error: *** STEP 6090279.0 ON cn3003 CANCELLED AT 2026-10-12T23:30:17 ***
+yhrun: error: cn7515: tasks 440-443: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7442 [37]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6090279.0:151]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7492 [87]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6090279.0:351]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn7491 [86]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6090279.0:346]
+yhrun: First task exited 300s ago
+yhrun: StepId=6090279.0 tasks 0-327,332-511: exited abnormally
+yhrun: StepId=6090279.0 tasks 328-331: unknown
+yhrun: launch/slurm: _step_signal: Terminating StepId=6090279.0
+yhrun: error: Timed out waiting for job step to complete

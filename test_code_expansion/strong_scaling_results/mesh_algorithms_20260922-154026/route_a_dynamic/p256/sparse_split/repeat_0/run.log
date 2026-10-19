@@ -1,0 +1,71 @@
+========参数========
+使用核数 : 256
+输出文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260922-154026/route_a_dynamic/p256/sparse_split/repeat_0/mesh/
+输入文件目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+细化等级 : 2
+细化次数 : 2
+网格最大值:1000
+网格最小值:0
+强扩展分析 : 开启
+分析结果目录 : /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20260922-154026/route_a_dynamic/p256/sparse_split/repeat_0
+实验名称 : sparse
+重复编号 : 0
+仅核心算法 : 是
+算法 : sparse
+前置同步诊断 : 开启
+Successfully loaded STEP File: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP
+Setting Local Mesh size.....
+OCC Mesh Pointer before call = 0x3841d960
+Local Mesh size successfully set.....
+OCC Mesh Pointer after call = 0x3841d960
+Creating Edge Mesh.....
+Edge Mesh successfully created.....
+Number of points = 3031
+Creating Surface Mesh.....
+Surface Mesh successfully created.....
+Number of points = 6347
+Number of surface elements = 12694
+Creating Volume Mesh.....
+Volume Mesh successfully created.....
+Number of points = 8067
+Number of volume elements = 26411
+Generate Coarse Mesh Done...
+sparse face protocol rank 123: 封闭子域体网格生成或修复失败
+Abort(15) on node 123 (rank 123 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 123
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  封闭子域体网格生成或修复失败
+sparse face protocol rank 126: 封闭子域体网格生成或修复失败
+Abort(15) on node 126 (rank 126 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 126
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+slurmstepd: error: *** STEP 6053284.5 ON cn4536 CANCELLED AT 2026-09-22T15:44:36 ***
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  封闭子域体网格生成或修复失败
+sparse face protocol rank 158: 封闭子域体网格生成或修复失败
+Abort(15) on node 158 (rank 158 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 158
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  封闭子域体网格生成或修复失败
+sparse face protocol rank 1: 封闭子域体网格生成或修复失败
+Abort(15) on node 1 (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 1
+sparse face protocol rank 137: 封闭子域体网格生成或修复失败
+Abort(15) on node 137 (rank 137 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 137
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  封闭子域体网格生成或修复失败
+terminate called after throwing an instance of 'std::runtime_error'
+sparse face protocol rank 12: 封闭子域体网格生成或修复失败
+Abort(15) on node 12 (rank 12 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 15) - process 12
+  what():  封闭子域体网格生成或修复失败
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  封闭子域体网格生成或修复失败
+yhrun: error: cn4566: tasks 120-122: Killed
+yhrun: error: cn4566: task 123: Aborted
+yhrun: error: cn4567: tasks 124-125,127: Killed
+yhrun: error: cn4567: task 126: Aborted
+yhrun: error: cn4590: tasks 216-219: Killed
+yhrun: error: cn4575: task 158: Aborted
+yhrun: error: cn4579: tasks 172-175: Killed
+yhrun: error: cn4570: task 137: Aborted
+yhrun: error: cn4541: tasks 20-23: Killed
+yhrun: error: cn4539: task 12: Aborted
+yhrun: error: cn4573: tasks 148-151: Killed
+yhrun: error: cn4536: task 1: Aborted
+yhrun: error: cn4585: tasks 196-199: Killed

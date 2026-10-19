@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+invoked_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${STRONG_SCALING_DIR:-${invoked_script_dir}}"
+SCRIPT_DIR="$(cd "${SCRIPT_DIR}" && pwd)"
+export STRONG_SCALING_DIR="${SCRIPT_DIR}"
+
+# Compatibility: direct calls enter the same unified configuration first.
+if [[ "${MESH_EXPERIMENT_DRIVER_READY:-0}" != 1 ]]; then
+    exec "${SCRIPT_DIR}/run_experiments.sh" "$@"
+fi
+
+REPOSITORY_ROOT="${STRONG_SCALING_PROJECT_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+export STRONG_SCALING_PROJECT_DIR="${REPOSITORY_ROOT}"
+MESH_SOURCE_REVISION="$(git -C "${REPOSITORY_ROOT}" rev-parse HEAD)"
+[[ -n "${MESH_SOURCE_REVISION}" ]] || { echo "Cannot record source revision" >&2; exit 2; }
+export MESH_SOURCE_REVISION
+export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
+export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
+export MESH_EXPERIMENT_WORKER=1
+[[ "${RANKS_PER_NODE}" =~ ^[1-9][0-9]*$ && "${START_EPOCH}" =~ ^[0-9]+$ ]] || exit 2
+read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
+read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
+# 所有协作对照采用相同物理核布局，避免把超线程当额外计算核。
+[[ "${EXPERIMENT_PRESET}" != cooperate ]] || batch_extra+=(--hint=nomultithread)
+[[ "${EXPERIMENT_PRESET}" != worklets && "${EXPERIMENT_PRESET}" != inplace ]] || batch_extra+=(--hint=nomultithread)
+((${#counts[@]}>0)) || exit 2
+for p in "${counts[@]}"; do [[ "${p}" =~ ^[1-9][0-9]*$ ]] || exit 2; done
+mkdir -p "${RUN_ROOT}"
+RUN_ROOT="$(cd "${RUN_ROOT}" && pwd)"
+export RUN_ROOT
+# Jobs read a frozen copy of every companion shell/Python file. A checkout
+# update or missing live module must not invalidate a running batch.
+source_script_dir="${SCRIPT_DIR}"
+export MESH_RUNTIME_MANIFEST="${RUN_ROOT}/runtime_manifest.json"
+export MESH_RUNTIME_SHA256
+MESH_RUNTIME_SHA256="$(python3 "${source_script_dir}/runtime_snapshot.py" capture \
+    --source "${source_script_dir}" --snapshot "${RUN_ROOT}/runtime_scripts" \
+    --manifest "${MESH_RUNTIME_MANIFEST}" --project "${REPOSITORY_ROOT}" \
+    --revision "${MESH_SOURCE_REVISION}")"
+SCRIPT_DIR="${RUN_ROOT}/runtime_scripts"
+export STRONG_SCALING_DIR="${SCRIPT_DIR}"
+if [[ "${MPI_LAUNCHER}" == "${source_script_dir}/"* ]]; then
+    launcher_relative="${MPI_LAUNCHER#"$source_script_dir"/}"
+    [[ "$launcher_relative" != */* && -x "${SCRIPT_DIR}/$launcher_relative" ]] || {
+        echo "MPI launcher is not present in the frozen runtime" >&2;exit 2;
+    }
+    export MPI_LAUNCHER="${SCRIPT_DIR}/$launcher_relative"
+fi
+if [[ "${BALANCE_METHOD}" == task_queue ]]; then
+    for p in "${counts[@]}"; do
+        (( p>=2 && TASK_COUNT>=p-1 )) || { echo "任务数须不少于进程数减一，且至少两进程。" >&2;exit 2; }
+    done
+fi
+if [[ "${EXPERIMENT_STAGE}" == evaluation && "${BALANCE_METHOD}" != task_queue ]]; then
+    [[ -n "${CALIBRATION_ROOT}" && -d "${CALIBRATION_ROOT}" ]] || {
+        echo "Set CALIBRATION_ROOT in run_experiments.sh to the completed v3 multi-seed calibration directory." >&2
+        exit 2
+    }
+    if [[ "${BALANCE_METHOD}" == node_mapping ]]; then
+        [[ "${PARTITION_SEEDS}" == 41 && "${PARTITION_VARIANT}" == cell_order_v1 ]] || {
+            echo "本轮映射评价使用留出分区 41。" >&2;exit 2;
+        }
+        python3 "${SCRIPT_DIR}/resource_model.py" --train "${CALIBRATION_ROOT}" --output "${RUN_ROOT}/models" \
+            --target-ranks "${counts[@]}" --levels "${LEVELS}" --refines "${REFINES}" --rpn "${RANKS_PER_NODE}"
+    else
+        python3 "${SCRIPT_DIR}/fit_cost_model.py" --calibration-root "${CALIBRATION_ROOT}" \
+            --target-ranks "${counts[@]}" --levels "${LEVELS}" --refines "${REFINES}" --output "${RUN_ROOT}/models" --require-v3 --require-sampling
+    fi
+fi
+printf '%s\n' "${counts[@]}" > "${RUN_ROOT}/requested_process_counts.txt"
+failures=0
+for p in "${counts[@]}"; do
+    nodes=$(( (p+RANKS_PER_NODE-1)/RANKS_PER_NODE ))
+    mkdir -p "${RUN_ROOT}/p${p}"
+    export PROCESS_COUNT="${p}"
+    command=("${SBATCH_COMMAND}" --parsable -p "${PARTITION}" -N "${nodes}" -n "${p}"
+             --cpus-per-task "${CPUS_PER_TASK}" --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "mesh_p${p}"
+             --output "${RUN_ROOT}/p${p}/job-%j.log" "${batch_extra[@]}" "${SCRIPT_DIR}/run_experiments.sh")
+    if [[ "${DRY_RUN}" == 1 ]]; then
+        printf '%q ' "${command[@]}"; printf '\n'
+    else
+        if jobid=$("${command[@]}"); then
+            printf '%s\t%s\n' "${p}" "${jobid}" >> "${RUN_ROOT}/submitted_jobs.tsv"
+        else
+            failures=$((failures+1));printf '%s\n' "${p}" >> "${RUN_ROOT}/failed_submissions.txt"
+        fi
+    fi
+done
+printf 'Results: %s\n' "${RUN_ROOT}"
+((failures==0)) || exit 1

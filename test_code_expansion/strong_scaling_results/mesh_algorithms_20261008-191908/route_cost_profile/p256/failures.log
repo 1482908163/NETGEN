@@ -1,0 +1,8 @@
+sparse/natural seed 17 repeat 2: Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1652, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1510, in main
+    result,_=inspect(profile_path(args.root),cost_sink=cost_rows)
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 512, in inspect
+    from cost_profile_checks import validate
+ModuleNotFoundError: No module named 'cost_profile_checks'

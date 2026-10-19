@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1652, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1544, in main
+    result, details = inspect(profile_path(directory), sample_writer, timeline_rows, critical_rows, cost_rows)
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 512, in inspect
+    from cost_profile_checks import validate
+ModuleNotFoundError: No module named 'cost_profile_checks'
+RESULT: 5/9 measured runs, 7 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261008-191908/route_batch_parallel/p128/RESULT_SUMMARY.txt
+python3: can't open file '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_worklet_routes.py': [Errno 2] No such file or directory

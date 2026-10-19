@@ -1,0 +1,83 @@
+CREATE_EP cmd: Device or resource busy
+[1791916688.303236] [cn370:72298:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.313686] [cn313:71121:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.325671] [cn260:184660:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.326872] [cn262:209310:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+CREATE_EP cmd: Device or resource busy
+[1791916688.335890] [cn329:71571:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+[1791916688.336004] [cn329:71574:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.346162] [cn329:71573:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.347531] [cn3901:575322:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.351656] [cn357:570636:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.357223] [cn356:75281:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.366588] [cn348:75397:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.405957] [cn329:71572:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.409130] [cn350:73734:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.412313] [cn359:73468:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.418954] [cn350:73735:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.421986] [cn359:73470:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.423085] [cn370:72299:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.423530] [cn313:71123:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.433201] [cn313:71124:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.433672] [cn313:71122:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.434892] [cn260:184663:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.447186] [cn262:209311:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.456871] [cn3901:575325:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.466306] [cn348:75396:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.466957] [cn3901:575324:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.467248] [cn356:75284:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+CREATE_EP cmd: Device or resource busy
+[1791916688.471567] [cn357:570637:0]         glex_md.c:834  UCX  ERROR Could not create endpoint on glex device #0
+[MPI_PREFLIGHT_OK] ranks=512 thread_support=1
+yhrun: forcing job termination
+yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.
+slurmstepd: error: *** STEP 6091644.0 ON cn256 CANCELLED AT 2026-10-14T02:39:03 ***
+yhrun: error: cn359: tasks 413,415: Killed
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn359 [103]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:415]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn348 [92]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:369]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn350 [94]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:377]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn356 [100]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:403]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn357 [101]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:405]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn370 [114]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:456]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn257 [1]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:5]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn305 [49]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:199]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn358 [102]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:410]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn305 [49]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:198]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn374 [118]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:474]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn332 [76]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:304]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn321 [65]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:262]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn355 [99]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:399]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn373 [117]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:470]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn309 [53]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:214]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn305 [49]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:197]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn369 [113]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:452]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn327 [71]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:286]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn371 [115]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:462]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn371 [115]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:461]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn325 [69]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:279]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn355 [99]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:398]
+slurmstepd: error:  mpi/pmix_v3: _errhandler: cn373 [117]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.6091644.0:471]

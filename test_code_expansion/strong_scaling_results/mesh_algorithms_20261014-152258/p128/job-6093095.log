@@ -1,0 +1,12 @@
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_pack_compact/p128/RESULT_SUMMARY.txt
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_unpack_flat/p128/RESULT_SUMMARY.txt
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_layout/p128/RESULT_SUMMARY.txt
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_control/p128/RESULT_SUMMARY.txt
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_pack/p128/RESULT_SUMMARY.txt
+RESULT: 9/9 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/route_multi_exchange/p128/RESULT_SUMMARY.txt
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/runtime_scripts/analyze_worklet_routes.py", line 79, in <module>
+    PAIRS=PAIRS+tuple(('multi_control',r,'multi_point_'+r.removeprefix('multi_')) for r in MULTI_ROUTES if r!='multi_control')
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261014-152258/runtime_scripts/analyze_worklet_routes.py", line 79, in <genexpr>
+    PAIRS=PAIRS+tuple(('multi_control',r,'multi_point_'+r.removeprefix('multi_')) for r in MULTI_ROUTES if r!='multi_control')
+AttributeError: 'str' object has no attribute 'removeprefix'
