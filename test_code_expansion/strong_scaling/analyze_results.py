@@ -318,6 +318,8 @@ FRONT_PROFILE_METRICS = (
     'kernel_front_qualclass_max','kernel_front_class_skips')
 
 CRITICAL_METRICS = (
+    'volume_kernel_input_points','volume_kernel_input_surface_elements',
+    'volume_kernel_points','volume_kernel_surface_elements','volume_kernel_elements',
     'kernel_generation_seconds','kernel_repair_seconds','kernel_optimization_seconds',
     'kernel_delaunay_seconds','kernel_front_seconds','kernel_domain_repair_seconds',
     'kernel_repair_mark_seconds','kernel_repair_split_seconds','kernel_repair_swap_seconds',
@@ -546,6 +548,38 @@ def _refresh_kernel_reports(root):
     if failures: raise SystemExit(1)
 
 
+def volume_workload_metrics(rows):
+    """实际内核工作量；缺失的新指标不能用细化后单元数代替。"""
+    names = ('volume_kernel_input_points', 'volume_kernel_input_surface_elements',
+             'volume_kernel_points', 'volume_kernel_surface_elements', 'volume_kernel_elements')
+    if not any(name in r['metrics'] for r in rows for name in names):
+        if os.environ.get('WORKLOAD_ROOT'):
+            raise ValueError('缺少生成后、体细化前的实际网格计数；无法分析本轮工作量实验')
+        return {}
+    workload = []
+    for r in sorted(rows, key=lambda r: r['rank']):
+        counts = [r['metrics'].get(name) for name in names]
+        if any(not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0 or int(v) != v for v in counts):
+            raise ValueError('生成前输入或体细化前网格计数缺失/无效')
+        workload.append([r['rank'], *map(int, counts)])
+    result = {}
+    for name in names:
+        values = [r['metrics'][name] for r in rows]
+        result[name + '_sum'] = sum(values)
+        result[name + '_max'] = max(values)
+    elements = [r['metrics']['volume_kernel_elements'] for r in rows]
+    result['volume_kernel_elements_mean'] = mean(elements)
+    result['volume_kernel_elements_imbalance'] = max(elements) / mean(elements)
+    result['scaling_kernel_work_sha256'] = hashlib.sha256(json.dumps(workload, separators=(',', ':')).encode()).hexdigest()
+    for stage in ('local_volume_mesh', 'surface_refine', 'volume_refine'):
+        times = [seconds(r, stage) for r in rows]
+        if any(not math.isfinite(t) or t < 0 for t in times):
+            raise ValueError('无效的工作量阶段计时：' + stage)
+        result[stage + '_max_seconds'] = max(times)
+        result[stage + '_mean_seconds'] = mean(times)
+    return result
+
+
 def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
@@ -592,6 +626,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   cut_before=max(r["metrics"].get("partition_cut_before", 0) for r in rows),
                   cut_after=max(r["metrics"].get("partition_cut_after", 0) for r in rows),
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
+    # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
+    result.update(volume_workload_metrics(rows))
     if os.environ.get('NODE_SCALING') == '1':
         from collections import Counter
         if metadata.get('timing_boundary') != 'post_coarse_barrier_to_adjacency_complete':

@@ -15,6 +15,24 @@ REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
 export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
+# 不同工作量作为独立作业同时提交，共享最早启动时刻，结果按细化级数分开。
+if [[ "${WORKLOAD_SWEEP:-0}" == 1 ]]; then
+    export WORKLOAD_ROOT="${RUN_ROOT}"
+    python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${WORKLOAD_ROOT}" --init-workload
+    failures=0
+    for level in ${WORKLOAD_LEVELS//,/ }; do
+        if ! WORKLOAD_SWEEP=0 LEVELS="${level}" RUN_ROOT="${WORKLOAD_ROOT}/levels${level}" \
+            bash "${SCRIPT_DIR}/submit_experiments.sh" "$@"; then
+            failures=$((failures+1))
+            mkdir -p "${WORKLOAD_ROOT}/levels${level}"
+            printf '提交失败\n' > "${WORKLOAD_ROOT}/levels${level}/submission_failed.txt"
+        fi
+    done
+    python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${WORKLOAD_ROOT}" --workload-summary
+    printf '整批结果: %s\n' "${WORKLOAD_ROOT}"
+    ((failures==0)) || exit 1
+    exit 0
+fi
 export MESH_EXPERIMENT_WORKER=1
 [[ "${RANKS_PER_NODE}" =~ ^[1-9][0-9]*$ && "${START_EPOCH}" =~ ^[0-9]+$ ]] || exit 2
 read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
@@ -56,8 +74,10 @@ for p in "${counts[@]}"; do
     nodes=$(( (p+RANKS_PER_NODE-1)/RANKS_PER_NODE ))
     mkdir -p "${RUN_ROOT}/p${p}"
     export PROCESS_COUNT="${p}"
+    job_name="mesh_p${p}"
+    [[ -z "${WORKLOAD_ROOT:-}" ]] || job_name="mesh_l${LEVELS}_p${p}"
     command=("${SBATCH_COMMAND}" --parsable -p "${PARTITION}" -N "${nodes}" -n "${p}"
-             --cpus-per-task "${CPUS_PER_TASK}" --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "mesh_p${p}"
+             --cpus-per-task "${CPUS_PER_TASK}" --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "${job_name}"
              --output "${RUN_ROOT}/p${p}/job-%j.log" "${batch_extra[@]}" "${SCRIPT_DIR}/run_experiments.sh")
     if [[ "${DRY_RUN}" == 1 ]]; then
         printf '%q ' "${command[@]}"; printf '\n'

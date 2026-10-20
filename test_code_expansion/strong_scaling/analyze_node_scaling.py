@@ -12,6 +12,11 @@ import statistics as st
 
 HISTORICAL_BASE = 'fe28c76e90975730bb7a7f6f0dec6f3fee4eed38'
 LABELS = {'node_fixed': '固定核', 'node_elastic': '弹性借核', 'node_phaseaware': '阶段受限借核'}
+WORKLOAD_FIELDS = ('volume_kernel_elements_sum', 'volume_kernel_elements_mean',
+                   'volume_kernel_elements_max', 'volume_kernel_elements_imbalance',
+                   'volume_kernel_input_points_sum', 'volume_kernel_input_surface_elements_sum',
+                   'local_volume_mesh_max_seconds', 'local_volume_mesh_mean_seconds',
+                   'surface_refine_max_seconds', 'volume_refine_max_seconds')
 
 
 def atomic(path, text):
@@ -46,6 +51,8 @@ def initialize(root):
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'],
                 quality_warmup=int(os.environ['QUALITY_WARMUP']),
                 start_epoch=int(os.environ['START_EPOCH']))
+    if os.environ.get('WORKLOAD_ROOT'):
+        plan['measure_kernel_workload'] = True
     target = root / 'node_scaling_plan.json'
     if target.exists():
         old = json.loads(target.read_text())
@@ -128,6 +135,9 @@ def collect_scale(root, plan, p):
                     oldcrit, newcrit = critical[ck], critical[nk]
                     if control['scaling_work_sha256'] != new['scaling_work_sha256']:
                         raise ValueError(f'{candidate}/{mode}/{seed}/{repeat} 逐进程单元/边界/幽灵计数不同')
+                    if plan.get('measure_kernel_workload'):
+                        if not control.get('scaling_kernel_work_sha256') or control['scaling_kernel_work_sha256'] != new.get('scaling_kernel_work_sha256'):
+                            raise ValueError('缺少内核网格计数，或生成前/体细化前的逐进程工作量不同')
                     ct, nt = numeric(control, 'core_seconds'), numeric(new, 'core_seconds')
                     row = dict(ranks=p, nodes=p // 4, candidate=candidate, timing=mode, seed=seed, repeat=repeat,
                                control_seconds=ct, candidate_seconds=nt, reduction_pct=100 * (1 - nt / ct),
@@ -149,6 +159,18 @@ def collect_scale(root, plan, p):
                                critical_team_stop_seconds=numeric(newcrit, 'kernel_team_stop_seconds'),
                                critical_management_seconds=numeric(newcrit, 'coop_management_seconds'),
                                source_revision=new.get('scaling_source_revision', 'manual'), workload_sha256=new['scaling_work_sha256'])
+                    if plan.get('measure_kernel_workload'):
+                        for prefix, run, critical_row in (('control', control, oldcrit), ('candidate', new, newcrit)):
+                            for field in WORKLOAD_FIELDS:
+                                row[prefix + '_' + field] = numeric(run, field)
+                            for field in ('kernel_generation_seconds', 'kernel_repair_seconds', 'kernel_optimization_seconds',
+                                          'kernel_team_start_seconds', 'kernel_team_stop_seconds', 'coop_borrowed_core_seconds'):
+                                row[prefix + '_critical_' + field] = numeric(critical_row, field)
+                        kt = row['control_local_volume_mesh_max_seconds']
+                        if kt <= 0:
+                            raise ValueError('内核时间必须大于零')
+                        row['kernel_reduction_pct'] = 100 * (1 - row['candidate_local_volume_mesh_max_seconds'] / kt)
+                        row['kernel_workload_sha256'] = new['scaling_kernel_work_sha256']
                     pairs.append(row)
                     group.append(row)
                 old = summaries['node_fixed', mode, seed]
@@ -162,6 +184,16 @@ def collect_scale(root, plan, p):
                                    wins=sum(r['reduction_pct'] > 0 for r in group), pairs=len(group),
                                    control_imbalance=old['compute_imbalance'], candidate_imbalance=new['compute_imbalance'],
                                    volume_elements=new['volume_elements'], quality='pass'))
+                if plan.get('measure_kernel_workload'):
+                    report[-1].update(levels=plan['levels'], refines=plan['refines'])
+                    for key in group[0]:
+                        if key.startswith(('control_volume_kernel_', 'candidate_volume_kernel_',
+                                           'control_local_volume_mesh_', 'candidate_local_volume_mesh_',
+                                           'control_surface_refine_', 'candidate_surface_refine_',
+                                           'control_volume_refine_', 'candidate_volume_refine_',
+                                           'control_critical_kernel_', 'candidate_critical_kernel_',
+                                           'control_critical_coop_', 'candidate_critical_coop_')) or key == 'kernel_reduction_pct':
+                            report[-1][key] = st.median(r[key] for r in group)
     expected = len(plan['schedulers']) * len(plan['seeds']) * len(plan['modes']) * plan['repeats']
     if len(raw) != expected or len(critical) != expected:
         raise ValueError('正式运行总数与计划不一致')
@@ -205,16 +237,115 @@ def summarize(root):
     return states, errors
 
 
+def initialize_workload(root):
+    tokens = words('WORKLOAD_LEVELS')
+    levels = list(map(int, tokens))
+    counts = list(map(int, words('PROCESS_COUNTS')))
+    refines = int(os.environ['REFINES'])
+    if not levels or len(set(levels)) != len(levels) or tokens != list(map(str, levels)):
+        raise ValueError('WORKLOAD_LEVELS 须为不重复的整数级数')
+    if refines < 0 or any(level < 0 or level + refines > 13 for level in levels):
+        raise ValueError('细化级数无效，生成前和生成后细化之和不得超过13')
+    if len(counts) != 1 or counts[0] < 4 or counts[0] % 4:
+        raise ValueError('工作量对照固定一个进程数，且须填满每节点4进程')
+    plan = dict(schema='node_workload_v1', levels=levels, counts=counts, refines=refines,
+                cases=[dict(levels=level, directory=f'levels{level}') for level in levels],
+                seeds=list(map(int, words('PARTITION_SEEDS'))), modes=words('TIMING_MODES'),
+                schedulers=words('KERNEL_SCHEDULERS'), repeats=int(os.environ['REPEATS']),
+                warmups=int(os.environ['WARMUPS']), input_path=os.environ['INPUT_PATH'],
+                maxh=os.environ['MAXH'], minh=os.environ['MINH'],
+                partition_variant=os.environ['PARTITION_VARIANT'],
+                ranks_per_node=int(os.environ['RANKS_PER_NODE']), cpus_per_task=int(os.environ['CPUS_PER_TASK']))
+    target = root / 'node_workload_plan.json'
+    if target.exists() and json.loads(target.read_text()) != plan:
+        raise ValueError('结果目录已有其他工作量计划，请使用新的 RUN_ROOT')
+    atomic(target, json.dumps(plan, ensure_ascii=False, indent=2) + '\n')
+
+
+def summarize_workload(root):
+    """读取各作业已经生成的原子汇总，不重复扫描网格数据。"""
+    plan = json.loads((root / 'node_workload_plan.json').read_text())
+    reports, pairs, states = [], [], []
+    for case in plan['cases']:
+        child = root / case['directory']
+        child_plan = child / 'node_scaling_plan.json'
+        if not child_plan.exists():
+            failed = (child / 'submission_failed.txt').exists()
+            states.append(dict(levels=case['levels'], ranks=plan['counts'][0],
+                               state='failed' if failed else 'pending',
+                               issues='提交失败' if failed else '尚未提交或初始化'))
+            continue
+        with (child / '.node_scaling.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            actual = json.loads(child_plan.read_text())
+            common = ('counts', 'refines', 'seeds', 'modes', 'schedulers', 'repeats', 'warmups',
+                      'input_path', 'maxh', 'minh', 'partition_variant', 'ranks_per_node', 'cpus_per_task')
+            if any(actual[k] != plan[k] for k in common) or actual['levels'] != case['levels'] or not actual.get('measure_kernel_workload'):
+                raise ValueError('各工作量对照除生成前细化级数外，须使用相同实验配置')
+            status_path = child / 'node_scaling_status.csv'
+            current = rows(status_path) if status_path.exists() else [dict(ranks=plan['counts'][0], state='pending', issues='尚未汇总')]
+            states.extend(dict(levels=case['levels'], **r) for r in current)
+            complete = {int(r['ranks']) for r in current if r['state'] == 'complete'}
+            for filename, destination in (('node_scaling_summary.csv', reports), ('node_scaling_pairs.csv', pairs)):
+                path = child / filename
+                if path.exists():
+                    destination.extend(dict(r, levels=case['levels'], refines=plan['refines'])
+                                       for r in rows(path) if int(r['ranks']) in complete)
+    # 对同种子/路线/计时的最小级数作工作量参照；缺少参照时留空。
+    baseline = {(r['candidate'], r['timing'], r['seed']): r for r in reports if r['levels'] == min(plan['levels'])}
+    for r in reports:
+        reference = baseline.get((r['candidate'], r['timing'], r['seed']))
+        r['kernel_work_growth_vs_min_level'] = (float(r['control_volume_kernel_elements_sum']) /
+            float(reference['control_volume_kernel_elements_sum'])) if reference else ''
+    atomic(root / 'node_workload_summary.csv', csv_text(reports))
+    atomic(root / 'node_workload_pairs.csv', csv_text(pairs))
+    atomic(root / 'node_workload_status.csv', csv_text(states))
+    lines = ['固定进程数的弹性借核工作量对照',
+             f"进程数={plan['counts'][0]}；每节点4进程，每进程初始4核；生成后体细化次数={plan['refines']}。",
+             '只改变生成前表面细化级数；实际内核单元数直接测量，不能由最终单元数或理论倍率代替。',
+             '核心时间为粗网格结束后至邻接完成；内核时间为局部体网格生成、修复和优化。',
+             '降幅按同种子、同重复编号逐次配对后取中位数，正值表示加速。', '']
+    lines += [f"生成前级数={r['levels']}，进程={r['ranks']}：{r['state']} {r['issues']}" for r in states]
+    lines += ['', '级数 方案 种子 内核单元总数 每进程均值/最大 后续细化后总数 核心秒(固定/借核) 核心降幅% 内核秒(固定/借核) 内核降幅% 胜出/次数']
+    for r in reports:
+        if r['timing'] == 'natural':
+            lines.append(f"{r['levels']} {LABELS[r['candidate']]} {r['seed']} "
+                         f"{float(r['control_volume_kernel_elements_sum']):.0f} "
+                         f"{float(r['control_volume_kernel_elements_mean']):.1f}/{float(r['control_volume_kernel_elements_max']):.0f} "
+                         f"{float(r['volume_elements']):.0f} "
+                         f"{float(r['control_seconds']):.6f}/{float(r['candidate_seconds']):.6f} "
+                         f"{float(r['paired_reduction_pct']):.2f} "
+                         f"{float(r['control_local_volume_mesh_max_seconds']):.6f}/{float(r['candidate_local_volume_mesh_max_seconds']):.6f} "
+                         f"{float(r['kernel_reduction_pct']):.2f} {r['wins']}/{r['pairs']}")
+    lines += ['', '先检查实际内核工作量是否增长，再判断借核收益是否恢复；不预设成功。',
+              '自然计时用于判断净收益，拆分计时用于辅助解释；各阶段最大值不可相加。',
+              '线程启停耗时已经包含在相关阶段内；逐轮文件保存两条路线各自慢进程的阶段耗时。',
+              '质量检查覆盖自然预热，正式轮比较逐进程工作量计数。',
+              '同一粗网格在不同种子下可能得到相同分区，不能把种子数量当作独立几何样本数。']
+    atomic(root / 'RESULT_SUMMARY.txt', '\n'.join(lines) + '\n')
+    return states, [r for r in states if r['state'] in ('failed', 'invalid')]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--init', action='store_true')
+    parser.add_argument('--init-workload', action='store_true')
+    parser.add_argument('--workload-summary', action='store_true')
     parser.add_argument('--mark-ranks', type=int)
     parser.add_argument('--exit-code', type=int, default=0)
     args = parser.parse_args()
     args.root.mkdir(parents=True, exist_ok=True)
     with (args.root / '.node_scaling.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        if args.init_workload or args.workload_summary or (args.root / 'node_workload_plan.json').exists():
+            if args.init_workload:
+                initialize_workload(args.root)
+            states, errors = summarize_workload(args.root)
+            print('工作量对照汇总：' + str(args.root / 'RESULT_SUMMARY.txt'))
+            if not (args.init_workload or args.workload_summary) and (errors or any(r['state'] != 'complete' for r in states)):
+                raise SystemExit(1)
+            return
         if args.init:
             initialize(args.root)
         if args.mark_ranks is not None:

@@ -2,7 +2,9 @@
 """Check missing pairs, quality gates, workload consistency and job failure retention."""
 import importlib.util
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +21,7 @@ def write_csv(path, rows):
 with tempfile.TemporaryDirectory() as temp:
     root = Path(temp)
     plan = dict(counts=[64, 128], schedulers=list(module.LABELS), seeds=[-1, 17],
-                modes=['natural', 'split'], repeats=2)
+                modes=['natural', 'split'], repeats=2, levels=2, refines=1, measure_kernel_workload=True)
     (root / 'node_scaling_plan.json').write_text(json.dumps(plan))
     pdir = root / 'p64'
     pdir.mkdir()
@@ -45,6 +47,11 @@ with tempfile.TemporaryDirectory() as temp:
                              compute_max_seconds=5, compute_imbalance=2, volume_elements_sum=100,
                              scaling_work_sha256=f'{seed}', scaling_source_revision='source',
                              scaling_input_sha256='input', scaling_binary_sha256='binary', scaling_kernel_sha256='kernel')
+                    r.update({field: 1 for field in module.WORKLOAD_FIELDS})
+                    r.update(volume_kernel_elements_sum=80, volume_kernel_elements_mean=1.25,
+                             volume_kernel_elements_max=2, volume_kernel_elements_imbalance=1.6,
+                             scaling_kernel_work_sha256=f'kernel-{seed}',
+                             local_volume_mesh_max_seconds=5 if scheduler == 'node_fixed' else 4)
                     raw.append(r)
                     c = dict(r, rank=7, selection='compute;generation', first_loan_fraction='',
                              coop_borrowed_core_seconds=0, compute_seconds=5,
@@ -59,6 +66,8 @@ with tempfile.TemporaryDirectory() as temp:
     assert states[0]['state'] == 'complete' and states[1]['state'] == 'pending' and not errors
     result = module.rows(root / 'node_scaling_summary.csv')
     assert len(result) == 8 and all(abs(float(r['paired_reduction_pct']) - 20) < 1e-10 for r in result)
+    assert all(abs(float(r['kernel_reduction_pct']) - 20) < 1e-10 and
+               float(r['control_volume_kernel_elements_sum']) == 80 and float(r['volume_elements']) == 100 for r in result)
     pairs = module.rows(root / 'node_scaling_pairs.csv')
     assert len(pairs) == 16 and all(r['first_loan_fraction'] == '' for r in pairs)
     # Removing just one pair invalidates the scale; no partial success remains.
@@ -68,6 +77,12 @@ with tempfile.TemporaryDirectory() as temp:
     states, errors = module.summarize(root)
     assert states[0]['state'] == 'invalid' and errors and not (root / 'node_scaling_summary.csv').read_text()
     path.write_text(original)
+    for bad_value in ('', 'different-kernel-work'):
+        data = module.rows(path)
+        data[0]['scaling_kernel_work_sha256'] = bad_value
+        write_csv(path, data)
+        assert module.summarize(root)[0][0]['state'] == 'invalid'
+        path.write_text(original)
     data = module.rows(path)
     data[0]['scaling_work_sha256'] = 'changed'
     write_csv(path, data)
@@ -84,3 +99,30 @@ with tempfile.TemporaryDirectory() as temp:
     assert module.summarize(root)[0][0]['state'] == 'failed'
     assert not (root / 'node_scaling_summary.csv').read_text()
 print('node scaling summary: pairing, workload, quality, pending and failure checks passed without build stamps')
+
+# 直接检验新计数的汇总，不用体细化后的单元数代替内核单元数。
+sys.path.insert(0, str(ROOT / 'strong_scaling'))
+from analyze_results import volume_workload_metrics
+samples = [dict(rank=i, metrics=dict(volume_kernel_input_points=4, volume_kernel_input_surface_elements=4,
+    volume_kernel_points=4, volume_kernel_surface_elements=4, volume_kernel_elements=n,
+    local_volume_elements_before_adjacency=n*8), stages={}) for i, n in enumerate((2, 6))]
+metrics = volume_workload_metrics(samples)
+assert metrics['volume_kernel_elements_sum'] == 8
+assert metrics['volume_kernel_elements_mean'] == 4
+assert metrics['volume_kernel_elements_max'] == 6
+assert metrics['volume_kernel_elements_imbalance'] == 1.5
+original_env = os.environ.get('WORKLOAD_ROOT')
+os.environ['WORKLOAD_ROOT'] = 'fixture'
+try:
+    try:
+        volume_workload_metrics([dict(rank=0, metrics={}, stages={})])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('缺失内核计数必须报告为缺失，不能反推')
+finally:
+    if original_env is None:
+        os.environ.pop('WORKLOAD_ROOT', None)
+    else:
+        os.environ['WORKLOAD_ROOT'] = original_env
+print('pre-refine workload: actual counts and missing-data checks passed')

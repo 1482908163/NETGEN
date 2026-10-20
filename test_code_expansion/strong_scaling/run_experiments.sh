@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   borrow_workload: 固定2048进程，比较生成前表面细化2/3/4级
 #   borrow_scaling: 64～2048进程，同布局固定核/弹性借核/阶段受限借核
 #   cooperate  : 1/4/16/32/64 节点，每节点4进程/16核，完成贡献消融与扩展验证
 #   kernel     : 1/4/16 节点、每节点1进程/16核，比较修复策略与同步等待
@@ -18,7 +19,14 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_scaling}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_workload}"
+if [[ "${EXPERIMENT_PRESET}" == borrow_workload ]]; then
+    export WORKLOAD_SWEEP=1
+    export WORKLOAD_LEVELS="${WORKLOAD_LEVELS:-2 3 4}"
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-2048}"
+    export REFINES="${REFINES:-1}"
+    EXPERIMENT_PRESET=borrow_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == borrow_scaling ]]; then
     export NODE_SCALING=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-64 128 256 512 1024 2048}"
@@ -216,6 +224,9 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
             trap - EXIT
             python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${kernel_root}" \
                 --mark-ranks "${PROCESS_COUNT}" --exit-code "$rc" || rc=1
+            if [[ -n "${WORKLOAD_ROOT:-}" ]]; then
+                python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${WORKLOAD_ROOT}" --workload-summary || rc=1
+            fi
             exit "$rc"
         }
         trap scaling_finish EXIT

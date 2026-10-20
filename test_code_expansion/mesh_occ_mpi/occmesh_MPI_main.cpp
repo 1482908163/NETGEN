@@ -813,6 +813,8 @@ int main(int argc, char **argv) {
         volumeMesh_start = MPI_Wtime();
         {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
+            profiler.set_metric("volume_kernel_input_points", nglib::Ng_GetNP(submesh));
+            profiler.set_metric("volume_kernel_input_surface_elements", nglib::Ng_GetNSE(submesh));
             double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={};
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
@@ -865,6 +867,10 @@ int main(int argc, char **argv) {
             }
         }
         volumeMesh_end = MPI_Wtime();
+        // 在生成、修复和优化结束后记录；不混入下方 Refineforvol 的单元放大。
+        profiler.set_metric("volume_kernel_points", nglib::Ng_GetNP(submesh));
+        profiler.set_metric("volume_kernel_surface_elements", nglib::Ng_GetNSE(submesh));
+        profiler.set_metric("volume_kernel_elements", nglib::Ng_GetNE(submesh));
         profiler.mark_elapsed("local_volume_complete_elapsed");
         //MPI_Barrier(MPI_COMM_WORLD);
         if(id == 0) printf("meshing done \n");
@@ -1252,4 +1258,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
 
