@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_node_scaling.py", line 291, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_node_scaling.py", line 269, in main
+    check_build(args.seal_build)
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_node_scaling.py", line 52, in check_build
+    actual = build_info()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_node_scaling.py", line 43, in build_info
+    dirty = subprocess.check_output(['git', '-C', str(PROJECT), 'diff', 'HEAD', '--name-only',
+  File "/usr/lib/python3.8/subprocess.py", line 415, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+  File "/usr/lib/python3.8/subprocess.py", line 493, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/usr/lib/python3.8/subprocess.py", line 858, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.8/subprocess.py", line 1704, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+NotADirectoryError: [Errno 20] Not a directory: 'git'
+借核验证汇总：/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261020-032000/RESULT_SUMMARY.txt
