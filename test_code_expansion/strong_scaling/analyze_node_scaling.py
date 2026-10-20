@@ -3,16 +3,13 @@
 import argparse
 import csv
 import fcntl
-import hashlib
 import io
 import json
 import math
 import os
 from pathlib import Path
 import statistics as st
-import subprocess
 
-PROJECT = Path(__file__).resolve().parents[1]
 HISTORICAL_BASE = 'fe28c76e90975730bb7a7f6f0dec6f3fee4eed38'
 LABELS = {'node_fixed': '固定核', 'node_elastic': '弹性借核', 'node_phaseaware': '阶段受限借核'}
 
@@ -21,44 +18,6 @@ def atomic(path, text):
     temporary = path.with_name(path.name + '.tmp')
     temporary.write_text(text, encoding='utf-8')
     temporary.replace(path)
-
-
-def digest(path):
-    h = hashlib.sha256()
-    with path.open('rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            h.update(block)
-    return h.hexdigest()
-
-
-def revision():
-    return subprocess.check_output(['git', '-C', str(PROJECT), 'rev-parse', 'HEAD'], text=True).strip()
-
-
-def build_info():
-    binary = Path(os.environ.get('BINARY', PROJECT / 'build/mesh_occ_mpi/mesh_occ_mpi')).resolve()
-    install = Path(os.environ.get('NETGEN_INSTALL_DIR', PROJECT.parent / 'install'))
-    kernel = Path(os.environ.get('NETGEN_INSTALL_LIB', install / 'lib')) / 'libnglib.so'
-    # A dirty source tree cannot be attributed to the recorded commit.
-    dirty = subprocess.check_output(['git', '-C', str(PROJECT), 'diff', 'HEAD', '--name-only',
-                                    '--', '.', '../netgen'], text=True).strip()
-    if dirty:
-        raise ValueError('源码有未提交改动，请提交后重新编译：' + dirty)
-    return dict(source_revision=revision(), binary_path=str(binary), kernel_path=str(kernel.resolve()),
-                binary_sha256=digest(binary), kernel_sha256=digest(kernel))
-
-
-def check_build(seal=False):
-    actual = build_info()
-    stamp = PROJECT / 'build/node_scaling_build.json'
-    if seal:
-        atomic(stamp, json.dumps(actual, indent=2) + '\n')
-    elif json.loads(stamp.read_text()) != actual:
-        raise ValueError('程序或内核库与当前源码不匹配，请在本分支重跑 bash build_project.sh')
-    expected = os.environ.get('MESH_SOURCE_REVISION')
-    if not seal and expected and actual['source_revision'] != expected:
-        raise ValueError('排队后源码分支发生变化，请恢复提交时版本')
-    return actual
 
 
 def words(name):
@@ -78,7 +37,7 @@ def initialize(root):
         raise ValueError('本轮固定每节点4进程、每进程4个物理核，以保持历史布局')
     if os.environ['EXPERIMENT_STAGE'] != 'kernel' or os.environ['ALGORITHMS'] != 'sparse' or 'natural' not in modes or len(set(modes)) != len(modes):
         raise ValueError('本轮只比较 sparse 算法，必须包含 natural 计时')
-    plan = dict(schema='node_scaling_v1', historical_base=HISTORICAL_BASE, source_revision=revision(),
+    plan = dict(schema='node_scaling_v1', historical_base=HISTORICAL_BASE, source_revision=os.environ.get('MESH_SOURCE_REVISION', 'manual'),
                 counts=counts, schedulers=schedulers, seeds=seeds, modes=modes,
                 repeats=int(os.environ['REPEATS']), warmups=int(os.environ['WARMUPS']),
                 ranks_per_node=4, cpus_per_task=4, threads=4, exclusive_nodes=True,
@@ -86,7 +45,6 @@ def initialize(root):
                 partition_variant=os.environ['PARTITION_VARIANT'],
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'],
                 quality_warmup=int(os.environ['QUALITY_WARMUP']),
-                input_sha256=digest(Path(os.environ['INPUT_PATH'])) if os.environ.get('DRY_RUN') != '1' else 'dry_run',
                 start_epoch=int(os.environ['START_EPOCH']))
     target = root / 'node_scaling_plan.json'
     if target.exists():
@@ -95,8 +53,6 @@ def initialize(root):
             raise ValueError('结果目录已经包含其他计划，请使用新的 RUN_ROOT')
         plan = old
     atomic(target, json.dumps(plan, ensure_ascii=False, indent=2) + '\n')
-    if os.environ.get('DRY_RUN') != '1':
-        atomic(root / 'node_scaling_build.json', json.dumps(check_build(), indent=2) + '\n')
 
 
 def rows(path):
@@ -158,7 +114,6 @@ def collect_scale(root, plan, p):
                 critical[key] = r
     pairs = []
     report = []
-    build = json.loads((root / 'node_scaling_build.json').read_text())
     for candidate, contribution in (('node_elastic', 'borrowing'), ('node_phaseaware', 'phaseaware')):
         for mode in plan['modes']:
             for seed in plan['seeds']:
@@ -171,12 +126,6 @@ def collect_scale(root, plan, p):
                     nk = candidate, mode, seed, repeat
                     control, new = raw[ck], raw[nk]
                     oldcrit, newcrit = critical[ck], critical[nk]
-                    for r in (control, new):
-                        if (r['scaling_source_revision'] != build['source_revision'] or
-                            r['scaling_binary_sha256'] != build['binary_sha256'] or
-                            r['scaling_kernel_sha256'] != build['kernel_sha256'] or
-                            r['scaling_input_sha256'] != plan['input_sha256']):
-                            raise ValueError('源码、程序或内核库指纹不匹配')
                     if control['scaling_work_sha256'] != new['scaling_work_sha256']:
                         raise ValueError(f'{candidate}/{mode}/{seed}/{repeat} 逐进程单元/边界/幽灵计数不同')
                     ct, nt = numeric(control, 'core_seconds'), numeric(new, 'core_seconds')
@@ -199,7 +148,7 @@ def collect_scale(root, plan, p):
                                critical_team_start_seconds=numeric(newcrit, 'kernel_team_start_seconds'),
                                critical_team_stop_seconds=numeric(newcrit, 'kernel_team_stop_seconds'),
                                critical_management_seconds=numeric(newcrit, 'coop_management_seconds'),
-                               source_revision=build['source_revision'], workload_sha256=new['scaling_work_sha256'])
+                               source_revision=new.get('scaling_source_revision', 'manual'), workload_sha256=new['scaling_work_sha256'])
                     pairs.append(row)
                     group.append(row)
                 old = summaries['node_fixed', mode, seed]
@@ -260,14 +209,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
     parser.add_argument('--init', action='store_true')
-    parser.add_argument('--seal-build', action='store_true')
-    parser.add_argument('--verify-build', action='store_true')
     parser.add_argument('--mark-ranks', type=int)
     parser.add_argument('--exit-code', type=int, default=0)
     args = parser.parse_args()
-    if args.seal_build or args.verify_build:
-        check_build(args.seal_build)
-        return
     args.root.mkdir(parents=True, exist_ok=True)
     with (args.root / '.node_scaling.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)

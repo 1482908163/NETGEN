@@ -81,6 +81,3 @@ make install || {
 echo "✅ 编译完成"
 echo "安装路径: ${NETGEN_INSTALL_DIR}"
 echo "可执行文件: $BUILD_DIR/mesh_occ_mpi/mesh_occ_mpi"
-
-# Bind measurements to this checkout and the actual application/kernel files.
-python3 "${PROJ_DIR}/strong_scaling/analyze_node_scaling.py" "${PROJ_DIR}" --seal-build

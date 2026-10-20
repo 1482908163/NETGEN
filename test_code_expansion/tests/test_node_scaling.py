@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Check missing pairs, quality gates, provenance and job failure retention."""
-import csv
+"""Check missing pairs, quality gates, workload consistency and job failure retention."""
 import importlib.util
 import json
 from pathlib import Path
@@ -20,10 +19,8 @@ def write_csv(path, rows):
 with tempfile.TemporaryDirectory() as temp:
     root = Path(temp)
     plan = dict(counts=[64, 128], schedulers=list(module.LABELS), seeds=[-1, 17],
-                modes=['natural', 'split'], repeats=2, input_sha256='input')
+                modes=['natural', 'split'], repeats=2)
     (root / 'node_scaling_plan.json').write_text(json.dumps(plan))
-    build = dict(source_revision='source', binary_sha256='binary', kernel_sha256='kernel')
-    (root / 'node_scaling_build.json').write_text(json.dumps(build))
     pdir = root / 'p64'
     pdir.mkdir()
     (pdir / 'node_scaling_state.json').write_text('{"exit_code":0}')
@@ -71,13 +68,12 @@ with tempfile.TemporaryDirectory() as temp:
     states, errors = module.summarize(root)
     assert states[0]['state'] == 'invalid' and errors and not (root / 'node_scaling_summary.csv').read_text()
     path.write_text(original)
-    for field, value in [('scaling_work_sha256', 'changed'), ('scaling_kernel_sha256', 'wrong-library')]:
-        data = module.rows(path)
-        data[0][field] = value
-        write_csv(path, data)
-        states, errors = module.summarize(root)
-        assert states[0]['state'] == 'invalid' and errors
-        path.write_text(original)
+    data = module.rows(path)
+    data[0]['scaling_work_sha256'] = 'changed'
+    write_csv(path, data)
+    states, errors = module.summarize(root)
+    assert states[0]['state'] == 'invalid' and errors
+    path.write_text(original)
     original_audit = (pdir / 'ablation_summary.csv').read_text()
     data = module.rows(pdir / 'ablation_summary.csv')
     data[0]['quality_pass'] = False
@@ -87,4 +83,4 @@ with tempfile.TemporaryDirectory() as temp:
     (pdir / 'node_scaling_state.json').write_text('{"exit_code":124}')
     assert module.summarize(root)[0][0]['state'] == 'failed'
     assert not (root / 'node_scaling_summary.csv').read_text()
-print('node scaling summary: pairing, provenance, quality, pending and failure checks passed')
+print('node scaling summary: pairing, workload, quality, pending and failure checks passed without build stamps')

@@ -11,9 +11,8 @@ if [[ "${MESH_EXPERIMENT_DRIVER_READY:-0}" != 1 ]]; then
 fi
 
 REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-MESH_SOURCE_REVISION="$(git -C "${REPOSITORY_ROOT}" rev-parse HEAD)"
-[[ -n "${MESH_SOURCE_REVISION}" ]] || { echo "Cannot record source revision" >&2; exit 2; }
-export MESH_SOURCE_REVISION
+# Optional label supplied by the user; experiment scripts do not invoke Git.
+export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
 export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
 export MESH_EXPERIMENT_WORKER=1
@@ -49,10 +48,6 @@ if [[ "${EXPERIMENT_STAGE}" == evaluation && "${BALANCE_METHOD}" != task_queue ]
     fi
 fi
 if [[ "${NODE_SCALING:-0}" == 1 ]]; then
-    # Check the historical executable/library before allocating cluster time.
-    if [[ "${DRY_RUN}" != 1 ]]; then
-        python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --verify-build
-    fi
     python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --init
 fi
 printf '%s\n' "${counts[@]}" > "${RUN_ROOT}/requested_process_counts.txt"

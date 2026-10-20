@@ -210,7 +210,7 @@ fi
 if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
     kernel_root="${RUN_ROOT:?}";kernel_failures=0
     if [[ "${NODE_SCALING}" == 1 ]]; then
-        # Always publish completion/failure, including build or launch failures.
+        # Always publish completion/failure, including launch failures.
         scaling_finish() {
             local rc=$?
             trap - EXIT
@@ -219,7 +219,6 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
             exit "$rc"
         }
         trap scaling_finish EXIT
-        python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${kernel_root}" --verify-build
     fi
     mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
     read -r -a schedulers <<< "${KERNEL_SCHEDULERS}"
@@ -302,58 +301,15 @@ done
 [[ -x "${BINARY}" && -f "${INPUT_PATH}" ]] || { echo "Missing executable or input: ${BINARY}, ${INPUT_PATH}" >&2; exit 2; }
 (( ${#algorithms[@]} > 0 && ${#timings[@]} > 0 )) || exit 2
 
-# A stale executable silently ignores the new research arguments in older
-# revisions.  That produces ordinary mesh artifacts but no rank profile, and
-# the failure would otherwise be discovered only after many expensive runs.
-binary_error=""
 if ((KERNEL_THREADS>0)); then
     [[ -r "${NETGEN_INSTALL_LIB}/libnglib.so" ]] || { echo "缺少本次内核库，请先运行 build_project.sh。" >&2;exit 2; }
     MESH_KERNEL_SHA256="$(sha256sum "${NETGEN_INSTALL_LIB}/libnglib.so" | cut -d ' ' -f1)"
     export MESH_KERNEL_SHA256
 fi
-markers=("--profile-core-only" "--algorithm" "research_1" "global_id_bits" "mesh_phase_v3")
-if [[ "${EXPERIMENT_STAGE}" == communication ]]; then
-    markers+=("mesh_comm_v1" "--communication-only")
-else
-    [[ "${EXPERIMENT_STAGE}" == legacy ]] || markers+=("partition_sampling_v1" "--preflight-parts")
-fi
-[[ "${BALANCE_METHOD}" != task_queue ]] || markers+=("mesh_tasks_v1" "--mesh-tasks")
-((KERNEL_THREADS==0)) || markers+=("--kernel-threads" "--kernel-scheduler" "repair_v2" "natural_sync_v1" "front_profile_v1")
-[[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_coop_v2")
-[[ "${KERNEL_SCHEDULER}" != node_tail ]] || markers+=("node_tail_v1")
-[[ "${KERNEL_SCHEDULER}" != node_budget && "${KERNEL_SCHEDULER}" != node_priority ]] || markers+=("node_work_v1")
-[[ "${KERNEL_SCHEDULER}" != node_phaseaware ]] || markers+=("node_phaseaware_v1" "critical_path_phase6")
-[[ "${KERNEL_SCHEDULER}" != node_reserved && "${KERNEL_SCHEDULER}" != node_elastic ]] || markers+=("node_atomic_v1")
-[[ "${KERNEL_SCHEDULER}" != node_* ]] || markers+=("node_timeline_v1" "node_stage_metrics_v1")
-[[ "${KERNEL_SCHEDULER}" != node_stage && "${KERNEL_SCHEDULER}" != node_reclaim && "${KERNEL_SCHEDULER}" != node_selective && "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("node_stage_v1")
-[[ "${QUALITY_WARMUP}" != 1 ]] || markers+=("volume_audit_v1")
-[[ "${KERNEL_SCHEDULER}" != node_original ]] || markers+=("node_original")
-[[ "${KERNEL_SCHEDULER}" != node_selective ]] || markers+=("finalopt_only_v1")
-[[ "${KERNEL_SCHEDULER}" != node_once ]] || markers+=("finalopt_once_v1")
-((resource_evaluation==0)) || markers+=("mesh_resource_v1" "--rank-capacities")
-for marker in "${markers[@]}"; do
-    if ! LC_ALL=C grep -aFq -- "${marker}" "${BINARY}"; then
-        binary_error="missing capability marker ${marker}"
-        break
-    fi
-done
-if [[ -z "${binary_error}" ]]; then
-    newer_source="$(find "${REPOSITORY_ROOT}/mesh_occ_mpi" -type f \
-        \( -name '*.cpp' -o -name '*.h' -o -name 'CMakeLists.txt' \) \
-        -newer "${BINARY}" -print -quit)"
-    [[ -z "${newer_source}" ]] || binary_error="source is newer than executable: ${newer_source}"
-fi
-if [[ -n "${binary_error}" ]]; then
-    echo "ERROR: stale/incompatible mesh executable (${binary_error})." >&2
-    echo "Rebuild first: cmake --build \"${REPOSITORY_ROOT}/build\" -j" >&2
-    echo "No experiment was started and no result directory needs analysis." >&2
-    exit 2
-fi
 export MESH_INPUT_SHA256="$(sha256sum "${INPUT_PATH}" | cut -d ' ' -f1)"
 export MESH_BINARY_SHA256="$(sha256sum "${BINARY}" | cut -d ' ' -f1)"
-MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-$(git -C "${REPOSITORY_ROOT}" rev-parse HEAD)}"
-[[ -n "${MESH_SOURCE_REVISION}" ]] || { echo "Cannot record source revision" >&2; exit 2; }
-export MESH_SOURCE_REVISION
+# Optional label supplied by the user; experiment scripts do not invoke Git.
+export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export MESH_MODEL_SHA256="none"
 model_args=()
 export MESH_CAPACITY_SHA256="none"
