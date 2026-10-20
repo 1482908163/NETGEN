@@ -1,0 +1,20 @@
+实验结果总览 / Experiment result overview
+========================================================
+状态: 完整，可分析
+有效正式运行: 30 / 30
+异常项: 0
+
+优先查看：
+1. 本文件：快速判断实验是否完整及主要指标。
+2. analysis/summary.csv：论文分析用的重复实验中位数。
+3. analysis/issues.txt：仅在异常项不为 0 时查看。
+4. repeat_*/run.log.gz：只在排查某次失败时查看。
+
+核心汇总（时间单位 s，通信量单位 GiB）：
+algorithm timing ranks seed repeats core compute_max face_exchange vertex_wait imbalance recv_GiB vs_baseline vs_sparse
+sparse natural 2048 -1 5 3.089 0.576 0.241 - 2.643 0.026 - 1.000
+sparse natural 2048 17 5 2.997 0.590 0.204 - 2.686 0.026 - 1.000
+sparse natural 2048 41 5 2.959 0.575 0.219 - 2.630 0.026 - 1.000
+sparse split 2048 -1 5 3.109 0.560 0.256 0.448 2.568 0.026 - 1.000
+sparse split 2048 17 5 3.194 0.563 0.234 0.453 2.560 0.026 - 1.000
+sparse split 2048 41 5 3.083 0.569 0.252 0.460 2.598 0.026 - 1.000
