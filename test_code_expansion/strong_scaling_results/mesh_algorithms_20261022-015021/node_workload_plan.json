@@ -1,0 +1,49 @@
+{
+  "schema": "node_workload_v1",
+  "levels": [
+    2,
+    3,
+    4
+  ],
+  "counts": [
+    256,
+    512,
+    1024,
+    2048
+  ],
+  "refines": 2,
+  "cases": [
+    {
+      "levels": 2,
+      "directory": "levels2"
+    },
+    {
+      "levels": 3,
+      "directory": "levels3"
+    },
+    {
+      "levels": 4,
+      "directory": "levels4"
+    }
+  ],
+  "seeds": [
+    -1
+  ],
+  "modes": [
+    "natural"
+  ],
+  "schedulers": [
+    "node_original",
+    "node_fixed",
+    "node_elastic"
+  ],
+  "repeats": 5,
+  "warmups": 1,
+  "input_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP",
+  "maxh": "1000",
+  "minh": "0",
+  "partition_variant": "metis_seed",
+  "ranks_per_node": 4,
+  "cpus_per_task": 4,
+  "overall_comparison": true
+}

@@ -1,0 +1,546 @@
+退出码：1
+y_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=276 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=276 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=276 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=364 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=364 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=364 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=364 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=808 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=808 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=808 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1776 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1776 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1776 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1776 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1160 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1160 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1336 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1336 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1336 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1820 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1820 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1820 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1292 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1292 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1292 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1292 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1468 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1468 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1468 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1468 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1164 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1164 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1164 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=2044 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=2044 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=2044 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1252 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1252 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1252 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1912 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1912 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1912 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1912 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1032 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1032 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1032 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1032 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=904 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=244 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=244 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=244 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=244 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=200 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=200 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=200 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=816 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=816 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=816 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=816 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1700 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1700 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1700 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1876 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1876 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1876 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1876 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1260 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1260 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1260 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1172 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1172 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1172 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1172 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=820 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=820 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=820 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=820 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=908 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=908 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=908 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1484 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1484 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1484 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1484 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1352 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1352 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1352 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1616 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1396 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1396 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1396 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1396 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1264 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1264 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=956 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=956 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=956 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=956 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=740 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=740 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=740 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=740 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1620 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1620 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1620 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1620 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1136 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1136 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1136 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1136 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=520 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=520 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=520 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1180 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1180 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1180 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=744 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=744 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=744 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1228 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1228 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1228 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1228 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1184 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1184 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1184 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=260 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=260 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=260 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=876 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=876 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=876 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=220 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=220 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=220 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1056 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1056 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1056 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=968 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=968 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=968 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=528 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=528 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=528 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=528 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=0 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=0 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=0 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=0 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=308 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=352 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=352 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=352 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=444 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=444 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=444 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=180 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=180 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=180 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=972 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=972 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=972 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=972 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1020 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1020 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1020 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=360 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=360 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=360 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=976 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=976 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=976 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=1196 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1196 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1196 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=272 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=272 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=272 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=272 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=448 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=448 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=448 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=892 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=848 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1068 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=1068 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1068 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1068 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=980 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=980 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=980 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=408 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=408 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=408 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=408 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=16 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=16 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=16 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=16 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=984 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=104 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=104 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=104 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=148 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=148 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=148 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=148 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=328 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=328 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=328 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=64 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=64 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=64 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=284 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=284 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=284 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=284 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=196 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=196 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=196 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=68 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=68 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=68 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=68 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1040 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=996 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=996 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=996 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=996 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=556 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=160 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=160 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=160 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=160 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=204 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=204 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=204 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=204 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=208 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=208 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=208 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=208 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=296 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=296 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=296 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=296 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=824 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=824 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=824 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=916 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=916 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=916 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v2_layout: leader_world_rank=36 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=36 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=36 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=36 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=168 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=168 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=168 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=564 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=564 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=564 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=524 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=524 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=524 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=832 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=832 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=832 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=128 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=128 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=128 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=896 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=388 local_rank=0 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=0,1,2,3
+node_coop_v2_layout: leader_world_rank=388 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=388 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=388 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=480 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=480 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=480 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1344 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1864 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=768 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=768 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=768 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1664 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=1664 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1664 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1040 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=1040 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=556 local_rank=1 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=4,5,6,7
+node_coop_v2_layout: leader_world_rank=556 local_rank=2 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=8,9,10,11
+node_coop_v2_layout: leader_world_rank=556 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v2_layout: leader_world_rank=1344 local_rank=3 pool=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 home=12,13,14,15
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+node_coop_v1: node_group=processor_name shared_state=posix_shm affinity_layout=shared_pool node_ranks=4 node_cpus=16 home_cpus=4
+id0 sum runtime is :1s
+meshing done 
+successful!!!

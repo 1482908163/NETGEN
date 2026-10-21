@@ -1,0 +1,38 @@
+{
+  "schema": "node_scaling_v1",
+  "historical_base": "fe28c76e90975730bb7a7f6f0dec6f3fee4eed38",
+  "source_revision": "manual",
+  "counts": [
+    256,
+    512,
+    1024,
+    2048
+  ],
+  "schedulers": [
+    "node_original",
+    "node_fixed",
+    "node_elastic"
+  ],
+  "seeds": [
+    -1
+  ],
+  "modes": [
+    "natural"
+  ],
+  "repeats": 5,
+  "warmups": 1,
+  "ranks_per_node": 4,
+  "cpus_per_task": 4,
+  "threads": 4,
+  "exclusive_nodes": true,
+  "levels": 2,
+  "refines": 2,
+  "partition_variant": "metis_seed",
+  "input_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP",
+  "maxh": "1000",
+  "minh": "0",
+  "quality_warmup": 1,
+  "start_epoch": 1792605141,
+  "overall_comparison": true,
+  "measure_kernel_workload": true
+}

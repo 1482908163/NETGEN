@@ -1,0 +1,79 @@
+内核协作与贡献消融汇总
+全量体网格预热审计：已要求；收到 2 组。
+贡献 borrowing: 3.123731→3.163125s；加速 0.9875；质量门槛=通过 
+质量门槛覆盖全部本地四面体的形状、方向、面连接与边界指纹；不覆盖任意非相邻单元相交或 CAD 距离。
+关键进程阶段报告：10/15 次正式运行。
+关键计算 node_elastic/sparse: 进程及出现次数={"1013": 3, "2036": 2}；计算=0.724s；生成=0.497s；前沿=0.321s；域内修复=0.060s；外层修复=0.062s；优化=0.091s；借核=5/5 次运行。
+  front细分: ApplyRules=0.303s GetLocals=0.004s Transform=0.001s Validate=0.001s Commit=0.000s Retry=0.000s；迭代=1551 旋转尝试=4650 局部面均值/最大=13.415/48 候选命中率=4.796% 重试率=91.360% 覆盖率=96.748% 未归因=0.010s。
+关键计算 node_fixed/sparse: 进程及出现次数={"1013": 4, "2036": 1}；计算=0.575s；生成=0.458s；前沿=0.323s；域内修复=0.022s；外层修复=0.025s；优化=0.049s；借核=0/5 次运行。
+  front细分: ApplyRules=0.305s GetLocals=0.004s Transform=0.002s Validate=0.001s Commit=0.000s Retry=0.000s；迭代=1551 旋转尝试=4650 局部面均值/最大=13.415/48 候选命中率=4.796% 重试率=91.360% 覆盖率=96.678% 未归因=0.011s。
+上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。
+逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。
+进程数: 2048; 异常项: 5
+scheduler algorithm threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static
+node_elastic sparse 4 natural 3.163125 0.170008 0.724 - 191890.000 -
+node_fixed sparse 4 natural 3.123731 0.102978 0.575 - 191890.000 -
+自然同步 node_elastic: 局部体网格完成离散=0.579s 到vertex入口离散=0.586s 体网格后至vertex最大本地尾部=0.068s vertex最后到达后=0.018s element最后到达后=0.018s volume-size最后到达后=0.019s
+线程组 node_elastic natural: 启动次数=9653.000 启动耗时=0.164317s 停止耗时=0.021364s
+资源 node_elastic natural: 相对原修复加速=- 相对同核原修复加速=- 相对固定接口加速=0.988 相对保底借核加速=- 相对普通借核加速=- 借核租约核秒=397.664 峰值线程=13.000 模型采用次数=0.000
+安全点 node_elastic natural: 检查次数=100900.000 重建次数=1461.000 实际增核次数=1461.000 检查耗时=0.010s
+阶段共享 node_elastic natural: 阶段闲置核秒=166.656 提前借核核秒=0.000 收回等待最大进程累计=0.000s 等待各进程总和=0.000s 提前借核租约数=0.000 归还次数=0.000 缩核次数=0.000 重建未变次数=0.000
+节点尾部 node_elastic natural: 可借核闲置核秒=24.610 预留过渡核秒=5.744 节点完成跨度最大值=0.472s
+原子借核 node_elastic natural: 新预留核数=5991.000 无容量次数=99439.000 相对原安全点加速=- 相对原子事件对照加速=-
+自然同步 node_fixed: 局部体网格完成离散=0.434s 到vertex入口离散=0.446s 体网格后至vertex最大本地尾部=0.072s vertex最后到达后=0.034s element最后到达后=0.028s volume-size最后到达后=0.032s
+线程组 node_fixed natural: 启动次数=8192.000 启动耗时=0.075697s 停止耗时=0.014173s
+资源 node_fixed natural: 相对原修复加速=- 相对同核原修复加速=- 相对固定接口加速=1.000 相对保底借核加速=- 相对普通借核加速=- 借核租约核秒=0.000 峰值线程=4.000 模型采用次数=0.000
+阶段共享 node_fixed natural: 阶段闲置核秒=160.268 提前借核核秒=0.000 收回等待最大进程累计=0.000s 等待各进程总和=0.000s 提前借核租约数=0.000 归还次数=0.000 缩核次数=0.000 重建未变次数=0.000
+节点尾部 node_fixed natural: 可借核闲置核秒=245.462 预留过渡核秒=0.000 节点完成跨度最大值=0.351s
+node_original=同核布局原串行修复；node_native=同核布局并行修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。
+node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。
+node_reserved=完成事件触发的原子预留；node_elastic=每个安全点检查可用容量，允许领取阶段归还的核。
+node_stage=未完成进程的串行窗口也可借核，正常租约结束归还；node_reclaim=另在安全点响应归还，包含生成内部优化轮次。
+node_selective=仅最终优化借用未完成进程的核；node_once=进一步限制每进程最多一次提前租约，归还请求仍优先。
+已完成来源的常规借核不受一次限制；持有提前租约时暂停额外增核，原所有者需要核时仍立即在安全点归还。
+阶段策略进入并行租约前必须收回全部初始保底核；串行及等待时只运行主核。收回等待已包含在核心时间中，不重复相加。
+阶段重建可以增核、缩核或不变；阶段闲置核秒与提前借核核秒是资源状态积分，不代表硬件实际忙碌。
+完整模式的 node_resource_timeline.csv 保留全进程时序；精简模式仅保留关键进程及同节点进程，时间原点仅节点内一致。
+可借核闲置核秒只累计首个至最后一个节点内核完成之间的可借空闲容量；不是硬件利用率。
+node_tail=保底安全点借核：在修复轮次及优化操作之间响应已完成进程释放的核，无新核时保留线程组。
+node_budget=只在最终优化中按剩余窗口和成本门槛申请一次；node_priority=同一约束下优先剩余单元操作量较多的进程。
+node_phaseaware=关键路径阶段过滤：generation/repair 固定保底核，仅 final optimization 使用已完成进程释放的核；二次增核受剩余工作与重建成本门槛约束。
+gain_estimate 是门槛启发量，不是实测节省时间；剩余工作优先只比较本节点已公布且未过期的进度。
+质量对照优先使用同核原修复，再检查各借核策略相对固定分配的单元数和标记数；不代替完整质量验证。
+租约核秒表示借入资源的持有量，不是硬件实测忙碌核秒。
+线程组次数为各进程总和，启停耗时分别取进程最大值，已包含在内核耗时中，不能再加到总时间。
+kernel_phase_summary.csv 给出阶段租约次数、最少/最多线程、低于保底核次数；阶段秒为进程租约时长之和，不是关键路径。
+同线程同进程同预留核数：static=原调度，repair=并行修复，frontier=邻域限制修复；cavity=上一轮候选调度。
+逐轮胜出仅比较同一批、同规模、同种子、同计时、同重复编号的正式运行，是波动诊断，不等于统计显著性。
+natural 判断整体净收益；split 判断等待；内部子计时存在嵌套，不相加。illegal 非0表示仍有原内核标记单元，异常项为0不等于质量全部通过。
+p2048/node_original/t4: Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_0
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_1
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_2
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_3
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_4
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_5
+baseline_natural: missing/invalid quality warmup: missing/invalid natural sync timestamp: face_sparse_match_arrival_elapsed
+Missing measured repeats: p2048 seed=-1 baseline/natural: [1, 2, 3, 4, 5]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_0
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_1
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_2
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_3
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_4
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_5
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/analysis/summary.csv'
+baseline_natural: missing/invalid quality warmup: missing/invalid natural sync timestamp: face_sparse_match_arrival_elapsed
+node_original/t4: 关键进程明细 0/5 次
+node_original/t4: Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_0
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_1
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_2
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_3
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_4
+Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_5
+baseline_natural: missing/invalid quality warmup: missing/invalid natural sync timestamp: face_sparse_match_arrival_elapsed
+Missing measured repeats: p2048 seed=-1 baseline/natural: [1, 2, 3, 4, 5]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_0
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_1
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_2
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_3
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_4
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels2/kernel_node_original_t4/p2048/baseline_natural/repeat_5

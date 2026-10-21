@@ -1,0 +1,7 @@
+scheduler,threads,algorithm,timing,seed,repeats,phase,phase_name,epochs_median,seconds_median,core_seconds_median,borrowed_core_seconds_median,below_base_epochs_median,min_threads_median,max_threads_median,early_epochs_median,reclaims_median
+node_elastic,4,sparse,natural,-1,5,1,delaunay_opt,2048.0,148.93864261900012,595.7545704760005,0.0,0.0,4.0,4.0,,
+node_elastic,4,sparse,natural,-1,5,6,final_opt,3330.0,399.2147584210003,2364.8037255289973,768.1385102850015,0.0,4.0,13.0,,
+node_elastic,4,sparse,natural,-1,5,7,repair_group,4261.0,554.7805010009998,2313.033769566998,95.22790018800005,0.0,4.0,13.0,,
+node_fixed,4,sparse,natural,-1,5,1,delaunay_opt,2048.0,151.8432038220001,607.3728152880004,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,natural,-1,5,6,final_opt,2048.0,379.8297393840007,1519.3189575360027,0.0,0.0,4.0,4.0,,
+node_fixed,4,sparse,natural,-1,5,7,repair_group,4096.0,553.5612011260012,2214.2448045040046,0.0,0.0,4.0,4.0,,
