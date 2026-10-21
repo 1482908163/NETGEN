@@ -58,3 +58,16 @@ __pycache__/
 
 # 节点协作验证的精简诊断文件始终保留
 !/test_code_expansion/strong_scaling_results/**/node_coop_errors.txt
+
+# 借核实验：忽略大体积明细，保留分析所需的汇总和关键进程数据
+/test_code_expansion/strong_scaling_results/**/node_coop_diagnostics.txt
+/test_code_expansion/strong_scaling_results/**/node_coop_stderr.txt
+/test_code_expansion/strong_scaling_results/**/analysis/node_resource_timeline.csv
+/test_code_expansion/strong_scaling_results/**/analysis/model_samples.csv
+/test_code_expansion/strong_scaling_results/**/analysis/model_samples.csv.gz
+/test_code_expansion/strong_scaling_results/**/quality_summary.json
+
+# 覆盖前面对单次运行原始日志的放行
+/test_code_expansion/strong_scaling_results/**/run.log
+/test_code_expansion/strong_scaling_results/**/run.log.gz
+/test_code_expansion/strong_scaling_results/**/.node_scaling.lock
