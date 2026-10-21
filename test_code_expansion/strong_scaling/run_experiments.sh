@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   borrow_large: 面细化2/3/4、体细化2，64/128/256/512节点，原程序与借核对照
 #   borrow_workload: 固定2048进程，比较生成前表面细化2/3/4级
 #   borrow_scaling: 64～2048进程，同布局固定核/弹性借核/阶段受限借核
 #   cooperate  : 1/4/16/32/64 节点，每节点4进程/16核，完成贡献消融与扩展验证
@@ -19,7 +20,27 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_workload}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_large}"
+if [[ "${EXPERIMENT_PRESET}" == borrow_large ]]; then
+    export WORKLOAD_SWEEP=1 OVERALL_COMPARISON=1
+    export WORKLOAD_LEVELS="${WORKLOAD_LEVELS:-2 3 4}"
+    export NODE_COUNTS="${NODE_COUNTS:-64 128 256 512}"
+    export RANKS_PER_NODE=4 CPUS_PER_TASK=4
+    if [[ -z "${PROCESS_COUNTS:-}" ]]; then
+        PROCESS_COUNTS=""
+        for nodes in ${NODE_COUNTS//,/ }; do
+            [[ "$nodes" =~ ^[1-9][0-9]*$ ]] || { echo "节点数须为正整数" >&2; exit 2; }
+            PROCESS_COUNTS+="$((nodes*4)) "
+        done
+        export PROCESS_COUNTS
+    fi
+    export REFINES="${REFINES:-2}"
+    export KERNEL_SCHEDULERS="node_original node_fixed node_elastic"
+    export PARTITION_SEEDS="${PARTITION_SEEDS:--1}"
+    export TIMING_MODES="${TIMING_MODES:-natural}"
+    export COMPACT_RESULTS="${COMPACT_RESULTS:-1}"
+    EXPERIMENT_PRESET=borrow_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == borrow_workload ]]; then
     export WORKLOAD_SWEEP=1
     export WORKLOAD_LEVELS="${WORKLOAD_LEVELS:-2 3 4}"
@@ -241,7 +262,9 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
           scheduler="${schedulers[$(((ks+kr+WARMUPS-1)%${#schedulers[@]}))]}"
           variant="${kernel_root}/kernel_${scheduler}_t${threads}"
           variant_algorithms="${ALGORITHMS}"
-          if [[ "${COMMUNICATION_ABLATION}" == 1 && "$scheduler" == node_original &&
+          if [[ "${OVERALL_COMPARISON:-0}" == 1 && "$scheduler" == node_original ]]; then
+              variant_algorithms="baseline"
+          elif [[ "${COMMUNICATION_ABLATION}" == 1 && "$scheduler" == node_original &&
                 " ${ALGORITHMS//,/ } " != *" baseline "* ]]; then
               variant_algorithms="baseline ${ALGORITHMS}"
           fi
@@ -510,10 +533,10 @@ SIGNATURE
                 failures=$((failures+1));exec 9>&-;continue
             fi
             if [[ "${RESUME}" == 1 && -f "${out}/SUCCESS" &&
-                  ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" ) ]]; then
+                  ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" || -f "${out}/analysis_metrics.json" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/analysis_metrics.json" "${out}/failure_summary.txt"
             touch "${out}/RUNNING"
             args=("${common[@]}" --algorithm "${a}" --partition-seed "${seed}" --rank-shift "${rank_shift}"
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
@@ -536,6 +559,16 @@ SIGNATURE
             fi
             if ((rc!=0)); then
                 failures=$((failures+1))
+                # run.log 已在用户的忽略规则中；另存不超过64KiB的可上传故障摘要。
+                python3 - "${out}" "$rc" <<'FAILURE'
+import pathlib,sys
+folder=pathlib.Path(sys.argv[1])
+with (folder/'run.log').open('rb') as stream:
+    stream.seek(0,2)
+    stream.seek(max(0,stream.tell()-65536))
+    tail=stream.read().decode('utf-8',errors='replace')
+(folder/'failure_summary.txt').write_text('退出码：'+sys.argv[2]+'\n'+tail)
+FAILURE
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"
         done

@@ -36,8 +36,10 @@ def initialize(root):
     modes = words('TIMING_MODES')
     if len(set(counts)) != len(counts) or len(set(seeds)) != len(seeds):
         raise ValueError('规模和种子不能重复')
-    if set(schedulers) != set(LABELS) or len(schedulers) != 3:
-        raise ValueError('借核扩展验证必须保留固定核、弹性借核、阶段受限借核三条路线')
+    overall = os.environ.get('OVERALL_COMPARISON') == '1'
+    required = {'node_original', 'node_fixed', 'node_elastic'} if overall else set(LABELS)
+    if set(schedulers) != required or len(schedulers) != 3:
+        raise ValueError('本预设要求三条路线：' + '、'.join(sorted(required)))
     if words('KERNEL_THREAD_COUNTS') != ['4'] or os.environ['CPUS_PER_TASK'] != '4' or os.environ['RANKS_PER_NODE'] != '4':
         raise ValueError('本轮固定每节点4进程、每进程4个物理核，以保持历史布局')
     if os.environ['EXPERIMENT_STAGE'] != 'kernel' or os.environ['ALGORITHMS'] != 'sparse' or 'natural' not in modes or len(set(modes)) != len(modes):
@@ -51,6 +53,8 @@ def initialize(root):
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'],
                 quality_warmup=int(os.environ['QUALITY_WARMUP']),
                 start_epoch=int(os.environ['START_EPOCH']))
+    if overall:
+        plan['overall_comparison'] = True
     if os.environ.get('WORKLOAD_ROOT'):
         plan['measure_kernel_workload'] = True
     target = root / 'node_scaling_plan.json'
@@ -97,7 +101,7 @@ def collect_scale(root, plan, p):
         raise ValueError('缺少或未通过逐规模内核检查')
     overview = rows(root / f'p{p}/kernel_summary.csv')
     audit = rows(root / f'p{p}/ablation_summary.csv')
-    summaries = {(r['scheduler'], r['timing'], int(r['seed'])): r for r in overview}
+    summaries = {(r['scheduler'], r.get('algorithm', 'sparse'), r['timing'], int(r['seed'])): r for r in overview}
     raw = {}
     critical = {}
     for scheduler in plan['schedulers']:
@@ -107,7 +111,8 @@ def collect_scale(root, plan, p):
             if not path.exists() or path.read_text().strip():
                 raise ValueError(f'{scheduler}: {name} 未通过')
         for r in rows(folder / 'analysis/runs.csv'):
-            if r['algorithm'] != 'sparse' or int(r['ranks']) != p:
+            algorithm = 'baseline' if plan.get('overall_comparison') and scheduler == 'node_original' else 'sparse'
+            if r['algorithm'] != algorithm or int(r['ranks']) != p:
                 raise ValueError('意外的算法或规模')
             key = scheduler, r['timing'], int(r['partition_seed']), int(r['repeat'])
             if key in raw:
@@ -121,7 +126,12 @@ def collect_scale(root, plan, p):
                 critical[key] = r
     pairs = []
     report = []
-    for candidate, contribution in (('node_elastic', 'borrowing'), ('node_phaseaware', 'phaseaware')):
+    comparisons = [('node_elastic', 'borrowing', 'node_fixed', 'sparse')]
+    if plan.get('overall_comparison'):
+        comparisons.insert(0, ('node_elastic', 'total', 'node_original', 'baseline'))
+    else:
+        comparisons.append(('node_phaseaware', 'phaseaware', 'node_fixed', 'sparse'))
+    for candidate, contribution, control_scheduler, control_algorithm in comparisons:
         for mode in plan['modes']:
             for seed in plan['seeds']:
                 gate = [r for r in audit if r['contribution'] == contribution and r['timing'] == mode and int(r['seed']) == seed]
@@ -129,7 +139,7 @@ def collect_scale(root, plan, p):
                     raise ValueError(f'{candidate}/{mode}/{seed} 质量对照未通过')
                 group = []
                 for repeat in range(1, plan['repeats'] + 1):
-                    ck = 'node_fixed', mode, seed, repeat
+                    ck = control_scheduler, mode, seed, repeat
                     nk = candidate, mode, seed, repeat
                     control, new = raw[ck], raw[nk]
                     oldcrit, newcrit = critical[ck], critical[nk]
@@ -139,7 +149,8 @@ def collect_scale(root, plan, p):
                         if not control.get('scaling_kernel_work_sha256') or control['scaling_kernel_work_sha256'] != new.get('scaling_kernel_work_sha256'):
                             raise ValueError('缺少内核网格计数，或生成前/体细化前的逐进程工作量不同')
                     ct, nt = numeric(control, 'core_seconds'), numeric(new, 'core_seconds')
-                    row = dict(ranks=p, nodes=p // 4, candidate=candidate, timing=mode, seed=seed, repeat=repeat,
+                    row = dict(ranks=p, nodes=p // 4, comparison=contribution, control=control_scheduler,
+                               control_algorithm=control_algorithm, candidate_algorithm='sparse', candidate=candidate, timing=mode, seed=seed, repeat=repeat,
                                control_seconds=ct, candidate_seconds=nt, reduction_pct=100 * (1 - nt / ct),
                                speedup=ct / nt, control_compute_max=numeric(control, 'compute_max_seconds'),
                                candidate_compute_max=numeric(new, 'compute_max_seconds'),
@@ -173,11 +184,12 @@ def collect_scale(root, plan, p):
                         row['kernel_workload_sha256'] = new['scaling_kernel_work_sha256']
                     pairs.append(row)
                     group.append(row)
-                old = summaries['node_fixed', mode, seed]
-                new = summaries[candidate, mode, seed]
+                old = summaries[control_scheduler, control_algorithm, mode, seed]
+                new = summaries[candidate, 'sparse', mode, seed]
                 if int(old['repeats']) != plan['repeats'] or int(new['repeats']) != plan['repeats']:
                     raise ValueError('正式重复不完整')
-                report.append(dict(ranks=p, nodes=p // 4, candidate=candidate, timing=mode, seed=seed,
+                report.append(dict(ranks=p, nodes=p // 4, comparison=contribution, control=control_scheduler,
+                                   control_algorithm=control_algorithm, candidate_algorithm='sparse', candidate=candidate, timing=mode, seed=seed,
                                    control_seconds=st.median(r['control_seconds'] for r in group),
                                    candidate_seconds=st.median(r['candidate_seconds'] for r in group),
                                    paired_reduction_pct=st.median(r['reduction_pct'] for r in group),
@@ -217,18 +229,19 @@ def summarize(root):
     atomic(root / 'node_scaling_pairs.csv', csv_text(all_pairs))
     atomic(root / 'node_scaling_status.csv', csv_text(states))
     lines = ['弹性借核跨规模验证', '完整核心时间：粗网格结束后的屏障至邻接完成，包含借核与线程管理开销。',
-             '固定核/弹性借核/阶段受限借核：相同节点、进程、4个初始物理核；每节点4进程。',
+             '各路线采用相同节点、进程、4个初始物理核；每节点4进程。',
              'natural（自然计时）判断净收益；split（拆分计时）只辅助解释等待。',
              '下表降幅为同种子、同重复编号的逐次降幅中位数；正值更快。',
              'P变化会改变分区和生成单元数，本实验不是严格固定网格强扩展，也不能直接验收P1目标。', '']
     lines.extend(f"P={r['ranks']}，节点={r['nodes']}：{r['state']} {r['issues']}" for r in states)
-    lines += ['', '进程 方案 种子 固定核秒 借核秒 配对降幅% 胜出/正式次数 不均衡(固定→借核)']
+    lines += ['', '进程 对照项 方案 种子 对照秒 借核秒 配对降幅% 胜出/正式次数 不均衡(对照→借核)']
     for r in all_rows:
         if r['timing'] == 'natural':
-            lines.append(f"{r['ranks']} {LABELS[r['candidate']]} {r['seed']} {r['control_seconds']:.6f} "
+            lines.append(f"{r['ranks']} {r['comparison']} {LABELS[r['candidate']]} {r['seed']} {r['control_seconds']:.6f} "
                          f"{r['candidate_seconds']:.6f} {r['paired_reduction_pct']:.2f} {r['wins']}/{r['pairs']} "
                          f"{float(r['control_imbalance']):.3f}→{float(r['candidate_imbalance']):.3f}")
-    lines += ['', '质量门槛只覆盖每组自然预热；正式轮逐进程工作量计数相同不等于几何恒等证明。',
+    lines += ['', 'total：原通信+原修复 vs 稀疏通信+弹性借核；borrowing：固定核 vs 弹性借核；phaseaware：固定核 vs 阶段受限借核。',
+              '质量门槛只覆盖每组自然预热；正式轮逐进程工作量计数相同不等于几何恒等证明。',
               'node_scaling_pairs.csv 保存慢进程借核时机、阶段时间、线程启停和管理耗时。',
               'first_loan_fraction 为空表示该最慢计算进程没有借核，不用零代替。',
               '每轮最慢计算进程可改变；各阶段最大值不能相加为核心时间。',
@@ -246,8 +259,8 @@ def initialize_workload(root):
         raise ValueError('WORKLOAD_LEVELS 须为不重复的整数级数')
     if refines < 0 or any(level < 0 or level + refines > 13 for level in levels):
         raise ValueError('细化级数无效，生成前和生成后细化之和不得超过13')
-    if len(counts) != 1 or counts[0] < 4 or counts[0] % 4:
-        raise ValueError('工作量对照固定一个进程数，且须填满每节点4进程')
+    if not counts or len(set(counts)) != len(counts) or any(p < 4 or p % 4 for p in counts):
+        raise ValueError('进程数须互不重复，且填满每节点4进程')
     plan = dict(schema='node_workload_v1', levels=levels, counts=counts, refines=refines,
                 cases=[dict(levels=level, directory=f'levels{level}') for level in levels],
                 seeds=list(map(int, words('PARTITION_SEEDS'))), modes=words('TIMING_MODES'),
@@ -256,6 +269,8 @@ def initialize_workload(root):
                 maxh=os.environ['MAXH'], minh=os.environ['MINH'],
                 partition_variant=os.environ['PARTITION_VARIANT'],
                 ranks_per_node=int(os.environ['RANKS_PER_NODE']), cpus_per_task=int(os.environ['CPUS_PER_TASK']))
+    if os.environ.get('OVERALL_COMPARISON') == '1':
+        plan['overall_comparison'] = True
     target = root / 'node_workload_plan.json'
     if target.exists() and json.loads(target.read_text()) != plan:
         raise ValueError('结果目录已有其他工作量计划，请使用新的 RUN_ROOT')
@@ -271,19 +286,19 @@ def summarize_workload(root):
         child_plan = child / 'node_scaling_plan.json'
         if not child_plan.exists():
             failed = (child / 'submission_failed.txt').exists()
-            states.append(dict(levels=case['levels'], ranks=plan['counts'][0],
+            states.extend(dict(levels=case['levels'], ranks=p, nodes=p//4,
                                state='failed' if failed else 'pending',
-                               issues='提交失败' if failed else '尚未提交或初始化'))
+                               issues='提交失败' if failed else '尚未提交或初始化') for p in plan['counts'])
             continue
         with (child / '.node_scaling.lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             actual = json.loads(child_plan.read_text())
             common = ('counts', 'refines', 'seeds', 'modes', 'schedulers', 'repeats', 'warmups',
                       'input_path', 'maxh', 'minh', 'partition_variant', 'ranks_per_node', 'cpus_per_task')
-            if any(actual[k] != plan[k] for k in common) or actual['levels'] != case['levels'] or not actual.get('measure_kernel_workload'):
+            if actual.get('overall_comparison', False) != plan.get('overall_comparison', False) or any(actual[k] != plan[k] for k in common) or actual['levels'] != case['levels'] or not actual.get('measure_kernel_workload'):
                 raise ValueError('各工作量对照除生成前细化级数外，须使用相同实验配置')
             status_path = child / 'node_scaling_status.csv'
-            current = rows(status_path) if status_path.exists() else [dict(ranks=plan['counts'][0], state='pending', issues='尚未汇总')]
+            current = rows(status_path) if status_path.exists() else [dict(ranks=p, nodes=p//4, state='pending', issues='尚未汇总') for p in plan['counts']]
             states.extend(dict(levels=case['levels'], **r) for r in current)
             complete = {int(r['ranks']) for r in current if r['state'] == 'complete'}
             for filename, destination in (('node_scaling_summary.csv', reports), ('node_scaling_pairs.csv', pairs)):
@@ -292,24 +307,30 @@ def summarize_workload(root):
                     destination.extend(dict(r, levels=case['levels'], refines=plan['refines'])
                                        for r in rows(path) if int(r['ranks']) in complete)
     # 对同种子/路线/计时的最小级数作工作量参照；缺少参照时留空。
-    baseline = {(r['candidate'], r['timing'], r['seed']): r for r in reports if r['levels'] == min(plan['levels'])}
+    baseline = {(r['ranks'], r.get('comparison', r['candidate']), r['candidate'], r['timing'], r['seed']): r for r in reports if r['levels'] == min(plan['levels'])}
     for r in reports:
-        reference = baseline.get((r['candidate'], r['timing'], r['seed']))
+        reference = baseline.get((r['ranks'], r.get('comparison', r['candidate']), r['candidate'], r['timing'], r['seed']))
         r['kernel_work_growth_vs_min_level'] = (float(r['control_volume_kernel_elements_sum']) /
             float(reference['control_volume_kernel_elements_sum'])) if reference else ''
+    for r in reports:
+        r['final_billion_reached'] = float(r['volume_elements']) >= 1_000_000_000
     atomic(root / 'node_workload_summary.csv', csv_text(reports))
     atomic(root / 'node_workload_pairs.csv', csv_text(pairs))
     atomic(root / 'node_workload_status.csv', csv_text(states))
-    lines = ['固定进程数的弹性借核工作量对照',
-             f"进程数={plan['counts'][0]}；每节点4进程，每进程初始4核；生成后体细化次数={plan['refines']}。",
-             '只改变生成前表面细化级数；实际内核单元数直接测量，不能由最终单元数或理论倍率代替。',
+    lines = ['多节点弹性借核工作量对照',
+             f"进程数={plan['counts']}；每节点4进程，每进程初始4核；生成后体细化次数={plan['refines']}。",
+             '各节点规模分别改变生成前表面细化级数；实际内核单元数直接测量，不能由最终单元数或理论倍率代替。',
              '核心时间为粗网格结束后至邻接完成；内核时间为局部体网格生成、修复和优化。',
              '降幅按同种子、同重复编号逐次配对后取中位数，正值表示加速。', '']
     lines += [f"生成前级数={r['levels']}，进程={r['ranks']}：{r['state']} {r['issues']}" for r in states]
-    lines += ['', '级数 方案 种子 内核单元总数 每进程均值/最大 后续细化后总数 核心秒(固定/借核) 核心降幅% 内核秒(固定/借核) 内核降幅% 胜出/次数']
+    for p in plan['counts']:
+        sizes = [float(r['volume_elements']) for r in reports if int(r['ranks']) == p]
+        largest = max(sizes, default=0)
+        lines.append(f"节点={p//4}：已完成实验的最大最终单元数={largest:.0f}；十亿目标={'已达到' if largest >= 1_000_000_000 else '尚未达到'}。")
+    lines += ['', '面细化 节点 对照项 方案 种子 内核单元总数 每进程均值/最大 后续细化后总数 核心秒(对照/借核) 核心降幅% 内核秒(对照/借核) 内核降幅% 胜出/次数']
     for r in reports:
         if r['timing'] == 'natural':
-            lines.append(f"{r['levels']} {LABELS[r['candidate']]} {r['seed']} "
+            lines.append(f"{r['levels']} {r['nodes']} {r.get('comparison', 'borrowing')} {LABELS[r['candidate']]} {r['seed']} "
                          f"{float(r['control_volume_kernel_elements_sum']):.0f} "
                          f"{float(r['control_volume_kernel_elements_mean']):.1f}/{float(r['control_volume_kernel_elements_max']):.0f} "
                          f"{float(r['volume_elements']):.0f} "
@@ -317,7 +338,10 @@ def summarize_workload(root):
                          f"{float(r['paired_reduction_pct']):.2f} "
                          f"{float(r['control_local_volume_mesh_max_seconds']):.6f}/{float(r['candidate_local_volume_mesh_max_seconds']):.6f} "
                          f"{float(r['kernel_reduction_pct']):.2f} {r['wins']}/{r['pairs']}")
-    lines += ['', '先检查实际内核工作量是否增长，再判断借核收益是否恢复；不预设成功。',
+    lines += ['', 'total：原通信+原修复 vs 稀疏通信+弹性借核；borrowing：固定核 vs 弹性借核。',
+              '原程序对照保留相同节点、进程、初始核布局；借核仅发生在节点内部，不代表跨节点迁移。',
+              '最终网格达到十亿不等于借核阶段处理十亿；两种实际规模分别列出。',
+              '先检查实际内核工作量是否增长，再判断借核收益是否恢复；不预设成功。',
               '自然计时用于判断净收益，拆分计时用于辅助解释；各阶段最大值不可相加。',
               '线程启停耗时已经包含在相关阶段内；逐轮文件保存两条路线各自慢进程的阶段耗时。',
               '质量检查覆盖自然预热，正式轮比较逐进程工作量计数。',

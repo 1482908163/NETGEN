@@ -3,6 +3,7 @@
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -98,6 +99,32 @@ with tempfile.TemporaryDirectory() as temp:
     (pdir / 'node_scaling_state.json').write_text('{"exit_code":124}')
     assert module.summarize(root)[0][0]['state'] == 'failed'
     assert not (root / 'node_scaling_summary.csv').read_text()
+    # 原程序使用 baseline 通信，借核使用 sparse：总收益与纯借核收益分开。
+    plan.update(schedulers=['node_original','node_fixed','node_elastic'], overall_comparison=True)
+    (root/'node_scaling_plan.json').write_text(json.dumps(plan))
+    (pdir/'node_scaling_state.json').write_text('{"exit_code":0}')
+    source=root/'kernel_node_fixed_t4/p64/analysis'
+    original=root/'kernel_node_original_t4/p64/analysis'
+    shutil.copytree(source,original)
+    for name in ('runs.csv','kernel_critical_ranks.csv'):
+        data=module.rows(original/name)
+        for r in data:
+            r['algorithm']='baseline'
+            r['core_seconds']=20
+        write_csv(original/name,data)
+    overview=[dict(r,algorithm='sparse') for r in summary if r['scheduler']!='node_phaseaware']
+    overview += [dict(r,scheduler='node_original',algorithm='baseline') for r in summary if r['scheduler']=='node_fixed']
+    write_csv(pdir/'kernel_summary.csv',overview)
+    write_csv(pdir/'ablation_summary.csv', [dict(r,contribution='total' if r['contribution']=='phaseaware' else 'borrowing') for r in audit])
+    states,errors=module.summarize(root)
+    assert states[0]['state']=='complete' and not errors
+    report=module.rows(root/'node_scaling_summary.csv')
+    assert {r['comparison'] for r in report}=={'total','borrowing'}
+    for r in report:
+        expected=60 if r['comparison']=='total' else 20
+        assert abs(float(r['paired_reduction_pct'])-expected)<1e-10
+        assert r['control_algorithm']==('baseline' if r['comparison']=='total' else 'sparse')
+
 print('node scaling summary: pairing, workload, quality, pending and failure checks passed without build stamps')
 
 # 直接检验新计数的汇总，不用体细化后的单元数代替内核单元数。

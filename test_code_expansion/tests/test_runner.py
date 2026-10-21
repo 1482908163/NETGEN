@@ -100,6 +100,25 @@ out=pathlib.Path(value('--profile-dir'))
     repeat_analysis=subprocess.run(analyzer+[str(pdir)],capture_output=True,text=True)
     assert repeat_analysis.returncode==0 and (pdir/'analysis/summary.csv').read_bytes()==csv_before
 
+    # 精简后保留同一套统计，支持断点续跑；失败日志仍然保留。
+    compact_env=dict(env, RUN_ROOT=str(tmp/'compact_results'), COMPACT_RESULTS='1')
+    compact=subprocess.run(['bash',str(spooled)],env=compact_env,capture_output=True,text=True)
+    assert compact.returncode==1, compact.stderr
+    compact_pdir=tmp/'compact_results/p1'
+    compact_run=compact_pdir/'sparse_natural/repeat_1'
+    assert (compact_run/'analysis_metrics.json').exists()
+    assert not list(compact_run.glob('rank_profiles.jsonl*')) and not list(compact_run.glob('run.log*'))
+    assert not (compact_run/'mesh/volfined/volfined0.vol').exists()
+    assert (compact_run/'mesh/source.STEP').exists()
+    assert (compact_pdir/'baseline_natural/repeat_1/run.log').exists()
+    assert (compact_pdir/'analysis/runs.csv').read_bytes()==(pdir/'analysis/runs.csv').read_bytes()
+    compact_csv=(compact_pdir/'analysis/summary.csv').read_bytes()
+    rerun=subprocess.run(analyzer+[str(compact_pdir)],capture_output=True,text=True)
+    assert rerun.returncode==0 and (compact_pdir/'analysis/summary.csv').read_bytes()==compact_csv
+    resumed=subprocess.run(['bash',str(spooled)],env=compact_env,capture_output=True,text=True)
+    assert resumed.returncode==1
+    assert len(list(csv.DictReader((compact_pdir/'run_status.tsv').open(),delimiter='\t')))==5
+
     # Opt-out retains all artifacts; later analysis can reclaim them identically.
     kept_env=dict(env, RUN_ROOT=str(tmp/'kept_results'), CLEANUP_RESULTS='0')
     kept=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=kept_env,capture_output=True,text=True)
@@ -161,13 +180,7 @@ out=pathlib.Path(value('--profile-dir'))
     third=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=env,capture_output=True,text=True)
     assert third.returncode==2 and 'another configuration' in third.stderr
 
-    # A stale executable is rejected before any expensive mesh run starts.
-    stale=tmp/'stale_mesh';stale.write_text('#!/bin/sh\nexit 0\n');stale.chmod(0o755)
-    stale_env=dict(env, RUN_ROOT=str(tmp/'stale_results'), BINARY=str(stale))
-    stale_result=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=stale_env,
-                                capture_output=True,text=True)
-    assert stale_result.returncode==2 and 'stale/incompatible' in stale_result.stderr
-    assert not (tmp/'stale_results/p1').exists()
+    # 版本由用户判断；不再测试已经移除的二进制标记门禁。
 
     # Repeated missing profiles are kept out of the scheduler log.  The user
     # gets one summary and can inspect a dedicated failure file if necessary.
@@ -493,7 +506,8 @@ rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kerne
             metrics.update(coop_borrow_epochs=1,coop_borrowed_core_seconds=.1)
     stages={s:dict(seconds=.1,calls=1)""")
     modern.write_text(node_mock+"\n# node_coop_v1\n")
-    node_env=dict(kernel_env,EXPERIMENT_PRESET='cooperate',PROCESS_COUNT='4',PROCESS_COUNTS='4',
+    # 此历史夹具只含 node_coop_v1 性能数据，不含新增的全量质量审计。
+    node_env=dict(kernel_env,QUALITY_WARMUP='0',COMMUNICATION_ABLATION='0',EXPERIMENT_PRESET='cooperate',PROCESS_COUNT='4',PROCESS_COUNTS='4',
         RANKS_PER_NODE='4',KERNEL_THREAD_COUNTS='2',KERNEL_SCHEDULERS='repair node_fixed node_lend node_model',
         RUN_ROOT=str(tmp/'node_results'),MOCK_AUDIT=str(tmp/'node_audit'))
     node_run=subprocess.run(['bash',str(ROOT/'strong_scaling/run_experiments.sh')],env=node_env,capture_output=True,text=True)
@@ -590,3 +604,4 @@ rows=[]""").replace("    stages={s:dict(seconds=.1,calls=1)", """    if '--kerne
     assert '任务网格不一致' in (task_p/'analysis/issues.txt').read_text(),analyzed.stderr
     assert '不完整，不可直接比较' in (task_p/'RESULT_SUMMARY.txt').read_text()
 print('PASS: Slurm spool path, failure continuation, warmup filtering, compressed resume, lossless analysis, cleanup opt-out, failure/active/symlink protection, configuration guard')
+

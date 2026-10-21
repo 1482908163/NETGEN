@@ -36,6 +36,9 @@ def profile_path(directory):
         return raw
     if packed.exists():
         return packed
+    compact = directory/"analysis_metrics.json"
+    if compact.exists():
+        return compact
     raise FileNotFoundError(
         "missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled")
 
@@ -85,6 +88,27 @@ MESH_OUTPUTS = {
     "volwithadj": r"volwithadj[0-9]+\.vol",
 }
 
+def compact_quality(q):
+    """保留质量统计和逐进程指纹的有序摘要，不重复保存逐进程审计明细。"""
+    if 'per_rank' in q:
+        for prefix in ('surface', 'volume'):
+            values = [(r['rank'], r[prefix+'_sum'], r[prefix+'_xor']) for r in q['per_rank']]
+            q[prefix+'_fingerprint_sha256'] = hashlib.sha256(
+                json.dumps(values, separators=(',', ':')).encode()).hexdigest()
+        del q['per_rank']
+    return q
+
+
+def save_compact_run(directory, result, details, critical):
+    if 'mesh_quality' in result:
+        compact_quality(result['mesh_quality'])
+    payload = dict(schema='analysis_metrics_v1', result=result, stages=details, critical=critical)
+    target = directory/'analysis_metrics.json'
+    temporary = target.with_suffix('.json.tmp')
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), allow_nan=False)+'\n')
+    os.replace(temporary, target)
+
+
 def cleanup_run(directory):
     """Caller holds run_guard and has validated the successful core-only profile."""
     removed = freed = compressed = 0
@@ -108,8 +132,18 @@ def cleanup_run(directory):
                     folder.rmdir()
         if not any(mesh.iterdir()):
             mesh.rmdir()
-    for name in ("rank_profiles.jsonl", "run.log"):
-        compressed += compress_result(directory/name)
+    if (directory/'analysis_metrics.json').exists():
+        # 只有精简指标已原子保存后才删除原始明细。失败轮不走此路径。
+        for name in ('rank_profiles.jsonl', 'rank_profiles.jsonl.gz', 'run.log', 'run.log.gz',
+                     'node_coop_diagnostics.txt', 'node_coop_stderr.txt', 'quality_summary.json'):
+            path = directory/name
+            if path.is_file() and not path.is_symlink():
+                freed += path.stat().st_size
+                path.unlink()
+                removed += 1
+    else:
+        for name in ("rank_profiles.jsonl", "run.log"):
+            compressed += compress_result(directory/name)
     return removed, freed, compressed
 
 def try_cleanup(directory):
@@ -209,7 +243,7 @@ def compare_quality(control, candidate):
     for k in ('points','elements','surfaces','duplicate_surface','internal_marked'):
         if control['counts'][k]!=candidate['counts'][k]: problems.append(k+'_changed')
     def signature(q,prefix):
-        return [(r['rank'],r[prefix+'_sum'],r[prefix+'_xor']) for r in q['per_rank']]
+        return compact_quality(dict(q))[prefix+'_fingerprint_sha256']
     if signature(control,'surface')!=signature(candidate,'surface'): problems.append('boundary_fingerprint_changed')
     same_mesh=signature(control,'volume')==signature(candidate,'volume')
     if not math.isclose(control['abs_volume'],candidate['abs_volume'],rel_tol=1e-10,abs_tol=0): problems.append('volume_changed')
@@ -229,11 +263,12 @@ def quality_reports(folder, plan):
             name=f'{algorithm}_natural' if seed==-1 else f'{algorithm}_seed{seed}_natural'
             directory=folder/name/'repeat_0'
             try:
-                # Re-read the retained raw measurements, never trust a stale summary.
+                # 原始记录或成功结束时原子保存的精简指标均可重新生成质量对照。
                 result,_=inspect(profile_path(directory));q=result['mesh_quality']
                 if q['algorithm']!=algorithm or q['seed']!=seed or q['ranks']!=plan['ranks']:
                     raise ValueError('quality run identity mismatch')
-                (directory/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
+                if not (directory/'analysis_metrics.json').exists():
+                    (directory/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
                 reports.append(q)
                 if not q['structural_pass']: issues.append(f'{name}: quality {q["issues"]}')
                 if not (directory/'SUCCESS').exists(): issues.append(f'{name}: quality warmup not successfully finalized')
@@ -278,6 +313,7 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
                 gate=compare_quality(a,b) if a and b else dict(quality_pass=None,quality_issues='missing' if required else 'not_requested',same_volume_fingerprint=None)
                 # Custom subsets need not contain the baseline communication arm.
                 if not any((old,threads,oldalgo,t,seed) in indexed for t in ('natural','split')): continue
+                if not any((new,threads,newalgo,t,seed) in indexed for t in ('natural','split')): continue
                 if required and gate['quality_pass'] is not True:
                     issues.append(f'{name}/t{threads}/seed{seed}: quality review required: {gate["quality_issues"]}')
                 for timing in ('natural','split'):
@@ -581,6 +617,13 @@ def volume_workload_metrics(rows):
 
 
 def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
+    if path.name == 'analysis_metrics.json':
+        cached = json.loads(path.read_text())
+        if cached.get('schema') != 'analysis_metrics_v1':
+            raise ValueError('未知精简分析数据格式')
+        if critical_sink is not None:
+            critical_sink.extend(cached['critical'])
+        return cached['result'], cached['stages']
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
         rows = [json.loads(line) for line in stream if line.strip()]
@@ -1106,7 +1149,7 @@ def write_overview(root, runs, summaries, errors):
         "1. 本文件：快速判断实验是否完整及主要指标。",
         "2. analysis/summary.csv：论文分析用的重复实验中位数。",
         "3. analysis/issues.txt：仅在异常项不为 0 时查看。",
-        "4. repeat_*/run.log.gz：只在排查某次失败时查看。",
+        "4. 失败轮保留 run.log；精简模式的成功轮只保留 analysis_metrics.json，不保留原始日志。",
         "",
         "核心汇总（时间单位 s，通信量单位 GiB）：",
         "algorithm timing ranks seed repeats core compute_max face_exchange vertex_wait imbalance recv_GiB vs_baseline vs_sparse",
@@ -1340,7 +1383,7 @@ def kernel_overview(root, ranks):
               "已完成来源的常规借核不受一次限制；持有提前租约时暂停额外增核，原所有者需要核时仍立即在安全点归还。",
               "阶段策略进入并行租约前必须收回全部初始保底核；串行及等待时只运行主核。收回等待已包含在核心时间中，不重复相加。",
               "阶段重建可以增核、缩核或不变；阶段闲置核秒与提前借核核秒是资源状态积分，不代表硬件实际忙碌。",
-              "node_resource_timeline.csv 保留各进程借核起止和完成时刻；时间原点仅节点内一致，不能跨节点比较绝对时刻。",
+              "完整模式的 node_resource_timeline.csv 保留全进程时序；精简模式仅保留关键进程及同节点进程，时间原点仅节点内一致。",
               "可借核闲置核秒只累计首个至最后一个节点内核完成之间的可借空闲容量；不是硬件利用率。",
               "node_tail=保底安全点借核：在修复轮次及优化操作之间响应已完成进程释放的核，无新核时保留线程组。",
               "node_budget=只在最终优化中按剩余窗口和成本门槛申请一次；node_priority=同一约束下优先剩余单元操作量较多的进程。",
@@ -1381,11 +1424,14 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                result,_=inspect(profile_path(args.root))
+                critical=[]
+                result,details=inspect(profile_path(args.root), critical_sink=critical)
                 if 'mesh_quality' in result:
                     q=result['mesh_quality']
                     (args.root/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
                     if not q['structural_pass']: raise ValueError('volume quality audit failed: '+str(q['issues']))
+                if os.environ.get('COMPACT_RESULTS') == '1' and not args.keep_artifacts:
+                    save_compact_run(args.root, result, details, critical)
                 (args.root/"SUCCESS").touch()
                 if not args.keep_artifacts:
                     try_cleanup(args.root)
@@ -1403,7 +1449,7 @@ def main():
     sample_writer=csv.DictWriter(sample_stream,fieldnames=SAMPLE_FIELDS)
     sample_writer.writeheader()
     completed = []
-    directories = {p.parent for pattern in ("rank_profiles.jsonl", "rank_profiles.jsonl.gz") for p in args.root.rglob(pattern)}
+    directories = {p.parent for pattern in ("rank_profiles.jsonl", "rank_profiles.jsonl.gz", "analysis_metrics.json") for p in args.root.rglob(pattern)}
     for directory in sorted(directories):
         try:
             with run_guard(directory) as acquired:
@@ -1480,17 +1526,21 @@ def main():
     output = args.root/"analysis"
     output.mkdir(exist_ok=True)
     write_csv(output/"runs.csv", runs)
-    write_csv(output/"node_resource_timeline.csv", timeline_rows)
+    if timeline_rows:
+        write_csv(output/"node_resource_timeline.csv", timeline_rows)
+    else:
+        (output/"node_resource_timeline.csv").unlink(missing_ok=True)
     replace_csv(output/"kernel_critical_ranks.csv",critical_rows)
     (output/"critical_issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))
     write_csv(output/"stages.csv", stage_rows)
     write_csv(output/"summary.csv", summaries)
     (output/"issues.txt").write_text("\n".join(errors)+( "\n" if errors else ""))
     sample_stream.close()
-    if any("phase_0_max_seconds" in r for r in runs):
+    if any("phase_0_max_seconds" in r for r in runs) and not any((d/'analysis_metrics.json').exists() for d in completed):
         os.replace(sample_tmp,output/"model_samples.csv.gz")
     else:
         sample_tmp.unlink()
+        (output/"model_samples.csv.gz").unlink(missing_ok=True)
     expected, complete = write_overview(args.root, runs, summaries, errors)
     print(f"RESULT: {len(runs)}/{expected} measured runs, {len(errors)} issues; read {args.root/'RESULT_SUMMARY.txt'}")
     if args.require_calibration:
