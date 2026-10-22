@@ -510,6 +510,10 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeStages(Ng_Mesh * mesh,
     int (*poll)(void *), int responsive, double * seconds, double * details);
 // Twenty advancing-front diagnostics from the last research volume-kernel call.
 NGLIB_API void Ng_GetVolumeFrontStats(double * values);
+// Host-thread setting, applied only to the instrumented volume kernel.
+// -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
+NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);
+NGLIB_API void Ng_GetVolumeRuleSearchStats(double * values); // 24 doubles
 // Three cumulative host-side values: starts, startup seconds, shutdown seconds.
 NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values);
 

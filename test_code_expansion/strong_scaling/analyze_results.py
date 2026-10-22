@@ -301,7 +301,11 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('grouped_scope','node_native','sparse','node_fixed','sparse'),
            ('borrowing','node_fixed','sparse','node_elastic','sparse'),
            ('phaseaware','node_fixed','sparse','node_phaseaware','sparse'),
-           ('total','node_original','baseline','node_elastic','sparse'))
+           ('total','node_original','baseline','node_elastic','sparse'),
+           ('rule_search_fixed','node_fixed','sparse','node_rules_fixed','sparse'),
+           ('rule_search_elastic','node_elastic','sparse','node_rules_elastic','sparse'),
+           ('rule_search_borrowing','node_rules_fixed','sparse','node_rules_elastic','sparse'),
+           ('rule_search_total','node_original','baseline','node_rules_elastic','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -353,6 +357,8 @@ FRONT_PROFILE_METRICS = (
     'kernel_front_local_points_max','kernel_front_local_faces_max','kernel_front_qualclass_sum',
     'kernel_front_qualclass_max','kernel_front_class_skips')
 
+RULE_SEARCH_METRICS = ('kernel_rules_calls', 'kernel_rules_parallel_calls', 'kernel_rules_verified_calls', 'kernel_rules_serial_calls', 'kernel_rules_rules', 'kernel_rules_eligible_rules', 'kernel_rules_face_trials', 'kernel_rules_point_trials', 'kernel_rules_mappings', 'kernel_rules_wall_seconds', 'kernel_rules_copy_seconds', 'kernel_rules_dispatch_seconds', 'kernel_rules_worker_seconds', 'kernel_rules_worker_max_sum_seconds', 'kernel_rules_verify_seconds', 'kernel_rules_max_call_seconds', 'kernel_rules_debug_fallbacks', 'kernel_rules_mismatches', 'kernel_rules_calls_le32us', 'kernel_rules_calls_le128us', 'kernel_rules_calls_le512us', 'kernel_rules_calls_le2ms', 'kernel_rules_calls_le8ms', 'kernel_rules_calls_gt8ms')
+
 CRITICAL_METRICS = (
     'volume_kernel_input_points','volume_kernel_input_surface_elements',
     'volume_kernel_points','volume_kernel_surface_elements','volume_kernel_elements',
@@ -365,7 +371,7 @@ CRITICAL_METRICS = (
     'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
     'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
     'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
-    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS
 CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
     for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
 CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
@@ -616,6 +622,44 @@ def volume_workload_metrics(rows):
     return result
 
 
+def inspect_rule_search(rows, metadata):
+    """验证规则并行覆盖、顺序重放和保底核预算；不从内部计时推算加速。"""
+    if metadata.get('rule_search_mode') not in ('0','1','2'):
+        raise ValueError('非法规则搜索模式')
+    if metadata.get('rule_search_resource')!='phase0_base_only':
+        raise ValueError('缺少规则搜索资源契约')
+    result={}
+    for key in RULE_SEARCH_METRICS:
+        values=[r['metrics'][key] for r in rows]
+        if any(not math.isfinite(v) or v<0 for v in values):
+            raise ValueError('非法规则搜索诊断: '+key)
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for r in rows:
+        m=r['metrics'];prefix='kernel_rules_'
+        if m[prefix+'mismatches'] or m[prefix+'parallel_calls']+m[prefix+'serial_calls']!=m[prefix+'calls']:
+            raise ValueError('规则搜索等价或调用计数检查失败')
+        hist=sum(m[prefix+k] for k in ('calls_le32us','calls_le128us','calls_le512us','calls_le2ms','calls_le8ms','calls_gt8ms'))
+        if hist!=m[prefix+'calls'] or m[prefix+'eligible_rules']>m[prefix+'rules']:
+            raise ValueError('规则搜索粒度计数不一致')
+        mode=metadata.get('rule_search_mode')
+        if mode=='2' and m[prefix+'verified_calls']!=m[prefix+'parallel_calls']:
+            raise ValueError('预热存在未验证的并行规则调用')
+        if mode!='2' and m[prefix+'verified_calls']:
+            raise ValueError('正式测量混入顺序重放')
+        if mode=='0' and m[prefix+'parallel_calls']:
+            raise ValueError('原规则对照意外启用并行')
+        if m[prefix+'parallel_calls'] and not m['coop_phase_0_epochs']:
+            raise ValueError('并行规则调用缺少资源租约')
+        if mode in ('1','2') and m['coop_phase_0_epochs'] and (
+            m['coop_phase_0_min_threads']!=int(metadata['kernel_threads']) or
+            m['coop_phase_0_max_threads']!=int(metadata['kernel_threads']) or
+            m['coop_phase_0_borrowed_core_seconds']):
+            raise ValueError('规则搜索超出固定保底核预算')
+    result['rule_search_mode']=int(metadata['rule_search_mode'])
+
+    return result
+
+
 def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     if path.name == 'analysis_metrics.json':
         cached = json.loads(path.read_text())
@@ -638,6 +682,14 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             raise ValueError("inconsistent run metadata")
         if not math.isfinite(r["metrics"]["core_seconds"]) or r["metrics"]["core_seconds"] <= 0:
             raise ValueError("invalid core time")
+    metadata=dict(metadata)
+    rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic'}
+    requested_scheduler=metadata.get('kernel_scheduler')
+    if requested_scheduler in rule_aliases:
+        expected_mode='2' if rows[0]['repeat']<=0 else '1'
+        if metadata.get('rule_search_mode')!=expected_mode or metadata.get('rule_search_profile')!='rule_search_v1':
+            raise ValueError('规则搜索模式或诊断缺失')
+        metadata['kernel_scheduler']=rule_aliases[requested_scheduler]
     if metadata.get("core_only") != "true":
         raise ValueError("performance comparison requires core_only=true")
     compute = [sum(seconds(r, stage) for stage in COMPUTE) for r in rows]
@@ -716,6 +768,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                r["metrics"]["kernel_front_failed_iterations"]+
                r["metrics"]["kernel_front_class_skips"]>r["metrics"]["kernel_front_iterations"]+1e-9 for r in rows):
             raise ValueError("front iteration accounting exceeds total")
+
+    if metadata.get('rule_search_profile')=='rule_search_v1':
+        result.update(inspect_rule_search(rows,metadata))
 
     if metadata.get("kernel_lifecycle")=="team_lifecycle_v1":
         for name in ("starts","start_seconds","stop_seconds"):
@@ -1100,14 +1155,14 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     if timeline_sink is not None and metadata.get('node_timeline')=='node_timeline_v1' and result['repeat']>0:
         for i,r in enumerate(rows):
             t={k:result[k] for k in ('algorithm','timing','ranks','partition_seed','repeat')}
-            t.update(rank=r['rank'],scheduler=metadata['kernel_scheduler'],compute_seconds=compute[i],
+            t.update(rank=r['rank'],scheduler=requested_scheduler,compute_seconds=compute[i],
                      checkpoint_grants=r['metrics']['coop_checkpoint_grants'],
                      borrowed_core_seconds=r['metrics']['coop_borrowed_core_seconds'])
             t.update({k[len('coop_timeline_'):]:v for k,v in r['metrics'].items() if k.startswith('coop_timeline_')})
             t.update({k[len('coop_'):]:v for k,v in r['metrics'].items() if k.startswith('coop_stage_')})
             timeline_sink.append(t)
     if metadata.get("mesh_quality") is not None:
-        result["mesh_quality"]=inspect_quality(rows,metadata)
+        result["mesh_quality"]=inspect_quality(rows,rows[0]["metadata"])
     if critical_sink is not None:
         critical_sink.extend(critical_rank_details(rows,result))
     return result, detail
@@ -1234,7 +1289,7 @@ def kernel_overview(root, ranks):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
-                        if (key.startswith('coop_') or key.startswith('sync_') or key.startswith('kernel_front_')) and key.endswith('_median'):
+                        if (key.startswith('coop_') or key.startswith('sync_') or key.startswith('kernel_front_') or key.startswith('kernel_rules_')) and key.endswith('_median'):
                             report[-1][key[:-7]]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
@@ -1284,7 +1339,7 @@ def kernel_overview(root, ranks):
     critical_lines,critical_issues=critical_overview(root,ranks,selected)
     issues.extend(critical_issues)
     write_csv(out/'kernel_summary.csv',report)
-    phase_names=('reserved','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
+    phase_names=('rule_search','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
     phase_report=[]
     for row in report:
         for phase,name in enumerate(phase_names):
@@ -1378,6 +1433,15 @@ def kernel_overview(root, ranks):
                          f"无可用核={compact(row.get('coop_work_no_capacity'))} "
                          f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
                          f"相对受限申请加速={compact(row.get('speedup_vs_node_budget'))}")
+    for row in report:
+        if row['scheduler'] in ('node_rules_fixed','node_rules_elastic'):
+            calls=row.get('kernel_rules_parallel_calls',0) or 0
+            lines.append(f"规则搜索 {row['scheduler']} {row['timing']}: 并行调用={compact(calls)}；"
+                         f"不一致={compact(row.get('kernel_rules_mismatches'))}；"
+                         f"单调用最大耗时={compact(row.get('kernel_rules_max_call_seconds'))}s；"
+                         f"{'已覆盖并行路径' if calls else '未覆盖并行路径，不能判断优化收益'}。")
+    if any(row['scheduler'].startswith('node_rules_') for row in report):
+        lines.append("规则搜索仅使用各进程原有保底核；预热逐调用顺序重放，正式计时不重放；并行搜索不改变前沿提交顺序。")
     lines += ["node_original=同核布局原串行修复；node_native=同核布局并行修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",
               "node_reserved=完成事件触发的原子预留；node_elastic=每个安全点检查可用容量，允许领取阶段归还的核。",

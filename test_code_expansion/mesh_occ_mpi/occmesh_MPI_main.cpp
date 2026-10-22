@@ -41,7 +41,7 @@ void print_help() {
          "-v : 保存细化文件" << endl <<
          "-adj : 通信" << endl <<
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
-         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware内核策略" << endl <<
+         "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware/node_rules_fixed/node_rules_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -311,6 +311,15 @@ int main(int argc, char **argv) {
     }
 
     auto &research = mesh_research::options();
+    const std::string requested_scheduler=research.kernel_scheduler;
+    const char *rule_profile=std::getenv("RULE_SEARCH_EXPERIMENT");
+    int rule_search_mode=rule_profile && std::string(rule_profile)=="1"?0:-1;
+    if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic") {
+        research.kernel_scheduler=requested_scheduler=="node_rules_fixed"?"node_fixed":"node_elastic";
+        // Verify every eligible rule call during quality warmup only. Formal
+        // timing executes the same task path without the sequential replay.
+        rule_search_mode=profile_repeat<=0?2:1;
+    }
     const bool node_cooperative=research.kernel_scheduler=="node_original" || research.kernel_scheduler=="node_native" || research.kernel_scheduler=="node_scoped" ||
         research.kernel_scheduler=="node_fixed" || research.kernel_scheduler=="node_lend" ||
         research.kernel_scheduler=="node_guarded" || research.kernel_scheduler=="node_model" || research.kernel_scheduler=="node_tail" ||
@@ -440,7 +449,12 @@ int main(int argc, char **argv) {
     }
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
-    profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?research.kernel_scheduler:"legacy");
+    profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
+    if(research.kernel_threads>0 && rule_search_mode>=0) {
+        profiler.add_metadata("rule_search_profile","rule_search_v1");
+        profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
+        profiler.add_metadata("rule_search_resource","phase0_base_only");
+    }
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
     profiler.add_metadata("active_workers",std::to_string(research.mesh_tasks>0?p-1:p));
     profiler.add_metadata("partition_seed",std::to_string(research.partition_seed));
@@ -815,7 +829,9 @@ int main(int argc, char **argv) {
             scaling::StageScope profile_stage("local_volume_mesh", "compute");
             profiler.set_metric("volume_kernel_input_points", nglib::Ng_GetNP(submesh));
             profiler.set_metric("volume_kernel_input_surface_elements", nglib::Ng_GetNSE(submesh));
-            double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={};
+            double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={},rule_details[24]={};
+            if(nglib::Ng_SetVolumeRuleSearchMode(rule_search_mode)!=nglib::NG_OK)
+                MPI_Abort(MPI_COMM_WORLD,2);
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -842,6 +858,15 @@ int main(int argc, char **argv) {
             if(node_resources) {node_resources->finish();node_resources->report(profiler,research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original");}
             if(research.kernel_threads>0) {
                 nglib::Ng_GetVolumeFrontStats(front_details);
+                if(rule_search_mode>=0) {
+                    nglib::Ng_GetVolumeRuleSearchStats(rule_details);
+                    const char *rule_names[]={"calls","parallel_calls","verified_calls","serial_calls",
+                        "rules","eligible_rules","face_trials","point_trials","mappings","wall_seconds",
+                        "copy_seconds","dispatch_seconds","worker_seconds","worker_max_sum_seconds",
+                        "verify_seconds","max_call_seconds","debug_fallbacks","mismatches",
+                        "calls_le32us","calls_le128us","calls_le512us","calls_le2ms","calls_le8ms","calls_gt8ms"};
+                    for(int k=0;k<24;++k) profiler.set_metric(std::string("kernel_rules_")+rule_names[k],rule_details[k]);
+                }
                 nglib::Ng_GetVolumeTaskManagerStats(team_after);
                 const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};
                 for(int k=0;k<3;++k) profiler.set_metric(team_names[k],team_after[k]-team_before[k]);

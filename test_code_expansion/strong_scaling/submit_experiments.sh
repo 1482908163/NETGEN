@@ -15,6 +15,21 @@ REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
 export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
+# Rule-search runs retain the same independent submission and shared start time.
+# They do not reuse the older three-route borrowing analyzer.
+if [[ "${RULE_SEARCH_SWEEP:-0}" == 1 ]]; then
+    failures=0
+    for level in ${RULE_SEARCH_LEVELS//,/ }; do
+        [[ "$level" =~ ^[0-9]+$ ]] || { echo "非法面细化级数" >&2; exit 2; }
+        if ! RULE_SEARCH_SWEEP=0 LEVELS="$level" RUN_ROOT="${RUN_ROOT}/levels${level}" \
+            bash "${SCRIPT_DIR}/submit_experiments.sh" "$@"; then
+            failures=$((failures+1))
+        fi
+    done
+    printf '规则搜索结果：%s/levels*/p*/RESULT_SUMMARY.txt\n' "${RUN_ROOT}"
+    ((failures==0)) || exit 1
+    exit 0
+fi
 # 不同工作量作为独立作业同时提交，共享最早启动时刻，结果按细化级数分开。
 if [[ "${WORKLOAD_SWEEP:-0}" == 1 ]]; then
     export WORKLOAD_ROOT="${RUN_ROOT}"
@@ -75,7 +90,7 @@ for p in "${counts[@]}"; do
     mkdir -p "${RUN_ROOT}/p${p}"
     export PROCESS_COUNT="${p}"
     job_name="mesh_p${p}"
-    [[ -z "${WORKLOAD_ROOT:-}" ]] || job_name="mesh_l${LEVELS}_p${p}"
+    [[ -z "${WORKLOAD_ROOT:-}" && "${RULE_SEARCH_EXPERIMENT:-0}" != 1 ]] || job_name="mesh_l${LEVELS}_p${p}"
     command=("${SBATCH_COMMAND}" --parsable -p "${PARTITION}" -N "${nodes}" -n "${p}"
              --cpus-per-task "${CPUS_PER_TASK}" --ntasks-per-node "${RANKS_PER_NODE}" --export=ALL --job-name "${job_name}"
              --output "${RUN_ROOT}/p${p}/job-%j.log" "${batch_extra[@]}" "${SCRIPT_DIR}/run_experiments.sh")

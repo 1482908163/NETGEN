@@ -1,5 +1,7 @@
 #include <mystdlib.h>
 #include "meshing.hpp"
+#include <sstream>
+#include <cstring>
 
 
 namespace netgen
@@ -47,7 +49,168 @@ extern double minwithoutother;
 
 
 
-int Meshing3 :: ApplyRules 
+
+// Each rule is claimed exactly once. Its mutable free-zone and diagnostic slots
+// are exclusively owned until the team joins. Front and rotation order stay serial.
+struct RuleSearchQueue { std::atomic<int> next{0}; };
+struct RuleSearchResult {
+  float quality = 0, error = 0;
+  int found = -1;
+  double other = 0, withoutother = 0, seconds = 0;
+  unsigned long long rules = 0, eligible = 0, face_trials = 0, point_trials = 0, mappings = 0;
+  std::string trace;
+  Array<Point3d,PointIndex> points;
+  Array<MiniElement2d> faces;
+  NgArray<Element> elements;
+  NgArray<INDEX> deleted;
+};
+namespace {
+struct RuleLegacyTimer {
+  int index; bool active;
+  RuleLegacyTimer(int i, bool a):index(i),active(a) { if(active) NgProfiler::StartTimer(i); }
+  ~RuleLegacyTimer() { if(active) NgProfiler::StopTimer(index); }
+};
+using RuleClock = std::chrono::steady_clock;
+double RuleElapsed(RuleClock::time_point t) {
+  return std::chrono::duration<double>(RuleClock::now()-t).count();
+}
+template<class T> bool RuleBitsEqual(T a, T b) { return std::memcmp(&a,&b,sizeof(T))==0; }
+bool SameRuleOutput(const RuleSearchResult & a,
+                    const Array<Point3d,PointIndex> & points,
+                    const Array<MiniElement2d> & faces,
+                    const NgArray<Element> & elements, const NgArray<INDEX> & deleted) {
+  if(a.points.Size()!=points.Size() || a.faces.Size()!=faces.Size() ||
+     a.elements.Size()!=elements.Size() || a.deleted.Size()!=deleted.Size()) return false;
+  for(auto i:points.Range())
+    for(int j=0;j<3;j++) if(!RuleBitsEqual(a.points[i].X(j+1),points[i].X(j+1))) return false;
+  for(auto i:faces.Range()) {
+    if(a.faces[i].GetNP()!=faces[i].GetNP()) return false;
+    for(int j=1;j<=faces[i].GetNP();j++) if(a.faces[i].PNum(j)!=faces[i].PNum(j)) return false;
+  }
+  for(auto i:elements.Range()) {
+    if(a.elements[i].GetType()!=elements[i].GetType() || a.elements[i].GetNP()!=elements[i].GetNP()) return false;
+    for(int j=1;j<=elements[i].GetNP();j++) if(a.elements[i].PNum(j)!=elements[i].PNum(j)) return false;
+  }
+  for(auto i:deleted.Range()) if(a.deleted[i]!=deleted[i]) return false;
+  return true;
+}
+void RecordRuleWork(VolumeKernelStats * s, const RuleSearchResult & r) {
+  if(!s) return;
+  s->AddRule(4,r.rules); s->AddRule(5,r.eligible);
+  s->AddRule(6,r.face_trials); s->AddRule(7,r.point_trials); s->AddRule(8,r.mappings);
+}
+}
+
+int Meshing3::ApplyRules(Array<Point3d,PointIndex> & p, Array<int,PointIndex> & a,
+  Array<MiniElement2d> & f, INDEX split, INDEX_2_HASHTABLE<int> & pairs,
+  NgArray<Element> & e, NgArray<INDEX> & d, int tol, double sloppy, int rot, float & err) {
+  return ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,err,nullptr,nullptr);
+}
+
+int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointIndex> & a,
+  Array<MiniElement2d> & f, INDEX split, INDEX_2_HASHTABLE<int> & pairs,
+  NgArray<Element> & e, NgArray<INDEX> & d, int tol, double sloppy, int rot, float & err,
+  int mode, VolumeKernelStats * stats) {
+  if(mode<0 || (!mode && !stats)) return ApplyRules(p,a,f,split,pairs,e,d,tol,sloppy,rot,err);
+  const auto begin=RuleClock::now();
+  if(stats) stats->AddRule(0,1);
+  struct CallTimer {
+    VolumeKernelStats * stats; RuleClock::time_point begin;
+    ~CallTimer() {
+      if(!stats) return;
+      double t=RuleElapsed(begin); stats->AddRule(9,t); stats->MaxRule(15,t);
+      const double edges[]={32e-6,128e-6,512e-6,2e-3,8e-3};
+      int b=0; while(b<5 && t>edges[b]) ++b;
+      stats->AddRule(18+b,1);
+    }
+  } call_timer{stats,begin};
+  // Verbose/test rules keep the original ordered diagnostics. Nested teams
+  // also fall back: no extra workers or unaccounted resource oversubscription.
+  bool debug=testmode || tol>5;
+  for(auto & rule:rules) debug=debug || rule->TestFlag('t');
+  bool parallel=mode && !debug && rules.Size()>1 && ngcore::task_manager &&
+                ngcore::TaskManager::GetNumThreads()>1;
+  if(!parallel) {
+    RuleSearchResult work;
+    int found=ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,err,nullptr,stats?&work:nullptr);
+    RecordRuleWork(stats,work);
+    if(stats) { stats->AddRule(3,1); if(mode && debug) stats->AddRule(16,1); }
+    return found;
+  }
+  if(stats) stats->AddRule(1,1);
+  const bool verify=mode==2;
+  const double old_other=minother, old_without=minwithoutother;
+  Array<int> old_found,old_can;
+  if(verify) { old_found=foundmap;old_can=canuse; }
+  const int workers=std::min(int(rules.Size()),ngcore::TaskManager::GetNumThreads());
+  std::vector<std::unique_ptr<RuleSearchResult>> results;
+  auto stamp=RuleClock::now();
+  for(int i=0;i<workers;i++) {
+    results.emplace_back(new RuleSearchResult);
+    results.back()->points=p;results.back()->faces=f;
+  }
+  if(stats) stats->AddRule(10,RuleElapsed(stamp));
+  RuleSearchQueue queue;
+  stamp=RuleClock::now();
+  ngcore::ParallelFor(size_t(workers),[&](size_t i) {
+    auto & r=*results[i];const auto t=RuleClock::now();
+    r.found=ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,
+                          tol,sloppy,rot,r.error,&queue,&r);
+    r.seconds=RuleElapsed(t);
+  },workers);
+  if(stats) stats->AddRule(11,RuleElapsed(stamp));
+  int winner=-1, found=-1;
+  double longest=0;
+  for(int i=0;i<workers;i++) {
+    const auto & r=*results[i];RecordRuleWork(stats,r);
+    if(stats) stats->AddRule(12,r.seconds);
+    longest=std::max(longest,r.seconds);
+    minother=std::min(minother,r.other);minwithoutother=std::min(minwithoutother,r.withoutother);
+    if(!r.trace.empty()) (*testout)<<r.trace;
+    // Strict original comparison: equal qualities keep the earliest rule.
+    if(r.found>0 && (winner<0 || r.quality<results[winner]->quality ||
+       (r.quality==results[winner]->quality && r.found<results[winner]->found))) winner=i;
+    if(r.found==0) found=0;
+  }
+  if(stats) stats->AddRule(13,longest);
+  if(winner>=0) found=results[winner]->found;
+  err=results[0]->error;
+  if(verify) {
+    const auto verify_begin=RuleClock::now();
+    Array<int> parallel_found(foundmap),parallel_can(canuse);
+    Array<string> parallel_problems(problems);
+    foundmap=old_found;canuse=old_can;
+    const double parallel_other=minother,parallel_without=minwithoutother;
+    minother=old_other;minwithoutother=old_without;
+    float serial_error;
+    RuleSearchResult reference;
+    int serial_found=ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,serial_error,nullptr,&reference);
+    bool same=serial_found==found && RuleBitsEqual(serial_error,err) &&
+      RuleBitsEqual(minother,parallel_other) && RuleBitsEqual(minwithoutother,parallel_without);
+    for(int i:foundmap.Range()) same=same && foundmap[i]==parallel_found[i] &&
+      canuse[i]==parallel_can[i] && problems[i]==parallel_problems[i];
+    // No-winner output must also preserve the input arrays and empty outputs.
+    same=same && SameRuleOutput(*results[winner>=0?winner:0],p,f,e,d);
+    unsigned long long face=0,point=0,maps=0;
+    for(auto & r:results) {face+=r->face_trials;point+=r->point_trials;maps+=r->mappings;}
+    same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
+    if(stats) {stats->AddRule(2,1);stats->AddRule(14,RuleElapsed(verify_begin));}
+    if(!same) {
+      if(stats) stats->AddRule(17,1);
+      throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+
+                        " serial="+ToString(serial_found)+" parallel="+ToString(found));
+    }
+    // Serial verification has already materialized the exactly checked output.
+  } else if(winner>=0) {
+    p=results[winner]->points;f=results[winner]->faces;
+    e=results[winner]->elements;d=results[winner]->deleted;
+  } else {e.SetSize(0);d.SetSize(0);}
+  // This includes verification when enabled; the separate verification metric
+  // is explanatory only, and is never subtracted from natural core timings.
+  return found;
+}
+
+int Meshing3 :: ApplyRulesImpl
 (
  Array<Point3d, PointIndex> & lpoints,     // in: local points, out: old+new local points
  Array<int, PointIndex> & allowpoint,      // in: 2 .. it is allowed to use pointi, 1..will be allowed later, 0..no means
@@ -59,7 +222,8 @@ int Meshing3 :: ApplyRules
  int tolerance,                // quality class: 1 best 
  double sloppy,                // quality strength
  int rotind1,                  // how to rotate base element
- float & retminerr             // element error 
+ float & retminerr,            // element error
+ RuleSearchQueue * queue, RuleSearchResult * result
  )
 
 {
@@ -97,7 +261,11 @@ int Meshing3 :: ApplyRules
   NgArray<int> fnearness;
 
   static int cnt = 0;
-  cnt++;
+  if (!queue) cnt++;
+  std::unique_ptr<std::ostringstream> worker_trace;
+  if(queue) worker_trace.reset(new std::ostringstream);
+  std::ostream & rule_out = queue ? *worker_trace : *testout;
+  double local_minother = minother, local_minwithoutother = minwithoutother;
   
   delfaces.SetSize (0);
   elements.SetSize (0);
@@ -113,9 +281,9 @@ int Meshing3 :: ApplyRules
   for (PointIndex pi : lfaces[0].PNums())
     pnearness[pi] = 0;
   
-  NgProfiler::RegionTimer reg2(98);
+  RuleLegacyTimer reg2(98, !queue);
   
-  NgProfiler::StartTimer (90);
+  if (!queue) NgProfiler::StartTimer (90);
 
   for (int loop = 0; loop < 2; loop++)
     {
@@ -160,8 +328,8 @@ int Meshing3 :: ApplyRules
     }
 
   
-  NgProfiler::StopTimer (90);
-  NgProfiler::StartTimer (91);
+  if (!queue) NgProfiler::StopTimer (90);
+  if (!queue) NgProfiler::StartTimer (91);
 
   // find bounding boxes of faces
 
@@ -175,8 +343,8 @@ int Meshing3 :: ApplyRules
 	triboxes[i].AddPoint (lpoints[face[j]]);
     }
 
-  NgProfiler::StopTimer (91);
-  NgProfiler::StartTimer (92);
+  if (!queue) NgProfiler::StopTimer (91);
+  if (!queue) NgProfiler::StartTimer (92);
 
   
   bool useedges = false;
@@ -203,9 +371,9 @@ int Meshing3 :: ApplyRules
 	  }
     }
 
-  NgProfiler::StopTimer (92);
+  if (!queue) NgProfiler::StopTimer (92);
 
-  NgProfiler::RegionTimer reg3(99);
+  RuleLegacyTimer reg3(99, !queue);
 
   pused.SetSize (lpoints.Size());
   fused.SetSize (lfaces.Size());
@@ -215,7 +383,7 @@ int Meshing3 :: ApplyRules
   minteterr = sloppy * tolerance;
 
   if (testmode)
-    (*testout) << "cnt = " << cnt << " class = " << tolerance << endl;
+    rule_out << "cnt = " << cnt << " class = " << tolerance << endl;
 
 
 
@@ -226,11 +394,15 @@ int Meshing3 :: ApplyRules
   // check each rule:
   // tstart.Stop();
   // tloop.Start();
-  for (int rim = 0; rim < rules.Size(); rim++)
+  int serial_rule = 0;
+  for (int rim = queue ? queue->next.fetch_add(1, std::memory_order_relaxed) : serial_rule++;
+       rim < rules.Size();
+       rim = queue ? queue->next.fetch_add(1, std::memory_order_relaxed) : serial_rule++)
     {
+      if (result) result->rules++;
       int base = (lfaces[0].GetNP() == 3) ? 100 : 200;
-      NgProfiler::RegionTimer regx1(base);
-      NgProfiler::RegionTimer regx(base+rim+1);
+      RuleLegacyTimer regx1(base, !queue);
+      RuleLegacyTimer regx(base+rim+1, !queue);
 
       // sprintf (problems.Elem(ri), "");
       // *problems.Elem(ri) = '\0';
@@ -253,10 +425,11 @@ int Meshing3 :: ApplyRules
       if (testmode)
 	problems[rim] = "no mapping found";
       
+      if (result) result->eligible++;
       loktestmode = testmode || rule->TestFlag ('t') || tolerance > 5;
 
       if (loktestmode)
-	(*testout) << "Rule " << rim+1 << " = " << rule->Name() << endl;
+	rule_out << "Rule " << rim+1 << " = " << rule->Name() << endl;
       
       pmap.SetSize (rule->GetNP());
       fmapi.SetSize (rule->GetNF());
@@ -287,8 +460,8 @@ int Meshing3 :: ApplyRules
 	*/
 
       int nfok = 2;
-      NgProfiler::RegionTimer regfa(300);
-      NgProfiler::RegionTimer regx2(base+50+rim+1);
+      RuleLegacyTimer regfa(300, !queue);
+      RuleLegacyTimer regx2(base+50+rim+1, !queue);
       while (nfok >= 2)
 	{
 	  
@@ -304,6 +477,7 @@ int Meshing3 :: ApplyRules
 
 	      while (!ok)
 		{
+		  if (result) result->face_trials++;
 		  locfr++;
 		  if (locfr == actfnp + 1)
 		    {
@@ -379,7 +553,7 @@ int Meshing3 :: ApplyRules
 		      
 		      if (rule->GetPointNr (nfok, j) < IndexBASE<PointIndex>()+3 &&
 			  pmap.Get(rule->GetPointNr(nfok, j)) != locpi)
-			(*testout) << "change face1 point, mark1" << endl;
+			rule_out << "change face1 point, mark1" << endl;
 		      
 		      pmap.Set(rule->GetPointNr (nfok, j), locpi);
 		      pused[locpi]++;
@@ -412,14 +586,14 @@ int Meshing3 :: ApplyRules
 	  else
 	    
 	    { 
-	      NgProfiler::RegionTimer regfb(301);
+	      RuleLegacyTimer regfb(301, !queue);
 
 	      // all faces are mapped
 	      // now map all isolated points:
 	      
 	      if (loktestmode)
 		{
-		  (*testout) << "Faces Ok" << endl;
+		  rule_out << "Faces Ok" << endl;
 		  problems[rim] = "Faces Ok";
 		}
 
@@ -461,6 +635,7 @@ int Meshing3 :: ApplyRules
 			  while (!ok && locpi < lpoints.Size()-1+IndexBASE<PointIndex>())
 			    {
 			      ok = 1;
+			      if (result) result->point_trials++;
 			      locpi++;
 			      
 			      if (pused[locpi] || 
@@ -493,7 +668,7 @@ int Meshing3 :: ApplyRules
 			      pmap.Set (npok, locpi);
 			      
 			      if (npok <= 3)
-				(*testout) << "set face1 point, mark3" << endl;
+				rule_out << "set face1 point, mark3" << endl;
 			      
 			      pused[locpi]++;
 			      npok++;
@@ -507,7 +682,7 @@ int Meshing3 :: ApplyRules
                               pmap.Elem(npok).Invalidate();
 			      
 			      if (npok <= 3)
-				(*testout) << "set face1 point, mark4" << endl;
+				rule_out << "set face1 point, mark4" << endl;
 			      
 			      npok--;
 			      incnpok = 0;
@@ -518,18 +693,19 @@ int Meshing3 :: ApplyRules
 		  else
 		    
 		    {
-		      NgProfiler::RegionTimer regfa2(302);		      
+		      RuleLegacyTimer regfa2(302, !queue);
 
+		      if (result) result->mappings++;
 		      // all points are mapped
 		      
 		      if (loktestmode)
 			{
-			  (*testout) << "Mapping found!!: Rule " << rule->Name() << endl;
+			  rule_out << "Mapping found!!: Rule " << rule->Name() << endl;
 			  for (auto pi : pmap)
-			    (*testout) << pi << " ";
-			  (*testout) << endl;
+			    rule_out << pi << " ";
+			  rule_out << endl;
 			  problems[rim] = "mapping found";
-			  (*testout) << rule->GetNP(1) << " = " << lfaces[0].GetNP() << endl;
+			  rule_out << rule->GetNP(1) << " = " << lfaces[0].GetNP() << endl;
 			}
 		      
 		      ok = 1;
@@ -562,7 +738,7 @@ int Meshing3 :: ApplyRules
 			  if (el.GetType() == PYRAMID) 
 			    { 
 			      if (loktestmode)
-				(*testout) << "map pyramid, rule = " << rule->Name() << endl;
+				rule_out << "map pyramid, rule = " << rule->Name() << endl;
 			      for (int j = 1; j <= 2; j++)
 				{
 				  INDEX_2 in2;
@@ -581,7 +757,7 @@ int Meshing3 :: ApplyRules
 				    {
 				      ok = 0;
 				      if (loktestmode)
-					(*testout) << "no pair" << endl;
+					rule_out << "no pair" << endl;
 				    }
 				}
 			    }
@@ -643,15 +819,15 @@ int Meshing3 :: ApplyRules
 			  problems[rim] = "Freezone not convex";
 
 			  if (loktestmode)
-			    (*testout) << "Freezone not convex" << endl;
+			    rule_out << "Freezone not convex" << endl;
 			}
 
 		      if (loktestmode)
 			{
 			  const NgArray<Point3d> & fz = rule->GetTransFreeZone();
-			  (*testout) << "Freezone: " << endl;
+			  rule_out << "Freezone: " << endl;
 			  for (int i = 1; i <= fz.Size(); i++)
-			    (*testout) << fz.Get(i) << endl;
+			    rule_out << fz.Get(i) << endl;
 			}
 		      
 
@@ -670,7 +846,7 @@ int Meshing3 :: ApplyRules
 				    {
 				      if (loktestmode)
 					{
-					  (*testout) << "Point " << i 
+					  rule_out << "Point " << i
 						     << " in Freezone" << endl;
 					  problems[rim] = "locpoint " + ToString(i) + " in Freezone";
 					}
@@ -741,15 +917,15 @@ int Meshing3 :: ApplyRules
 
 				  if (loktestmode)
 				    {
-				      (*testout) << "El with " << lfaces[i-1].GetNP() << " points in freezone: "
+				      rule_out << "El with " << lfaces[i-1].GetNP() << " points in freezone: "
 						 << lfaces[i-1].PNum(1) << " - " 
 						 << lfaces[i-1].PNum(2) << " - "
 						 << lfaces[i-1].PNum(3) << " - "
 						 << lfaces[i-1].PNum(4) << endl;
 				      for (int lj = 1; lj <= lfaces[i-1].GetNP(); lj++)
-					(*testout) << lpoints[lfaces[i-1].PNum(lj)] << " ";
+					rule_out << lpoints[lfaces[i-1].PNum(lj)] << " ";
 
-				      (*testout) << endl;
+				      rule_out << endl;
 
 				      sprintf (problems.Elem(ri), "triangle (%d, %d, %d) in Freezone",
 					       lfaces[i-1].PNum(1), lfaces[i-1].PNum(2),
@@ -760,7 +936,7 @@ int Meshing3 :: ApplyRules
 				    {
 				      if (lfacei.GetNP() == 3)
 					{
-					  (*testout) << "Triangle in freezone: "
+					  rule_out << "Triangle in freezone: "
 						     << lfacei.PNum(1) << " - " 
 						     << lfacei.PNum(2) << " - "
 						     << lfacei.PNum(3) 
@@ -769,11 +945,11 @@ int Meshing3 :: ApplyRules
 						     << lpoints[lfacei.PNum(2)] << " - "
 						     << lpoints[lfacei.PNum(3)] 
 						     << endl;
-					  (*testout) << "lpi = " << lpi.Get(1) << ", " 
+					  rule_out << "lpi = " << lpi.Get(1) << ", "
 						     << lpi.Get(2) << ", " << lpi.Get(3) << endl;
 					}
 				      else
-					  (*testout) << "Quad in freezone: "
+					  rule_out << "Quad in freezone: "
 						     << lfacei.PNum(1) << " - " 
 						     << lfacei.PNum(2) << " - "
 						     << lfacei.PNum(3) << " - "
@@ -806,7 +982,7 @@ int Meshing3 :: ApplyRules
 						hc = 1;
 
 						
- // 						(*testout) << "found from other side: " 
+ // 						rule_out << "found from other side: "
 //  							   << rule->Name() 
 //  							   << " ( " << pmap.Get (rule->GetPointNr(k, 1))
 //  							   << " - " << pmap.Get (rule->GetPointNr(k, 2))
@@ -822,7 +998,7 @@ int Meshing3 :: ApplyRules
 				    {
 				      if (loktestmode)
 					{
-					  (*testout) << "Triangle in freezone: "
+					  rule_out << "Triangle in freezone: "
 						     << lfaces[i-1].PNum(1) << " - " 
 						     << lfaces[i-1].PNum(2) << " - "
 						     << lfaces[i-1].PNum(3) << endl;
@@ -860,7 +1036,7 @@ int Meshing3 :: ApplyRules
 			  
 			  if (loktestmode)
 			    {
-			      (*testout) << "Rule ok" << endl;
+			      rule_out << "Rule ok" << endl;
 			      problems[rim] = "Rule ok, err = "+ToString(err);
 			    }
 
@@ -927,7 +1103,7 @@ int Meshing3 :: ApplyRules
 				  if (loktestmode)
 				    {
 				      problems[rim] = "Orientation wrong";
-				      (*testout) << "Orientation wrong ("<< n*v3 << ")" << endl;
+				      rule_out << "Orientation wrong ("<< n*v3 << ")" << endl;
 				    }
 				  ok = 0;
 				}
@@ -941,7 +1117,7 @@ int Meshing3 :: ApplyRules
 			      {
 				if (loktestmode)
 				  {
-				    (*testout) << "Newpoint " << lpoints[pmap.Get(i)]
+				    rule_out << "Newpoint " << lpoints[pmap.Get(i)]
 					       << " outside convex hull" << endl;
 				    problems[rim] = "newpoint outside convex hull";
 				  }
@@ -1024,7 +1200,7 @@ int Meshing3 :: ApplyRules
 			  
 
 			  if (loktestmode)
-			    (*testout) << "ok = " << int(ok) 
+			    rule_out << "ok = " << int(ok)
 				       << "teterr = " << teterr 
 				       << "minteterr = " << minteterr << endl;
 
@@ -1033,22 +1209,22 @@ int Meshing3 :: ApplyRules
 			    {
 			      canuse[rim] ++;
 			      /*
-			      (*testout) << "can use rule " << rule->Name() 
+			      rule_out << "can use rule " << rule->Name()
 					 << ", err = " << teterr << endl;
 			      for (i = 1; i <= pmap.Size(); i++)
-				(*testout) << pmap.Get(i) << " ";
-			      (*testout) << endl;
+				rule_out << pmap.Get(i) << " ";
+			      rule_out << endl;
 			      */
 
 			      if (problems[rim] == "other")
 				{
-				  if (teterr < minother)
-				    minother = teterr;
+				  if (teterr < local_minother)
+				    local_minother = teterr;
 				}
 			      else
 				{
-				  if (teterr < minwithoutother)
-				    minwithoutother = teterr;
+				  if (teterr < local_minwithoutother)
+				    local_minwithoutother = teterr;
 				}
 			    }
 
@@ -1059,7 +1235,7 @@ int Meshing3 :: ApplyRules
 			    {
 
 			      if (loktestmode)
-				(*testout) << "use rule" << endl;
+				rule_out << "use rule" << endl;
 
 			      found = rim+1;
 			      minteterr = teterr;
@@ -1068,7 +1244,7 @@ int Meshing3 :: ApplyRules
 				{
 				  for (int i = 1; i <= rule->GetNOldP(); i++)
 				    {
-				      (*testout) << "P" << i << ": Ref: "
+				      rule_out << "P" << i << ": Ref: "
 						 << rule->GetPoint (i) << "  is: "
 						 << lpoints[pmap.Get(i)] << endl;
 				    }
@@ -1121,7 +1297,7 @@ int Meshing3 :: ApplyRules
 	    }
 	}
       if (loktestmode)
-	(*testout) << "end rule" << endl;
+	rule_out << "end rule" << endl;
     }
   // tloop.Stop();
   
@@ -1156,6 +1332,16 @@ int Meshing3 :: ApplyRules
     }
   
   retminerr = minerr;
+  if (result) {
+    result->quality = minteterr;
+    result->other = local_minother;
+    result->withoutother = local_minwithoutother;
+    if(worker_trace) result->trace = worker_trace->str();
+  }
+  if (!queue) {
+    minother = local_minother;
+    minwithoutother = local_minwithoutother;
+  }
 
 
   if (impossible && found == 0)

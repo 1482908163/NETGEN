@@ -416,6 +416,16 @@ namespace nglib
 
 
 
+   static thread_local int volume_rule_search_mode=-1;
+   static thread_local double last_volume_rule_stats[VolumeKernelStats::rule_count] = {};
+   NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode) {
+     if(mode<-1 || mode>2) return NG_ERROR;
+     volume_rule_search_mode=mode;return NG_OK;
+   }
+   NGLIB_API void Ng_GetVolumeRuleSearchStats(double * values) {
+     if(values) std::copy_n(last_volume_rule_stats,VolumeKernelStats::rule_count,values);
+   }
+
    static thread_local double last_volume_front_stats[VolumeKernelStats::front_count] = {};
 
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
@@ -426,6 +436,7 @@ namespace nglib
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
       std::fill_n(last_volume_front_stats,VolumeKernelStats::front_count,0.0);
+      std::fill_n(last_volume_rule_stats,VolumeKernelStats::rule_count,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -445,6 +456,7 @@ namespace nglib
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
+         local.volume_rule_search = volume_rule_search_mode;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
@@ -463,6 +475,8 @@ namespace nglib
             for(int i=0;i<VolumeKernelStats::count;++i) details[i]=stats.values[i].load();
             for(int i=0;i<VolumeKernelStats::front_count;++i)
                last_volume_front_stats[i]=stats.front_values[i].load();
+            for(int i=0;i<VolumeKernelStats::rule_count;++i)
+               last_volume_rule_stats[i]=stats.rule_values[i].load();
          }
          return NG_OK;
       } catch (const std::exception & error) {

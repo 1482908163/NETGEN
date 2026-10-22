@@ -19,6 +19,9 @@ enum MESHING3_RESULT
 };
 
 
+struct RuleSearchQueue;
+struct RuleSearchResult;
+
 /// 3d volume mesh generation
 class Meshing3
 {
@@ -32,6 +35,14 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  int ApplyRulesImpl(Array<Point3d, PointIndex> & lpoints,
+                    Array<int, PointIndex> & allowpoint,
+                    Array<MiniElement2d> & lfaces, INDEX lfacesplit,
+                    INDEX_2_HASHTABLE<int> & connectedpairs,
+                    NgArray<Element> & elements, NgArray<INDEX> & delfaces,
+                    int tolerance, double sloppy, int rotind1, float & retminerr,
+                    RuleSearchQueue * queue, RuleSearchResult * result);
+
 public:
   /// 
   Meshing3 (const string & rulefilename); 
@@ -56,6 +67,14 @@ public:
 		  float & retminerr);
   
   ///
+  // The caller owns a fixed-size task team; this method never changes affinity.
+  int ApplyRulesTasks(Array<Point3d, PointIndex> & lpoints,
+                      Array<int, PointIndex> & allowpoint,
+                      Array<MiniElement2d> & lfaces, INDEX lfacesplit,
+                      INDEX_2_HASHTABLE<int> & connectedpairs,
+                      NgArray<Element> & elements, NgArray<INDEX> & delfaces,
+                      int tolerance, double sloppy, int rotind1, float & retminerr,
+                      int mode, VolumeKernelStats * stats);
   PointIndex AddPoint (const Point3d & p, PointIndex globind);
   ///
   void AddBoundaryElement (const Element2d & elem);

@@ -40,11 +40,11 @@ namespace netgen
     int phase, threads;
     double work;
     std::chrono::steady_clock::time_point start;
-    VolumeResourceScope(const VolumeResources * r, int p, double w, int fallback)
+    VolumeResourceScope(const VolumeResources * r, int p, double w, int fallback, int maximum=0)
       : resources(r),phase(p),threads(fallback),work(std::max(1.0,w)) {
       if(resources) {
         if(ngcore::task_manager) throw std::runtime_error("nested resource task manager");
-        threads=resources->acquire(resources->context,phase,work,0);
+        threads=resources->acquire(resources->context,phase,work,maximum);
         if(threads<1) throw std::runtime_error("invalid resource thread count");
         start=std::chrono::steady_clock::now();
       }
@@ -99,11 +99,22 @@ namespace netgen
   struct VolumeKernelStats {
     static constexpr int count = 12;
     static constexpr int front_count = 20;
+    static constexpr int rule_count = 24;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
+    std::atomic<double> rule_values[rule_count];
     VolumeKernelStats() {
       for(auto & v : values) v.store(0);
       for(auto & v : front_values) v.store(0);
+      for(auto & v : rule_values) v.store(0);
+    }
+    void AddRule(int i, double value) {
+      double old=rule_values[i].load(std::memory_order_relaxed);
+      while(!rule_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void MaxRule(int i, double value) {
+      double old=rule_values[i].load(std::memory_order_relaxed);
+      while(old<value && !rule_values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
     }
     void Add(int i, double value) {
       double old=values[i].load(std::memory_order_relaxed);
@@ -1724,6 +1735,7 @@ namespace netgen
     bool volume_repair_frontier = false;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     const VolumeResources * volume_resources = nullptr;
+    int volume_rule_search = -1; // -1: off; 0: serial profile; 1: tasks; 2: verified tasks
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;
     int nthreads = 4;

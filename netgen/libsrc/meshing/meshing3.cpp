@@ -195,6 +195,20 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   // NgProfiler::RegionTimer reg (meshing3_timer);
 
 
+  // Only this front loop owns the team. An enclosing task region keeps the
+  // original serial rule path rather than introducing nested parallelism.
+  std::unique_ptr<VolumeResourceScope> rule_lease;
+  std::unique_ptr<ngcore::RegionTaskManager> rule_team;
+  int rule_mode=mp.volume_rule_search<0?-1:0;
+  if(mp.volume_rule_search>0 && mp.nthreads>1 && !ngcore::task_manager) {
+    // Phase 0 was previously unused. Cap this first implementation at the
+    // original per-rank budget, even on the elastic resource path. Acquire
+    // before creating workers so they inherit the leased physical CPU mask.
+    rule_lease.reset(new VolumeResourceScope(mp.volume_resources,0,mesh.GetNP(),mp.nthreads,mp.nthreads));
+    rule_team.reset(new ngcore::RegionTaskManager(rule_lease->threads));
+    rule_mode=mp.volume_rule_search;
+  }
+
   Array<Point3d, PointIndex> locpoints;      // local points
   Array<MiniElement2d> locfaces;                   // local faces
   Array<PointIndex, PointIndex> pindex;      // mapping from local to front point numbering
@@ -546,10 +560,10 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
           {
             FrontTimer time(front_values,3);
-	    found = ApplyRules (plainpoints, allowpoint,
+	    found = ApplyRulesTasks (plainpoints, allowpoint,
 			        locfaces, locfacesplit, connectedpairs,
 			        locelements, delfaces,
-			        stat.qualclass, mp.sloppy, rotind, err);
+			        stat.qualclass, mp.sloppy, rotind, err, rule_mode, front_stats);
           }
 
           {
