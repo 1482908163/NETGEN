@@ -974,6 +974,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             ('element_count','element_count_pre_collective_wait_arrival_elapsed','element_count_complete_elapsed'),
             ('volume_size','volume_size_exchange_pre_collective_wait_arrival_elapsed','volume_size_exchange_complete_elapsed'))
         for label,arrival_name,complete_name in pairs:
+            # 原通信没有执行稀疏面交换；不能要求它报告不存在阶段的时间戳。
+            if label.startswith('face_') and metadata['algorithm'] not in ('sparse','combined'):
+                continue
             arrival=sync_values(arrival_name);complete=sync_values(complete_name)
             if any(c<a for a,c in zip(arrival,complete)):
                 raise ValueError('natural sync completion precedes arrival: '+label)
