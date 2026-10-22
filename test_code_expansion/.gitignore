@@ -38,3 +38,19 @@ strong_scaling_results/**/*.err
 !strong_scaling_results/**/job-*.log
 !strong_scaling_results/**/node_coop_errors.txt
 !strong_scaling_results/**/node_coop_stderr.txt
+
+# 精简结果规则须位于本目录放行规则之后，避免覆盖根目录的忽略设置。
+strong_scaling_results/**/run.log
+strong_scaling_results/**/run.log.gz
+strong_scaling_results/**/node_coop_diagnostics.txt
+strong_scaling_results/**/node_coop_stderr.txt
+strong_scaling_results/**/analysis/node_resource_timeline.csv
+strong_scaling_results/**/analysis/model_samples.csv
+strong_scaling_results/**/analysis/model_samples.csv.gz
+strong_scaling_results/**/quality_summary.json
+strong_scaling_results/**/.node_scaling.lock
+
+# 精简指标、故障摘要和必要诊断可上传；失败原始日志仍保留在超算磁盘。
+!strong_scaling_results/**/analysis_metrics.json
+!strong_scaling_results/**/failure_summary.txt
+!strong_scaling_results/**/node_coop_errors.txt
