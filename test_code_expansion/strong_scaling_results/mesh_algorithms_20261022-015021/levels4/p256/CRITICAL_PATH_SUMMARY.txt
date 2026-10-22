@@ -1,22 +1,9 @@
-关键进程阶段报告：10/15 次正式运行。
+关键进程阶段报告：15/15 次正式运行。
 关键计算 node_elastic/sparse: 进程及出现次数={"73": 5}；计算=62.329s；生成=48.519s；前沿=10.222s；域内修复=1.753s；外层修复=1.684s；优化=2.650s；借核=5/5 次运行。
   front细分: ApplyRules=4.935s GetLocals=0.304s Transform=0.042s Validate=0.061s Commit=0.012s Retry=0.002s；迭代=15572 旋转尝试=46629 局部面均值/最大=80.768/985 候选命中率=21.141% 重试率=68.829% 覆盖率=62.055% 未归因=3.860s。
 关键计算 node_fixed/sparse: 进程及出现次数={"73": 5}；计算=67.530s；生成=50.655s；前沿=10.470s；域内修复=2.366s；外层修复=2.401s；优化=4.483s；借核=0/5 次运行。
   front细分: ApplyRules=4.911s GetLocals=0.302s Transform=0.042s Validate=0.055s Commit=0.012s Retry=0.002s；迭代=15572 旋转尝试=46629 局部面均值/最大=80.768/985 候选命中率=21.141% 重试率=68.829% 覆盖率=60.980% 未归因=4.085s。
+关键计算 node_original/baseline: 进程及出现次数={"73": 5}；计算=72.571s；生成=53.279s；前沿=10.611s；域内修复=4.680s；外层修复=4.700s；优化=4.499s；借核=0/5 次运行。
+  front细分: ApplyRules=5.018s GetLocals=0.313s Transform=0.043s Validate=0.057s Commit=0.013s Retry=0.002s；迭代=15572 旋转尝试=46629 局部面均值/最大=80.768/985 候选命中率=21.141% 重试率=68.829% 覆盖率=61.495% 未归因=4.121s。
 上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。
 逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。
-node_original/t4: 关键进程明细 0/5 次
-node_original/t4: Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_0
-Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_1
-Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_2
-Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_3
-Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_4
-Incomplete run: /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_5
-baseline_natural: missing/invalid quality warmup: missing/invalid natural sync timestamp: face_sparse_match_arrival_elapsed
-Missing measured repeats: p256 seed=-1 baseline/natural: [1, 2, 3, 4, 5]
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_0
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_1
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_2
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_3
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_4
-Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261022-015021/levels4/kernel_node_original_t4/p256/baseline_natural/repeat_5
