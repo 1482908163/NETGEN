@@ -284,12 +284,14 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
             local rc=$?
             trap - EXIT
             python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
-                --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --exit-code "$rc" || rc=1
+                --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --exit-code "$rc" || \
+                printf '整批状态或汇总更新失败；保留实验退出码 %s，请检查逐规模结果并重建汇总。\n' "$rc" >&2
             exit "$rc"
         }
         trap rule_batch_finish EXIT
         python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
-            --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --running
+            --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --running || \
+            printf '整批状态或汇总更新失败；继续本规模实验，详情见本作业日志。\n' >&2
     fi
     mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
     read -r -a schedulers <<< "${KERNEL_SCHEDULERS}"

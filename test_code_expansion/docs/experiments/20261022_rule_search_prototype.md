@@ -3,8 +3,8 @@
 ## 状态与边界
 
 基线：`agent/elastic-borrow-scaling`，父版本 `3cc36a853608d4c10d6517e3ae84b6cce70506f2`。
-这是算法改造的可核查首版；尚无本版本的超算性能结果，不能宣称加速或论文新颖性已成立。
-本轮没有提交超算实验。原编译入口、安装路径和运行入口继续使用。
+这是算法改造的可核查首版。2026-10-23 已收到两组有效超算结果及三组汇总脚本启动失败，见 [首轮结果与修复](20261023_rule_search_results.md)。大网格出现增量收益，小网格组合仍负收益，尚不能宣称论文新颖性成立。
+原编译入口、安装路径和运行入口继续使用。
 
 - 已实现：单次 `ApplyRules` 内按规则动态分工；顺序等价的选择归并；预热逐调用顺序重放；粒度及成本诊断。
 - 暂未实现：单条规则内部的映射子树拆分、跨节点工作迁移、小任务的净收益在线学习。
@@ -82,7 +82,7 @@ bash test_code_expansion/strong_scaling/run_experiments.sh
 
 面细化、节点数和重复次数直接修改脚本顶部的 `RULE_SEARCH_CHECK_*`、`RULE_SEARCH_MAIN_*` 配置即可。已保留 `EXPERIMENT_PRESET=rule_search` 等原有显式预设，仍可单独提交子集。
 
-默认结果目录为 `test_code_expansion/strong_scaling_results/mesh_algorithms_时间/`，统一先看其中顶层的 **`RESULT_SUMMARY.txt`**。每个作业结束后会在文件锁保护下更新整批汇总；`batch_jobs.csv` 保留状态，`batch_comparisons.csv` 只接纳质量审计及全部重复配对通过的比较，负收益也完整保留。没有收到结束回调的作业不会被写成成功。
+默认结果目录为 `test_code_expansion/strong_scaling_results/mesh_algorithms_时间/`，统一先看其中顶层的 **`RESULT_SUMMARY.txt`**。每个作业结束后会在共享目录锁保护下更新整批汇总；唯一临时文件避免跨节点覆盖。作业状态独立保存，汇总故障不再中断实验或覆盖实验退出码。`batch_jobs.csv` 保留状态，`batch_comparisons.csv` 只接纳质量审计及全部重复配对通过的比较，负收益也完整保留。没有收到结束回调的作业不会被写成成功。
 
 逐规模详细结果分别在 `precheck/levels*/p*/`、`main/levels*/p*/`，保留原来的 `ablation_summary.csv`、`kernel_summary.csv`、`kernel_phase_summary.csv`。清理、故障摘要和忽略规则继续生效；整批锁不上传。
 

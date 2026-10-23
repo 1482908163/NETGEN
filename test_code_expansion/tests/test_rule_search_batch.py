@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 """用假提交器验证整批编排，不申请节点，不运行 MPI。"""
 import csv
+from concurrent.futures import ThreadPoolExecutor
+import importlib.util
 import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
+import threading
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 DRIVER = ROOT/'test_code_expansion/strong_scaling/run_experiments.sh'
 HELPER = DRIVER.with_name('rule_search_batch.py')
 SCHEDULERS = 'node_original node_fixed node_elastic node_rules_fixed node_rules_elastic'.split()
 CONTRIBUTIONS = 'rule_search_fixed rule_search_elastic rule_search_borrowing rule_search_total'.split()
+spec = importlib.util.spec_from_file_location('rule_search_batch', HELPER)
+batch = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(batch)
 
 
 class BatchTests(unittest.TestCase):
@@ -133,6 +140,76 @@ python3() {
         self.assertEqual([r for s,r in calls if s=='node_rules_fixed'],['0'])
         self.assertEqual([r for s,r in calls if s=='node_rules_elastic'],['0','1','2'])
         self.assertIn('跳过该策略的正式计时',result.stderr)
+
+    def test_atomic_writers_never_share_temporary_names(self):
+        # 强制所有写入者完成临时写入后同时替换；固定 .tmp 的旧实现必然失败。
+        target = self.folder/'summary.txt'
+        barrier = threading.Barrier(8)
+        replace = Path.replace
+        def synchronized_replace(source, destination):
+            barrier.wait(timeout=5)
+            return replace(source, destination)
+        payloads = [str(i)*10000 for i in range(8)]
+        with patch.object(Path, 'replace', synchronized_replace), ThreadPoolExecutor(8) as pool:
+            list(pool.map(lambda content: batch.atomic(target, content), payloads))
+        self.assertIn(target.read_text(), payloads)
+        self.assertEqual(list(self.folder.glob('.*.tmp')), [])
+
+    def test_concurrent_job_callbacks_keep_every_state(self):
+        self.assertEqual(self.launch().returncode, 0)
+        root = self.folder/'results'
+        plan = json.loads((root/'rule_search_batch_plan.json').read_text())
+        processes = [subprocess.Popen(['python3', str(HELPER), str(root), '--mark', j['key'],
+                                       '--exit-code', '19'], stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE, text=True) for j in plan['jobs']]
+        for process in processes:
+            _, error = process.communicate(timeout=20)
+            self.assertEqual(process.returncode, 0, error)
+        with (root/'batch_jobs.csv').open() as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual(len(rows), 5)
+        self.assertTrue(all(r['status'] == '失败' and '19' in r['detail'] for r in rows))
+        self.assertFalse((root/'.rule_search_batch.lock.d').exists())
+
+    def test_busy_lock_keeps_saved_exit_code_and_does_not_remove_owner(self):
+        self.assertEqual(self.launch().returncode, 0)
+        root = self.folder/'results'
+        lock = root/'.rule_search_batch.lock.d'
+        lock.mkdir()
+        with self.assertRaises(TimeoutError):
+            with batch.summary_lock(root, timeout=0):
+                self.fail('不应获得已有锁')
+        self.assertTrue(lock.exists())
+        args = ['rule_search_batch.py', str(root), '--mark', 'main/levels2/p256', '--exit-code', '23']
+        with patch('sys.argv', args), patch.object(batch, 'summary_lock', side_effect=TimeoutError('busy')):
+            with self.assertRaises(TimeoutError):
+                batch.main()
+        state = json.loads((root/'main/levels2/p256/rule_search_job_state.json').read_text())
+        self.assertEqual(state['exit_code'], 23)
+
+    def test_report_failure_never_aborts_worker_or_masks_experiment_failure(self):
+        env_file = self.folder/'report_failure.sh'
+        env_file.write_text('''bash() {
+  printf '%s\\n' "$KERNEL_REPEAT" >> "$VARIANT_CAPTURE"
+  return 0
+}
+python3() {
+  if [[ "$1" == */rule_search_batch.py ]]; then return 88; fi
+  if [[ "$1" == */analyze_results.py ]]; then return "$MOCK_ANALYSIS_RC"; fi
+  command python3 "$@"
+}
+''')
+        for rc in (0, 23):
+            capture = self.folder/f'worker-{rc}.txt'
+            result = self.launch(EXPERIMENT_PRESET='rule_search', RULE_SEARCH_ALL='0', RULE_SEARCH_SWEEP='0',
+                                 MESH_EXPERIMENT_WORKER='1', PROCESS_COUNTS='64', PROCESS_COUNT='64',
+                                 RULE_SEARCH_BATCH_ROOT=str(self.folder/'results'), RULE_SEARCH_BATCH_GROUP='main',
+                                 REPEATS='2', BASH_ENV=str(env_file), VARIANT_CAPTURE=str(capture),
+                                 MOCK_ANALYSIS_RC=str(rc))
+            self.assertEqual(result.returncode, rc, result.stderr)
+            self.assertEqual(len(capture.read_text().splitlines()), 15)
+            self.assertIn('继续本规模实验', result.stderr)
+            self.assertIn(f'保留实验退出码 {rc}', result.stderr)
 
 
 if __name__ == '__main__':

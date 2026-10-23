@@ -57,3 +57,5 @@ strong_scaling_results/**/.node_scaling.lock
 
 # 整批规则搜索汇总使用的并发锁。
 strong_scaling_results/**/.rule_search_batch.lock
+strong_scaling_results/**/.rule_search_batch.lock.d/
+strong_scaling_results/**/.*.tmp

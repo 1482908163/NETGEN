@@ -35,7 +35,8 @@ if [[ "${RULE_SEARCH_ALL:-0}" == 1 ]]; then
             failures=$((failures+1))
         fi
     done
-    python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}"
+    python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" || \
+        printf '整批汇总暂未更新；已提交作业继续独立运行。\n' >&2
     printf '本轮全部实验已处理；统一查看：%s/RESULT_SUMMARY.txt\n' "${RULE_SEARCH_BATCH_ROOT}"
     ((failures==0)) || exit 1
     exit 0
@@ -130,7 +131,8 @@ for p in "${counts[@]}"; do
             fi
             if [[ -n "${RULE_SEARCH_BATCH_ROOT:-}" ]]; then
                 python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
-                    --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${p}" --exit-code 125
+                    --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${p}" --exit-code 125 || \
+                    printf '提交失败状态未完成汇总：p%s；继续提交其他规模。\n' "$p" >&2
             fi
             failures=$((failures+1));printf '%s\n' "${p}" >> "${RUN_ROOT}/failed_submissions.txt"
         fi

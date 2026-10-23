@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """规则搜索整批计划、独立作业状态和汇总；不调用 Git 或集群调度命令。"""
 import argparse
+from contextlib import contextmanager
 import csv
-import fcntl
 import io
 import json
 import math
 import os
 from pathlib import Path
+import socket
+import tempfile
 import time
 
 SCHEDULERS = ('node_original', 'node_fixed', 'node_elastic', 'node_rules_fixed', 'node_rules_elastic')
@@ -16,9 +18,39 @@ LABELS = dict(zip(CONTRIBUTIONS, ('固定核规则并行', '借核基础上规�
 
 
 def atomic(path, content):
-    temporary = path.with_name(path.name+'.tmp')
-    temporary.write_text(content, encoding='utf-8')
-    temporary.replace(path)
+    # 同目录唯一临时文件：即使共享文件系统的 flock 只在节点内生效，
+    # 两个写入者也不能删除或替换对方正在使用的临时文件。
+    fd, name = tempfile.mkstemp(prefix='.'+path.name+'.', suffix='.tmp', dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as stream:
+            stream.write(content)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+@contextmanager
+def summary_lock(root, timeout=10.):
+    """用共享目录的原子 mkdir 互斥，不依赖跨节点 advisory lock（建议锁）。"""
+    lock = root/'.rule_search_batch.lock.d'
+    deadline = time.monotonic()+timeout
+    while True:
+        try:
+            lock.mkdir()
+            break
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f'汇总锁等待超时：{lock}；作业状态已独立保留。'
+                                   '若持锁进程已终止，确认后移走该锁目录，再单独重建汇总。')
+            time.sleep(0.05)
+    try:
+        (lock/'owner.json').write_text(json.dumps(dict(host=socket.gethostname(), pid=os.getpid(),
+                                                     created_epoch=time.time()))+'\n')
+        yield
+    finally:
+        (lock/'owner.json').unlink(missing_ok=True)
+        lock.rmdir()
 
 
 def integers(name, minimum=1):
@@ -171,10 +203,12 @@ def main():
     if args.mark and (args.running == (args.exit_code is not None)):
         parser.error('状态更新需选择 --running 或 --exit-code')
     args.root.mkdir(parents=True, exist_ok=True)
-    fd = os.open(args.root/'.rule_search_batch.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
-    with os.fdopen(fd, 'w') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        plan = initialize(args.root) if args.initialize else json.loads((args.root/'rule_search_batch_plan.json').read_text())
+    if args.initialize:
+        with summary_lock(args.root):
+            plan = initialize(args.root)
+            summarize(args.root, plan)
+    else:
+        plan = json.loads((args.root/'rule_search_batch_plan.json').read_text())
         if args.mark:
             if args.mark not in {j['key'] for j in plan['jobs']}:
                 raise ValueError('作业不在整批计划中')
@@ -182,7 +216,9 @@ def main():
             folder.mkdir(parents=True, exist_ok=True)
             state = dict(state='running' if args.running else 'finished', exit_code=args.exit_code, updated_epoch=time.time())
             atomic(folder/'rule_search_job_state.json', json.dumps(state, ensure_ascii=False)+'\n')
-        summarize(args.root, plan)
+        # 不同作业拥有不同状态文件；先保存真实退出码，汇总锁失败也不丢状态。
+        with summary_lock(args.root):
+            summarize(args.root, plan)
     if args.initialize:
         print(f"本轮计划：{len(plan['jobs'])} 个独立作业；五策略、预热验证、正式计时和结果清理均已配置。")
 
