@@ -54,3 +54,6 @@ strong_scaling_results/**/.node_scaling.lock
 !strong_scaling_results/**/analysis_metrics.json
 !strong_scaling_results/**/failure_summary.txt
 !strong_scaling_results/**/node_coop_errors.txt
+
+# 整批规则搜索汇总使用的并发锁。
+strong_scaling_results/**/.rule_search_batch.lock

@@ -15,6 +15,31 @@ REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
 export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
+# 一次提交全部计划；每个作业独立预热验证，不建立作业间串行依赖。
+if [[ "${RULE_SEARCH_ALL:-0}" == 1 ]]; then
+    export RULE_SEARCH_BATCH_ROOT="${RUN_ROOT}"
+    python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RUN_ROOT}" --initialize
+    failures=0
+    for group in precheck main; do
+        if [[ "$group" == precheck ]]; then
+            levels="$RULE_SEARCH_CHECK_LEVEL";nodes="$RULE_SEARCH_CHECK_NODES";repeats="$RULE_SEARCH_CHECK_REPEATS"
+        else
+            levels="$RULE_SEARCH_MAIN_LEVELS";nodes="$RULE_SEARCH_MAIN_NODES";repeats="$RULE_SEARCH_MAIN_REPEATS"
+        fi
+        counts=""
+        for node_count in ${nodes//,/ }; do counts+="$((node_count*4)) "; done
+        if ! RULE_SEARCH_ALL=0 EXPERIMENT_PRESET=rule_search RULE_SEARCH_SWEEP=1 \
+            RULE_SEARCH_LEVELS="$levels" PROCESS_COUNTS="$counts" REPEATS="$repeats" \
+            RULE_SEARCH_BATCH_GROUP="$group" RUN_ROOT="${RULE_SEARCH_BATCH_ROOT}/${group}" \
+            bash "${SCRIPT_DIR}/run_experiments.sh" "$@"; then
+            failures=$((failures+1))
+        fi
+    done
+    python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}"
+    printf '本轮全部实验已处理；统一查看：%s/RESULT_SUMMARY.txt\n' "${RULE_SEARCH_BATCH_ROOT}"
+    ((failures==0)) || exit 1
+    exit 0
+fi
 # Rule-search runs retain the same independent submission and shared start time.
 # They do not reuse the older three-route borrowing analyzer.
 if [[ "${RULE_SEARCH_SWEEP:-0}" == 1 ]]; then
@@ -102,6 +127,10 @@ for p in "${counts[@]}"; do
         else
             if [[ "${NODE_SCALING:-0}" == 1 ]]; then
                 python3 "${SCRIPT_DIR}/analyze_node_scaling.py" "${RUN_ROOT}" --mark-ranks "$p" --exit-code 125 || true
+            fi
+            if [[ -n "${RULE_SEARCH_BATCH_ROOT:-}" ]]; then
+                python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
+                    --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${p}" --exit-code 125
             fi
             failures=$((failures+1));printf '%s\n' "${p}" >> "${RUN_ROOT}/failed_submissions.txt"
         fi

@@ -8,7 +8,7 @@
 
 - 已实现：单次 `ApplyRules` 内按规则动态分工；顺序等价的选择归并；预热逐调用顺序重放；粒度及成本诊断。
 - 暂未实现：单条规则内部的映射子树拆分、跨节点工作迁移、小任务的净收益在线学习。
-- 默认关闭新增搜索和逐调用诊断；只有 `rule_search` 预设或新规则策略才启用。旧预设保持原来的规则路径。
+- 内核默认关闭新增搜索和逐调用诊断；`rule_search_all`、`rule_search` 预设或新规则策略才启用。原有旧预设保持原来的规则路径。
 - 首版任务粒度是“规则”，不是“前沿面”。前沿选取、三种旋转尝试、容差推进和最终网格提交保持原顺序。
 
 ## 算法与正确性理由
@@ -62,21 +62,37 @@ python3 test_code_expansion/tests/test_rule_search_analysis.py
 
 ## 超算验证入口（待执行）
 
-将代码按原方式同步到项目目录，超算上不使用 Git。仍从项目根目录调用原入口：
+将代码按原方式同步到项目目录，超算上不使用 Git。所有实验配置已集中到原 `run_experiments.sh` 顶部，默认预设为 `rule_search_all`，不必记忆环境变量：
 
 ```bash
+cd /vol8/home/hnu_lhz/cjz/NETGEN
+# 若当前内核尚未编译，先执行原构建入口；本轮脚本更新本身不要求重新编译。
 bash test_code_expansion/build_project.sh
-
-# 第一轮：小网格、16 节点流程与正确性预检，每个策略预热 1 次＋正式 1 次。
-EXPERIMENT_PRESET=rule_search RULE_SEARCH_LEVELS=2 PROCESS_COUNTS=64 REPEATS=1 \
-  bash test_code_expansion/strong_scaling/run_experiments.sh
-
-# 预检通过后：L2/L4，各 64/256 节点，五策略，每组预热 1 次＋正式 5 次。
-EXPERIMENT_PRESET=rule_search \
-  bash test_code_expansion/strong_scaling/run_experiments.sh
+# 一次提交本轮全部实验。
+bash test_code_expansion/strong_scaling/run_experiments.sh
 ```
 
-默认 `256/1024` 是进程数，对应 `64/256` 节点；每节点 4 进程，每进程 4 个物理核，共 16 核。面细化为 L2/L4，体细化为 1；借核优化的主要工作边界仍在体细化前。各规模独立提交，共享最早启动时刻，节点独占；策略按重复轮换顺序，采用自然计时。
+| 用途 | 面细化 | 节点数 | 进程数 | 每策略正式重复 |
+|---|---|---|---|---|
+| 流程与正确性预检 | L2 | 16 | 64 | 1 |
+| 小工作量对照 | L2 | 64、256 | 256、1024 | 5 |
+| 大工作量对照 | L4 | 64、256 | 256、1024 | 5 |
+
+合计 **5 个独立作业**。每个作业均比较同一套五策略，另做 1 次预热；每节点 4 进程、每进程 4 个物理核，体细化为 1。预检和正式规模共同提交，共享默认 120 秒启动延时，不建立作业间依赖；预检不是其他作业的全局前置条件。每个作业内先逐策略完成自身预热检查，失败策略跳过正式计时，其他策略和规模继续。正式策略按重复轮换顺序，采用自然计时。
+
+面细化、节点数和重复次数直接修改脚本顶部的 `RULE_SEARCH_CHECK_*`、`RULE_SEARCH_MAIN_*` 配置即可。已保留 `EXPERIMENT_PRESET=rule_search` 等原有显式预设，仍可单独提交子集。
+
+默认结果目录为 `test_code_expansion/strong_scaling_results/mesh_algorithms_时间/`，统一先看其中顶层的 **`RESULT_SUMMARY.txt`**。每个作业结束后会在文件锁保护下更新整批汇总；`batch_jobs.csv` 保留状态，`batch_comparisons.csv` 只接纳质量审计及全部重复配对通过的比较，负收益也完整保留。没有收到结束回调的作业不会被写成成功。
+
+逐规模详细结果分别在 `precheck/levels*/p*/`、`main/levels*/p*/`，保留原来的 `ablation_summary.csv`、`kernel_summary.csv`、`kernel_phase_summary.csv`。清理、故障摘要和忽略规则继续生效；整批锁不上传。
+
+编排验证使用假提交器，不申请超算节点：
+
+```bash
+python3 test_code_expansion/tests/test_rule_search_batch.py
+# 可选：只打印实际提交命令并生成整批计划，不提交作业。
+DRY_RUN=1 bash test_code_expansion/strong_scaling/run_experiments.sh
+```
 
 | 对照 | 要回答的问题 |
 |---|---|
@@ -85,7 +101,7 @@ EXPERIMENT_PRESET=rule_search \
 | `node_rules_fixed` → `node_rules_elastic` | 新规则路径与原弹性修复/优化是否互补 |
 | `node_original+baseline` → `node_rules_elastic+sparse` | 相对同核布局原程序的总收益；不能单独归因于规则搜索 |
 
-首先查看 `levels*/p*/RESULT_SUMMARY.txt`，再查同目录的 `ablation_summary.csv`、`kernel_summary.csv`、`kernel_phase_summary.csv` 及关键进程诊断。
+整批汇总只报告现有五策略的贡献；尚未实现的跨节点迁移、映射子树拆分和在线借核决策不在本批实验中冒充已实现方法。
 
 验收顺序：
 

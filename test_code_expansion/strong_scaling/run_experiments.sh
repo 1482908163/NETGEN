@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   rule_search_all: 本轮全部实验：16节点预检＋L2/L4的64/256节点对照
 #   rule_search: 规则搜索并行预检；固定核/借核及各自规则任务版，预热逐调用验证
 #   borrow_large: 面细化2/3/4、体细化2，64/128/256/512节点，原程序与借核对照
 #   borrow_workload: 固定2048进程，比较生成前表面细化2/3/4级
@@ -21,7 +22,18 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-borrow_large}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-rule_search_all}"
+# 本轮总实验配置：直接执行本脚本即可；节点数会自动换算为进程数。
+if [[ "${EXPERIMENT_PRESET}" == rule_search_all ]]; then
+    export RULE_SEARCH_ALL=1
+    export RULE_SEARCH_CHECK_LEVEL="${RULE_SEARCH_CHECK_LEVEL:-2}"
+    export RULE_SEARCH_CHECK_NODES="${RULE_SEARCH_CHECK_NODES:-16}"
+    export RULE_SEARCH_CHECK_REPEATS="${RULE_SEARCH_CHECK_REPEATS:-1}"
+    export RULE_SEARCH_MAIN_LEVELS="${RULE_SEARCH_MAIN_LEVELS:-2 4}"
+    export RULE_SEARCH_MAIN_NODES="${RULE_SEARCH_MAIN_NODES:-64 256}"
+    export RULE_SEARCH_MAIN_REPEATS="${RULE_SEARCH_MAIN_REPEATS:-5}"
+    EXPERIMENT_PRESET=rule_search
+fi
 if [[ "${EXPERIMENT_PRESET}" == rule_search ]]; then
     export RULE_SEARCH_EXPERIMENT=1
     export RULE_SEARCH_SWEEP="${RULE_SEARCH_SWEEP:-1}"
@@ -267,14 +279,31 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         }
         trap scaling_finish EXIT
     fi
+    if [[ -n "${RULE_SEARCH_BATCH_ROOT:-}" ]]; then
+        rule_batch_finish() {
+            local rc=$?
+            trap - EXIT
+            python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
+                --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --exit-code "$rc" || rc=1
+            exit "$rc"
+        }
+        trap rule_batch_finish EXIT
+        python3 "${SCRIPT_DIR}/rule_search_batch.py" "${RULE_SEARCH_BATCH_ROOT}" \
+            --mark "${RULE_SEARCH_BATCH_GROUP}/levels${LEVELS}/p${PROCESS_COUNT}" --running
+    fi
     mkdir -p "${kernel_root}/p${PROCESS_COUNT:?}"
     read -r -a schedulers <<< "${KERNEL_SCHEDULERS}"
+    declare -A invalid_warmup=()
     # Interleave strategy runs by repetition; rotate which strategy runs first.
     # Each child retains the full plan/signature, but runs only this repetition.
     for ((kr=1-WARMUPS;kr<=REPEATS;++kr)); do
       for threads in ${KERNEL_THREAD_COUNTS}; do
         for ((ks=0;ks<${#schedulers[@]};++ks)); do
           scheduler="${schedulers[$(((ks+kr+WARMUPS-1)%${#schedulers[@]}))]}"
+          variant_key="${scheduler}_t${threads}"
+          if ((kr>0)) && [[ "${invalid_warmup[$variant_key]:-0}" == 1 ]]; then
+              continue
+          fi
           variant="${kernel_root}/kernel_${scheduler}_t${threads}"
           variant_algorithms="${ALGORITHMS}"
           if [[ "${OVERALL_COMPARISON:-0}" == 1 && "$scheduler" == node_original ]]; then
@@ -286,6 +315,10 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
           if ! EXPERIMENT_STAGE=communication KERNEL_REPEAT="$kr" KERNEL_THREADS="$threads" KERNEL_SCHEDULER="$scheduler" \
                ALGORITHMS="$variant_algorithms" RUN_ROOT="$variant" bash "${SCRIPT_DIR}/run_experiments.sh"; then
               kernel_failures=$((kernel_failures+1))
+              if ((kr<=0)) && [[ "${RULE_SEARCH_EXPERIMENT:-0}" == 1 ]]; then
+                  invalid_warmup[$variant_key]=1
+                  printf '预热验证失败：%s；跳过该策略的正式计时，保留诊断并继续其他策略。\n' "$variant_key" >&2
+              fi
           fi
         done
       done
