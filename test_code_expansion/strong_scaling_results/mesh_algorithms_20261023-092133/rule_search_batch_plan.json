@@ -1,0 +1,65 @@
+{
+  "schema": "rule_search_batch_v1",
+  "jobs": [
+    {
+      "key": "precheck/levels2/p64",
+      "group": "precheck",
+      "levels": 2,
+      "nodes": 16,
+      "ranks": 64,
+      "repeats": 1
+    },
+    {
+      "key": "main/levels2/p256",
+      "group": "main",
+      "levels": 2,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels2/p1024",
+      "group": "main",
+      "levels": 2,
+      "nodes": 256,
+      "ranks": 1024,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels4/p256",
+      "group": "main",
+      "levels": 4,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels4/p1024",
+      "group": "main",
+      "levels": 4,
+      "nodes": 256,
+      "ranks": 1024,
+      "repeats": 5
+    }
+  ],
+  "schedulers": [
+    "node_original",
+    "node_fixed",
+    "node_elastic",
+    "node_rules_fixed",
+    "node_rules_elastic"
+  ],
+  "seeds": [
+    -1
+  ],
+  "threads": 4,
+  "ranks_per_node": 4,
+  "warmups": 1,
+  "refines": 1,
+  "start_epoch": 1792718613,
+  "dry_run": false,
+  "source_revision": "manual",
+  "input_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP",
+  "maxh": "1000",
+  "minh": "0"
+}
