@@ -4,6 +4,8 @@
 #include "meshclass.hpp"
 #include "adfront3.hpp"
 #include "ruler3.hpp"
+#include "search_policy.hpp"
+#include <map>
 
 namespace netgen
 {
@@ -35,6 +37,10 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  bool standard_rules=false;
+  const RuleSearchTransport * search_transport=nullptr;
+  std::map<int,SearchProfile> search_profiles;
+  double search_dispatch_cost=0;
   int ApplyRulesImpl(Array<Point3d, PointIndex> & lpoints,
                     Array<int, PointIndex> & allowpoint,
                     Array<MiniElement2d> & lfaces, INDEX lfacesplit,
@@ -74,7 +80,9 @@ public:
                       INDEX_2_HASHTABLE<int> & connectedpairs,
                       NgArray<Element> & elements, NgArray<INDEX> & delfaces,
                       int tolerance, double sloppy, int rotind1, float & retminerr,
-                      int mode, VolumeKernelStats * stats);
+                      int mode, VolumeKernelStats * stats, double remaining_faces=0);
+  static std::string ExecuteRuleSearchPacket(const char * data,int bytes);
+  void SetRuleSearchTransport(const RuleSearchTransport * transport) {search_transport=transport;}
   PointIndex AddPoint (const Point3d & p, PointIndex globind);
   ///
   void AddBoundaryElement (const Element2d & elem);

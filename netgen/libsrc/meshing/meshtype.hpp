@@ -25,6 +25,13 @@
 
 namespace netgen
 {
+  struct RuleSearchTransport {
+    void * context=nullptr;
+    // Host-only callbacks. offer reserves one completed remote rank's anchor.
+    int (*offer)(void *,double,double,double)=nullptr;
+    void (*start)(void *,const char *,int)=nullptr;
+    const char * (*finish)(void *,int *)=nullptr;
+  };
   // Optional host-side CPU leasing. Callbacks run only on the host thread.
   struct VolumeResources {
     void * context = nullptr;
@@ -100,14 +107,19 @@ namespace netgen
     static constexpr int count = 12;
     static constexpr int front_count = 20;
     static constexpr int rule_count = 24;
+    static constexpr int adaptive_count = 8;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
     std::atomic<double> rule_values[rule_count];
+    std::atomic<double> adaptive_values[adaptive_count];
     VolumeKernelStats() {
       for(auto & v : values) v.store(0);
       for(auto & v : front_values) v.store(0);
       for(auto & v : rule_values) v.store(0);
+      for(auto & v : adaptive_values) v.store(0);
     }
+    void AddAdaptive(int i,double value) { auto old=adaptive_values[i].load();
+      while(!adaptive_values[i].compare_exchange_weak(old,old+value)) {} }
     void AddRule(int i, double value) {
       double old=rule_values[i].load(std::memory_order_relaxed);
       while(!rule_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
@@ -1736,6 +1748,7 @@ namespace netgen
     VolumeKernelStats * volume_kernel_stats = nullptr;
     const VolumeResources * volume_resources = nullptr;
     int volume_rule_search = -1; // -1: off; 0: serial profile; 1: tasks; 2: verified tasks
+    const RuleSearchTransport * volume_rule_transport = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims
     bool parallel_meshing = true;
     int nthreads = 4;

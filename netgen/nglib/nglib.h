@@ -514,6 +514,19 @@ NGLIB_API void Ng_GetVolumeFrontStats(double * values);
 // -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);
 NGLIB_API void Ng_GetVolumeRuleSearchStats(double * values); // 24 doubles
+// Adaptive modes 3/4 retain the old 24-value interface; diagnostics are separate.
+NGLIB_API void Ng_GetVolumeSearchPolicyStats(double * values); // 8 doubles
+struct Ng_RuleSearchTransport {
+  void * context;
+  int (*offer)(void *,double,double,double);
+  void (*start)(void *,const char *,int);
+  const char * (*finish)(void *,int *);
+};
+NGLIB_API Ng_Result Ng_SetRuleSearchTransport(const Ng_RuleSearchTransport * transport);
+// The caller releases returned packet bytes with Ng_FreeRuleSearchPacket.
+NGLIB_API Ng_Result Ng_ExecuteRuleSearchPacket(const char * data,int bytes,char ** output,int * output_bytes);
+NGLIB_API void Ng_FreeRuleSearchPacket(char * data);
+
 // Three cumulative host-side values: starts, startup seconds, shutdown seconds.
 NGLIB_API void Ng_GetVolumeTaskManagerStats(double * values);
 

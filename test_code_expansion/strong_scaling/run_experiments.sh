@@ -10,7 +10,8 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   rule_search_all: 本轮全部实验：16节点预检＋L2/L4的64/256节点对照
+#   search_joint_all: 本轮联合方法，十策略、七项对照；五个独立作业共同延时
+#   rule_search_all: 上轮规则并行五策略：16节点预检＋L2/L4的64/256节点对照
 #   rule_search: 规则搜索并行预检；固定核/借核及各自规则任务版，预热逐调用验证
 #   borrow_large: 面细化2/3/4、体细化2，64/128/256/512节点，原程序与借核对照
 #   borrow_workload: 固定2048进程，比较生成前表面细化2/3/4级
@@ -22,7 +23,12 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-rule_search_all}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-search_joint_all}"
+if [[ "${EXPERIMENT_PRESET}" == search_joint_all ]]; then
+    export SEARCH_JOINT_EXPERIMENT=1
+    export KERNEL_SCHEDULERS="node_original node_fixed node_elastic node_rules_fixed node_rules_elastic node_search_local node_search_idle node_search_remote node_search_online node_search_full"
+    EXPERIMENT_PRESET=rule_search_all
+fi
 # 本轮总实验配置：直接执行本脚本即可；节点数会自动换算为进程数。
 if [[ "${EXPERIMENT_PRESET}" == rule_search_all ]]; then
     export RULE_SEARCH_ALL=1
@@ -226,7 +232,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {

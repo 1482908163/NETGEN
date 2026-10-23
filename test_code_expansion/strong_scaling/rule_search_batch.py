@@ -13,8 +13,13 @@ import tempfile
 import time
 
 SCHEDULERS = ('node_original', 'node_fixed', 'node_elastic', 'node_rules_fixed', 'node_rules_elastic')
+JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full')
 CONTRIBUTIONS = ('rule_search_fixed', 'rule_search_elastic', 'rule_search_borrowing', 'rule_search_total')
+JOINT_CONTRIBUTIONS = ('search_adaptive','search_protocol','search_remote','search_online',
+                       'search_remote_online','search_incremental','search_total')
 LABELS = dict(zip(CONTRIBUTIONS, ('固定核规则并行', '借核基础上规则并行', '规则并行基础上借核', '相对原程序总收益')))
+LABELS.update(zip(JOINT_CONTRIBUTIONS,('实测代价自适应搜索','跨节点协议开销','跨节点搜索增量',
+                                     '在线借核增量','在线借核上的跨节点增量','相对原借核增量','联合方案总收益')))
 
 
 def atomic(path, content):
@@ -61,8 +66,10 @@ def integers(name, minimum=1):
 
 
 def initialize(root):
-    if tuple(os.environ['KERNEL_SCHEDULERS'].split()) != SCHEDULERS:
-        raise ValueError('整批预设要求默认五策略；自定义子集请使用 rule_search 预设')
+    schedulers=JOINT_SCHEDULERS if os.environ.get('SEARCH_JOINT_EXPERIMENT')=='1' else SCHEDULERS
+    contributions=JOINT_CONTRIBUTIONS if schedulers==JOINT_SCHEDULERS else CONTRIBUTIONS
+    if tuple(os.environ['KERNEL_SCHEDULERS'].split()) != schedulers:
+        raise ValueError('整批预设要求完整策略集；自定义子集请使用 rule_search 预设')
     check_levels = integers('RULE_SEARCH_CHECK_LEVEL', 0)
     check_nodes = integers('RULE_SEARCH_CHECK_NODES')
     check_repeats = integers('RULE_SEARCH_CHECK_REPEATS')
@@ -80,7 +87,8 @@ def initialize(root):
             for n in nodes:
                 jobs.append(dict(key=f'{group}/levels{level}/p{n*4}', group=group,
                                  levels=level, nodes=n, ranks=n*4, repeats=repeats))
-    plan = dict(schema='rule_search_batch_v1', jobs=jobs, schedulers=list(SCHEDULERS),
+    plan = dict(schema='rule_search_batch_v1', jobs=jobs, schedulers=list(schedulers),
+                contributions=list(contributions),
                 seeds=seeds, threads=4, ranks_per_node=4, warmups=1,
                 refines=int(os.environ['REFINES']), start_epoch=int(os.environ['START_EPOCH']),
                 dry_run=os.environ.get('DRY_RUN') == '1',
@@ -89,6 +97,7 @@ def initialize(root):
     target = root/'rule_search_batch_plan.json'
     if target.exists():
         old = json.loads(target.read_text())
+        old.setdefault('contributions',list(CONTRIBUTIONS))
         ignored = {'start_epoch', 'dry_run'}
         if {k: v for k, v in old.items() if k not in ignored} != {k: v for k, v in plan.items() if k not in ignored}:
             raise ValueError('该结果目录已有不同实验计划，请换用新的 RUN_ROOT')
@@ -109,16 +118,17 @@ def audit_job(root, job, plan):
         raise ValueError('逐规模审计缺失或未通过：'+str(issues.relative_to(root)))
     summary = read_csv(folder/'kernel_summary.csv')
     expected = {(s, str(seed), 'baseline' if s == 'node_original' else 'sparse')
-                for s in SCHEDULERS for seed in plan['seeds']}
+                for s in plan['schedulers'] for seed in plan['seeds']}
     actual = {(r['scheduler'], r['seed'], r['algorithm']) for r in summary}
     if actual != expected or len(summary) != len(expected):
         raise ValueError('策略、种子或算法覆盖不完整')
     if any(int(r['repeats']) != job['repeats'] or r['timing'] != 'natural' or int(r['threads']) != 4 for r in summary):
         raise ValueError('正式重复数、计时模式或核数与计划不符')
-    audit = [r for r in read_csv(folder/'ablation_summary.csv') if r['contribution'] in CONTRIBUTIONS]
-    expected = {(c, str(seed)) for c in CONTRIBUTIONS for seed in plan['seeds']}
+    contributions=plan.get('contributions',CONTRIBUTIONS)
+    audit = [r for r in read_csv(folder/'ablation_summary.csv') if r['contribution'] in contributions]
+    expected = {(c, str(seed)) for c in contributions for seed in plan['seeds']}
     if {(r['contribution'], r['seed']) for r in audit} != expected or len(audit) != len(expected):
-        raise ValueError('四项贡献对照不完整')
+        raise ValueError('贡献对照不完整')
     for r in audit:
         if (r['quality_pass'] != 'True' or int(r['paired_count']) != job['repeats'] or
                 r['timing'] != 'natural' or int(r['threads']) != 4):
@@ -220,7 +230,7 @@ def main():
         with summary_lock(args.root):
             summarize(args.root, plan)
     if args.initialize:
-        print(f"本轮计划：{len(plan['jobs'])} 个独立作业；五策略、预热验证、正式计时和结果清理均已配置。")
+        print(f"本轮计划：{len(plan['jobs'])} 个独立作业；{len(plan['schedulers'])} 策略、预热验证、正式计时和结果清理均已配置。")
 
 
 if __name__ == '__main__':

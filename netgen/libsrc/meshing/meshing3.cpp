@@ -200,6 +200,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   std::unique_ptr<VolumeResourceScope> rule_lease;
   std::unique_ptr<ngcore::RegionTaskManager> rule_team;
   int rule_mode=mp.volume_rule_search<0?-1:0;
+  search_transport=mp.volume_rule_transport;
   if(mp.volume_rule_search>0 && mp.nthreads>1 && !ngcore::task_manager) {
     // Phase 0 was previously unused. Cap this first implementation at the
     // original per-rank budget, even on the elastic resource path. Acquire
@@ -563,7 +564,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	    found = ApplyRulesTasks (plainpoints, allowpoint,
 			        locfaces, locfacesplit, connectedpairs,
 			        locelements, delfaces,
-			        stat.qualclass, mp.sloppy, rotind, err, rule_mode, front_stats);
+			        stat.qualclass, mp.sloppy, rotind, err, rule_mode, front_stats, adfront->GetNF());
           }
 
           {

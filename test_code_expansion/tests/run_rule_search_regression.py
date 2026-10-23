@@ -66,16 +66,18 @@ def main():
         (output/'reference.txt').write_text(oracle)
         oracle = re.search(r'fingerprint=(\w+)', oracle)[1]
     logs = []
-    for threads, mode in ((1, -1), (4, -1), (1, 0), (1, 2), (2, 1), (2, 2), (4, 1), (4, 2)):
-        out = subprocess.check_output([str(binary), str(threads), str(mode)], text=True, cwd=output)
+    cases=[(1,-1,0),(4,-1,0),(1,0,0),(1,2,0),(2,1,0),(2,2,0),(4,1,0),(4,2,0),
+           (2,3,0),(2,4,0),(4,3,0),(4,4,0),(2,4,1),(4,4,1)]
+    for threads, mode, remote in cases:
+        out = subprocess.check_output([str(binary), str(threads), str(mode),str(remote)], text=True, cwd=output)
         fingerprint = re.search(r'fingerprint=(\w+)', out)[1]
         if oracle is None:
             oracle = fingerprint
         if fingerprint != oracle:
             raise SystemExit(f'结果不一致：threads={threads}, mode={mode}')
-        logs.append(f'threads={threads} mode={mode}\n{out}')
+        logs.append(f'threads={threads} mode={mode} remote={remote}\n{out}')
     (output/'results.txt').write_text('\n'.join(logs))
-    print(f'通过：8 组顺序/并行/重放及资源生命周期检查；指纹 {oracle}。')
+    print(f'通过：{len(cases)} 组顺序/并行/重放、远程消息及资源生命周期检查；指纹 {oracle}。')
     print('父版本源码对照：'+('通过。' if args.reference_sources else '未提供；仅同版本差分。'))
     print(output/'results.txt')
 

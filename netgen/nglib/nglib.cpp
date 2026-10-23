@@ -416,10 +416,32 @@ namespace nglib
 
 
 
+   static thread_local RuleSearchTransport rule_transport;
+   static thread_local bool has_rule_transport=false;
+   static thread_local double last_search_policy_stats[VolumeKernelStats::adaptive_count]={};
+   NGLIB_API Ng_Result Ng_SetRuleSearchTransport(const Ng_RuleSearchTransport * transport) {
+     if(transport && (!transport->offer || !transport->start || !transport->finish)) return NG_ERROR;
+     has_rule_transport=transport!=nullptr;
+     if(transport) rule_transport={transport->context,transport->offer,transport->start,transport->finish};
+     return NG_OK;
+   }
+   NGLIB_API void Ng_GetVolumeSearchPolicyStats(double * values) {
+     if(values) std::copy_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,values);
+   }
+   NGLIB_API Ng_Result Ng_ExecuteRuleSearchPacket(const char * data,int bytes,char ** output,int * output_bytes) {
+     if(!data || !output || !output_bytes) return NG_ERROR;
+     *output=nullptr;*output_bytes=0;
+     try {
+       auto result=Meshing3::ExecuteRuleSearchPacket(data,bytes);
+       *output=new char[result.size()];std::memcpy(*output,result.data(),result.size());
+       *output_bytes=result.size();return NG_OK;
+     } catch(const std::exception & e) { std::cerr<<"Remote rule search: "<<e.what()<<std::endl;return NG_ERROR; }
+   }
+   NGLIB_API void Ng_FreeRuleSearchPacket(char * data) {delete[] data;}
    static thread_local int volume_rule_search_mode=-1;
    static thread_local double last_volume_rule_stats[VolumeKernelStats::rule_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode) {
-     if(mode<-1 || mode>2) return NG_ERROR;
+     if(mode<-1 || mode>4) return NG_ERROR;
      volume_rule_search_mode=mode;return NG_OK;
    }
    NGLIB_API void Ng_GetVolumeRuleSearchStats(double * values) {
@@ -437,6 +459,7 @@ namespace nglib
       std::fill_n(seconds,3,0.0);
       std::fill_n(last_volume_front_stats,VolumeKernelStats::front_count,0.0);
       std::fill_n(last_volume_rule_stats,VolumeKernelStats::rule_count,0.0);
+      std::fill_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -457,6 +480,7 @@ namespace nglib
          local.volume_kernel_stats = details ? &stats : nullptr;
          local.volume_resources = resources;
          local.volume_rule_search = volume_rule_search_mode;
+         local.volume_rule_transport = has_rule_transport ? &rule_transport : nullptr;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
          m.CalcLocalH(local.grading);
          auto measure = [&](int phase, auto fn) {
@@ -477,6 +501,8 @@ namespace nglib
                last_volume_front_stats[i]=stats.front_values[i].load();
             for(int i=0;i<VolumeKernelStats::rule_count;++i)
                last_volume_rule_stats[i]=stats.rule_values[i].load();
+            for(int i=0;i<VolumeKernelStats::adaptive_count;++i)
+               last_search_policy_stats[i]=stats.adaptive_values[i].load();
          }
          return NG_OK;
       } catch (const std::exception & error) {

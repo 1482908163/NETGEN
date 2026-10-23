@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "online_borrow.h"
 
 namespace mesh_node {
 class NodeResources {
@@ -141,7 +142,7 @@ class NodeResources {
     };
     PhaseStats phase_stats[phases];
     bool protected_base() const { return mode>=2; }
-    bool work_policy() const { return mode==5 || mode==6; }
+    bool work_policy() const { return mode==5 || mode==6 || mode==14; }
     bool work_eligible(const RankState &r,int extra,double stamp) const {
         if(!r.active || r.done || r.phase!=6 || r.work_granted || r.remaining<2 || r.last_operation<=0) return false;
         // A stale peer observation must not reserve the queue indefinitely.
@@ -435,6 +436,35 @@ public:
         int extra=0;
         for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) ++extra;
+        if(mode==14) {
+            // Learn from completed operations, price every available core count,
+            // and charge the measured team restart plus prediction residuals.
+            if(last>0) r.model[r.phase].observe(r.threads,work,last);
+            if(r.phase!=6 || remaining<1 || last<=0) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+            if(!extra) {++work_no_capacity;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+            const auto & model=r.model[r.phase];double a,b;model.coefficients(a,b);
+            double fraction=(a+b/r.threads)>0?a/(a+b/r.threads):1;
+            double other=0;
+            for(int i=0;i<size;++i) if(i!=me) {
+                const auto & peer=shared->rank[i];
+                if(peer.active && peer.remaining>0 && peer.last_operation>0)
+                    other=std::max(other,std::max(0.0,peer.last_operation*peer.remaining-(stamp-peer.progress_time)));
+            }
+            auto choice=ChooseBorrowTarget(r.threads,r.threads+extra,remaining,last,restart,
+                                           fraction,model.error*work*remaining,other);
+            if(choice.threads<=r.threads) {++work_cost;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+            int reserve=choice.threads-r.threads;
+            for(int c=0;c<shared->cpus;++c) {
+                if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
+                if(reserve && shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) {
+                    shared->reserved[c]=me+1;--reserve;++work_reserved;
+                }
+            }
+            if(reserve) fail("在线借核预留数量不一致");
+            checkpoint_old_threads=r.threads;++checkpoint_restarts;++work_grants;
+            work_gain_estimate+=choice.gain;work_restart_estimate+=restart;
+            unlock();checkpoint_seconds+=now()-stamp;return 1;
+        }
         bool grant=false;
         if(r.work_granted) ++work_already;
         else if(r.phase!=6 || remaining<0 || last<=0) ++work_unknown;
@@ -570,6 +600,7 @@ public:
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
         int target=force_base?std::min(base,cap):cap;
+        if(mode==14 && !checkpoint_old_threads) target=std::min(base,cap);
         // Critical-path evidence shows lending in generation/repair is counterproductive
         // at high rank counts, while phase 6 optimization benefits. Keep all other
         // parallel phases at the protected base; phase 5 is forced serial below.
@@ -634,7 +665,8 @@ public:
         if(mode!=0) for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me] &&
                (!protected_base() || stage_policy() || shared->home[c]!=me)) shared->owner[c]=-1;
-        r.model[phase].observe(threads,work,seconds);r.active=0;r.threads=1;
+        if(mode!=14) r.model[phase].observe(threads,work,seconds);
+        r.active=0;r.threads=1;
         pthread_cond_broadcast(&shared->changed);unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
         phase_seconds+=seconds;management+=now()-start;
         auto &ps=phase_stats[phase];ps.seconds+=seconds;
@@ -651,6 +683,11 @@ public:
         bool last=true;for(int i=0;i<size;++i) if(!shared->rank[i].done) last=false;
         if(last) {node_last=1;node_idle=shared->idle_core_seconds;node_reserved=shared->reserved_core_seconds;node_phase_idle=shared->phase_idle_core_seconds;node_early_loan=shared->early_loan_core_seconds;}
         pthread_cond_broadcast(&shared->changed);unlock();
+    }
+    int physical_node_id() const { return node_leader; }
+    void pin_service_anchor() {
+        if(!shared->rank[me].done) fail("远程服务只能使用已完成进程");
+        cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);
     }
     template<class Profiler> void report(Profiler &p,bool include_stage=true) const {
         const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};

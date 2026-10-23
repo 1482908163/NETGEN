@@ -305,7 +305,14 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('rule_search_fixed','node_fixed','sparse','node_rules_fixed','sparse'),
            ('rule_search_elastic','node_elastic','sparse','node_rules_elastic','sparse'),
            ('rule_search_borrowing','node_rules_fixed','sparse','node_rules_elastic','sparse'),
-           ('rule_search_total','node_original','baseline','node_rules_elastic','sparse'))
+           ('rule_search_total','node_original','baseline','node_rules_elastic','sparse'),
+           ('search_adaptive','node_rules_fixed','sparse','node_search_local','sparse'),
+           ('search_protocol','node_search_local','sparse','node_search_idle','sparse'),
+           ('search_remote','node_search_idle','sparse','node_search_remote','sparse'),
+           ('search_online','node_search_local','sparse','node_search_online','sparse'),
+           ('search_remote_online','node_search_online','sparse','node_search_full','sparse'),
+           ('search_incremental','node_elastic','sparse','node_search_full','sparse'),
+           ('search_total','node_original','baseline','node_search_full','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -359,6 +366,12 @@ FRONT_PROFILE_METRICS = (
 
 RULE_SEARCH_METRICS = ('kernel_rules_calls', 'kernel_rules_parallel_calls', 'kernel_rules_verified_calls', 'kernel_rules_serial_calls', 'kernel_rules_rules', 'kernel_rules_eligible_rules', 'kernel_rules_face_trials', 'kernel_rules_point_trials', 'kernel_rules_mappings', 'kernel_rules_wall_seconds', 'kernel_rules_copy_seconds', 'kernel_rules_dispatch_seconds', 'kernel_rules_worker_seconds', 'kernel_rules_worker_max_sum_seconds', 'kernel_rules_verify_seconds', 'kernel_rules_max_call_seconds', 'kernel_rules_debug_fallbacks', 'kernel_rules_mismatches', 'kernel_rules_calls_le32us', 'kernel_rules_calls_le128us', 'kernel_rules_calls_le512us', 'kernel_rules_calls_le2ms', 'kernel_rules_calls_le8ms', 'kernel_rules_calls_gt8ms')
 
+SEARCH_POLICY_METRICS = tuple('search_policy_'+k for k in (
+    'decisions','serial','parallel','remote_calls','remote_rules','predicted_gain_seconds','remote_wait_seconds','reserved'))
+SEARCH_REMOTE_METRICS = tuple('search_remote_'+k for k in (
+    'probes','grants','critical_rejects','cost_rejects','service_calls','payload_bytes',
+    'wait_seconds','service_seconds','control_seconds','drain_seconds'))
+
 CRITICAL_METRICS = (
     'volume_kernel_input_points','volume_kernel_input_surface_elements',
     'volume_kernel_points','volume_kernel_surface_elements','volume_kernel_elements',
@@ -371,7 +384,7 @@ CRITICAL_METRICS = (
     'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
     'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
     'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
-    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS + SEARCH_POLICY_METRICS + SEARCH_REMOTE_METRICS
 CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
     for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
 CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
@@ -624,7 +637,7 @@ def volume_workload_metrics(rows):
 
 def inspect_rule_search(rows, metadata):
     """验证规则并行覆盖、顺序重放和保底核预算；不从内部计时推算加速。"""
-    if metadata.get('rule_search_mode') not in ('0','1','2'):
+    if metadata.get('rule_search_mode') not in ('0','1','2','3','4'):
         raise ValueError('非法规则搜索模式')
     if metadata.get('rule_search_resource')!='phase0_base_only':
         raise ValueError('缺少规则搜索资源契约')
@@ -642,21 +655,46 @@ def inspect_rule_search(rows, metadata):
         if hist!=m[prefix+'calls'] or m[prefix+'eligible_rules']>m[prefix+'rules']:
             raise ValueError('规则搜索粒度计数不一致')
         mode=metadata.get('rule_search_mode')
-        if mode=='2' and m[prefix+'verified_calls']!=m[prefix+'parallel_calls']:
+        if mode in ('2','4') and m[prefix+'verified_calls']!=m[prefix+'parallel_calls']:
             raise ValueError('预热存在未验证的并行规则调用')
-        if mode!='2' and m[prefix+'verified_calls']:
+        if mode not in ('2','4') and m[prefix+'verified_calls']:
             raise ValueError('正式测量混入顺序重放')
         if mode=='0' and m[prefix+'parallel_calls']:
             raise ValueError('原规则对照意外启用并行')
         if m[prefix+'parallel_calls'] and not m['coop_phase_0_epochs']:
             raise ValueError('并行规则调用缺少资源租约')
-        if mode in ('1','2') and m['coop_phase_0_epochs'] and (
+        if mode in ('1','2','3','4') and m['coop_phase_0_epochs'] and (
             m['coop_phase_0_min_threads']!=int(metadata['kernel_threads']) or
             m['coop_phase_0_max_threads']!=int(metadata['kernel_threads']) or
             m['coop_phase_0_borrowed_core_seconds']):
             raise ValueError('规则搜索超出固定保底核预算')
     result['rule_search_mode']=int(metadata['rule_search_mode'])
 
+    return result
+
+
+def inspect_search_policy(rows, metadata):
+    keys=list(SEARCH_POLICY_METRICS)
+    enabled=metadata.get('search_remote')=='completed_anchor_rma_v1'
+    if enabled: keys+=SEARCH_REMOTE_METRICS
+    result={}
+    for key in keys:
+        values=[r['metrics'][key] for r in rows]
+        if any(not math.isfinite(v) or v<0 for v in values): raise ValueError('非法联合搜索指标: '+key)
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for row in rows:
+        m=row['metrics']
+        if m['search_policy_decisions']!=m['search_policy_serial']+m['search_policy_parallel']:
+            raise ValueError('在线搜索决策计数不闭合')
+        if m['search_policy_remote_calls']>m['search_policy_parallel']:
+            raise ValueError('远程搜索未包含在并行调用中')
+        if enabled:
+            if m['search_remote_grants']!=m['search_policy_remote_calls']:
+                raise ValueError('远程预留与实际任务不一致')
+        elif m['search_policy_remote_calls']:
+            raise ValueError('本地对照意外进行跨节点搜索')
+    if enabled and result['search_remote_grants']!=result['search_remote_service_calls']:
+        raise ValueError('跨节点搜索请求与服务次数不一致')
     return result
 
 
@@ -683,10 +721,12 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         if not math.isfinite(r["metrics"]["core_seconds"]) or r["metrics"]["core_seconds"] <= 0:
             raise ValueError("invalid core time")
     metadata=dict(metadata)
-    rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic'}
+    rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
+                  'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
+                  'node_search_online':'node_online','node_search_full':'node_online'}
     requested_scheduler=metadata.get('kernel_scheduler')
     if requested_scheduler in rule_aliases:
-        expected_mode='2' if rows[0]['repeat']<=0 else '1'
+        expected_mode=('4' if rows[0]['repeat']<=0 else '3') if requested_scheduler.startswith('node_search_') else ('2' if rows[0]['repeat']<=0 else '1')
         if metadata.get('rule_search_mode')!=expected_mode or metadata.get('rule_search_profile')!='rule_search_v1':
             raise ValueError('规则搜索模式或诊断缺失')
         metadata['kernel_scheduler']=rule_aliases[requested_scheduler]
@@ -744,7 +784,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         for name in ('SOURCE_REVISION','INPUT_SHA256','BINARY_SHA256','KERNEL_SHA256'):
             result['scaling_'+name.lower()]=metadata['MESH_'+name]
     if int(metadata.get("kernel_threads",0))>0:
-        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once","node_phaseaware"):
+        if metadata.get("feature_schema")!="mesh_comm_v1" or metadata.get("kernel_scheduler") not in ("static","cavity","repair","frontier","node_original","node_native","node_scoped","node_fixed","node_lend","node_guarded","node_model","node_tail","node_budget","node_priority","node_reserved","node_elastic","node_stage","node_reclaim","node_selective","node_once","node_phaseaware","node_online"):
             raise ValueError("invalid kernel experiment metadata")
         for phase in ("generation","repair","optimization"):
             key="kernel_"+phase+"_seconds"
@@ -771,6 +811,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
 
     if metadata.get('rule_search_profile')=='rule_search_v1':
         result.update(inspect_rule_search(rows,metadata))
+    if metadata.get('search_policy')=='measured_rule_cost_v1':
+        result.update(inspect_search_policy(rows,metadata))
 
     if metadata.get("kernel_lifecycle")=="team_lifecycle_v1":
         for name in ("starts","start_seconds","stop_seconds"):
@@ -828,7 +870,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                         raise ValueError('invalid phase thread limits')
                     if not calls and any(m[prefix+field] for field in phase_fields):
                         raise ValueError('unused phase contains resource measurements')
-                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware') and phase!=5 and calls:
+                    if metadata['kernel_scheduler'] in ('node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware','node_online') and phase!=5 and calls:
                         if m[prefix+'below_base_epochs'] or m[prefix+'min_threads']<int(metadata['kernel_threads']):
                             raise ValueError('protected allocation used fewer than base CPUs')
             for r in rows:
@@ -838,7 +880,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 for field,total in (('seconds','phase_seconds'),('core_seconds','leased_core_seconds'),('borrowed_core_seconds','borrowed_core_seconds')):
                     if not math.isclose(sum(m[f'coop_phase_{i}_{field}'] for i in range(8)),m['coop_'+total],rel_tol=1e-8,abs_tol=1e-6):
                         raise ValueError('phase resource measurement does not match total')
-    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware'):
+    if metadata.get('kernel_scheduler') in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware','node_online'):
         expected_checkpoint=('node_phaseaware_v1' if metadata['kernel_scheduler']=='node_phaseaware' else
             'node_stage_v1' if metadata['kernel_scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else
             'node_atomic_v1' if metadata['kernel_scheduler'] in ('node_reserved','node_elastic') else
@@ -855,7 +897,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             m=r['metrics']
             if not 0<=m['coop_checkpoint_grants']<=m['coop_checkpoint_restarts']<=m['coop_checkpoint_checks']:
                 raise ValueError('inconsistent checkpoint counts')
-            if metadata['kernel_scheduler'] not in ('node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware') and m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
+            if metadata['kernel_scheduler'] not in ('node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware','node_online') and m['coop_checkpoint_restarts']>m['coop_node_ranks']-1:
                 raise ValueError('checkpoint restart count exceeds peer completion events')
             if m['coop_checkpoint_grants']>m['coop_borrow_epochs']:
                 raise ValueError('checkpoint grant without a borrowed lease')
@@ -969,9 +1011,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 raise ValueError('selective control unexpectedly suppressed growth')
     elif scope is not None:
         raise ValueError('unexpected early lending scope')
-    if metadata.get('kernel_scheduler') in ('node_budget','node_priority','node_phaseaware'):
+    if metadata.get('kernel_scheduler') in ('node_budget','node_priority','node_phaseaware','node_online'):
         scheduler=metadata['kernel_scheduler']
-        expected_policy=('critical_path_phase6' if scheduler=='node_phaseaware' else
+        expected_policy=('online_net_benefit_v1' if scheduler=='node_online' else 'critical_path_phase6' if scheduler=='node_phaseaware' else
                          'remaining_priority' if scheduler=='node_priority' else 'arrival_gate')
         if metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
         reasons=('unknown','short','cost','deferred','no_capacity','grants','already')
@@ -983,7 +1025,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             m=r['metrics'];grants=m['coop_work_grants']
             if sum(m['coop_work_'+reason] for reason in reasons)!=m['coop_work_checks']:
                 raise ValueError('work decisions do not cover checkpoints')
-            if not grants==m['coop_checkpoint_grants']==m['coop_checkpoint_restarts']<=1:
+            if not grants==m['coop_checkpoint_grants']==m['coop_checkpoint_restarts'] or (scheduler!='node_online' and grants>1):
                 raise ValueError('work-aware reservation or restart bound violated')
             if m['coop_work_reserved_cores']<grants:
                 raise ValueError('reserved resources do not match work grants')
@@ -993,8 +1035,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 raise ValueError('arrival control used priority selection')
             if scheduler in ('node_budget','node_priority') and m['coop_borrow_epochs']!=grants:
                 raise ValueError('work grant does not match borrowed lease')
-            if scheduler=='node_phaseaware':
-                if metadata.get('node_phase_scope')!='final_optimization_v1':
+            if scheduler in ('node_phaseaware','node_online'):
+                if scheduler=='node_phaseaware' and metadata.get('node_phase_scope')!='final_optimization_v1':
                     raise ValueError('missing phase-aware scope')
                 if m['coop_borrow_epochs']<grants:
                     raise ValueError('phase-aware grant without borrowed lease')
@@ -1289,7 +1331,7 @@ def kernel_overview(root, ranks):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
-                        if (key.startswith('coop_') or key.startswith('sync_') or key.startswith('kernel_front_') or key.startswith('kernel_rules_')) and key.endswith('_median'):
+                        if key.startswith(('coop_','sync_','kernel_front_','kernel_rules_','search_policy_','search_remote_')) and key.endswith('_median'):
                             report[-1][key[:-7]]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
@@ -1378,7 +1420,7 @@ def kernel_overview(root, ranks):
                      f"借核租约核秒={compact(row.get('coop_borrowed_core_seconds'))} "
                      f"峰值线程={compact(row.get('coop_peak_threads'))} "
                      f"模型采用次数={compact(row.get('coop_model_decisions'))}")
-        if row['scheduler'] in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware'):
+        if row['scheduler'] in ('node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware','node_online'):
             lines.append(f"安全点 {row['scheduler']} {row['timing']}: 检查次数={compact(row.get('coop_checkpoint_checks'))} "
                          f"重建次数={compact(row.get('coop_checkpoint_restarts'))} "
                          f"实际增核次数={compact(row.get('coop_checkpoint_grants'))} "
@@ -1387,11 +1429,11 @@ def kernel_overview(root, ranks):
                 lines.append('  安全点未实际增核；阶段入口仍可能直接取得已完成进程释放的核。' if row['scheduler']=='node_phaseaware' else
                              '  安全点未实际增核；阶段入口是否借核需另查提前借核租约数。' if row['scheduler'] in ('node_stage','node_reclaim','node_selective','node_once') else
                              '  安全点未实际增核：不能将耗时差归因于阶段内协作。')
-        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware') and not row.get('coop_borrow_epochs'):
+        if row['scheduler'] in ('node_lend','node_guarded','node_model','node_tail','node_budget','node_priority','node_reserved','node_elastic','node_stage','node_reclaim','node_selective','node_once','node_phaseaware','node_online') and not row.get('coop_borrow_epochs'):
             lines.append("  未发生借核：该组不能支持跨进程资源协作收益。")
         if row['scheduler']=='node_model' and not row.get('coop_model_decisions'):
             lines.append("  在线模型未通过采用条件，实际使用公平回退；不能归因于代价模型。")
-        if row['scheduler'] in ('node_reclaim','node_selective','node_once','node_phaseaware'):
+        if row['scheduler'] in ('node_reclaim','node_selective','node_once','node_phaseaware','node_online'):
             lines.append(f"逐轮对照 {row['scheduler']} {row['timing']}: 相对完成后借核胜出="
                          f"{row.get('paired_wins_vs_node_elastic',0)}/{row.get('paired_count_vs_node_elastic',0)} "
                          f"同编号耗时下降百分比中位数={compact(row.get('paired_reduction_pct_vs_node_elastic'))}%")
@@ -1425,7 +1467,7 @@ def kernel_overview(root, ranks):
                          f"保留当前提前租约次数={compact(row.get('coop_stage_growth_deferred'))} "
                          f"相对全阶段安全点归还加速={compact(row.get('speedup_vs_node_reclaim'))} "
                          f"相对最终优化不限次加速={compact(row.get('speedup_vs_node_selective'))}")
-        if row['scheduler'] in ('node_budget','node_priority','node_phaseaware'):
+        if row['scheduler'] in ('node_budget','node_priority','node_phaseaware','node_online'):
             lines.append(f"{'阶段感知' if row['scheduler']=='node_phaseaware' else '受限申请'} {row['scheduler']} {row['timing']}: "
                          f"短尾拒绝={compact(row.get('coop_work_short'))} "
                          f"成本拒绝={compact(row.get('coop_work_cost'))} "
@@ -1434,13 +1476,21 @@ def kernel_overview(root, ranks):
                          f"相对原安全点加速={compact(row.get('speedup_vs_node_tail'))} "
                          f"相对受限申请加速={compact(row.get('speedup_vs_node_budget'))}")
     for row in report:
-        if row['scheduler'] in ('node_rules_fixed','node_rules_elastic'):
+        if row['scheduler'].startswith(('node_rules_','node_search_')):
             calls=row.get('kernel_rules_parallel_calls',0) or 0
             lines.append(f"规则搜索 {row['scheduler']} {row['timing']}: 并行调用={compact(calls)}；"
                          f"不一致={compact(row.get('kernel_rules_mismatches'))}；"
                          f"单调用最大耗时={compact(row.get('kernel_rules_max_call_seconds'))}s；"
                          f"{'已覆盖并行路径' if calls else '未覆盖并行路径，不能判断优化收益'}。")
-    if any(row['scheduler'].startswith('node_rules_') for row in report):
+        if row['scheduler'].startswith('node_search_'):
+            calls=row.get('search_policy_remote_calls',0) or 0
+            lines.append(f"联合搜索 {row['scheduler']}: 串行决策={compact(row.get('search_policy_serial'))}；"
+                         f"并行决策={compact(row.get('search_policy_parallel'))}；远程任务={compact(calls)}；"
+                         f"协议控制最大进程累计={compact(row.get('search_remote_control_seconds'))}s；"
+                         f"服务及结束等待最大进程累计={compact(row.get('search_remote_drain_seconds'))}s。")
+            if row['scheduler'] in ('node_search_remote','node_search_full') and not calls:
+                lines.append("  未发生跨节点搜索；该组不能支持跨节点协作收益，不能以总收益替代组件覆盖。")
+    if any(row['scheduler'].startswith(('node_rules_','node_search_')) for row in report):
         lines.append("规则搜索仅使用各进程原有保底核；预热逐调用顺序重放，正式计时不重放；并行搜索不改变前沿提交顺序。")
     lines += ["node_original=同核布局原串行修复；node_native=同核布局并行修复；node_scoped=旧细粒度固定接口；node_fixed=整段修复固定接口。",
               "node_lend=无保底贪心；node_guarded=保底借核；node_model=保底模型分配；后三者均整段修复租约。",

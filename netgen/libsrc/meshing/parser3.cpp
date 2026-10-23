@@ -954,6 +954,7 @@ void vnetrule :: LoadRule (istream & ist)
 
 void Meshing3 :: LoadRules (const char * filename, const char ** prules)
 {
+  standard_rules = !filename && (!prules || prules==tetrules);
   char buf[256];
   istream * ist;
   char *tr1 = NULL;

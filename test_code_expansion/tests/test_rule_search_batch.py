@@ -41,7 +41,7 @@ print('12345')
                         RUN_ROOT=str(self.folder/'results'), SBATCH_COMMAND=str(fake),
                         BATCH_CAPTURE=str(self.capture), DRY_RUN='0', MESH_EXPERIMENT_WORKER='0',
                         START_DELAY_SECONDS='120', MESH_SOURCE_REVISION='test-only')
-        for k in ('START_EPOCH','RULE_SEARCH_BATCH_ROOT','RULE_SEARCH_BATCH_GROUP','BASH_ENV'):
+        for k in ('START_EPOCH','RULE_SEARCH_BATCH_ROOT','RULE_SEARCH_BATCH_GROUP','BASH_ENV','SEARCH_JOINT_EXPERIMENT'):
             self.env.pop(k, None)
 
     def launch(self, **updates):
@@ -81,6 +81,16 @@ print('12345')
         state = json.loads((self.folder/'results/precheck/levels2/p64/rule_search_job_state.json').read_text())
         self.assertEqual(state['exit_code'], 125)
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
+
+    def test_joint_plan_has_ten_strategies_and_seven_contributions(self):
+        result=self.launch(EXPERIMENT_PRESET='search_joint_all')
+        self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),5)
+        self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
+        for r in calls:
+            self.assertEqual(tuple(r['env']['KERNEL_SCHEDULERS'].split()),batch.JOINT_SCHEDULERS)
+        plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
+        self.assertEqual(tuple(plan['contributions']),batch.JOINT_CONTRIBUTIONS)
 
     def test_invalid_configuration_submits_nothing(self):
         result = self.launch(RULE_SEARCH_MAIN_NODES='0')

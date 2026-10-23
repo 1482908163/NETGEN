@@ -2,6 +2,7 @@
 #include "meshing.hpp"
 #include <sstream>
 #include <cstring>
+#include <cstdint>
 
 
 namespace netgen
@@ -52,7 +53,17 @@ extern double minwithoutother;
 
 // Each rule is claimed exactly once. Its mutable free-zone and diagnostic slots
 // are exclusively owned until the team joins. Front and rotation order stay serial.
-struct RuleSearchQueue { std::atomic<int> next{0}; };
+struct RuleSearchQueue {
+  std::atomic<int> next{0};
+  std::vector<int> order;
+  std::vector<double> seconds;
+  bool measure;
+  explicit RuleSearchQueue(int count,bool measured=false):order(count),seconds(count,0),measure(measured) {
+    std::iota(order.begin(),order.end(),0);
+  }
+  int Claim(int count) { int i=next.fetch_add(1,std::memory_order_relaxed);
+    return i<int(order.size())?order[i]:count; }
+};
 struct RuleSearchResult {
   float quality = 0, error = 0;
   int found = -1;
@@ -99,6 +110,107 @@ void RecordRuleWork(VolumeKernelStats * s, const RuleSearchResult & r) {
   s->AddRule(4,r.rules); s->AddRule(5,r.eligible);
   s->AddRule(6,r.face_trials); s->AddRule(7,r.point_trials); s->AddRule(8,r.mappings);
 }
+// Versioned native-endian packets are used only inside one homogeneous MPI job.
+// No pointers or mesh ownership cross processes; count/length checks precede reads.
+struct RulePacket {
+  std::string data; size_t position=0;
+  static constexpr size_t limit=64*1024*1024;
+  RulePacket()=default;
+  RulePacket(const char * p,int n) {
+    if(n<0 || size_t(n)>limit) throw NgException("规则消息长度非法");
+    data.assign(p,n);
+  }
+  template<class T> void Put(T value) {
+    if(data.size()+sizeof(T)>limit) throw NgException("规则消息超过容量");
+    data.append(reinterpret_cast<const char*>(&value),sizeof(T));
+  }
+  template<class T> T Get() {
+    if(position+sizeof(T)>data.size()) throw NgException("规则消息截断");
+    T value;std::memcpy(&value,data.data()+position,sizeof(T));position+=sizeof(T);return value;
+  }
+  int Count() {int n=Get<int>();if(n<0 || n>1000000) throw NgException("规则消息计数非法");return n;}
+  void Text(const std::string & s) {Put(int(s.size()));for(char c:s) Put(c);}
+  std::string Text() {int n=Count();if(position+size_t(n)>data.size()) throw NgException("规则消息文本截断");
+    auto s=data.substr(position,n);position+=n;return s;}
+  void End() {if(position!=data.size()) throw NgException("规则消息包含多余数据");}
+};
+void PutRuleGeometry(RulePacket & packet,const RuleSearchResult & r) {
+  packet.Put(int(r.points.Size()));
+  for(auto p:r.points) for(int j=1;j<=3;++j) packet.Put(p.X(j));
+  packet.Put(int(r.faces.Size()));
+  for(auto f:r.faces) {packet.Put(f.GetNP());for(int j=1;j<=f.GetNP();++j) packet.Put(int(f.PNum(j)));}
+}
+void GetRuleGeometry(RulePacket & packet,RuleSearchResult & r) {
+  r.points.SetSize(packet.Count());
+  for(auto & p:r.points) for(int j=1;j<=3;++j) p.X(j)=packet.Get<double>();
+  r.faces.SetSize(packet.Count());
+  for(auto & f:r.faces) {
+    int n=packet.Get<int>();if(n!=3 && n!=4) throw NgException("规则消息面类型非法");
+    f=MiniElement2d(n);
+    for(int j=1;j<=n;++j) {int i=packet.Get<int>();if(i<1 || i>r.points.Size()) throw NgException("规则消息点索引非法");f.PNum(j)=i;}
+  }
+}
+void PutRuleResult(RulePacket & packet,const RuleSearchResult & r) {
+  packet.Put(r.found);packet.Put(r.quality);packet.Put(r.error);
+  packet.Put(r.other);packet.Put(r.withoutother);packet.Put(r.seconds);
+  for(auto x:{r.rules,r.eligible,r.face_trials,r.point_trials,r.mappings}) packet.Put(x);
+  packet.Text(r.trace);PutRuleGeometry(packet,r);
+  packet.Put(int(r.elements.Size()));
+  for(auto & e:r.elements) {packet.Put(int(e.GetType()));packet.Put(e.GetNP());for(int j=1;j<=e.GetNP();++j) packet.Put(int(e.PNum(j)));}
+  packet.Put(int(r.deleted.Size()));for(int d:r.deleted) packet.Put(d);
+}
+void GetRuleResult(RulePacket & packet,RuleSearchResult & r) {
+  r.found=packet.Get<int>();r.quality=packet.Get<float>();r.error=packet.Get<float>();
+  r.other=packet.Get<double>();r.withoutother=packet.Get<double>();r.seconds=packet.Get<double>();
+  r.rules=packet.Get<unsigned long long>();r.eligible=packet.Get<unsigned long long>();
+  r.face_trials=packet.Get<unsigned long long>();r.point_trials=packet.Get<unsigned long long>();r.mappings=packet.Get<unsigned long long>();
+  r.trace=packet.Text();GetRuleGeometry(packet,r);
+  r.elements.SetSize(0);int count=packet.Count();
+  for(int i=0;i<count;++i) {
+    int type=packet.Get<int>();if(type!=TET && type!=PYRAMID && type!=PRISM) throw NgException("规则消息单元类型非法");
+    Element e(static_cast<ELEMENT_TYPE>(type));int n=packet.Count();
+    if(n!=e.GetNP()) throw NgException("规则消息单元点数非法");
+    for(int j=1;j<=n;++j) {int pi=packet.Get<int>();if(pi<1 || pi>r.points.Size()) throw NgException("规则消息单元索引非法");e.PNum(j)=pi;}
+    r.elements.Append(e);
+  }
+  count=packet.Count();r.deleted.SetSize(count);for(auto & d:r.deleted) d=packet.Get<int>();
+}
+}
+
+std::string Meshing3::ExecuteRuleSearchPacket(const char * data,int bytes) {
+  RulePacket request(data,bytes),response;
+  if(request.Get<unsigned>()!=0x52534e31) throw NgException("规则消息版本不匹配");
+  static thread_local std::unique_ptr<Meshing3> helper;
+  if(!helper) helper.reset(new Meshing3(static_cast<const char **>(nullptr)));
+  auto & m=*helper;
+  const int count=request.Count();if(count!=m.rules.Size()) throw NgException("远程规则集合不匹配");
+  RuleSearchQueue queue(count,true);queue.order.clear();
+  int tasks=request.Count();std::vector<bool> seen(count,false);
+  for(int i=0;i<tasks;++i) {int id=request.Get<int>();
+    if(id<0 || id>=count || seen[id]) throw NgException("远程规则任务重复或越界");
+    seen[id]=true;queue.order.push_back(id);}
+  int tol=request.Get<int>(),rot=request.Get<int>();double sloppy=request.Get<double>();
+  if(tol<1 || tol>5 || rot<1 || rot>4 || !std::isfinite(sloppy)) throw NgException("远程规则参数非法");
+  struct Restore { double other=minother,without=minwithoutother;
+    ~Restore(){minother=other;minwithoutother=without;} } restore;
+  minother=request.Get<double>();minwithoutother=request.Get<double>();
+  RuleSearchResult result;GetRuleGeometry(request,result);
+  if(result.faces.Size()==0) throw NgException("远程规则缺少基面");
+  Array<int,PointIndex> allow(result.points.Size());for(auto & v:allow) v=request.Get<int>();
+  int split=request.Count();if(split<1 || split>result.faces.Size()) throw NgException("远程规则面分割非法");
+  int npairs=request.Count();INDEX_2_HASHTABLE<int> pairs(std::max(1,npairs*2));
+  for(int i=0;i<npairs;++i) {int a=request.Get<int>(),b=request.Get<int>(),v=request.Get<int>();
+    if(a<1 || b<1 || a>result.points.Size() || b>result.points.Size()) throw NgException("远程连接点非法");
+    pairs.Set(INDEX_2(a,b),v);}
+  request.End();m.foundmap=0;m.canuse=0;
+  const auto start=RuleClock::now();
+  result.found=m.ApplyRulesImpl(result.points,allow,result.faces,split,pairs,result.elements,result.deleted,
+                               tol,sloppy,rot,result.error,&queue,&result);
+  result.seconds=RuleElapsed(start);response.Put(unsigned(0x52534f31));PutRuleResult(response,result);
+  response.Put(tasks);
+  for(int id:queue.order) {response.Put(id);response.Put(m.foundmap[id]);response.Put(m.canuse[id]);
+    response.Text(m.problems[id]);response.Put(queue.seconds[id]);}
+  return std::move(response.data);
 }
 
 int Meshing3::ApplyRules(Array<Point3d,PointIndex> & p, Array<int,PointIndex> & a,
@@ -110,7 +222,7 @@ int Meshing3::ApplyRules(Array<Point3d,PointIndex> & p, Array<int,PointIndex> & 
 int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointIndex> & a,
   Array<MiniElement2d> & f, INDEX split, INDEX_2_HASHTABLE<int> & pairs,
   NgArray<Element> & e, NgArray<INDEX> & d, int tol, double sloppy, int rot, float & err,
-  int mode, VolumeKernelStats * stats) {
+  int mode, VolumeKernelStats * stats, double remaining_faces) {
   if(mode<0 || (!mode && !stats)) return ApplyRules(p,a,f,split,pairs,e,d,tol,sloppy,rot,err);
   const auto begin=RuleClock::now();
   if(stats) stats->AddRule(0,1);
@@ -137,31 +249,121 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     if(stats) { stats->AddRule(3,1); if(mode && debug) stats->AddRule(16,1); }
     return found;
   }
-  if(stats) stats->AddRule(1,1);
-  const bool verify=mode==2;
+  const bool adaptive=mode>=3;
+  const bool verify=mode==2 || mode==4;
+  int point_bin=0,face_bin=0;
+  for(int size=p.Size();size>1;size>>=1) ++point_bin;
+  for(int size=f.Size();size>1;size>>=1) ++face_bin;
+  const int bucket=tol*1024+std::min(31,point_bin)*32+std::min(31,face_bin);
+  SearchProfile * profile=adaptive?&search_profiles[bucket]:nullptr;
+  const int available=std::min(int(rules.Size()),ngcore::TaskManager::GetNumThreads());
+  int workers=available;
+  if(adaptive) {
+    profile->rules.resize(rules.Size());
+    if(!search_dispatch_cost) {
+      const auto t=RuleClock::now();ngcore::ParallelFor(size_t(available),[](size_t){},available);
+      search_dispatch_cost=RuleElapsed(t);
+    }
+    if(!verify) {
+      if(!profile->serial.samples) workers=1;
+      else if(profile->parallel.samples) {
+        if(profile->serial.Lower()<=profile->parallel.Upper()) workers=1;
+      } else {
+        std::vector<double> cost;for(auto & x:profile->rules) cost.push_back(x.Upper());
+        const auto assignment=AssignSearch(cost,available,false);
+        if(profile->serial.Lower()<=assignment.local_seconds+search_dispatch_cost+profile->copy.Upper()) workers=1;
+      }
+    }
+    if(stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
+  }
+  if(stats) stats->AddRule(workers>1?1:3,1);
   const double old_other=minother, old_without=minwithoutother;
   Array<int> old_found,old_can;
   if(verify) { old_found=foundmap;old_can=canuse; }
-  const int workers=std::min(int(rules.Size()),ngcore::TaskManager::GetNumThreads());
   std::vector<std::unique_ptr<RuleSearchResult>> results;
   auto stamp=RuleClock::now();
   for(int i=0;i<workers;i++) {
     results.emplace_back(new RuleSearchResult);
     results.back()->points=p;results.back()->faces=f;
   }
-  if(stats) stats->AddRule(10,RuleElapsed(stamp));
-  RuleSearchQueue queue;
+  const double copy_seconds=RuleElapsed(stamp);
+  if(stats) stats->AddRule(10,copy_seconds);
+  RuleSearchQueue queue(rules.Size(),adaptive);
+  bool remote=false;
+  double packet_seconds=0;
+  RulePacket remote_request;
+  if(adaptive) {
+    std::vector<double> cost;for(auto & x:profile->rules) cost.push_back(x.Upper());
+    auto local=AssignSearch(cost,workers,false);queue.order=local.local;
+    // Price a fifth execution lane from measured rule work; remote execution is
+    // serial on an already completed rank's protected anchor CPU.
+    auto distributed=AssignSearch(cost,workers,true,profile->overhead.Upper());
+    const double gain=local.local_seconds-std::max(distributed.local_seconds,distributed.remote_seconds);
+    if(workers>1 && standard_rules && search_transport && !distributed.remote.empty() &&
+       gain>0 && search_transport->offer(search_transport->context,gain,
+          std::max(1.0,remaining_faces)*profile->serial.mean,
+          std::max(0.0,distributed.remote_seconds-profile->overhead.Upper()))) {
+      remote=true;queue.order=distributed.local;
+      const auto packing=RuleClock::now();
+      remote_request.Put(unsigned(0x52534e31));remote_request.Put(int(rules.Size()));
+      remote_request.Put(int(distributed.remote.size()));for(int id:distributed.remote) remote_request.Put(id);
+      remote_request.Put(tol);remote_request.Put(rot);remote_request.Put(sloppy);
+      remote_request.Put(old_other);remote_request.Put(old_without);
+      PutRuleGeometry(remote_request,*results[0]);for(int v:a) remote_request.Put(v);
+      remote_request.Put(int(split));int npairs=0;
+      for(int b=1;b<=pairs.GetNBags();++b) npairs+=pairs.GetBagSize(b);
+      remote_request.Put(npairs);
+      for(int b=1;b<=pairs.GetNBags();++b) for(int j=1;j<=pairs.GetBagSize(b);++j) {
+        INDEX_2 edge;int value;pairs.GetData(b,j,edge,value);
+        remote_request.Put(edge.I1());remote_request.Put(edge.I2());remote_request.Put(value);
+      }
+      search_transport->start(search_transport->context,remote_request.data.data(),remote_request.data.size());
+      packet_seconds=RuleElapsed(packing);
+      if(stats) {stats->AddAdaptive(3,1);stats->AddAdaptive(4,distributed.remote.size());stats->AddAdaptive(5,gain);}
+    }
+  }
   stamp=RuleClock::now();
-  ngcore::ParallelFor(size_t(workers),[&](size_t i) {
+  auto execute=[&](size_t i) {
     auto & r=*results[i];const auto t=RuleClock::now();
     r.found=ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,
                           tol,sloppy,rot,r.error,&queue,&r);
     r.seconds=RuleElapsed(t);
-  },workers);
+  };
+  if(workers==1) execute(0);else ngcore::ParallelFor(size_t(workers),execute,workers);
   if(stats) stats->AddRule(11,RuleElapsed(stamp));
+  if(remote) {
+    const auto wait=RuleClock::now();int bytes=0;
+    const char * data=search_transport->finish(search_transport->context,&bytes);
+    if(stats) stats->AddAdaptive(6,RuleElapsed(wait));
+    const auto unpacking=RuleClock::now();
+    RulePacket response(data,bytes);
+    if(response.Get<unsigned>()!=0x52534f31) throw NgException("远程规则响应版本不匹配");
+    results.emplace_back(new RuleSearchResult);GetRuleResult(response,*results.back());
+    std::vector<bool> covered(rules.Size(),false);for(int id:queue.order) covered[id]=true;
+    int count=response.Count();
+    for(int i=0;i<count;++i) {int id=response.Get<int>();
+      if(id<0 || id>=rules.Size() || covered[id]) throw NgException("远程规则覆盖重复");
+      covered[id]=true;foundmap[id]+=response.Get<int>();canuse[id]+=response.Get<int>();
+      problems[id]=response.Text();queue.seconds[id]=response.Get<double>();}
+    response.End();for(bool value:covered) if(!value) throw NgException("远程规则覆盖不完整");
+    profile->overhead.Observe(packet_seconds+RuleElapsed(unpacking));
+  }
+  const double execution_seconds=RuleElapsed(stamp)+copy_seconds;
+  if(adaptive) {
+    for(int id=0;id<rules.Size();++id) profile->rules[id].Observe(queue.seconds[id]);
+    profile->copy.Observe(copy_seconds);
+    if(!remote) {
+      (workers==1?profile->serial:profile->parallel).Observe(execution_seconds);
+      // Serial counterfactual from actual rule work plus one worker's repeated
+      // preprocessing, avoiding a permanent cold start after workload changes.
+      double work=std::accumulate(queue.seconds.begin(),queue.seconds.end(),0.0),total=0;
+      for(auto & r:results) total+=r->seconds;
+      if(workers>1) profile->serial.Observe(work+std::max(0.0,(total-work)/workers));
+    }
+  }
   int winner=-1, found=-1;
   double longest=0;
-  for(int i=0;i<workers;i++) {
+  for(int i=0;i<int(results.size());i++) {
     const auto & r=*results[i];RecordRuleWork(stats,r);
     if(stats) stats->AddRule(12,r.seconds);
     longest=std::max(longest,r.seconds);
@@ -395,10 +597,14 @@ int Meshing3 :: ApplyRulesImpl
   // tstart.Stop();
   // tloop.Start();
   int serial_rule = 0;
-  for (int rim = queue ? queue->next.fetch_add(1, std::memory_order_relaxed) : serial_rule++;
+  for (int rim = queue ? queue->Claim(rules.Size()) : serial_rule++;
        rim < rules.Size();
-       rim = queue ? queue->next.fetch_add(1, std::memory_order_relaxed) : serial_rule++)
+       rim = queue ? queue->Claim(rules.Size()) : serial_rule++)
     {
+      struct RuleTaskTimer {
+        RuleSearchQueue * queue; int id; RuleClock::time_point start;
+        ~RuleTaskTimer() {if(queue && queue->measure) queue->seconds[id]=RuleElapsed(start);}
+      } task_timer{queue,rim,queue && queue->measure?RuleClock::now():RuleClock::time_point{}};
       if (result) result->rules++;
       int base = (lfaces[0].GetNP() == 3) ? 100 : 200;
       RuleLegacyTimer regx1(base, !queue);
@@ -1231,7 +1437,8 @@ int Meshing3 :: ApplyRulesImpl
 
 			  if (teterr > minteterr) impossible = 0;
 
-			  if (ok && teterr < minteterr)
+			  if (ok && (teterr < minteterr ||
+                             (queue && found && teterr==minteterr && rim+1<found)))
 			    {
 
 			      if (loktestmode)

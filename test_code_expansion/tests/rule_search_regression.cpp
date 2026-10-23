@@ -10,6 +10,14 @@
 
 using namespace netgen;
 namespace netgen { extern double minother, minwithoutother; }
+#ifdef RULE_SEARCH_REFERENCE
+// The untouched parent predates the transport API; reference runs never use it.
+namespace netgen {
+std::string Meshing3::ExecuteRuleSearchPacket(const char *,int) {
+  throw std::runtime_error("参考版本不执行远程搜索");
+}
+}
+#endif
 
 static uint64_t fingerprint=1469598103934665603ULL;
 template<class T> void Hash(T v) {
@@ -22,6 +30,30 @@ int main(int argc,char **argv) {
   std::ostringstream diagnostics;
   testout=&diagnostics;testmode=0;printmessage_importance=0;
   Meshing3 mesher(static_cast<const char **>(nullptr));
+  struct Loopback {std::string output;int calls=0;} loopback;
+  RuleSearchTransport transport;
+  transport.context=&loopback;
+  transport.offer=[](void *,double,double,double){return 1;};
+  transport.start=[](void *ctx,const char *data,int bytes) {
+    auto & state=*static_cast<Loopback*>(ctx);
+    if(!state.calls) {
+      for(int length:{0,bytes-1}) {
+        bool rejected=false;
+        try {Meshing3::ExecuteRuleSearchPacket(data,length);} catch(const std::exception &) {rejected=true;}
+        if(!rejected) throw std::runtime_error("截断消息未被拒绝");
+      }
+      std::string broken(data,bytes);broken[0]=0;
+      bool rejected=false;
+      try {Meshing3::ExecuteRuleSearchPacket(broken.data(),bytes);} catch(const std::exception &) {rejected=true;}
+      if(!rejected) throw std::runtime_error("错误版本消息未被拒绝");
+    }
+    state.output=Meshing3::ExecuteRuleSearchPacket(data,bytes);++state.calls;
+  };
+  transport.finish=[](void *ctx,int *bytes)->const char * {
+    auto & state=*static_cast<Loopback*>(ctx);*bytes=state.output.size();return state.output.data();
+  };
+  const bool remote=argc>3 && std::atoi(argv[3]);
+  if(remote) mesher.SetRuleSearchTransport(&transport);
   VolumeKernelStats stats;
   auto team=std::make_unique<ngcore::RegionTaskManager>(threads);
   std::mt19937 random(928173);
@@ -132,6 +164,8 @@ int main(int argc,char **argv) {
   std::cout<<"parallel="<<stats.rule_values[1]<<" verified="<<stats.rule_values[2]
            <<" serial="<<stats.rule_values[3]<<" debug_fallbacks="<<stats.rule_values[16]
            <<" mismatches="<<stats.rule_values[17]<<" mappings="<<stats.rule_values[8]<<"\n";
+  std::cout<<"remote_packets="<<loopback.calls<<" adaptive_serial="<<stats.adaptive_values[1]<<"\n";
+  if(remote && !loopback.calls) return 6;
   if(threads>1 && mode>0 && stats.rule_values[1]==0) return 2;
 #endif
   return successes==0 || retries==0;
