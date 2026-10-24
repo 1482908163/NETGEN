@@ -1,0 +1,17 @@
+contribution,threads,timing,seed,control,candidate,control_seconds,candidate_seconds,speedup,reduction_pct,paired_count,paired_wins,paired_reduction_pct,quality_pass,quality_issues,same_volume_fingerprint
+borrowing,4,natural,-1,sparse+node_fixed,sparse+node_elastic,3.401344635999976,3.5800928380000414,0.9500716293994432,-5.255221717558012,5,2,-0.5376120474300139,True,,True
+total,4,natural,-1,baseline+node_original,sparse+node_elastic,3.0606175039999926,3.5800928380000414,0.8548989209200941,-16.972892996956812,5,0,-15.390922143865682,True,,True
+rule_search_fixed,4,natural,-1,sparse+node_fixed,sparse+node_rules_fixed,3.401344635999976,3.35938670500002,1.0124897591984594,1.2335689408203954,5,3,0.7060505784855065,True,,True
+rule_search_elastic,4,natural,-1,sparse+node_elastic,sparse+node_rules_elastic,3.5800928380000414,3.5047764579999807,1.0214896387551748,2.1037549417890267,5,4,2.1516757085362603,True,,True
+rule_search_borrowing,4,natural,-1,sparse+node_rules_fixed,sparse+node_rules_elastic,3.35938670500002,3.5047764579999807,0.958516682949038,-4.327865940040976,5,2,-4.449260240791175,True,,True
+rule_search_total,4,natural,-1,baseline+node_original,sparse+node_rules_elastic,3.0606175039999926,3.5047764579999807,0.8732703899028557,-14.512069979979735,5,0,-10.150985204418639,True,,True
+search_adaptive,4,natural,-1,sparse+node_rules_fixed,sparse+node_search_local,3.35938670500002,3.333671410000001,1.0077138061426454,0.7654758817061791,5,3,1.4024354484083124,True,,True
+search_protocol,4,natural,-1,sparse+node_search_local,sparse+node_search_idle,3.333671410000001,3.2940109079999615,1.0120401853872791,1.1896943976262842,5,3,2.5266447549944226,True,,True
+search_remote,4,natural,-1,sparse+node_search_idle,sparse+node_search_remote,3.2940109079999615,3.447071677999986,0.955596870533069,-4.646638225401611,5,1,-0.8825416526504037,True,,True
+search_online,4,natural,-1,sparse+node_search_local,sparse+node_search_online,3.333671410000001,3.397673173000044,0.9811630607944757,-1.9198581722258856,5,3,8.826133199179298,True,,True
+search_remote_online,4,natural,-1,sparse+node_search_online,sparse+node_search_full,3.397673173000044,3.5161230759999853,0.9663123558420222,-3.4862064998251174,5,3,0.6966454627855945,True,,True
+search_incremental,4,natural,-1,sparse+node_elastic,sparse+node_search_full,3.5800928380000414,3.5161230759999853,1.0181932658832948,1.7868185238400613,5,2,-0.7855893475292364,True,,True
+search_total,4,natural,-1,baseline+node_original,sparse+node_search_full,3.0606175039999926,3.5161230759999853,0.8704523242917351,-14.882799677015557,5,0,-16.22838095119008,True,,True
+search_previous,4,natural,-1,sparse+node_rules_elastic,sparse+node_search_full,3.5047764579999807,3.5161230759999853,0.996772974735312,-0.3237472670790442,5,2,-5.580009766066496,True,,True
+search_order_elastic,4,natural,-1,sparse+node_rules_elastic,sparse+node_search_elastic,3.5047764579999807,3.2200082289999727,1.088437112189756,8.125146708001818,5,4,5.129443300772795,True,,True
+search_model,4,natural,-1,sparse+node_search_elastic,sparse+node_search_online,3.2200082289999727,3.397673173000044,0.9477098193516953,-5.517530744176002,5,1,-5.202123039510087,True,,True
