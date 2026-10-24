@@ -1,0 +1,14 @@
+contribution,threads,timing,seed,control,candidate,control_seconds,candidate_seconds,speedup,reduction_pct,paired_count,paired_wins,paired_reduction_pct,quality_pass,quality_issues,same_volume_fingerprint
+borrowing,4,natural,-1,sparse+node_fixed,sparse+node_elastic,5.400046852000003,4.986447022999982,1.0829447955813611,7.659189639194263,1,1,7.659189639194263,True,,True
+total,4,natural,-1,baseline+node_original,sparse+node_elastic,7.688416731999951,4.986447022999982,1.5418627123755924,35.14338261288703,1,1,35.14338261288703,True,,True
+rule_search_fixed,4,natural,-1,sparse+node_fixed,sparse+node_rules_fixed,5.400046852000003,5.251443037000001,1.0282977105441278,2.75189862371219,1,1,2.75189862371219,True,,True
+rule_search_elastic,4,natural,-1,sparse+node_elastic,sparse+node_rules_elastic,4.986447022999982,4.757550496000022,1.0481122643243428,4.590373184437246,1,1,4.590373184437246,True,,True
+rule_search_borrowing,4,natural,-1,sparse+node_rules_fixed,sparse+node_rules_elastic,5.251443037000001,4.757550496000022,1.1038123591993878,9.404891903428625,1,1,9.404891903428625,True,,True
+rule_search_total,4,natural,-1,baseline+node_original,sparse+node_rules_elastic,7.688416731999951,4.757550496000022,1.6160452187452548,38.12054338575813,1,1,38.12054338575813,True,,True
+search_adaptive,4,natural,-1,sparse+node_rules_fixed,sparse+node_search_local,5.251443037000001,5.488022028000046,0.9568917563025419,-4.505028224302987,1,0,-4.505028224302987,True,,True
+search_protocol,4,natural,-1,sparse+node_search_local,sparse+node_search_idle,5.488022028000046,6.023219847000064,0.9111442330522636,-9.75210770418602,1,0,-9.75210770418602,True,,True
+search_remote,4,natural,-1,sparse+node_search_idle,sparse+node_search_remote,6.023219847000064,5.848807023999939,1.0298202389452142,2.895674198028708,1,1,2.895674198028708,True,,True
+search_online,4,natural,-1,sparse+node_search_local,sparse+node_search_online,5.488022028000046,5.291063916999974,1.037224670518013,3.5888724570562136,1,1,3.5888724570562136,True,,True
+search_remote_online,4,natural,-1,sparse+node_search_online,sparse+node_search_full,5.291063916999974,5.082623946000012,1.0410103075133077,3.9394718013186836,1,1,3.9394718013186836,True,,True
+search_incremental,4,natural,-1,sparse+node_elastic,sparse+node_search_full,4.986447022999982,5.082623946000012,0.9810773088818187,-1.9287665657814923,1,0,-1.9287665657814923,True,,True
+search_total,4,natural,-1,baseline+node_original,sparse+node_search_full,7.688416731999951,5.082623946000012,1.5126865205226678,33.89244986102757,1,1,33.89244986102757,True,,True

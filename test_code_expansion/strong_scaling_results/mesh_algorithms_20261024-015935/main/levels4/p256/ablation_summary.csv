@@ -1,0 +1,14 @@
+contribution,threads,timing,seed,control,candidate,control_seconds,candidate_seconds,speedup,reduction_pct,paired_count,paired_wins,paired_reduction_pct,quality_pass,quality_issues,same_volume_fingerprint
+borrowing,4,natural,-1,sparse+node_fixed,sparse+node_elastic,62.11482502300001,56.96648085999999,1.0903749728836598,8.288430597838248,5,5,8.288430597838248,True,,True
+total,4,natural,-1,baseline+node_original,sparse+node_elastic,65.42862582399994,56.96648085999999,1.1485460368316658,12.933398581169552,5,5,13.111685321156441,True,,True
+rule_search_fixed,4,natural,-1,sparse+node_fixed,sparse+node_rules_fixed,62.11482502300001,59.64750954199985,1.041364937110456,3.9721845470651385,5,5,1.5186810735319245,True,,True
+rule_search_elastic,4,natural,-1,sparse+node_elastic,sparse+node_rules_elastic,56.96648085999999,56.123910841,1.0150126747472572,1.4790627861859362,5,5,1.93554754641716,True,,True
+rule_search_borrowing,4,natural,-1,sparse+node_rules_fixed,sparse+node_rules_elastic,59.64750954199985,56.123910841,1.0627824869685627,5.907369357171177,5,5,5.907369357171177,True,,True
+rule_search_total,4,natural,-1,baseline+node_original,sparse+node_rules_elastic,65.42862582399994,56.123910841,1.165788784914871,14.221168281952313,5,5,14.605336968028471,True,,True
+search_adaptive,4,natural,-1,sparse+node_rules_fixed,sparse+node_search_local,59.64750954199985,62.39942517700001,0.9558983816406293,-4.613630403231572,5,0,-2.5621670654019324,True,,True
+search_protocol,4,natural,-1,sparse+node_search_local,sparse+node_search_idle,62.39942517700001,63.694279241000004,0.9796707949374754,-2.075105756706974,5,1,-2.171651696172572,True,,True
+search_remote,4,natural,-1,sparse+node_search_idle,sparse+node_search_remote,63.694279241000004,63.70829903999993,0.9997799376343242,-0.02201108037800381,5,3,0.5045499683112742,True,,True
+search_online,4,natural,-1,sparse+node_search_local,sparse+node_search_online,62.39942517700001,58.24626880200003,1.0713033892199697,6.655760631158514,5,5,6.436051504735307,True,,True
+search_remote_online,4,natural,-1,sparse+node_search_online,sparse+node_search_full,58.24626880200003,58.47272018900003,0.9961272301636037,-0.3887826493569779,5,2,-0.37875353333869377,True,,True
+search_incremental,4,natural,-1,sparse+node_elastic,sparse+node_search_full,56.96648085999999,58.47272018900003,0.9742403068622179,-2.6440800032948353,5,0,-2.5790932998134286,True,,True
+search_total,4,natural,-1,baseline+node_original,sparse+node_search_full,65.42862582399994,58.47272018900003,1.1189598433682664,10.631287983505844,5,5,10.994083557494505,True,,True
