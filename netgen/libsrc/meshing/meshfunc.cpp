@@ -740,7 +740,20 @@ namespace netgen
         for (auto j : Range(mp.optimize3d.size()))
 	  {
 #ifndef EMSCRIPTEN
-            resource_team.Checkpoint(mesh3d.GetNE(),
+            if(mp.volume_resources && mp.volume_resources->poll_operations) {
+              // Exact remaining operation composition; no mesh decisions change.
+              const std::string operation_kinds="cdDstmMj";
+              int remaining_by_kind[8]={};
+              for(size_t k=0;k<mp.optimize3d.size();++k) {
+                size_t kind=operation_kinds.find(mp.optimize3d[k]);
+                if(kind!=std::string::npos)
+                  remaining_by_kind[kind]+=mp.optsteps3d-i-(k<j?1:0);
+              }
+              const auto kind=operation_kinds.find(mp.optimize3d[j]);
+              resource_team.Checkpoint(mesh3d.GetNE(),
+                int((mp.optsteps3d-i)*mp.optimize3d.size()-j),
+                kind==std::string::npos?-1:int(kind),remaining_by_kind);
+            } else resource_team.Checkpoint(mesh3d.GetNE(),
               int((mp.optsteps3d-i)*mp.optimize3d.size()-j));
 #endif
             multithread.percent = 100.* (double(j)/mp.optimize3d.size() + i)/mp.optsteps3d;
@@ -768,6 +781,9 @@ namespace netgen
 #endif
 	      case 'j': mesh3d.ImproveMeshJacobian(mp); break;
 	      }
+#ifndef EMSCRIPTEN
+            resource_team.OperationCompleted();
+#endif
 	  }
 	// mesh3d.mglevels = 1;
 	MeshQuality3d (mesh3d);

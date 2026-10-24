@@ -312,7 +312,10 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('search_online','node_search_local','sparse','node_search_online','sparse'),
            ('search_remote_online','node_search_online','sparse','node_search_full','sparse'),
            ('search_incremental','node_elastic','sparse','node_search_full','sparse'),
-           ('search_total','node_original','baseline','node_search_full','sparse'))
+           ('search_total','node_original','baseline','node_search_full','sparse'),
+           ('search_previous','node_rules_elastic','sparse','node_search_full','sparse'),
+           ('search_order_elastic','node_rules_elastic','sparse','node_search_elastic','sparse'),
+           ('search_model','node_search_elastic','sparse','node_search_online','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -372,6 +375,9 @@ SEARCH_REMOTE_METRICS = tuple('search_remote_'+k for k in (
     'probes','grants','critical_rejects','cost_rejects','service_calls','payload_bytes',
     'wait_seconds','service_seconds','control_seconds','drain_seconds'))
 
+SEARCH_CREDIT_METRICS = tuple('search_remote_'+k for k in (
+    'ready_sent','ready_received','no_ready','control_max_seconds','rpc_floor_seconds','completion_residual_seconds','completion_cost_seconds'))
+
 CRITICAL_METRICS = (
     'volume_kernel_input_points','volume_kernel_input_surface_elements',
     'volume_kernel_points','volume_kernel_surface_elements','volume_kernel_elements',
@@ -384,7 +390,7 @@ CRITICAL_METRICS = (
     'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
     'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
     'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
-    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS + SEARCH_POLICY_METRICS + SEARCH_REMOTE_METRICS
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS + SEARCH_POLICY_METRICS + SEARCH_REMOTE_METRICS + SEARCH_CREDIT_METRICS + ('coop_operation_other_checks','coop_operation_other_restarts','search_policy_sampled_calls')
 CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
     for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
 CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
@@ -416,6 +422,8 @@ def critical_rank_details(rows, result):
     for field in ('face_complete_elapsed','vertex_arrival_elapsed'):
         if all(field in r['metrics'] for r in rows):
             select(field,lambda r:r['metrics'][field])
+    for field in ('search_remote_control_seconds','search_remote_control_max_seconds','kernel_rules_max_call_seconds'):
+        if all(field in r['metrics'] for r in rows): select(field,lambda r:r['metrics'][field])
     node=slow['metrics'].get('coop_timeline_node')
     if node is not None:
         for r in rows:
@@ -675,8 +683,10 @@ def inspect_rule_search(rows, metadata):
 
 def inspect_search_policy(rows, metadata):
     keys=list(SEARCH_POLICY_METRICS)
-    enabled=metadata.get('search_remote')=='completed_anchor_rma_v1'
+    if metadata.get('search_policy')=='structural_rule_credit_v2':keys+=('search_policy_sampled_calls',)
+    enabled=metadata.get('search_remote') in ('completed_anchor_rma_v1','completed_anchor_credit_v2')
     if enabled: keys+=SEARCH_REMOTE_METRICS
+    if metadata.get('search_remote')=='completed_anchor_credit_v2': keys+=SEARCH_CREDIT_METRICS
     result={}
     for key in keys:
         values=[r['metrics'][key] for r in rows]
@@ -693,9 +703,23 @@ def inspect_search_policy(rows, metadata):
                 raise ValueError('远程预留与实际任务不一致')
         elif m['search_policy_remote_calls']:
             raise ValueError('本地对照意外进行跨节点搜索')
+    if metadata.get('search_remote')=='completed_anchor_credit_v2' and result['search_remote_ready_sent']!=result['search_remote_ready_received']:
+        raise ValueError('就绪信用发送与回收计数不闭合')
     if enabled and result['search_remote_grants']!=result['search_remote_service_calls']:
         raise ValueError('跨节点搜索请求与服务次数不一致')
     return result
+
+
+def post_work_fingerprint(rows):
+    fields=('local_points_before_adjacency','local_surface_elements_before_adjacency',
+            'local_volume_elements_before_adjacency','ghost_points_added','ghost_volume_elements_added')
+    workload=[]
+    for row in sorted(rows,key=lambda r:r['rank']):
+        counts=[row['metrics'][k] for k in fields]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or int(v)!=v for v in counts):
+            raise ValueError('invalid per-rank workload counts')
+        workload.append([row['rank'],*map(int,counts)])
+    return hashlib.sha256(json.dumps(workload,separators=(',',':')).encode()).hexdigest()
 
 
 def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
@@ -723,7 +747,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     metadata=dict(metadata)
     rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
-                  'node_search_online':'node_online','node_search_full':'node_online'}
+                  'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
     if requested_scheduler in rule_aliases:
         expected_mode=('4' if rows[0]['repeat']<=0 else '3') if requested_scheduler.startswith('node_search_') else ('2' if rows[0]['repeat']<=0 else '1')
@@ -763,6 +787,9 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
     result.update(volume_workload_metrics(rows))
+    if metadata.get('post_work_profile')=='rank_counts_v1':
+        result['scaling_work_sha256']=post_work_fingerprint(rows)
+        result['post_work_profile']='rank_counts_v1'
     if os.environ.get('NODE_SCALING') == '1':
         from collections import Counter
         if metadata.get('timing_boundary') != 'post_coarse_barrier_to_adjacency_complete':
@@ -811,7 +838,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
 
     if metadata.get('rule_search_profile')=='rule_search_v1':
         result.update(inspect_rule_search(rows,metadata))
-    if metadata.get('search_policy')=='measured_rule_cost_v1':
+    if metadata.get('search_policy') in ('measured_rule_cost_v1','structural_rule_credit_v2'):
         result.update(inspect_search_policy(rows,metadata))
 
     if metadata.get("kernel_lifecycle")=="team_lifecycle_v1":
@@ -1015,7 +1042,13 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         scheduler=metadata['kernel_scheduler']
         expected_policy=('online_net_benefit_v1' if scheduler=='node_online' else 'critical_path_phase6' if scheduler=='node_phaseaware' else
                          'remaining_priority' if scheduler=='node_priority' else 'arrival_gate')
-        if metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
+        composition=scheduler=='node_online' and metadata.get('node_work_policy')=='operation_composition_v2'
+        if not composition and metadata.get('node_work_policy')!=expected_policy: raise ValueError('wrong work policy metadata')
+        if composition:
+            for key in ('coop_operation_other_checks','coop_operation_other_restarts'):
+                values=[r['metrics'][key] for r in rows]
+                if any(not math.isfinite(v) or v<0 or int(v)!=v for v in values): raise ValueError('invalid operation checkpoint metric')
+                result[key]=sum(values)
         reasons=('unknown','short','cost','deferred','no_capacity','grants','already')
         for name in ('checks',*reasons,'reserved_cores','gain_estimate_seconds','restart_estimate_seconds'):
             key='coop_work_'+name;values=[r['metrics'][key] for r in rows]
@@ -1025,11 +1058,14 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             m=r['metrics'];grants=m['coop_work_grants']
             if sum(m['coop_work_'+reason] for reason in reasons)!=m['coop_work_checks']:
                 raise ValueError('work decisions do not cover checkpoints')
-            if not grants==m['coop_checkpoint_grants']==m['coop_checkpoint_restarts'] or (scheduler!='node_online' and grants>1):
+            other_checks=m['coop_operation_other_checks'] if composition else 0
+            other_restarts=m['coop_operation_other_restarts'] if composition else 0
+            if other_restarts>other_checks: raise ValueError('invalid early elastic restart count')
+            if not grants+other_restarts==m['coop_checkpoint_grants']==m['coop_checkpoint_restarts'] or (scheduler!='node_online' and grants>1):
                 raise ValueError('work-aware reservation or restart bound violated')
             if m['coop_work_reserved_cores']<grants:
                 raise ValueError('reserved resources do not match work grants')
-            if m['coop_work_checks']!=m['coop_checkpoint_checks']:
+            if m['coop_work_checks']+other_checks!=m['coop_checkpoint_checks']:
                 raise ValueError('work checkpoint counts disagree')
             if scheduler=='node_budget' and m['coop_work_deferred']:
                 raise ValueError('arrival control used priority selection')
@@ -1041,7 +1077,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                 if m['coop_borrow_epochs']<grants:
                     raise ValueError('phase-aware grant without borrowed lease')
                 for phase in range(8):
-                    if phase!=6 and m[f'coop_phase_{phase}_borrowed_core_seconds']>1e-12:
+                    if not composition and phase!=6 and m[f'coop_phase_{phase}_borrowed_core_seconds']>1e-12:
                         raise ValueError('phase-aware lending escaped final optimization')
     if metadata.get('natural_sync_trace')=='natural_sync_v1':
         def sync_values(name):

@@ -1,25 +1,18 @@
 # 两个瓶颈的算法实验
 
-## 当前下一步：重分析已有结果，不重跑实验
+## 当前版本：就绪协作与操作组成借核（2026-10-24）
 
-2026-09-20：上一批 300 次运行及 25 组质量预热通过，但完成后借核在 256 进程退化。
-五次自然运行的最慢计算进程均为 155；现有公开汇总缺少该进程自己的生成、前沿、域内修复等计时，不能用各阶段跨进程最大值推断原因。
-
-本次仅改分析器，直接读取集群上保留的 `rank_profiles.jsonl(.gz)`（逐进程原始指标），不需要重编译或申请计算作业。在仓库根目录执行：
+默认一次提交全部五个独立作业，统一延时：16 节点预检，面细化 2/4 × 64/256 节点主实验；十一策略，主实验五次正式重复。共 286 次运行，体细化保持 1。保留原编译、安装和运行入口：
 
 ```bash
-git pull --ff-only
-cd test_code_expansion/strong_scaling
-python3 analyze_results.py ../strong_scaling_results/mesh_algorithms_20260915-125527 --refresh-kernel-reports
+cd /vol8/home/hnu_lhz/cjz/NETGEN
+bash test_code_expansion/build_project.sh &&
+bash test_code_expansion/strong_scaling/run_experiments.sh
 ```
 
-整个批次的所有规模、策略会自动遍历，不受当前环境中的策略筛选影响。此次重分析只新增/更新诊断报告，不改原性能汇总、质量结果、SUCCESS（成功标记）、网格或原始指标；缺失/损坏/仍在运行的记录会明确报错并继续其他记录。
+先将代码同步至超算原目录；超算无需 Git（版本控制工具）。结果先看根目录 `RESULT_SUMMARY.txt`；远程任务覆盖见 `batch_coverage.csv`。正确性审计通过不代表性能改善，主要比较上一轮规则并行与借核组合。
 
-优先上传并查看每个规模的 `p*/CRITICAL_PATH_SUMMARY.txt`（关键进程摘要）。对应 `kernel_critical_summary.csv`（阶段表）和各策略 `analysis/kernel_critical_ranks.csv`（逐次明细）可用于进一步定位；它们会被正常纳入现有 Git（版本管理）结果上传。
-明细只保留每次最慢计算进程、其同节点进程、生成/修复/优化及其子阶段的最慢进程，以及已有到达时间的最晚进程；不导出网格内容。
-
-以后按原入口运行新实验，也会自动产生这些报告，原 `RESULT_SUMMARY.txt` 会包含关键进程摘要。当前无需为了补报告重新执行下面的 300 次实验命令。
-完整方法、证据边界和本地检查见 [关键进程定位协议](../docs/experiments/20260920_critical_rank_diagnosis.md)。
+完整方法、对照、清理和本地验证见 [本版说明](../docs/experiments/20261024_credit_operations_v2.md)；上批结果见 [联合实验分析](../docs/experiments/20261024_joint_search_results.md)。以下内容为历史实验记录。
 
 ## 已运行的收尾评价：贡献消融、规模扩展与体网格审计
 
@@ -27,7 +20,6 @@ python3 analyze_results.py ../strong_scaling_results/mesh_algorithms_20260915-12
 在仓库根目录使用原入口，构建成功后一次提交：
 
 ```bash
-git pull --ff-only
 cd test_code_expansion
 bash build_project.sh &&
 cd strong_scaling &&

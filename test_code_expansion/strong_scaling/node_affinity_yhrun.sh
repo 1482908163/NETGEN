@@ -16,7 +16,7 @@ REAL_YHRUN="${REAL_YHRUN:-$(command -v yhrun)}"
 nodes=$(( (PROCESS_COUNT + RANKS_PER_NODE - 1) / RANKS_PER_NODE ))
 cpu_bind=cores
 case "${KERNEL_SCHEDULER:-static}" in
-    node_search_local|node_search_idle|node_search_remote|node_search_online|node_search_full) cpu_bind=none ;;
+    node_search_elastic|node_search_local|node_search_idle|node_search_remote|node_search_online|node_search_full) cpu_bind=none ;;
     node_rules_fixed|node_rules_elastic|node_original|node_native|node_scoped|node_fixed|node_lend|node_guarded|node_model|node_tail|node_budget|node_priority|node_reserved|node_elastic|node_stage|node_reclaim|node_selective|node_once|node_phaseaware) cpu_bind=none ;;
 esac
 

@@ -48,6 +48,8 @@ class NodeResources {
         int remaining=-1,work_granted=0;
         double progress_time=0,last_operation=0,restart_cost=0;
         Model model[phases];
+        Model operations[8];
+        double operation_tail=0;
     };
     struct Shared {
         pthread_mutex_t mutex;
@@ -75,6 +77,7 @@ class NodeResources {
     double work_checks=0,work_unknown=0,work_short=0,work_cost=0,work_deferred=0;
     double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
     double work_gain_estimate=0,work_restart_estimate=0;
+    double operation_other_checks=0,operation_other_restarts=0;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -104,7 +107,7 @@ class NodeResources {
     bool can_take(int c) const {
         if(stage_policy()) return shared->home[c]!=me && donor_available(shared->home[c]) &&
             (shared->reserved[c]==0 || shared->reserved[c]==me+1);
-        if(work_policy() || (phaseaware_policy() && checkpoint_old_threads) ||
+        if((work_policy() && (mode!=14 || shared->rank[me].phase==6 || checkpoint_old_threads)) || (phaseaware_policy() && checkpoint_old_threads) ||
            (atomic_tail() && checkpoint_old_threads))
             return shared->reserved[c]==me+1;
         return shared->reserved[c]==0;
@@ -424,6 +427,60 @@ public:
     static int poll_work_callback(void *ctx,double work,int remaining,double last,double restart) {
         return static_cast<NodeResources*>(ctx)->poll_work(work,remaining,last,restart);
     }
+    static int poll_operations_callback(void *ctx,double work,int completed,double completed_work,
+                                        double last,double restart,const int *counts) {
+        return static_cast<NodeResources*>(ctx)->poll_operations(work,completed,completed_work,last,restart,counts);
+    }
+    int poll_operations(double work,int completed,double completed_work,double last,double restart,const int *counts) {
+        if(mode!=14) return 0;
+        // Keep the previous elastic phase scope. Composition-aware decisions
+        // replace only final-optimization decisions, not early useful leases.
+        if(shared->rank[me].phase!=6) {
+            ++operation_other_checks;int changed=poll_atomic();operation_other_restarts+=changed;return changed;
+        }
+        const double stamp=now();++checkpoint_checks;++work_checks;
+        if(!std::isfinite(work+completed_work+last+restart) || work<=0 || last<0 || restart<0)
+            fail("非法操作组成预测输入");
+        lock();account_pool();auto &r=shared->rank[me];
+        if(!r.active || r.done || checkpoint_old_threads) fail("操作借核检查生命周期错误");
+        if(completed>=0 && completed<8 && completed_work>0 && last>0)
+            r.operations[completed].observe(r.threads,completed_work,last);
+        r.operation_tail=0;r.progress_time=stamp;
+        if(!counts) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        double serial=0,parallel=0,error=0;
+        for(int op=0;op<8;++op) {
+            if(counts[op]<0) fail("剩余操作计数非法");
+            if(!counts[op]) continue;
+            const auto &model=r.operations[op];
+            if(!model.samples) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+            double a,b;model.coefficients(a,b);
+            serial+=counts[op]*work*a;parallel+=counts[op]*work*b;error+=counts[op]*work*model.error;
+        }
+        const double before=serial+parallel/r.threads;
+        r.operation_tail=before;
+        int extra=0;
+        for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) ++extra;
+        if(!extra) {++work_no_capacity;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        double other=0;
+        for(int i=0;i<size;++i) if(i!=me && shared->rank[i].active) {
+            const auto &peer=shared->rank[i];
+            other=std::max(other,std::max(0.0,peer.operation_tail-(stamp-peer.progress_time)));
+        }
+        auto choice=ChooseBorrowComposition(r.threads,r.threads+extra,serial,parallel,error,restart,other);
+        if(choice.threads<=r.threads) {++work_cost;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        int reserve=choice.threads-r.threads;
+        for(int c=0;c<shared->cpus;++c) {
+            if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
+            if(reserve && shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) {
+                shared->reserved[c]=me+1;--reserve;++work_reserved;
+            }
+        }
+        if(reserve) fail("操作借核预留数量不一致");
+        checkpoint_old_threads=r.threads;++checkpoint_restarts;++work_grants;
+        work_gain_estimate+=choice.gain;work_restart_estimate+=restart;
+        unlock();checkpoint_seconds+=now()-stamp;return 1;
+    }
     int poll_work(double work,int remaining,double last,double restart) {
         if(!work_policy() && !phaseaware_policy()) return 0;
         if(!std::isfinite(work) || work<=0 || !std::isfinite(last) || last<0 ||
@@ -436,35 +493,7 @@ public:
         int extra=0;
         for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) ++extra;
-        if(mode==14) {
-            // Learn from completed operations, price every available core count,
-            // and charge the measured team restart plus prediction residuals.
-            if(last>0) r.model[r.phase].observe(r.threads,work,last);
-            if(r.phase!=6 || remaining<1 || last<=0) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
-            if(!extra) {++work_no_capacity;unlock();checkpoint_seconds+=now()-stamp;return 0;}
-            const auto & model=r.model[r.phase];double a,b;model.coefficients(a,b);
-            double fraction=(a+b/r.threads)>0?a/(a+b/r.threads):1;
-            double other=0;
-            for(int i=0;i<size;++i) if(i!=me) {
-                const auto & peer=shared->rank[i];
-                if(peer.active && peer.remaining>0 && peer.last_operation>0)
-                    other=std::max(other,std::max(0.0,peer.last_operation*peer.remaining-(stamp-peer.progress_time)));
-            }
-            auto choice=ChooseBorrowTarget(r.threads,r.threads+extra,remaining,last,restart,
-                                           fraction,model.error*work*remaining,other);
-            if(choice.threads<=r.threads) {++work_cost;unlock();checkpoint_seconds+=now()-stamp;return 0;}
-            int reserve=choice.threads-r.threads;
-            for(int c=0;c<shared->cpus;++c) {
-                if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
-                if(reserve && shared->owner[c]<0 && shared->reserved[c]==0 && shared->rank[shared->home[c]].done) {
-                    shared->reserved[c]=me+1;--reserve;++work_reserved;
-                }
-            }
-            if(reserve) fail("在线借核预留数量不一致");
-            checkpoint_old_threads=r.threads;++checkpoint_restarts;++work_grants;
-            work_gain_estimate+=choice.gain;work_restart_estimate+=restart;
-            unlock();checkpoint_seconds+=now()-stamp;return 1;
-        }
+        if(mode==14) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
         bool grant=false;
         if(r.work_granted) ++work_already;
         else if(r.phase!=6 || remaining<0 || last<=0) ++work_unknown;
@@ -600,7 +629,7 @@ public:
         if(maximum<=0) maximum=shared->cpus-size+1;
         int cap=std::min(maximum,mode==0?base:free);
         int target=force_base?std::min(base,cap):cap;
-        if(mode==14 && !checkpoint_old_threads) target=std::min(base,cap);
+        if(mode==14 && phase==6 && !checkpoint_old_threads) target=std::min(base,cap);
         // Critical-path evidence shows lending in generation/repair is counterproductive
         // at high rank counts, while phase 6 optimization benefits. Keep all other
         // parallel phases at the protected base; phase 5 is forced serial below.
@@ -666,7 +695,7 @@ public:
             if(shared->owner[c]==me && shared->cpu[c]!=shared->anchor[me] &&
                (!protected_base() || stage_policy() || shared->home[c]!=me)) shared->owner[c]=-1;
         if(mode!=14) r.model[phase].observe(threads,work,seconds);
-        r.active=0;r.threads=1;
+        r.active=0;r.threads=1;r.operation_tail=0;
         pthread_cond_broadcast(&shared->changed);unlock();borrow_seconds+=borrowed*seconds;lease_seconds+=threads*seconds;
         phase_seconds+=seconds;management+=now()-start;
         auto &ps=phase_stats[phase];ps.seconds+=seconds;
@@ -690,6 +719,8 @@ public:
         cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);
     }
     template<class Profiler> void report(Profiler &p,bool include_stage=true) const {
+        p.set_metric("coop_operation_other_checks",operation_other_checks);
+        p.set_metric("coop_operation_other_restarts",operation_other_restarts);
         const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};
         const double stage_values[]={stage_waits,stage_wait_seconds,stage_early_epochs,stage_early_cores,stage_reclaims,stage_shrinks,stage_unchanged,stage_no_change,node_phase_idle,node_early_loan};
         if(include_stage) for(int i=0;i<10;++i) p.set_metric(std::string("coop_stage_")+stage_names[i],stage_values[i]);

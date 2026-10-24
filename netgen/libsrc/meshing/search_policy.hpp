@@ -23,6 +23,12 @@ struct SearchEstimate {
 struct SearchProfile {
   SearchEstimate serial, parallel, copy, overhead;
   std::vector<SearchEstimate> rules;
+  std::vector<int> order;
+  unsigned long long calls=0;
+  // Logarithmic observation budget per structural bucket. Normal calls reuse
+  // the learned ordering; they do not time every cheap rejected rule.
+  bool Sample() {++calls;return (calls & (calls-1))==0;}
+
 };
 struct SearchAssignment {
   std::vector<int> local, remote;

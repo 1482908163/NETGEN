@@ -11,6 +11,14 @@ int main() {
     assert(ChooseBorrowTarget(4,16,100,.1,.001,0,0,20).threads==4);
     assert(ChooseBorrowTarget(4,16,100,.1,.001,0,10,0).threads==4);
     assert(ChooseBorrowTarget(4,16,100,std::numeric_limits<double>::quiet_NaN(),0,0,0,0).threads==4);
+    using mesh_node::ChooseBorrowComposition;
+    assert(ChooseBorrowComposition(4,16,0,.004,0,.003,0).threads==4);
+    assert(ChooseBorrowComposition(4,16,100,0,0,0,0).threads==4);
+    assert(ChooseBorrowComposition(4,16,0,40,1,.01,0).threads==16);
+    assert(ChooseBorrowComposition(4,16,0,40,1,.01,20).threads==4);
+    netgen::SearchProfile budget;int samples=0;
+    for(int i=0;i<1024;++i) samples+=budget.Sample();
+    assert(samples==11);
     std::vector<double> cost{9,8,7,6,5,4,3,2,1};
     auto local=netgen::AssignSearch(cost,2,false);
     auto remote=netgen::AssignSearch(cost,2,true);

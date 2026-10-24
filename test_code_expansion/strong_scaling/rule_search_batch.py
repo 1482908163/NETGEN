@@ -13,13 +13,14 @@ import tempfile
 import time
 
 SCHEDULERS = ('node_original', 'node_fixed', 'node_elastic', 'node_rules_fixed', 'node_rules_elastic')
-JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full')
+JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full','node_search_elastic')
 CONTRIBUTIONS = ('rule_search_fixed', 'rule_search_elastic', 'rule_search_borrowing', 'rule_search_total')
 JOINT_CONTRIBUTIONS = ('search_adaptive','search_protocol','search_remote','search_online',
-                       'search_remote_online','search_incremental','search_total')
+                       'search_remote_online','search_incremental','search_total','search_previous','search_order_elastic','search_model')
 LABELS = dict(zip(CONTRIBUTIONS, ('固定核规则并行', '借核基础上规则并行', '规则并行基础上借核', '相对原程序总收益')))
-LABELS.update(zip(JOINT_CONTRIBUTIONS,('实测代价自适应搜索','跨节点协议开销','跨节点搜索增量',
-                                     '在线借核增量','在线借核上的跨节点增量','相对原借核增量','联合方案总收益')))
+LABELS.update(zip(JOINT_CONTRIBUTIONS,('规则搜索策略增量','跨节点协议开销','跨节点搜索增量',
+                                     '在线借核增量','在线借核上的跨节点增量','相对原借核增量','联合方案总收益',
+                                     '相对上轮规则并行与借核','旧借核基础上的搜索排序','同搜索下操作模型净收益')))
 
 
 def atomic(path, content):
@@ -93,11 +94,13 @@ def initialize(root):
                 refines=int(os.environ['REFINES']), start_epoch=int(os.environ['START_EPOCH']),
                 dry_run=os.environ.get('DRY_RUN') == '1',
                 source_revision=os.environ.get('MESH_SOURCE_REVISION', 'manual'),
+                joint_revision='credit_operations_v2' if schedulers==JOINT_SCHEDULERS else None,
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'])
     target = root/'rule_search_batch_plan.json'
     if target.exists():
         old = json.loads(target.read_text())
         old.setdefault('contributions',list(CONTRIBUTIONS))
+        old.setdefault('joint_revision',None)
         ignored = {'start_epoch', 'dry_run'}
         if {k: v for k, v in old.items() if k not in ignored} != {k: v for k, v in plan.items() if k not in ignored}:
             raise ValueError('该结果目录已有不同实验计划，请换用新的 RUN_ROOT')
@@ -139,7 +142,36 @@ def audit_job(root, job, plan):
             value = float(r[field])
             if not math.isfinite(value) or (field != 'paired_reduction_pct' and value <= 0):
                 raise ValueError('无效比较指标：'+field)
+    if plan.get('joint_revision')=='credit_operations_v2':
+        review_joint_records(root,job,plan)
     return audit
+
+
+def review_joint_records(root,job,plan):
+    folder=root/job['group']/('levels'+str(job['levels']))
+    records=[];coverage=[]
+    for scheduler in plan['schedulers']:
+        paths=(folder/f'kernel_{scheduler}_t4'/f"p{job['ranks']}").rglob('analysis_metrics.json')
+        rows=[json.loads(p.read_text())['result'] for p in paths]
+        expected={(seed,i) for seed in plan['seeds'] for i in range(job['repeats']+1)}
+        if len(rows)!=len(expected) or {(r['partition_seed'],r['repeat']) for r in rows}!=expected:
+            raise ValueError('精简结果覆盖不完整：'+scheduler)
+        if any(r.get('post_work_profile')!='rank_counts_v1' or not r.get('scaling_work_sha256') for r in rows):
+            raise ValueError('缺少后续工作量指纹：'+scheduler)
+        records.extend(rows)
+        formal=[r for r in rows if r['repeat']>0]
+        coverage.append(dict(scheduler=scheduler,formal=len(formal),
+            remote_calls=sum(r.get('search_policy_remote_calls',0) for r in formal),
+            ready_received=sum(r.get('search_remote_ready_received',0) for r in formal),
+            cost_rejects=sum(r.get('search_remote_cost_rejects',0) for r in formal),
+            critical_rejects=sum(r.get('search_remote_critical_rejects',0) for r in formal),
+            control_max_seconds=max(r.get('search_remote_control_max_seconds',0) for r in formal)))
+    for seed in plan['seeds']:
+        for key in ('scaling_kernel_work_sha256','scaling_work_sha256','kernel_rules_face_trials',
+                    'kernel_rules_point_trials','kernel_rules_mappings'):
+            if len({r[key] for r in records if r['partition_seed']==seed})!=1:
+                raise ValueError('同种子生成/后续工作量变化：'+key)
+    return coverage
 
 
 def csv_text(rows):
@@ -153,7 +185,7 @@ def csv_text(rows):
 
 
 def summarize(root, plan):
-    jobs, comparisons = [], []
+    jobs, comparisons, coverage = [], [], []
     for job in plan['jobs']:
         record = dict(job, status='未提交（预览）' if plan['dry_run'] else '待运行', detail='')
         state_path = root/job['key']/'rule_search_job_state.json'
@@ -167,6 +199,9 @@ def summarize(root, plan):
                 else:
                     audit = audit_job(root, job, plan)
                     record['status'] = '通过'
+                    if plan.get('joint_revision')=='credit_operations_v2':
+                        for c in review_joint_records(root,job,plan):
+                            coverage.append(dict(group=job['group'],levels=job['levels'],nodes=job['nodes'],**c))
                     for row in audit:
                         comparisons.append(dict(group=job['group'], levels=job['levels'], nodes=job['nodes'],
                                                 ranks=job['ranks'], **row))
@@ -180,6 +215,7 @@ def summarize(root, plan):
     lines = ['规则搜索整批实验汇总', f'状态：{status}；通过 {passed}/{len(jobs)}，失败 {failed}，未完成 {pending}。',
              '各规模独立提交，共享最早启动时刻；每个作业先验证自身预热，再进行正式计时。',
              f"共同最早启动时刻：{plan['start_epoch']}；每节点4进程×4物理核；体细化 {plan['refines']} 次。",
+             '通过仅表示流程与正确性审计完成，不表示性能改善或跨节点组件已覆盖。',
              '预检的一次正式重复只用于流程检查，不作为稳定性能结论。', '',
              '用途 面细化 节点数 进程数 正式重复 状态 结果目录']
     for j in jobs:
@@ -192,6 +228,12 @@ def summarize(root, plan):
             lines.append(f"L{row['levels']}/{row['nodes']}节点/种子{row['seed']} {LABELS[row['contribution']]}："
                          f"加速比 {float(row['speedup']):.4f}；配对耗时下降中位数 {float(row['paired_reduction_pct']):.2f}%；"
                          f"胜出 {row['paired_wins']}/{row['paired_count']}。")
+    for c in coverage:
+        if c['scheduler'] in ('node_search_remote','node_search_full'):
+            lines.append(f"L{c['levels']}/{c['nodes']}节点 {c['scheduler']}：正式远程任务 {c['remote_calls']}；"
+                         f"最大单次控制 {c['control_max_seconds']:.6f}s；"+
+                         ('已发生外派，收益另看配对对照。' if c['remote_calls'] else '未覆盖远程执行，不能声称跨节点收益。'))
+    if plan.get('joint_revision')=='credit_operations_v2': atomic(root/'batch_coverage.csv',csv_text(coverage))
     lines += ['', '详细对照：batch_comparisons.csv；作业状态：batch_jobs.csv。',
               '失败数据保留；负收益不筛除；内部计时存在嵌套，不相加推算核心加速。',
               '硬终止可能无法执行完成回调；未收到完成记录的作业保持未完成，请查看调度日志。']

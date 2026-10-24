@@ -44,7 +44,7 @@ void print_help() {
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware/node_rules_fixed/node_rules_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
-         "联合搜索策略：node_search_local / node_search_idle / node_search_remote / node_search_online / node_search_full" << endl <<
+         "联合搜索策略：node_search_local / node_search_idle / node_search_remote / node_search_online / node_search_full / node_search_elastic" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
          "--cost-weights <a,b,c,d> : 四阶段代价权重，默认1,1,1,1" << endl <<
@@ -317,11 +317,11 @@ int main(int argc, char **argv) {
     const char *rule_profile=std::getenv("RULE_SEARCH_EXPERIMENT");
     int rule_search_mode=rule_profile && std::string(rule_profile)=="1"?0:-1;
     const bool adaptive_search=requested_scheduler=="node_search_local" || requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" ||
-                               requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full";
+                               requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_search_elastic";
     const bool remote_search=requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" || requested_scheduler=="node_search_full";
     const bool online_borrow=requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full";
     if(adaptive_search) {
-        research.kernel_scheduler=online_borrow?"node_online":"node_fixed";
+        research.kernel_scheduler=online_borrow?"node_online":requested_scheduler=="node_search_elastic"?"node_elastic":"node_fixed";
         rule_search_mode=profile_repeat<=0?4:3;
     }
     if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic") {
@@ -462,14 +462,15 @@ int main(int argc, char **argv) {
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
     if(research.kernel_threads>0 && rule_search_mode>=0) {
         profiler.add_metadata("rule_search_profile","rule_search_v1");
+        profiler.add_metadata("post_work_profile","rank_counts_v1");
         profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
         profiler.add_metadata("rule_search_resource","phase0_base_only");
     }
-    if(adaptive_search) profiler.add_metadata("search_policy","measured_rule_cost_v1");
-    if(remote_search) profiler.add_metadata("search_remote","completed_anchor_rma_v1");
+    if(adaptive_search) profiler.add_metadata("search_policy","structural_rule_credit_v2");
+    if(remote_search) profiler.add_metadata("search_remote","completed_anchor_credit_v2");
     if(online_borrow) {
         profiler.add_metadata("node_checkpoints","node_work_v1");
-        profiler.add_metadata("node_work_policy","online_net_benefit_v1");
+        profiler.add_metadata("node_work_policy","operation_composition_v2");
     }
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
     profiler.add_metadata("active_workers",std::to_string(research.mesh_tasks>0?p-1:p));
@@ -742,7 +743,7 @@ int main(int argc, char **argv) {
             search_service.reset(new mesh_search::DistributedSearch(MPI_COMM_WORLD,node_resources->physical_node_id()));
             search_callbacks={search_service.get(),mesh_search::DistributedSearch::OfferCallback,
                               mesh_search::DistributedSearch::StartCallback,mesh_search::DistributedSearch::FinishCallback};
-            if(requested_scheduler!="node_search_idle" && nglib::Ng_SetRuleSearchTransport(&search_callbacks)!=nglib::NG_OK)
+            if(requested_scheduler!="node_search_idle" && nglib::Ng_SetRuleSearchTransportReady(&search_callbacks,mesh_search::DistributedSearch::ReadyCallback)!=nglib::NG_OK)
                 MPI_Abort(MPI_COMM_WORLD,3);
         } catch(const std::exception &e) {std::cerr<<e.what()<<std::endl;MPI_Abort(MPI_COMM_WORLD,3);}
     }
@@ -870,8 +871,11 @@ int main(int argc, char **argv) {
                    research.kernel_scheduler=="node_selective" || research.kernel_scheduler=="node_once"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeStages(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_callback,research.kernel_scheduler=="node_reclaim",kernel_seconds,kernel_details)
+                    : research.kernel_scheduler=="node_online"
+                    ? nglib::Ng_GenerateVolumeMeshCooperativeOperations(submesh,&nmp,research.kernel_threads,&callbacks,
+                        mesh_node::NodeResources::poll_operations_callback,kernel_seconds,kernel_details)
                     : research.kernel_scheduler=="node_budget" || research.kernel_scheduler=="node_priority" ||
-                      research.kernel_scheduler=="node_phaseaware" || research.kernel_scheduler=="node_online"
+                      research.kernel_scheduler=="node_phaseaware"
                     ? nglib::Ng_GenerateVolumeMeshCooperativeWorkAware(submesh,&nmp,research.kernel_threads,&callbacks,
                         mesh_node::NodeResources::poll_work_callback,kernel_seconds,kernel_details)
                     : (research.kernel_scheduler=="node_tail" || research.kernel_scheduler=="node_reserved" || research.kernel_scheduler=="node_elastic")
@@ -901,6 +905,7 @@ int main(int argc, char **argv) {
                     const char *names[]={"decisions","serial","parallel","remote_calls","remote_rules",
                                          "predicted_gain_seconds","remote_wait_seconds","reserved"};
                     for(int k=0;k<8;++k) profiler.set_metric(std::string("search_policy_")+names[k],values[k]);
+                    profiler.set_metric("search_policy_sampled_calls",values[7]);
                 }
                 nglib::Ng_GetVolumeTaskManagerStats(team_after);
                 const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};

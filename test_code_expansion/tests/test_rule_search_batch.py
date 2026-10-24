@@ -82,7 +82,7 @@ print('12345')
         self.assertEqual(state['exit_code'], 125)
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
-    def test_joint_plan_has_ten_strategies_and_seven_contributions(self):
+    def test_joint_plan_has_eleven_strategies_and_ten_contributions(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all')
         self.assertEqual(result.returncode,0,result.stderr)
         calls=self.calls();self.assertEqual(len(calls),5)
@@ -91,6 +91,28 @@ print('12345')
             self.assertEqual(tuple(r['env']['KERNEL_SCHEDULERS'].split()),batch.JOINT_SCHEDULERS)
         plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
         self.assertEqual(tuple(plan['contributions']),batch.JOINT_CONTRIBUTIONS)
+
+    def test_joint_work_evidence_missing_or_changed_is_rejected(self):
+        plan=dict(schedulers=['node_search_local','node_search_full'],seeds=[-1],joint_revision='credit_operations_v2')
+        job=dict(group='main',levels=2,ranks=256,repeats=1)
+        root=self.folder/'review'
+        for scheduler in plan['schedulers']:
+            for rep in (0,1):
+                p=root/'main/levels2'/f'kernel_{scheduler}_t4'/'p256'/f'repeat_{rep}'/'analysis_metrics.json'
+                p.parent.mkdir(parents=True,exist_ok=True)
+                r=dict(partition_seed=-1,repeat=rep,post_work_profile='rank_counts_v1',
+                       scaling_work_sha256='same-post',scaling_kernel_work_sha256='same-kernel',
+                       kernel_rules_face_trials=10,kernel_rules_point_trials=12,kernel_rules_mappings=4)
+                p.write_text(json.dumps(dict(result=r)))
+        coverage=batch.review_joint_records(root,job,plan)
+        self.assertEqual(len(coverage),2)
+        self.assertEqual(coverage[1]['remote_calls'],0)  # Uncovered, not a correctness failure.
+        path=root/'main/levels2/kernel_node_search_full_t4/p256/repeat_1/analysis_metrics.json'
+        data=json.loads(path.read_text());data['result']['scaling_work_sha256']='different'
+        path.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):batch.review_joint_records(root,job,plan)
+        data['result'].pop('scaling_work_sha256');path.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):batch.review_joint_records(root,job,plan)
 
     def test_invalid_configuration_submits_nothing(self):
         result = self.launch(RULE_SEARCH_MAIN_NODES='0')

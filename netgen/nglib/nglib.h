@@ -503,6 +503,10 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeResponsive(Ng_Mesh * mesh,
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeWorkAware(Ng_Mesh * mesh,
     Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
     int (*poll)(void *,double,int,double,double), double * seconds, double * details);
+// Operation-composition policy. Existing callback APIs and entry points remain.
+NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeOperations(Ng_Mesh * mesh,
+    Ng_Meshing_Parameters * mp, int threads, const Ng_VolumeResources * resources,
+    int (*poll)(void *,double,int,double,double,double,const int *), double * seconds, double * details);
 // Stage lending; responsive=1 additionally polls between generation operations.
 // The public Ng_VolumeResources layout remains unchanged.
 NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeStages(Ng_Mesh * mesh,
@@ -523,6 +527,9 @@ struct Ng_RuleSearchTransport {
   const char * (*finish)(void *,int *);
 };
 NGLIB_API Ng_Result Ng_SetRuleSearchTransport(const Ng_RuleSearchTransport * transport);
+// Optional readiness hook without changing the existing transport ABI.
+NGLIB_API Ng_Result Ng_SetRuleSearchTransportReady(const Ng_RuleSearchTransport * transport,
+                                                 int (*ready)(void *));
 // The caller releases returned packet bytes with Ng_FreeRuleSearchPacket.
 NGLIB_API Ng_Result Ng_ExecuteRuleSearchPacket(const char * data,int bytes,char ** output,int * output_bytes);
 NGLIB_API void Ng_FreeRuleSearchPacket(char * data);

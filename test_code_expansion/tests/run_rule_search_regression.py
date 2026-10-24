@@ -16,6 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build-dir', type=Path, required=True)
     parser.add_argument('--reference-sources', type=Path)
+    parser.add_argument('--mpi-prefix',type=Path,help='可选 MPI 安装目录；运行四进程真实规则消息回归')
     args = parser.parse_args()
     build = args.build_dir.resolve()
     repo = Path(__file__).resolve().parents[2]
@@ -76,6 +77,24 @@ def main():
         if fingerprint != oracle:
             raise SystemExit(f'结果不一致：threads={threads}, mode={mode}')
         logs.append(f'threads={threads} mode={mode} remote={remote}\n{out}')
+    if args.mpi_prefix:
+        mpi=args.mpi_prefix.resolve();mpi_binary=output/'rule_search_mpi'
+        invoke([str(mpi/'bin/mpicxx')]+flags(rule)[1:]+['-DNETGEN_SEARCH_MPI_REGRESSION',str(test)]+
+               objects+libs+['-o',str(mpi_binary)])
+        mpi_binary.chmod(mpi_binary.stat().st_mode|0o111)
+        api_binary=output/'search_api'
+        invoke([str(mpi/'bin/mpicxx')]+flags(rule)[1:]+[str(repo/'test_code_expansion/tests/search_api_regression.cpp'),
+               str(build/'libnglib.so')]+libs+['-Wl,-rpath,'+str(build),'-o',str(api_binary)])
+        api_binary.chmod(api_binary.stat().st_mode|0o111)
+        logs.append(subprocess.check_output([str(api_binary)],text=True,cwd=output))
+
+        for mode in (3,4):
+            out=subprocess.check_output([str(mpi/'bin/mpiexec'),'-n','4',str(mpi_binary),'4',str(mode),'1'],
+                                        text=True,cwd=output,timeout=90)
+            if re.search(r'fingerprint=(\w+)',out)[1]!=oracle:
+                raise SystemExit('MPI 远程规则结果与原串行指纹不一致')
+            logs.append(f'real_mpi mode={mode}\n{out}')
+        print('通过：四进程 MPI 真实规则任务，正式与重放两种模式；合成节点身份，非集群性能测试。')
     (output/'results.txt').write_text('\n'.join(logs))
     print(f'通过：{len(cases)} 组顺序/并行/重放、远程消息及资源生命周期检查；指纹 {oracle}。')
     print('父版本源码对照：'+('通过。' if args.reference_sources else '未提供；仅同版本差分。'))

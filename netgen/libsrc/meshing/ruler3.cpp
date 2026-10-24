@@ -258,22 +258,15 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   SearchProfile * profile=adaptive?&search_profiles[bucket]:nullptr;
   const int available=std::min(int(rules.Size()),ngcore::TaskManager::GetNumThreads());
   int workers=available;
+  bool sample=false;
   if(adaptive) {
-    profile->rules.resize(rules.Size());
-    if(!search_dispatch_cost) {
-      const auto t=RuleClock::now();ngcore::ParallelFor(size_t(available),[](size_t){},available);
-      search_dispatch_cost=RuleElapsed(t);
-    }
-    if(!verify) {
-      if(!profile->serial.samples) workers=1;
-      else if(profile->parallel.samples) {
-        if(profile->serial.Lower()<=profile->parallel.Upper()) workers=1;
-      } else {
-        std::vector<double> cost;for(auto & x:profile->rules) cost.push_back(x.Upper());
-        const auto assignment=AssignSearch(cost,available,false);
-        if(profile->serial.Lower()<=assignment.local_seconds+search_dispatch_cost+profile->copy.Upper()) workers=1;
-      }
-    }
+    profile->rules.resize(rules.Size());sample=profile->Sample();
+    // Exact structural concurrency, not a noisy serial-time counterfactual.
+    // Ineligible rules still execute their original checks and diagnostics.
+    int eligible=0;
+    for(auto &rule:rules)
+      eligible+=rule->GetNP(1)==f[0].GetNP() && rule->GetQuality()<=tol;
+    workers=std::min(available,std::max(1,eligible));
     if(stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
   }
   if(stats) stats->AddRule(workers>1?1:3,1);
@@ -288,21 +281,27 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   }
   const double copy_seconds=RuleElapsed(stamp);
   if(stats) stats->AddRule(10,copy_seconds);
-  RuleSearchQueue queue(rules.Size(),adaptive);
+  RuleSearchQueue queue(rules.Size(),sample);
   bool remote=false;
   double packet_seconds=0;
   RulePacket remote_request;
-  if(adaptive) {
-    std::vector<double> cost;for(auto & x:profile->rules) cost.push_back(x.Upper());
-    auto local=AssignSearch(cost,workers,false);queue.order=local.local;
-    // Price a fifth execution lane from measured rule work; remote execution is
-    // serial on an already completed rank's protected anchor CPU.
+  if(adaptive && !profile->order.empty()) queue.order=profile->order;
+  if(adaptive && search_transport && (!search_transport->ready || search_transport->ready(search_transport->context))) {
+    std::vector<double> cost;
+    for(int id=0;id<rules.Size();++id) {
+      const bool eligible=rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol;
+      cost.push_back(eligible?profile->rules[id].Upper():0);
+    }
+    auto local=AssignSearch(cost,workers,false);
     auto distributed=AssignSearch(cost,workers,true,profile->overhead.Upper());
     const double gain=local.local_seconds-std::max(distributed.local_seconds,distributed.remote_seconds);
-    if(workers>1 && standard_rules && search_transport && !distributed.remote.empty() &&
-       gain>0 && search_transport->offer(search_transport->context,gain,
-          std::max(1.0,remaining_faces)*profile->serial.mean,
+    const bool candidate=workers>1 && standard_rules && !distributed.remote.empty() && gain>0;
+    // Consume/decline an arrived credit even on an unprofitable query, so a
+    // completed helper can continue to another client instead of getting stuck.
+    if(search_transport->offer(search_transport->context,candidate?gain:0,
+          std::max(1.0,remaining_faces)*profile->parallel.mean,
           std::max(0.0,distributed.remote_seconds-profile->overhead.Upper()))) {
+      if(!candidate) throw NgException("远程协议接受了无有效任务的查询");
       remote=true;queue.order=distributed.local;
       const auto packing=RuleClock::now();
       remote_request.Put(unsigned(0x52534e31));remote_request.Put(int(rules.Size()));
@@ -346,20 +345,24 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
       covered[id]=true;foundmap[id]+=response.Get<int>();canuse[id]+=response.Get<int>();
       problems[id]=response.Text();queue.seconds[id]=response.Get<double>();}
     response.End();for(bool value:covered) if(!value) throw NgException("远程规则覆盖不完整");
-    profile->overhead.Observe(packet_seconds+RuleElapsed(unpacking));
+    double remote_rule_seconds=0;
+    for(int id=0;id<rules.Size();++id)
+      if(std::find(queue.order.begin(),queue.order.end(),id)==queue.order.end()) remote_rule_seconds+=queue.seconds[id];
+    const double helper_preprocessing=std::max(0.0,results.back()->seconds-remote_rule_seconds);
+    profile->overhead.Observe(packet_seconds+RuleElapsed(unpacking)+helper_preprocessing);
   }
   const double execution_seconds=RuleElapsed(stamp)+copy_seconds;
   if(adaptive) {
-    for(int id=0;id<rules.Size();++id) profile->rules[id].Observe(queue.seconds[id]);
-    profile->copy.Observe(copy_seconds);
-    if(!remote) {
-      (workers==1?profile->serial:profile->parallel).Observe(execution_seconds);
-      // Serial counterfactual from actual rule work plus one worker's repeated
-      // preprocessing, avoiding a permanent cold start after workload changes.
-      double work=std::accumulate(queue.seconds.begin(),queue.seconds.end(),0.0),total=0;
-      for(auto & r:results) total+=r->seconds;
-      if(workers>1) profile->serial.Observe(work+std::max(0.0,(total-work)/workers));
+    if(sample) {
+      std::vector<double> cost;
+      for(int id=0;id<rules.Size();++id) {
+        profile->rules[id].Observe(queue.seconds[id]);cost.push_back(profile->rules[id].Upper());
+      }
+      profile->order=AssignSearch(cost,workers,false).local;
+      if(stats) stats->AddAdaptive(7,1); // sampled calls, separate from rule work
     }
+    profile->copy.Observe(copy_seconds);
+    if(!remote) (workers==1?profile->serial:profile->parallel).Observe(execution_seconds);
   }
   int winner=-1, found=-1;
   double longest=0;
@@ -396,7 +399,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     unsigned long long face=0,point=0,maps=0;
     for(auto & r:results) {face+=r->face_trials;point+=r->point_trials;maps+=r->mappings;}
     same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
-    if(stats) {stats->AddRule(2,1);stats->AddRule(14,RuleElapsed(verify_begin));}
+    if(stats) {stats->AddRule(2,workers>1?1:0);stats->AddRule(14,RuleElapsed(verify_begin));}
     if(!same) {
       if(stats) stats->AddRule(17,1);
       throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+

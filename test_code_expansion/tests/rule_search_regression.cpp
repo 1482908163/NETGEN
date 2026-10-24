@@ -7,6 +7,10 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#ifdef NETGEN_SEARCH_MPI_REGRESSION
+#define NETGEN_SEARCH_PROTOCOL_TEST
+#include "../mesh_occ_mpi/distributed_search.h"
+#endif
 
 using namespace netgen;
 namespace netgen { extern double minother, minwithoutother; }
@@ -29,11 +33,19 @@ int main(int argc,char **argv) {
   const int mode=argc>2?std::atoi(argv[2]):2;
   std::ostringstream diagnostics;
   testout=&diagnostics;testmode=0;printmessage_importance=0;
+#ifdef NETGEN_SEARCH_MPI_REGRESSION
+  int provided,rank;MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if(provided<MPI_THREAD_FUNNELED) MPI_Abort(MPI_COMM_WORLD,1);
+  mesh_search::DistributedSearch service(MPI_COMM_WORLD);service.UseRankAsTestNode();
+  auto execute_packet=[](const char *data,int bytes) {return Meshing3::ExecuteRuleSearchPacket(data,bytes);};
+  if(rank) {service.ServeUntilComplete(execute_packet);MPI_Finalize();return 0;}
+#endif
   Meshing3 mesher(static_cast<const char **>(nullptr));
-  struct Loopback {std::string output;int calls=0;} loopback;
+  struct Loopback {std::string output;int calls=0;void *service=nullptr;} loopback;
   RuleSearchTransport transport;
   transport.context=&loopback;
-  transport.offer=[](void *,double,double,double){return 1;};
+  transport.offer=[](void *,double gain,double,double){return gain>0?1:0;};
   transport.start=[](void *ctx,const char *data,int bytes) {
     auto & state=*static_cast<Loopback*>(ctx);
     if(!state.calls) {
@@ -52,6 +64,24 @@ int main(int argc,char **argv) {
   transport.finish=[](void *ctx,int *bytes)->const char * {
     auto & state=*static_cast<Loopback*>(ctx);*bytes=state.output.size();return state.output.data();
   };
+#ifdef NETGEN_SEARCH_MPI_REGRESSION
+  loopback.service=&service;
+  transport.offer=[](void *ctx,double gain,double,double) {
+    if(gain<=0) return 0;
+    auto &s=*static_cast<mesh_search::DistributedSearch*>(static_cast<Loopback*>(ctx)->service);
+    const double deadline=MPI_Wtime()+20;
+    // Synthetic positive gain tests real geometry transport, NOT performance.
+    while(!s.Offer(100,1000,0)) if(MPI_Wtime()>deadline) MPI_Abort(MPI_COMM_WORLD,2);
+    return 1;
+  };
+  transport.start=[](void *ctx,const char *data,int bytes) {
+    auto &state=*static_cast<Loopback*>(ctx);++state.calls;
+    static_cast<mesh_search::DistributedSearch*>(state.service)->Start(data,bytes);
+  };
+  transport.finish=[](void *ctx,int *bytes) {
+    return static_cast<mesh_search::DistributedSearch*>(static_cast<Loopback*>(ctx)->service)->Finish(bytes);
+  };
+#endif
   const bool remote=argc>3 && std::atoi(argv[3]);
   if(remote) mesher.SetRuleSearchTransport(&transport);
   VolumeKernelStats stats;
@@ -167,6 +197,9 @@ int main(int argc,char **argv) {
   std::cout<<"remote_packets="<<loopback.calls<<" adaptive_serial="<<stats.adaptive_values[1]<<"\n";
   if(remote && !loopback.calls) return 6;
   if(threads>1 && mode>0 && stats.rule_values[1]==0) return 2;
+#endif
+#ifdef NETGEN_SEARCH_MPI_REGRESSION
+  service.ServeUntilComplete(execute_packet);MPI_Finalize();
 #endif
   return successes==0 || retries==0;
 }

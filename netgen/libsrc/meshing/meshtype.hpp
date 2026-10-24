@@ -31,6 +31,7 @@ namespace netgen
     int (*offer)(void *,double,double,double)=nullptr;
     void (*start)(void *,const char *,int)=nullptr;
     const char * (*finish)(void *,int *)=nullptr;
+    int (*ready)(void *) = nullptr; // optional nonblocking readiness check
   };
   // Optional host-side CPU leasing. Callbacks run only on the host thread.
   struct VolumeResources {
@@ -41,6 +42,8 @@ namespace netgen
     int (*poll)(void *) = nullptr; // Host-only, between completed mesh operations.
     int (*poll_work)(void *,double,int,double,double) = nullptr;
     bool generation_checkpoints = false;
+    // Completed operation kind/work and remaining histogram of c,d,D,s,t,m,M,j.
+    int (*poll_operations)(void *,double,int,double,double,double,const int *) = nullptr;
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;
@@ -70,7 +73,8 @@ namespace netgen
     int phase, fallback;
     std::unique_ptr<VolumeResourceScope> lease;
     std::unique_ptr<ngcore::RegionTaskManager> team;
-    int previous_remaining=-1;
+    int previous_remaining=-1,previous_operation=-1;
+    double previous_work=0,completed_seconds=-1;
     double restart_seconds=0;
     std::chrono::steady_clock::time_point checkpoint_stamp;
     void start(double work) {
@@ -84,16 +88,23 @@ namespace netgen
       checkpoint_stamp=std::chrono::steady_clock::now();
       restart_seconds=std::chrono::duration<double>(checkpoint_stamp-begin).count();
     }
-    void Checkpoint(double work,int remaining=-1) {
+    void OperationCompleted() {
+      if(resources && resources->poll_operations)
+        completed_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-checkpoint_stamp).count();
+    }
+    void Checkpoint(double work,int remaining=-1,int operation=-1,const int *counts=nullptr) {
       if(!resources) return;
       auto stamp=std::chrono::steady_clock::now();
       // Only consecutive regular optimization operations supply an observation.
       double last=(remaining>=0 && previous_remaining==remaining+1)
         ? std::chrono::duration<double>(stamp-checkpoint_stamp).count() : 0;
-      bool refresh=resources->poll_work
+      bool refresh=resources->poll_operations
+        ? resources->poll_operations(resources->context,work,previous_operation,previous_work,
+            previous_operation>=0 && completed_seconds>=0?completed_seconds:0,restart_seconds,counts)
+        : resources->poll_work
         ? resources->poll_work(resources->context,work,remaining,last,restart_seconds)
         : resources->poll && resources->poll(resources->context);
-      previous_remaining=remaining;
+      previous_remaining=remaining;previous_operation=operation;previous_work=work;completed_seconds=-1;
       if(refresh) {
         team.reset();lease.reset();start(work);
         restart_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-stamp).count();

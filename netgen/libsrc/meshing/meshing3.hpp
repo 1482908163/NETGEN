@@ -40,7 +40,6 @@ class Meshing3
   bool standard_rules=false;
   const RuleSearchTransport * search_transport=nullptr;
   std::map<int,SearchProfile> search_profiles;
-  double search_dispatch_cost=0;
   int ApplyRulesImpl(Array<Point3d, PointIndex> & lpoints,
                     Array<int, PointIndex> & allowpoint,
                     Array<MiniElement2d> & lfaces, INDEX lfacesplit,

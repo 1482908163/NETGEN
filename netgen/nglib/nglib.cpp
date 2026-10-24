@@ -425,6 +425,11 @@ namespace nglib
      if(transport) rule_transport={transport->context,transport->offer,transport->start,transport->finish};
      return NG_OK;
    }
+   NGLIB_API Ng_Result Ng_SetRuleSearchTransportReady(const Ng_RuleSearchTransport * transport,int (*ready)(void *)) {
+     auto status=Ng_SetRuleSearchTransport(transport);
+     if(status==NG_OK && transport) rule_transport.ready=ready;
+     return status;
+   }
    NGLIB_API void Ng_GetVolumeSearchPolicyStats(double * values) {
      if(values) std::copy_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,values);
    }
@@ -562,6 +567,16 @@ namespace nglib
      if(!resources || !resources->acquire || !resources->release || !poll || !details) return NG_ERROR;
      VolumeResources adapter{resources->context,resources->acquire,resources->release};
      adapter.grouped_repair=true;adapter.poll_work=poll;
+     return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
+   }
+
+   NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeOperations(Ng_Mesh * mesh,
+       Ng_Meshing_Parameters * mp,int threads,const Ng_VolumeResources * resources,
+       int (*poll)(void *,double,int,double,double,double,const int *),double *seconds,double *details)
+   {
+     if(!resources || !resources->acquire || !resources->release || !poll || !details) return NG_ERROR;
+     VolumeResources adapter{resources->context,resources->acquire,resources->release};
+     adapter.grouped_repair=true;adapter.poll_operations=poll;
      return GenerateVolumeKernelImpl(mesh,mp,threads,2,seconds,details,&adapter);
    }
 

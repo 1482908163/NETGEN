@@ -1,0 +1,101 @@
+{
+  "schema": "credit_operations_validation_v1",
+  "date": "2026-10-24",
+  "parent": "0f7662340e529877eeea4d2d362cc3d52682ccb1",
+  "checks": {
+    "kernel_build": {
+      "USE_MPI": false,
+      "USE_OCC": false,
+      "passed": true
+    },
+    "kernel_differential": {
+      "cases": 14,
+      "fingerprint": "6d770e28fdeae775",
+      "original_source_oracle": true,
+      "passed": true
+    },
+    "mpi_geometry": {
+      "ranks": 4,
+      "modes": [
+        3,
+        4
+      ],
+      "synthetic_topology_and_gain": true,
+      "passed": true,
+      "remote_packets": [
+        30,
+        33
+      ]
+    },
+    "mpi_protocol": {
+      "ranks": 4,
+      "mpi": "MPICH 3.4.3",
+      "passed": true,
+      "output": "协议场景 0 通过：请求 0，进程 4\n协议场景 1 通过：请求 12，进程 4\n协议场景 2 通过：请求 36，进程 4\n协议场景 3 通过：请求 0，进程 4\n协议场景 4 通过：请求 0，进程 4"
+    },
+    "node_resources": {
+      "ranks": 4,
+      "cpus": 8,
+      "passed": true,
+      "output": "通过：异构操作与未知类型、小任务拒绝、两次增核、早期阶段借核、无核重叠。"
+    },
+    "public_api": {
+      "old_transport_layout_preserved": true,
+      "callback_link_check": true,
+      "passed": true
+    },
+    "python_rule_and_batch_tests": {
+      "count": 23,
+      "passed": true
+    },
+    "runner_cleanup_resume": {
+      "passed": true,
+      "output": "PASS: Slurm spool path, failure continuation, warmup filtering, compressed resume, lossless analysis, cleanup opt-out, failure/active/symlink protection, configuration guard"
+    },
+    "node_scaling": {
+      "passed": true,
+      "output": "node scaling summary: pairing, workload, quality, pending and failure checks passed without build stamps\npre-refine workload: actual counts and missing-data checks passed"
+    },
+    "historical_results": {
+      "runs": 260,
+      "unchanged": true,
+      "paired_reductions_pct": [
+        11.91,
+        -7.79,
+        -4.19,
+        -10.08
+      ]
+    }
+  },
+  "limitations": [
+    "未构建或运行超算 MPI-X/OCC 完整应用",
+    "合成节点身份测试不代表真实跨节点性能",
+    "本地通过不确认性能收益或论文新颖性"
+  ],
+  "source_sha256": {
+    "netgen/libsrc/meshing/meshfunc.cpp": "5be3ea0eb5b9dbe147efada3abd0b6aa1365fc4e80cb614cc6e2a6a8a01957cf",
+    "netgen/libsrc/meshing/meshing3.hpp": "17749f536d3c6064f1a102790e59023095e57a8c3a4e0c0ef453b7c977467a18",
+    "netgen/libsrc/meshing/meshtype.hpp": "e328783d1135124e246dfb7b6182a9d25825bdfa9a455efe6d8eea2756282c1e",
+    "netgen/libsrc/meshing/ruler3.cpp": "f84d6d479de27bfa33fff17e454d64e3697f527d6866adaa791377be352064b9",
+    "netgen/libsrc/meshing/search_policy.hpp": "5e9781c0a00e803927037c0fdf92f3f9aa38ee1a2d45fe52b8f20c61e92c8356",
+    "netgen/nglib/nglib.cpp": "4e99de401caf68ff152b9afa2ae71c50208cd4ab046f5e6f6680a7b17b54ca48",
+    "netgen/nglib/nglib.h": "e684f5aae6634507a56c92d36dba296a94b64d43ffc5110c9abb1e293574b794",
+    "test_code_expansion/mesh_occ_mpi/distributed_search.h": "25202b240f5812f22c8faa8161d6f7744cbc65399cd75125160385ad2a2746bc",
+    "test_code_expansion/mesh_occ_mpi/node_resources.h": "825c099898a96dafef7e975ac975bc8a317d4c1eadcfb53bf2e9c3574444b6c1",
+    "test_code_expansion/mesh_occ_mpi/occmesh_MPI_main.cpp": "e07c982e6a5494638e1b7d6b7e550bf86a500a39baca64d6381ce3f1b0449fcb",
+    "test_code_expansion/mesh_occ_mpi/online_borrow.h": "f1bc48543385da830e367c51a25e2092cd215b0f9a828103614e02e8e0505c4e",
+    "test_code_expansion/strong_scaling/analyze_joint_search.py": "069c65f5e016b6949c6ccd88f7d493b46310b83e3e88121d5c68520f4c5d49ca",
+    "test_code_expansion/strong_scaling/analyze_results.py": "686d10df3e5d7e98bd1baf8e1d4803215528cff4e5eb50ebd69b0d7f60b4c2ca",
+    "test_code_expansion/strong_scaling/node_affinity_yhrun.sh": "965a1c7aea0e145c36cf2108c05b2eb7a8e3c124c0b9c902ded86f989c9c5171",
+    "test_code_expansion/strong_scaling/rule_search_batch.py": "e762b84ba516d5f41f8cb975d2a186f99477d770080462ef75618a40f2f4f68d",
+    "test_code_expansion/strong_scaling/run_experiments.sh": "f69e4e40712f9f7be4c21cf04f964babb211e7dc31d53d2c46973bd779b6e68f",
+    "test_code_expansion/tests/distributed_search_regression.cpp": "77368c8c06fb3f9cc284dd6397cc9cd027f8660639b9dec9f14766831efbaa7b",
+    "test_code_expansion/tests/online_borrow_regression.cpp": "47547044410c3ead764b80d7956075c508c592128f69332b863e74c4eb3460ac",
+    "test_code_expansion/tests/rule_search_regression.cpp": "6cc6f4e7c5a4a695a7345b8ec69a175f936fdf15df101241f6b6047851f67b1c",
+    "test_code_expansion/tests/run_rule_search_regression.py": "61baabaf8073e8f937d1684f35d5a0d485ede9f18017b2c906248e10a6c7c1ac",
+    "test_code_expansion/tests/search_policy_regression.cpp": "acc1c7433ea3d6f94535d9896cb16e21826fd39b5b388bbdbf05963965555d73",
+    "test_code_expansion/tests/test_rule_search_analysis.py": "9a778fbe4b39bddd089617742cce8546f85373d5b5379c9f531bb28f4044c0c4",
+    "test_code_expansion/tests/test_rule_search_batch.py": "84e699ae6a8389411513b36752a44b04982ccef5d815abfc72d5f133d0553571",
+    "test_code_expansion/tests/search_api_regression.cpp": "12efaaef5abcffff10e78890b87216d19de71577fd59cdb2693cfa9c4a10c506"
+  }
+}

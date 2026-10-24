@@ -82,6 +82,26 @@ class RuleSearchAudit(unittest.TestCase):
                 rows,meta=self.joint_fixture();rows[0]['metrics'][key]=value
                 with self.assertRaises(ValueError):analyze.inspect_search_policy(rows,meta)
 
+    def test_credit_termination_requires_every_credit_consumed(self):
+        rows,meta=self.joint_fixture();meta['search_remote']='completed_anchor_credit_v2'
+        for r in rows:r['metrics'].update({k:0 for k in analyze.SEARCH_CREDIT_METRICS})
+        rows[0]['metrics']['search_remote_ready_sent']=2
+        rows[1]['metrics']['search_remote_ready_received']=2
+        analyze.inspect_search_policy(rows,meta)
+        rows[1]['metrics']['search_remote_ready_received']=1
+        with self.assertRaises(ValueError):analyze.inspect_search_policy(rows,meta)
+
+    def test_post_work_fingerprint_catches_ghost_change_and_rank_swap(self):
+        keys=('local_points_before_adjacency','local_surface_elements_before_adjacency',
+              'local_volume_elements_before_adjacency','ghost_points_added','ghost_volume_elements_added')
+        rows=[{'rank':i,'metrics':dict.fromkeys(keys,i+1)} for i in range(2)]
+        original=analyze.post_work_fingerprint(rows)
+        self.assertEqual(original,analyze.post_work_fingerprint(list(reversed(rows))))
+        rows[0]['metrics']['ghost_points_added']+=1
+        self.assertNotEqual(original,analyze.post_work_fingerprint(rows))
+        rows[0]['metrics']['ghost_points_added']=float('nan')
+        with self.assertRaises(ValueError):analyze.post_work_fingerprint(rows)
+
     def test_local_cannot_offload(self):
         rows,meta=self.joint_fixture()
         with self.assertRaises(ValueError):analyze.inspect_search_policy(rows,{})

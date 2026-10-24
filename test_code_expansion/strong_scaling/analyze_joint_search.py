@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""离线复核十策略联合实验，补算旧最佳基线和组件净收益；不运行网格、不清理源数据。"""
+"""离线复核联合实验，补算旧最佳基线和组件净收益；不运行网格、不清理源数据。"""
 import argparse
 import csv
 import json
@@ -85,14 +85,15 @@ def analyze(root, output):
             check(set(records)==expected,'运行覆盖不完整：'+job['key']+'/'+name)
             runs[name]=records
         for seed in plan['seeds']:
-            for field in WORK:
+            for field in WORK + (('scaling_work_sha256',) if any(r.get('post_work_profile')=='rank_counts_v1' for r in job_results) else ()):
                 check(len({r[field] for r in job_results if r['partition_seed']==seed})==1,
                       '同种子工作量/搜索工作变化：'+job['key']+'/'+field)
             for field in ('surface_fingerprint_sha256','volume_fingerprint_sha256'):
                 check(len({q[field] for q in qualities if q['seed']==seed})==1,
                       '同种子预热几何指纹变化：'+job['key']+'/'+field)
             common=dict(group=job['group'],levels=job['levels'],nodes=job['nodes'],ranks=job['ranks'],seed=seed)
-            for label,control,candidate in PAIRS:
+            pairs=PAIRS + ((('search_model','node_search_elastic',O),('search_order_elastic','node_rules_elastic','node_search_elastic')) if 'node_search_elastic' in runs else ())
+            for label,control,candidate in pairs:
                 aa=[runs[control][seed,i]['core_seconds'] for i in range(1,job['repeats']+1)]
                 bb=[runs[candidate][seed,i]['core_seconds'] for i in range(1,job['repeats']+1)]
                 delta=[100*(a-b)/a for a,b in zip(aa,bb)]
