@@ -27,6 +27,12 @@ EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-search_joint_all}"
 if [[ "${EXPERIMENT_PRESET}" == search_joint_all ]]; then
     export SEARCH_JOINT_EXPERIMENT=1
     export KERNEL_SCHEDULERS="node_original node_fixed node_elastic node_rules_fixed node_rules_elastic node_search_local node_search_idle node_search_remote node_search_online node_search_full node_search_elastic"
+    export SEARCH_FOCUSED="${SEARCH_FOCUSED:-1}"
+    if [[ "${SEARCH_FOCUSED}" == 1 ]]; then
+        export KERNEL_SCHEDULERS="node_fixed node_rules_fixed node_rules_elastic node_search_local node_search_elastic node_search_online node_search_full"
+        export RULE_SEARCH_MAIN_NODES="${RULE_SEARCH_MAIN_NODES:-64}"
+        export RULE_SEARCH_MAIN_REPEATS="${RULE_SEARCH_MAIN_REPEATS:-3}"
+    fi
     EXPERIMENT_PRESET=rule_search_all
 fi
 # 本轮总实验配置：直接执行本脚本即可；节点数会自动换算为进程数。
@@ -617,13 +623,22 @@ SIGNATURE
                 failures=$((failures+1))
                 # run.log 已在用户的忽略规则中；另存不超过64KiB的可上传故障摘要。
                 python3 - "${out}" "$rc" <<'FAILURE'
-import pathlib,sys
+import pathlib,sys,re,collections,json
 folder=pathlib.Path(sys.argv[1])
+stages=collections.defaultdict(set)
+with (folder/'run.log').open(errors='replace') as stream:
+    for line in stream:
+        match=re.search(r'\[EXIT_CHECKPOINT\] rank=(\d+) stage=([\w.]+)',line)
+        if match: stages[match[2]].add(int(match[1]))
+counts={k:len(v) for k,v in stages.items()}
+# Checkpoints locate the last observed phase, not the cause of a kill/timeout.
+header='收尾各阶段已观测进程数：'+json.dumps(counts,ensure_ascii=False)+'\n'
+
 with (folder/'run.log').open('rb') as stream:
     stream.seek(0,2)
     stream.seek(max(0,stream.tell()-65536))
     tail=stream.read().decode('utf-8',errors='replace')
-(folder/'failure_summary.txt').write_text('退出码：'+sys.argv[2]+'\n'+tail)
+(folder/'failure_summary.txt').write_text('退出码：'+sys.argv[2]+'\n'+header+tail)
 FAILURE
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"

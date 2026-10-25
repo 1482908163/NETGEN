@@ -380,6 +380,8 @@ SEARCH_CREDIT_METRICS = tuple('search_remote_'+k for k in (
 
 SEARCH_SUBTREE_METRICS=tuple('search_subtree_'+k for k in ('calls','tasks','setup_seconds','wall_seconds','replay_face_trials','replay_point_trials'))
 SEARCH_DEMAND_METRICS=tuple('search_remote_'+k for k in ('demand_sent','demand_received','event_waits','event_wait_seconds'))
+OPERATION_V4_METRICS=tuple('coop_operation_'+k for k in ('matched','unmatched','resolved','blocked'))
+SEARCH_SIZE_METRICS=('search_remote_latency_seconds','search_remote_seconds_per_byte')
 OPERATION_V3_METRICS=tuple('coop_operation_'+k for k in ('partial','explores','rollbacks','trial_debt_seconds','unknown_types','missing_plan'))
 
 CRITICAL_METRICS = (
@@ -394,7 +396,7 @@ CRITICAL_METRICS = (
     'face_complete_elapsed','vertex_arrival_elapsed','coop_checkpoint_restarts',
     'coop_checkpoint_grants','coop_borrowed_core_seconds','coop_management_seconds',
     'coop_timeline_start_seconds','coop_timeline_finish_seconds','coop_timeline_first_loan_seconds',
-    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS + SEARCH_POLICY_METRICS + SEARCH_REMOTE_METRICS + SEARCH_CREDIT_METRICS + ('coop_operation_other_checks','coop_operation_other_restarts','search_policy_sampled_calls') + SEARCH_SUBTREE_METRICS + SEARCH_DEMAND_METRICS + OPERATION_V3_METRICS + tuple('coop_work_'+k for k in ('checks','unknown','cost','deferred','no_capacity','grants','gain_estimate_seconds','restart_estimate_seconds'))
+    'coop_timeline_last_loan_seconds','coop_timeline_loan_events') + FRONT_PROFILE_METRICS + RULE_SEARCH_METRICS + SEARCH_POLICY_METRICS + SEARCH_REMOTE_METRICS + SEARCH_CREDIT_METRICS + ('coop_operation_other_checks','coop_operation_other_restarts','search_policy_sampled_calls') + SEARCH_SUBTREE_METRICS + SEARCH_DEMAND_METRICS + OPERATION_V3_METRICS + OPERATION_V4_METRICS + SEARCH_SIZE_METRICS + tuple('coop_work_'+k for k in ('checks','unknown','cost','deferred','no_capacity','grants','gain_estimate_seconds','restart_estimate_seconds'))
 CRITICAL_PHASES = tuple(f'coop_phase_{phase}_{field}' for phase in range(8)
     for field in ('epochs','seconds','borrowed_core_seconds','min_threads','max_threads'))
 CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kernel_repair_seconds',
@@ -798,6 +800,16 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
     result.update(volume_workload_metrics(rows))
+    if metadata.get('search_revision')=='matched_tasks_v4':
+        result['search_revision']='matched_tasks_v4'
+        extra=()
+        if metadata.get('node_work_policy')=='operation_exploration_v3': extra+=OPERATION_V4_METRICS
+        if metadata.get('search_remote')=='completed_anchor_demand_v3': extra+=SEARCH_SIZE_METRICS
+        for key in extra:
+            values=[row.get('metrics',{}).get(key) for row in rows]
+            if any(v is None or not math.isfinite(v) or v<0 for v in values):
+                raise ValueError('missing or invalid matched-task diagnostic: '+key)
+            result[key]=sum(values)
     if metadata.get('search_policy')=='ordered_subtree_demand_v3' or metadata.get('rule_search_profile')=='rule_search_v1':
         result['surface_levels']=int(metadata['numlevels'])
         result['volume_refines']=int(metadata['numrefine'])
@@ -1571,6 +1583,25 @@ def kernel_overview(root, ranks):
     (out/'kernel_issues.txt').write_text('\n'.join(issues)+('\n' if issues else ''))
     if issues: raise SystemExit(1)
 
+def aggregate_metrics(group):
+    """仅聚合有限数值；字符串标签单独保留，不对其求中位数。"""
+    excluded = {'algorithm', 'timing', 'ranks', 'partition_seed', 'repeat',
+                'core_seconds', 'task_signature', 'coop_timeline_critical_rank'}
+    result = {}
+    for name in sorted(set().union(*(r.keys() for r in group))):
+        if name.startswith('scaling_') or name in excluded:
+            continue
+        values = [r[name] for r in group if r.get(name) is not None]
+        if not values:
+            continue
+        if all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) for v in values):
+            result[name+'_median'] = st.median(values)
+        elif all(isinstance(v, str) for v in values):
+            labels = sorted(set(values))
+            result[name] = labels[0] if len(labels) == 1 else json.dumps(labels, ensure_ascii=False)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
@@ -1668,11 +1699,7 @@ def main():
         values = [r["core_seconds"] for r in group]
         summary = dict(algorithm=algorithm, timing=timing, ranks=ranks, partition_seed=seed, successful_repeats=len(group),
                        core_median=st.median(values), core_cv=st.stdev(values)/mean(values) if len(values)>1 else None)
-        for name in runs[0]:
-            if name.startswith("scaling_") or name in ("algorithm", "timing", "ranks", "partition_seed", "repeat", "core_seconds", "task_signature", "coop_timeline_critical_rank"):
-                continue
-            present = [r[name] for r in group if r.get(name) is not None]
-            summary[name+"_median"] = st.median(present) if present else None
+        summary.update(aggregate_metrics(group))
         base = groups.get(("baseline", timing, ranks, seed))
         summary["speedup_vs_baseline"] = st.median(r["core_seconds"] for r in base)/summary["core_median"] if base else None
         sparse=groups.get(("sparse",timing,ranks,seed))

@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-26",
+  "parent_revision": "ab1a27ef23296382056e580e4f51494f94c346fe",
+  "recovered_source_tree": "054d4406d79a909087442295fe8d346349a22a26",
+  "status": "本地实现和验证完成；完整超算构建、性能及退出故障根因待验证",
+  "kernel": {
+    "cases": 18,
+    "forced_replays": 3600,
+    "fingerprint": "6d770e28fdeae775",
+    "mpi_geometry_modes": 2
+  },
+  "protocol": {
+    "ranks": 4,
+    "scenario_tasks": [
+      0,
+      12,
+      36,
+      0,
+      0
+    ]
+  },
+  "borrowing": {
+    "ranks": 4,
+    "cpus": 8,
+    "checks": [
+      "不同类型/工作量不误计损失",
+      "重复负收益回退",
+      "新类型恢复试探",
+      "实测收益确认",
+      "核绑定不重叠"
+    ]
+  },
+  "python_audits": 26,
+  "runner_integration": "passed",
+  "node_scaling": "passed",
+  "historical_partial_reanalysis": {
+    "successful_repeats": 4,
+    "repeats": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "core_median": 75.46137007499988,
+    "post_work_profile": "rank_counts_v1"
+  },
+  "default_batch": {
+    "jobs": 3,
+    "nodes": [
+      64
+    ],
+    "surface_levels": [
+      2,
+      4
+    ],
+    "volume_refines": 2,
+    "strategies": 7,
+    "warmups": 21,
+    "formal": 49,
+    "total": 70
+  },
+  "log_sha256": {
+    "build-final.log": "0ec36481d21d3850242c51f4592a8ceafc85adbfb60d47219dd762a420841e15",
+    "kernel-tests.log": "2e4b7574104d7f8211687279ab42010d121220dd9d90c35a3a2b12d1972c853d",
+    "protocol-tests.log": "cb85f5260fd376c281ac254ebe74cb44b0c203495202897aaec9ccf83d3548f8",
+    "borrow-tests.log": "9810fa875927a355816ee8273b9bf1cdb061afa52889a52f0e1b7d4af676afb3",
+    "python-tests.log": "b898479db871045195766ca69d88328514e95b40ef1f89baad2ac23df12ff2e8",
+    "runner-tests.log": "0b48bd1a5ede603288ae4b9c72e71d3181898de18f01195573bddc5e2367d786",
+    "scaling-tests.log": "c627d2616e921135d5044e6055ed43807bcbb317edb097a33171acb8d46c8701",
+    "partial-reanalysis.log": "e184372a58aef0a3de9ae13e6055d3f269b6ea5d9f9951b56fff19875e8356f4"
+  },
+  "tested_file_sha256": {
+    "netgen/libsrc/meshing/meshtype.hpp": "680dcf9bda51419707eed1a1802e41dab5cada0f1f14056e08959843e64dec28",
+    "netgen/libsrc/meshing/ruler3.cpp": "b57f84e501538e4cf82e806b86b3df346fed168438fc87db8f8de070f69416ed",
+    "netgen/nglib/nglib.cpp": "4279df5062f5d2b940354549cec159c50f6750f65264ccc8ce7685cccee33680",
+    "netgen/nglib/nglib.h": "9077f68ac3e5c7b470cfa93d1524af5520ebfd7568155c73ebc408a2c2ce2522",
+    "test_code_expansion/docs/research_log.md": "0e175bdc633c309d17843cf94c73bdbdbeb02d241bc5ec03903bb35798549090",
+    "test_code_expansion/mesh_occ_mpi/distributed_search.h": "f12512988f905f66668f076f36a9f5681f15ffc43581ebf5c8e7214910009058",
+    "test_code_expansion/mesh_occ_mpi/mpi_debug.h": "698523db7db9b48f1fb0fff7109a6302ab9468eacff00f673f282cd8cc496f4e",
+    "test_code_expansion/mesh_occ_mpi/node_resources.h": "4424e0b4cfb6de3b73d73e32ceb3a5e3b505de7890c132f5a74f8584ce56df09",
+    "test_code_expansion/mesh_occ_mpi/occmesh_MPI_main.cpp": "1bff9b9c5c374eb93a6ddb1a017a6986ea727a50a47db951d6923aa2e5b1c1e6",
+    "test_code_expansion/strong_scaling/analyze_results.py": "b55cfc37c078de6d9591d8ada6f47c4d38136652680755635b011052fe21b019",
+    "test_code_expansion/strong_scaling/rule_search_batch.py": "657e7670611764e7c7007cfdd0c12fa5f70b30985be69eb69a95d26a08620cc2",
+    "test_code_expansion/strong_scaling/run_experiments.sh": "8c027cf227cd9fbcd76819ea2eaa12d6763b39ad3eaf79470e8cea1b20f6bb6b",
+    "test_code_expansion/tests/distributed_search_regression.cpp": "218c54df03389f008992ff7bde42156752fdf586693ecaad57227f4a3c03678e",
+    "test_code_expansion/tests/online_borrow_regression.cpp": "926c679696e88746775399c6090e75d49e23526327b4f96b075541eabfc7b7cf",
+    "test_code_expansion/tests/rule_search_regression.cpp": "90db09207d23f7720da170dffbb8358ef081b023993ce4cc28258c1a262ad5a5",
+    "test_code_expansion/tests/search_api_regression.cpp": "b5a2058338b880fa067811f6c1301d7108cf3c7e7aaa2369c13ba882329cb766",
+    "test_code_expansion/tests/test_rule_search_analysis.py": "689791ae04f3e06da93c9c86ce02bcac97928e8066edb6b56648780efe8ae43d",
+    "test_code_expansion/tests/test_rule_search_batch.py": "7a8ab41f540bcc7f3b03a214f78d05aa553def52073dc991c0a3d6ed57d16c0a",
+    "test_code_expansion/docs/experiments/20261026_matched_tasks_v4.md": "d954c72eb65829a694ef4b4f56b4f16e5a3b3643a3c72406b6fc9fb312308b86"
+  }
+}

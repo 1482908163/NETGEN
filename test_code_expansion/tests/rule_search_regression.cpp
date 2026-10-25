@@ -74,6 +74,13 @@ int main(int argc,char **argv) {
     while(!s.Offer(100,1000,0)) if(MPI_Wtime()>deadline) MPI_Abort(MPI_COMM_WORLD,2);
     return 1;
   };
+  transport.offer_sized=[](void *ctx,double gain,double,double,int bytes) {
+    if(gain<=0) return 0;
+    auto &s=*static_cast<mesh_search::DistributedSearch*>(static_cast<Loopback*>(ctx)->service);
+    const double deadline=MPI_Wtime()+20;
+    while(!s.Offer(100,1000,0,bytes)) if(MPI_Wtime()>deadline) MPI_Abort(MPI_COMM_WORLD,2);
+    return 1;
+  };
   transport.start=[](void *ctx,const char *data,int bytes) {
     auto &state=*static_cast<Loopback*>(ctx);++state.calls;
     static_cast<mesh_search::DistributedSearch*>(state.service)->Start(data,bytes);

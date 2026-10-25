@@ -32,6 +32,7 @@ namespace netgen
     void (*start)(void *,const char *,int)=nullptr;
     const char * (*finish)(void *,int *)=nullptr;
     int (*ready)(void *) = nullptr; // optional nonblocking readiness check
+    int (*offer_sized)(void *,double,double,double,int)=nullptr;
   };
   // Optional host-side CPU leasing. Callbacks run only on the host thread.
   struct VolumeResources {

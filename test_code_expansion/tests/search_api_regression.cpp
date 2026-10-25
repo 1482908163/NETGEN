@@ -13,6 +13,8 @@ int main() {
         mesh_search::DistributedSearch::StartCallback,mesh_search::DistributedSearch::FinishCallback};
     require(nglib::Ng_SetRuleSearchTransport(&transport)==nglib::NG_OK);
     require(nglib::Ng_SetRuleSearchTransportReady(&transport,mesh_search::DistributedSearch::ReadyCallback)==nglib::NG_OK);
+    require(nglib::Ng_SetRuleSearchTransportSized(&transport,mesh_search::DistributedSearch::ReadyCallback,
+                mesh_search::DistributedSearch::OfferSizedCallback)==nglib::NG_OK);
     require(nglib::Ng_SetRuleSearchTransport(nullptr)==nglib::NG_OK);
     require(nglib::Ng_GenerateVolumeMeshCooperativeOperations(nullptr,nullptr,4,nullptr,
         mesh_node::NodeResources::poll_operations_callback,nullptr,nullptr)==nglib::NG_ERROR);

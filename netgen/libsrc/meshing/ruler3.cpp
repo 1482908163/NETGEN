@@ -273,9 +273,9 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   }
   int split_rule=-1,parts=0;
   if(adaptive && standard_rules && split>1 && available>1) {
-    double total=0,largest=0;
+    double largest=0;std::vector<double> whole_cost;
     for(int id=0;id<rules.Size();++id) {
-      const double cost=profile->rules[id].Upper();total+=cost;
+      const double cost=profile->rules[id].Upper();whole_cost.push_back(cost);
       if(rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol &&
          rules[id]->GetNOldF()>=2 && cost>largest) {largest=cost;split_rule=id;}
     }
@@ -287,8 +287,15 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
         if(rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol && rules[id]->GetNOldF()>=2)
           {split_rule=id;break;}
       }
-    } else if(largest-total/available<=profile->preprocessing.Upper()*available+profile->copy.Upper())
-      split_rule=-1;
+    } else if(split_rule>=0) {
+      const int slices=std::min(available,int(split));
+      auto sliced=whole_cost;
+      const double per_slice=largest/slices+profile->preprocessing.Upper();
+      sliced[split_rule]=per_slice;
+      for(int i=1;i<slices;++i) sliced.push_back(per_slice);
+      if(AssignSearch(whole_cost,available,false).local_seconds <=
+         AssignSearch(sliced,available,false).local_seconds+profile->copy.Upper()) split_rule=-1;
+    }
     if(mode<5 && (sample || (split_rule==profile->subtree_rule && profile->subtree.samples &&
         profile->subtree.Upper()>=profile->rules[split_rule].Lower()))) split_rule=-1;
     if(split_rule>=0) parts=std::min(available,int(split));
@@ -335,9 +342,20 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     const bool candidate=workers>1 && standard_rules && !profile->remote_jobs.empty() && gain>0;
     // Consume/decline an arrived credit even on an unprofitable query, so a
     // completed helper can continue to another client instead of getting stuck.
-    if(search_transport->offer(search_transport->context,candidate?gain:0,
-          std::max(1.0,remaining_faces)*profile->parallel.mean,
-          profile->remote_work)) {
+    // Size estimate includes both snapshot and returned geometry, plus packet
+    // metadata. This is a model input, not a hard bound on the returned packet.
+    int transfer_bytes=1;
+    if(candidate && search_transport->offer_sized) {
+      size_t wire=128+4*profile->remote_jobs.size()+28*p.Size();
+      for(auto face:f) wire+=4+4*face.GetNP();
+      for(int bag=1;bag<=pairs.GetNBags();++bag) wire+=12*pairs.GetBagSize(bag);
+      transfer_bytes=int(std::min(size_t(2*RulePacket::limit),2*wire+4096));
+    }
+    const double remaining=std::max(1.0,remaining_faces)*profile->parallel.mean;
+    const bool accepted=search_transport->offer_sized ?
+        search_transport->offer_sized(search_transport->context,candidate?gain:0,remaining,profile->remote_work,transfer_bytes) :
+        search_transport->offer(search_transport->context,candidate?gain:0,remaining,profile->remote_work);
+    if(accepted) {
       if(!candidate) throw NgException("远程协议接受了无有效任务的查询");
       remote=true;queue.order=profile->remote_local;
       const auto packing=RuleClock::now();
@@ -366,19 +384,23 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
                           tol,sloppy,rot,r.error,&queue,&r);
     r.seconds=RuleElapsed(t);
   };
-  if(workers==1) execute(0);else ngcore::ParallelFor(size_t(workers),execute,workers);
+  // No barrier between whole rules and subtrees: each worker searches its
+  // disjoint slice first, then joins the ordinary-rule queue as soon as it is free.
+  // Result slots and interval-order merging are unchanged.
+  const int first=int(results.size());
+  std::vector<double> times(parts,0),preprocessing(parts,0);
   if(split_rule>=0) {
     const auto setup=RuleClock::now();
     while(int(subtree_workers.size())<parts)
       subtree_workers.emplace_back(new Meshing3(static_cast<const char **>(nullptr)));
-    if(stats) stats->AddAdaptive(10,RuleElapsed(setup));
-    const int first=int(results.size());
     for(int i=0;i<parts;++i) {
       results.emplace_back(new RuleSearchResult);results.back()->points=p;results.back()->faces=f;
     }
-    const auto branches=RuleClock::now();
-    std::vector<double> times(parts,0),preprocessing(parts,0);
-    ngcore::ParallelFor(size_t(parts),[&](size_t i) {
+    if(stats) stats->AddAdaptive(10,RuleElapsed(setup));
+  }
+  const auto branches=RuleClock::now();
+  auto unified=[&](size_t i) {
+    if(int(i)<parts) {
       auto &m=*subtree_workers[i];auto &r=*results[first+i];
       m.foundmap=0;m.canuse=0;
       RuleSearchQueue sub(rules.Size(),true);sub.order={split_rule};
@@ -387,13 +409,16 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
       r.found=m.ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,tol,sloppy,rot,r.error,&sub,&r);
       r.seconds=RuleElapsed(t);times[i]=sub.seconds[split_rule];
       preprocessing[i]=std::max(0.0,r.seconds-times[i]);
-      // Count the rule once. Traversal replay is separately accounted, never
-      // disguised as useful search or included in equivalence work counters.
       if(i) {r.rules=0;r.eligible=0;}
-    },parts);
+    }
+    execute(i);
+  };
+  if(workers==1) unified(0);else ngcore::ParallelFor(size_t(workers),unified,workers);
+  if(split_rule>=0) {
     double elapsed=RuleElapsed(branches);
     if(profile->subtree_rule!=split_rule) {profile->subtree=SearchEstimate{};profile->subtree_rule=split_rule;}
-    profile->subtree.Observe(elapsed);
+    profile->subtree.Observe(*std::max_element(times.begin(),times.end())+
+                             *std::max_element(preprocessing.begin(),preprocessing.end()));
     if(stats) {stats->AddAdaptive(8,1);stats->AddAdaptive(9,parts);stats->AddAdaptive(11,elapsed);}
     queue.seconds[split_rule]=std::accumulate(times.begin(),times.end(),0.0);
     profile->preprocessing.Observe(*std::max_element(preprocessing.begin(),preprocessing.end()));

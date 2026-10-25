@@ -14,6 +14,17 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_even_partial_group_keeps_labels_out_of_median(self):
+        rows=[dict(post_work_profile='rank_counts_v1',search_revision='matched_tasks_v4',
+                   seconds=x,scaling_work_sha256='fingerprint') for x in (1,2,3,4)]
+        rows[-1]['late_metric']=7
+        result=analyze.aggregate_metrics(rows)
+        self.assertEqual(result['seconds_median'],2.5)
+        self.assertEqual(result['late_metric_median'],7)
+        self.assertEqual(result['post_work_profile'],'rank_counts_v1')
+        self.assertNotIn('post_work_profile_median',result)
+        self.assertNotIn('scaling_work_sha256_median',result)
+
     def fixture(self,mode='2'):
         meta={'rule_search_mode':mode,'rule_search_resource':'phase0_base_only','kernel_threads':'4'}
         m={k:0. for k in analyze.RULE_SEARCH_METRICS}

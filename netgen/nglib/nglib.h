@@ -528,6 +528,8 @@ struct Ng_RuleSearchTransport {
   const char * (*finish)(void *,int *);
 };
 NGLIB_API Ng_Result Ng_SetRuleSearchTransport(const Ng_RuleSearchTransport * transport);
+NGLIB_API Ng_Result Ng_SetRuleSearchTransportSized(const Ng_RuleSearchTransport * transport,
+    int (*ready)(void *),int (*offer_sized)(void *,double,double,double,int));
 // Optional readiness hook without changing the existing transport ABI.
 NGLIB_API Ng_Result Ng_SetRuleSearchTransportReady(const Ng_RuleSearchTransport * transport,
                                                  int (*ready)(void *));

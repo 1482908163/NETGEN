@@ -24,7 +24,8 @@ int main(int argc,char **argv) {
                     double deadline=MPI_Wtime()+20;
                     // Deliberately large synthetic gain, to test contention and
                     // transport without relying on noisy microsecond timings.
-                    while(!service.Offer(100,1000,0)) {
+                    const int estimated_bytes=i==0?16*1024*1024:146;
+                    while(!service.Offer(100,1000,0,estimated_bytes)) {
                         if(MPI_Wtime()>deadline) throw std::runtime_error("远程资源领取超时");
                     }
                     std::string payload(i==0?8*1024*1024:73,char('a'+rank));

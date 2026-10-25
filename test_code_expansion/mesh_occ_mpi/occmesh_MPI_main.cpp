@@ -466,6 +466,7 @@ int main(int argc, char **argv) {
         profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
         profiler.add_metadata("rule_search_resource","phase0_base_only");
     }
+    if(adaptive_search) profiler.add_metadata("search_revision","matched_tasks_v4");
     if(adaptive_search) profiler.add_metadata("search_policy","ordered_subtree_demand_v3");
     if(remote_search) profiler.add_metadata("search_remote","completed_anchor_demand_v3");
     if(online_borrow) {
@@ -743,7 +744,7 @@ int main(int argc, char **argv) {
             search_service.reset(new mesh_search::DistributedSearch(MPI_COMM_WORLD,node_resources->physical_node_id()));
             search_callbacks={search_service.get(),mesh_search::DistributedSearch::OfferCallback,
                               mesh_search::DistributedSearch::StartCallback,mesh_search::DistributedSearch::FinishCallback};
-            if(requested_scheduler!="node_search_idle" && nglib::Ng_SetRuleSearchTransportReady(&search_callbacks,mesh_search::DistributedSearch::ReadyCallback)!=nglib::NG_OK)
+            if(requested_scheduler!="node_search_idle" && nglib::Ng_SetRuleSearchTransportSized(&search_callbacks,mesh_search::DistributedSearch::ReadyCallback,mesh_search::DistributedSearch::OfferSizedCallback)!=nglib::NG_OK)
                 MPI_Abort(MPI_COMM_WORLD,3);
         } catch(const std::exception &e) {std::cerr<<e.what()<<std::endl;MPI_Abort(MPI_COMM_WORLD,3);}
     }
@@ -1332,10 +1333,15 @@ int main(int argc, char **argv) {
     }
 
     if(id == 0) cout << "successful!!!" << endl;
+    netgen_exit_checkpoint(id,"profile.begin");
     profiler.finalize();
+    netgen_exit_checkpoint(id,"profile.end");
     if(node_resources) node_resources->close();
+    netgen_exit_checkpoint(id,"resources.closed");
     netgen_mpi_checkpoint(MPI_COMM_WORLD, "MPI_Finalize.begin");
+    netgen_exit_checkpoint(id,"finalize.begin");
     MPI_Finalize();
+    netgen_exit_checkpoint(id,"finalize.end");
 
     return 0;
 }

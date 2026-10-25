@@ -85,14 +85,27 @@ int main(int argc,char **argv) {
             require(trial.poll_operations(100,0,100,.1,.00001,partial)==1,"已知工作足以摊销但被未知类型全部阻塞");
             trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
             require(n==3,"未识别模型未限制为一核试探");
-            require(trial.poll_operations(100,0,100,.5,.00001,partial)==1,"实测负收益未触发退回");
+            require(!trial.poll_operations(100,1,100,5.,.00001,nullptr),"未知操作被误计为试探损失");
+            require(!trial.poll_operations(100,0,1000,5.,.00001,nullptr),"不同工作量范围被误判为加核退化");
+            require(!trial.poll_operations(100,0,100,.5,.00001,nullptr),"单次噪声错误触发全局回退");
+            require(trial.poll_operations(100,0,100,.5,.00001,partial)==1,"重复同类负收益未触发退回");
             trial.release(6,100,n,.5);n=trial.acquire(6,100,0);
             require(n==2,"退回没有恢复保底核");
-            require(!trial.poll_operations(100,0,100,.1,.00001,partial),"失败试探被重复发起");
+            int same[8]={20};
+            require(!trial.poll_operations(100,0,100,.1,.00001,same),"失败上下文被重复试探");
+            // A different operation must remain eligible after the first type failed.
+            for(int i=0;i<12;++i) trial.poll_operations(100,2,100,1.,.00001,nullptr);
+            int changed[8]={0,0,20};
+            require(trial.poll_operations(100,2,100,1.,.00001,changed)==1,"单类失败封锁了后续有效操作");
+            trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
+            require(n==3,"新操作试探没有兑现");
+            trial.poll_operations(100,2,100,.6,.00001,nullptr);
+            trial.poll_operations(100,2,100,.6,.00001,nullptr);
             trial.release(6,100,n,.1);trial.finish();Metrics m;trial.report(m);
-            require(m.values["coop_operation_explores"]==1 && m.values["coop_operation_rollbacks"]==1,"试探与退回诊断缺失");
+            require(m.values["coop_operation_explores"]==2 && m.values["coop_operation_rollbacks"]==1,"试探与退回诊断缺失");
+            require(m.values["coop_operation_unmatched"]==2 && m.values["coop_operation_resolved"]==1,"匹配操作证据缺失");
             require(m.values["coop_checkpoint_restarts"]==m.values["coop_checkpoint_grants"]+1,"退回错误计为增核");
-            std::cout<<"通过：部分未知操作、一核试探、负收益退回与禁止重复试探。\n";
+            std::cout<<"通过：未知类型与工作量隔离、重复负收益退回、新操作恢复试探和实测收益确认。\n";
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }

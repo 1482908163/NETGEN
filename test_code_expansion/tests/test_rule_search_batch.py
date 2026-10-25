@@ -84,7 +84,7 @@ print('12345')
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
     def test_joint_plan_has_eleven_strategies_and_ten_contributions(self):
-        result=self.launch(EXPERIMENT_PRESET='search_joint_all')
+        result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='0')
         self.assertEqual(result.returncode,0,result.stderr)
         calls=self.calls();self.assertEqual(len(calls),5)
         self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
@@ -93,7 +93,19 @@ print('12345')
         plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
         self.assertEqual(tuple(plan['contributions']),batch.JOINT_CONTRIBUTIONS)
         self.assertEqual(plan['refines'],2)
-        self.assertEqual(plan['joint_revision'],'subtree_demand_v3')
+        self.assertEqual(plan['joint_revision'],'matched_tasks_v4')
+
+    def test_focused_default_keeps_64_nodes_and_three_independent_jobs(self):
+        result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='1')
+        self.assertEqual(result.returncode,0,result.stderr)
+        plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
+        self.assertEqual(tuple(plan['schedulers']),batch.FOCUSED_SCHEDULERS)
+        self.assertEqual(len(plan['jobs']),3)
+        self.assertTrue(all(j['nodes']==64 for j in plan['jobs']))
+        self.assertEqual(plan['refines'],2)
+        self.assertEqual({j['levels'] for j in plan['jobs']},{2,4})
+        self.assertEqual(sum((j['repeats']+1)*len(plan['schedulers']) for j in plan['jobs']),70)
+        self.assertEqual(len({c['env']['START_EPOCH'] for c in self.calls()}),1)
 
     def test_joint_work_evidence_missing_or_changed_is_rejected(self):
         plan=dict(schedulers=['node_search_local','node_search_full'],seeds=[-1],joint_revision='credit_operations_v2')

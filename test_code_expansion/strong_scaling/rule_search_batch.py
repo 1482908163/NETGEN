@@ -14,6 +14,8 @@ import time
 
 SCHEDULERS = ('node_original', 'node_fixed', 'node_elastic', 'node_rules_fixed', 'node_rules_elastic')
 JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full','node_search_elastic')
+FOCUSED_SCHEDULERS = ('node_fixed','node_rules_fixed','node_rules_elastic','node_search_local','node_search_elastic','node_search_online','node_search_full')
+FOCUSED_CONTRIBUTIONS = ('search_adaptive','search_online','search_remote_online','search_previous','search_order_elastic','search_model')
 CONTRIBUTIONS = ('rule_search_fixed', 'rule_search_elastic', 'rule_search_borrowing', 'rule_search_total')
 JOINT_CONTRIBUTIONS = ('search_adaptive','search_protocol','search_remote','search_online',
                        'search_remote_online','search_incremental','search_total','search_previous','search_order_elastic','search_model')
@@ -68,7 +70,10 @@ def integers(name, minimum=1):
 
 def initialize(root):
     schedulers=JOINT_SCHEDULERS if os.environ.get('SEARCH_JOINT_EXPERIMENT')=='1' else SCHEDULERS
-    contributions=JOINT_CONTRIBUTIONS if schedulers==JOINT_SCHEDULERS else CONTRIBUTIONS
+    joint=schedulers==JOINT_SCHEDULERS
+    contributions=JOINT_CONTRIBUTIONS if joint else CONTRIBUTIONS
+    if joint and os.environ.get('SEARCH_FOCUSED')=='1':
+        schedulers=FOCUSED_SCHEDULERS;contributions=FOCUSED_CONTRIBUTIONS
     if tuple(os.environ['KERNEL_SCHEDULERS'].split()) != schedulers:
         raise ValueError('整批预设要求完整策略集；自定义子集请使用 rule_search 预设')
     check_levels = integers('RULE_SEARCH_CHECK_LEVEL', 0)
@@ -94,7 +99,7 @@ def initialize(root):
                 refines=int(os.environ['REFINES']), start_epoch=int(os.environ['START_EPOCH']),
                 dry_run=os.environ.get('DRY_RUN') == '1',
                 source_revision=os.environ.get('MESH_SOURCE_REVISION', 'manual'),
-                joint_revision='subtree_demand_v3' if schedulers==JOINT_SCHEDULERS else None,
+                joint_revision='matched_tasks_v4' if joint else None,
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'])
     target = root/'rule_search_batch_plan.json'
     if target.exists():
@@ -142,7 +147,7 @@ def audit_job(root, job, plan):
             value = float(r[field])
             if not math.isfinite(value) or (field != 'paired_reduction_pct' and value <= 0):
                 raise ValueError('无效比较指标：'+field)
-    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'):
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'):
         review_joint_records(root,job,plan)
     return audit
 
@@ -158,7 +163,7 @@ def review_joint_records(root,job,plan):
             raise ValueError('精简结果覆盖不完整：'+scheduler)
         if any(r.get('post_work_profile')!='rank_counts_v1' or not r.get('scaling_work_sha256') for r in rows):
             raise ValueError('缺少后续工作量指纹：'+scheduler)
-        if plan.get('joint_revision')=='subtree_demand_v3':
+        if plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4'):
             if any(r.get('surface_levels')!=job['levels'] or r.get('volume_refines')!=plan['refines'] for r in rows):
                 raise ValueError('实际面/体细化级数与本批计划不一致：'+scheduler)
             required=[]
@@ -172,6 +177,9 @@ def review_joint_records(root,job,plan):
                 raise ValueError('缺少本版算法诊断，可能运行旧程序：'+scheduler)
             if any(r.get('post_refine_elements_sum',0)<=0 for r in rows):
                 raise ValueError('缺少体细化后的实际网格计数：'+scheduler)
+        if plan.get('joint_revision')=='matched_tasks_v4' and scheduler.startswith('node_search_'):
+            if any(r.get('search_revision')!='matched_tasks_v4' for r in rows):
+                raise ValueError('缺少本轮版本标识，不能误用旧可执行文件：'+scheduler)
         records.extend(rows)
         formal=[r for r in rows if r['repeat']>0]
         coverage.append(dict(scheduler=scheduler,formal=len(formal),
@@ -222,7 +230,7 @@ def summarize(root, plan):
                 else:
                     audit = audit_job(root, job, plan)
                     record['status'] = '通过'
-                    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'):
+                    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'):
                         for c in review_joint_records(root,job,plan):
                             coverage.append(dict(group=job['group'],levels=job['levels'],nodes=job['nodes'],**c))
                     for row in audit:
@@ -252,13 +260,13 @@ def summarize(root, plan):
                          f"加速比 {float(row['speedup']):.4f}；配对耗时下降中位数 {float(row['paired_reduction_pct']):.2f}%；"
                          f"胜出 {row['paired_wins']}/{row['paired_count']}。")
     for c in coverage:
-        if c['scheduler']=='node_rules_elastic' and plan.get('joint_revision')=='subtree_demand_v3':
+        if c['scheduler']=='node_rules_elastic' and plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4'):
             lines.append(f"L{c['levels']}/{c['nodes']}节点，首个正式基准：生成后体单元 {c['generated_elements']:.0f}，体细化后 {c['refined_elements']:.0f}。")
         if c['scheduler'] in ('node_search_remote','node_search_full'):
             lines.append(f"L{c['levels']}/{c['nodes']}节点 {c['scheduler']}：正式远程任务 {c['remote_calls']}；"
                          f"最大单次控制 {c['control_max_seconds']:.6f}s；子树调用 {c['subtree_calls']}；额外前缀试探 {c['subtree_replay_trials']}；"+
                          ('已发生外派，收益另看配对对照。' if c['remote_calls'] else '未覆盖远程执行，不能声称跨节点收益。'))
-    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'): atomic(root/'batch_coverage.csv',csv_text(coverage))
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'): atomic(root/'batch_coverage.csv',csv_text(coverage))
     lines += ['', '详细对照：batch_comparisons.csv；作业状态：batch_jobs.csv。',
               '失败数据保留；负收益不筛除；内部计时存在嵌套，不相加推算核心加速。',
               '硬终止可能无法执行完成回调；未收到完成记录的作业保持未完成，请查看调度日志。']

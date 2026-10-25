@@ -48,3 +48,11 @@ inline void netgen_mpi_check(MPI_Comm comm, int error_code, const char *operatio
     MPI_Abort(comm, error_code);
     std::abort();
 }
+
+// Called outside timed core; safe before and after MPI_Finalize. No new MPI
+// synchronization and no calls to MPI after finalization.
+inline void netgen_exit_checkpoint(int rank, const char *stage)
+{
+    std::fprintf(stderr, "[EXIT_CHECKPOINT] rank=%d stage=%s\n", rank, stage);
+    std::fflush(stderr);
+}

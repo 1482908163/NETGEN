@@ -35,6 +35,13 @@ class DistributedSearch {
     double demand_sent=0,demand_received=0,event_waits=0,event_wait_seconds=0;
     double demand_start=0,discovery_cost=0,competing=0,competing_stamp=0;
     unsigned completed_tasks=0;
+    double latency=0,seconds_per_byte=0;
+    double size_cost[28]={},size_error[28]={};unsigned size_samples[28]={};
+    int active_size_bin=0;
+    static int SizeBin(int bytes) {
+        return std::min(27,std::max(0,int(std::log2(std::max(1,bytes)))));
+    }
+    double TransferFloor(int bytes) const {return latency+seconds_per_byte*std::max(0,bytes);}
     static void Check(int code) {if(code!=MPI_SUCCESS) throw std::runtime_error("跨节点搜索 MPI 调用失败");}
     static bool Complete(MPI_Request &r) {
         if(r==MPI_REQUEST_NULL) return true;
@@ -110,15 +117,23 @@ public:
         Check(MPI_Allgather(&leader,1,MPI_INT,node.data(),1,MPI_INT,comm));
         // Payload calibration is a floor, NOT the full task cost. Full exposed
         // completion residuals replace it after the first task, with error bands.
-        std::vector<char> calibration(65536,0),received(calibration.size());
-        rpc_cost=std::numeric_limits<double>::infinity();
-        for(int i=0;i<4;++i) {
-            const double t=MPI_Wtime();
-            Check(MPI_Sendrecv(calibration.data(),calibration.size(),MPI_BYTE,(rank+1)%size,63,
-                              received.data(),received.size(),MPI_BYTE,(rank+size-1)%size,63,comm,MPI_STATUS_IGNORE));
-            if(i) rpc_cost=std::min(rpc_cost,MPI_Wtime()-t);
+        double measured[2]={};
+        for(int scale=0;scale<2;++scale) {
+            std::vector<char> calibration(scale?65536:8,0),received(calibration.size());
+            measured[scale]=std::numeric_limits<double>::infinity();
+            for(int i=0;i<4;++i) {
+                const double t=MPI_Wtime();
+                Check(MPI_Sendrecv(calibration.data(),calibration.size(),MPI_BYTE,(rank+1)%size,63,
+                                  received.data(),received.size(),MPI_BYTE,(rank+size-1)%size,63,comm,MPI_STATUS_IGNORE));
+                if(i) measured[scale]=std::min(measured[scale],MPI_Wtime()-t);
+            }
         }
-        rpc_cost=std::max(2*rpc_cost,std::numeric_limits<double>::epsilon());rpc_floor=rpc_cost;
+        // Include the slow ring links instead of letting an intra-node link
+        // supply every rank's inter-node floor. Still only a calibration floor.
+        Check(MPI_Allreduce(MPI_IN_PLACE,measured,2,MPI_DOUBLE,MPI_MAX,comm));
+        latency=std::max(2*measured[0],std::numeric_limits<double>::epsilon());
+        seconds_per_byte=std::max(0.0,(measured[1]-measured[0])/65528.0);
+        rpc_cost=rpc_floor=TransferFloor(131072);
         cursor=(rank+1)%size;PostDemand();
     }
     int Ready() {
@@ -128,13 +143,16 @@ public:
         return answer_ready && answer[0]>0;
     }
     static int ReadyCallback(void *ctx) {return static_cast<DistributedSearch*>(ctx)->Ready();}
-    int Offer(double saving,double remaining,double remote_seconds) {
+    int Offer(double saving,double remaining,double remote_seconds,int transfer_bytes=131072) {
         if(drained || closing || helper>=0 || size<2) return 0;
         ++probes;const double begin=MPI_Wtime();Progress();
         const double elapsed=MPI_Wtime()-begin;
         control_seconds+=elapsed;control_max=std::max(control_max,elapsed);
         probe_cost=.875*probe_cost+.125*elapsed;
-        const double net=saving-rpc_cost-rpc_error-probe_cost;
+        if(transfer_bytes<1 || transfer_bytes>2*limit) throw std::runtime_error("跨节点传输估计长度非法");
+        const int bin=SizeBin(transfer_bytes);
+        const double predicted=std::max(TransferFloor(transfer_bytes),size_cost[bin]);
+        const double net=saving-predicted-size_error[bin]-probe_cost;
         bool valid=std::isfinite(saving+remaining+remote_seconds) && remaining>0 && remote_seconds>=0 && net>0;
         if(!valid) ++cost_rejects;
         if(answer_ready) {
@@ -142,6 +160,7 @@ public:
             if(valid && std::max(remaining,answer[1])<=std::max(std::max(0.0,remaining-net),answer[1])) {
                 ++critical_rejects;valid=false;
             }
+            if(valid) active_size_bin=bin;
             Decide(valid);
             // Balance measured solicitation cost with discovery delay. This is
             // a pacing heuristic, not a theorem or a fixed microsecond cutoff.
@@ -176,8 +195,10 @@ public:
         if(!std::isfinite(actual) || actual<0) throw std::runtime_error("远程搜索服务计时非法");
         const double residual=std::max(0.0,MPI_Wtime()-start_time-std::max(begin-start_time,actual));
         completion_residual+=residual;
-        rpc_error=completed_tasks?.75*rpc_error+.25*std::abs(residual-rpc_cost):0;
-        rpc_cost=std::max(rpc_floor,completed_tasks?.75*rpc_cost+.25*residual:residual);++completed_tasks;
+        const int bin=active_size_bin;
+        size_error[bin]=size_samples[bin]?.75*size_error[bin]+.25*std::abs(residual-size_cost[bin]):0;
+        size_cost[bin]=size_samples[bin]?.75*size_cost[bin]+.25*residual:residual;++size_samples[bin];
+        rpc_cost=size_cost[bin];rpc_error=size_error[bin];++completed_tasks;
         payload_bytes+=count;helper=-1;*bytes=count-sizeof(double);return response.data()+sizeof(double);
     }
     void ServeUntilComplete(const std::function<std::string(const char *,int)> &execute) {
@@ -206,10 +227,15 @@ public:
         for(auto &r:replies) Check(MPI_Wait(&r.send,MPI_STATUS_IGNORE));
         Check(MPI_Barrier(comm));drained=true;drain_seconds=MPI_Wtime()-begin;Check(MPI_Comm_free(&comm));
     }
+    static int OfferSizedCallback(void *ctx,double gain,double remaining,double work,int bytes) {
+        return static_cast<DistributedSearch*>(ctx)->Offer(gain,remaining,work,bytes);
+    }
     static int OfferCallback(void *ctx,double gain,double remaining,double work) {return static_cast<DistributedSearch*>(ctx)->Offer(gain,remaining,work);}
     static void StartCallback(void *ctx,const char *data,int bytes) {static_cast<DistributedSearch*>(ctx)->Start(data,bytes);}
     static const char *FinishCallback(void *ctx,int *bytes) {return static_cast<DistributedSearch*>(ctx)->Finish(bytes);}
     template<class Profiler> void Report(Profiler &p) const {
+        p.set_metric("search_remote_latency_seconds",latency);
+        p.set_metric("search_remote_seconds_per_byte",seconds_per_byte);
         const char *names[]={"probes","grants","critical_rejects","cost_rejects","service_calls","payload_bytes",
             "wait_seconds","service_seconds","control_seconds","drain_seconds","ready_sent","ready_received",
             "no_ready","control_max_seconds","rpc_floor_seconds","completion_residual_seconds","completion_cost_seconds",
