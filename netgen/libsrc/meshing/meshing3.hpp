@@ -40,6 +40,7 @@ class Meshing3
   bool standard_rules=false;
   const RuleSearchTransport * search_transport=nullptr;
   std::map<int,SearchProfile> search_profiles;
+  std::vector<std::unique_ptr<Meshing3>> subtree_workers;
   int ApplyRulesImpl(Array<Point3d, PointIndex> & lpoints,
                     Array<int, PointIndex> & allowpoint,
                     Array<MiniElement2d> & lfaces, INDEX lfacesplit,

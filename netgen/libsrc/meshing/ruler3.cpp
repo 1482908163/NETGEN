@@ -57,6 +57,7 @@ struct RuleSearchQueue {
   std::atomic<int> next{0};
   std::vector<int> order;
   std::vector<double> seconds;
+  int face_begin=1, face_end=0; // Inclusive second-face prefix interval; zero means unsplit.
   bool measure;
   explicit RuleSearchQueue(int count,bool measured=false):order(count),seconds(count,0),measure(measured) {
     std::iota(order.begin(),order.end(),0);
@@ -68,7 +69,9 @@ struct RuleSearchResult {
   float quality = 0, error = 0;
   int found = -1;
   double other = 0, withoutother = 0, seconds = 0;
+  unsigned long long replay_face_trials=0,replay_point_trials=0;
   unsigned long long rules = 0, eligible = 0, face_trials = 0, point_trials = 0, mappings = 0;
+  double prefix_min=1e100; // Valid candidates before the first diagnostic state write.
   std::string trace;
   Array<Point3d,PointIndex> points;
   Array<MiniElement2d> faces;
@@ -250,11 +253,11 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     return found;
   }
   const bool adaptive=mode>=3;
-  const bool verify=mode==2 || mode==4;
+  const bool verify=mode==2 || mode==4 || mode==6;
   int point_bin=0,face_bin=0;
   for(int size=p.Size();size>1;size>>=1) ++point_bin;
   for(int size=f.Size();size>1;size>>=1) ++face_bin;
-  const int bucket=tol*1024+std::min(31,point_bin)*32+std::min(31,face_bin);
+  const int bucket=(tol+8*f[0].GetNP())*1024+std::min(31,point_bin)*32+std::min(31,face_bin);
   SearchProfile * profile=adaptive?&search_profiles[bucket]:nullptr;
   const int available=std::min(int(rules.Size()),ngcore::TaskManager::GetNumThreads());
   int workers=available;
@@ -267,8 +270,31 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     for(auto &rule:rules)
       eligible+=rule->GetNP(1)==f[0].GetNP() && rule->GetQuality()<=tol;
     workers=std::min(available,std::max(1,eligible));
-    if(stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
   }
+  int split_rule=-1,parts=0;
+  if(adaptive && standard_rules && split>1 && available>1) {
+    double total=0,largest=0;
+    for(int id=0;id<rules.Size();++id) {
+      const double cost=profile->rules[id].Upper();total+=cost;
+      if(rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol &&
+         rules[id]->GetNOldF()>=2 && cost>largest) {largest=cost;split_rule=id;}
+    }
+    // Split only a predicted serial bottleneck; preprocessing is paid per slice.
+    // Modes 5/6 force structural coverage for internal differential tests only.
+    if(mode>=5) {
+      for(int n=0;n<rules.Size();++n) {
+        int id=(profile->calls+n)%rules.Size();
+        if(rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol && rules[id]->GetNOldF()>=2)
+          {split_rule=id;break;}
+      }
+    } else if(largest-total/available<=profile->preprocessing.Upper()*available+profile->copy.Upper())
+      split_rule=-1;
+    if(mode<5 && (sample || (split_rule==profile->subtree_rule && profile->subtree.samples &&
+        profile->subtree.Upper()>=profile->rules[split_rule].Lower()))) split_rule=-1;
+    if(split_rule>=0) parts=std::min(available,int(split));
+  }
+  workers=std::max(workers,parts);
+  if(adaptive && stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
   if(stats) stats->AddRule(workers>1?1:3,1);
   const double old_other=minother, old_without=minwithoutother;
   Array<int> old_found,old_can;
@@ -286,26 +312,37 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   double packet_seconds=0;
   RulePacket remote_request;
   if(adaptive && !profile->order.empty()) queue.order=profile->order;
-  if(adaptive && search_transport && (!search_transport->ready || search_transport->ready(search_transport->context))) {
-    std::vector<double> cost;
-    for(int id=0;id<rules.Size();++id) {
-      const bool eligible=rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol;
-      cost.push_back(eligible?profile->rules[id].Upper():0);
+  // Progress communication even when this call has no profitable remote job.
+  if(adaptive && search_transport && search_transport->ready) search_transport->ready(search_transport->context);
+  if(adaptive && search_transport && split_rule>=0)
+    search_transport->offer(search_transport->context,0,0,0);
+  if(adaptive && search_transport && split_rule<0) {
+    if(sample || profile->plan_threads!=workers) {
+      std::vector<double> cost,lower;
+      for(int id=0;id<rules.Size();++id) {
+        const bool eligible=rules[id]->GetNP(1)==f[0].GetNP() && rules[id]->GetQuality()<=tol;
+        cost.push_back(eligible?profile->rules[id].Upper():0);
+        lower.push_back(eligible?profile->rules[id].Lower():0);
+      }
+      auto local=AssignSearch(lower,workers,false);
+      auto distributed=AssignSearch(cost,workers,true,profile->overhead.Upper());
+      profile->remote_gain=local.local_seconds-std::max(distributed.local_seconds,distributed.remote_seconds);
+      profile->remote_work=std::max(0.0,distributed.remote_seconds-profile->overhead.Upper());
+      profile->remote_local=std::move(distributed.local);profile->remote_jobs=std::move(distributed.remote);
+      profile->plan_threads=workers;
     }
-    auto local=AssignSearch(cost,workers,false);
-    auto distributed=AssignSearch(cost,workers,true,profile->overhead.Upper());
-    const double gain=local.local_seconds-std::max(distributed.local_seconds,distributed.remote_seconds);
-    const bool candidate=workers>1 && standard_rules && !distributed.remote.empty() && gain>0;
+    const double gain=profile->remote_gain;
+    const bool candidate=workers>1 && standard_rules && !profile->remote_jobs.empty() && gain>0;
     // Consume/decline an arrived credit even on an unprofitable query, so a
     // completed helper can continue to another client instead of getting stuck.
     if(search_transport->offer(search_transport->context,candidate?gain:0,
           std::max(1.0,remaining_faces)*profile->parallel.mean,
-          std::max(0.0,distributed.remote_seconds-profile->overhead.Upper()))) {
+          profile->remote_work)) {
       if(!candidate) throw NgException("远程协议接受了无有效任务的查询");
-      remote=true;queue.order=distributed.local;
+      remote=true;queue.order=profile->remote_local;
       const auto packing=RuleClock::now();
       remote_request.Put(unsigned(0x52534e31));remote_request.Put(int(rules.Size()));
-      remote_request.Put(int(distributed.remote.size()));for(int id:distributed.remote) remote_request.Put(id);
+      remote_request.Put(int(profile->remote_jobs.size()));for(int id:profile->remote_jobs) remote_request.Put(id);
       remote_request.Put(tol);remote_request.Put(rot);remote_request.Put(sloppy);
       remote_request.Put(old_other);remote_request.Put(old_without);
       PutRuleGeometry(remote_request,*results[0]);for(int v:a) remote_request.Put(v);
@@ -318,9 +355,10 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
       }
       search_transport->start(search_transport->context,remote_request.data.data(),remote_request.data.size());
       packet_seconds=RuleElapsed(packing);
-      if(stats) {stats->AddAdaptive(3,1);stats->AddAdaptive(4,distributed.remote.size());stats->AddAdaptive(5,gain);}
+      if(stats) {stats->AddAdaptive(3,1);stats->AddAdaptive(4,profile->remote_jobs.size());stats->AddAdaptive(5,gain);}
     }
   }
+  if(split_rule>=0) queue.order.erase(std::remove(queue.order.begin(),queue.order.end(),split_rule),queue.order.end());
   stamp=RuleClock::now();
   auto execute=[&](size_t i) {
     auto & r=*results[i];const auto t=RuleClock::now();
@@ -329,6 +367,49 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     r.seconds=RuleElapsed(t);
   };
   if(workers==1) execute(0);else ngcore::ParallelFor(size_t(workers),execute,workers);
+  if(split_rule>=0) {
+    const auto setup=RuleClock::now();
+    while(int(subtree_workers.size())<parts)
+      subtree_workers.emplace_back(new Meshing3(static_cast<const char **>(nullptr)));
+    if(stats) stats->AddAdaptive(10,RuleElapsed(setup));
+    const int first=int(results.size());
+    for(int i=0;i<parts;++i) {
+      results.emplace_back(new RuleSearchResult);results.back()->points=p;results.back()->faces=f;
+    }
+    const auto branches=RuleClock::now();
+    std::vector<double> times(parts,0),preprocessing(parts,0);
+    ngcore::ParallelFor(size_t(parts),[&](size_t i) {
+      auto &m=*subtree_workers[i];auto &r=*results[first+i];
+      m.foundmap=0;m.canuse=0;
+      RuleSearchQueue sub(rules.Size(),true);sub.order={split_rule};
+      sub.face_begin=1+int(i)*split/parts;sub.face_end=int(i+1)*split/parts;
+      const auto t=RuleClock::now();
+      r.found=m.ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,tol,sloppy,rot,r.error,&sub,&r);
+      r.seconds=RuleElapsed(t);times[i]=sub.seconds[split_rule];
+      preprocessing[i]=std::max(0.0,r.seconds-times[i]);
+      // Count the rule once. Traversal replay is separately accounted, never
+      // disguised as useful search or included in equivalence work counters.
+      if(i) {r.rules=0;r.eligible=0;}
+    },parts);
+    double elapsed=RuleElapsed(branches);
+    if(profile->subtree_rule!=split_rule) {profile->subtree=SearchEstimate{};profile->subtree_rule=split_rule;}
+    profile->subtree.Observe(elapsed);
+    if(stats) {stats->AddAdaptive(8,1);stats->AddAdaptive(9,parts);stats->AddAdaptive(11,elapsed);}
+    queue.seconds[split_rule]=std::accumulate(times.begin(),times.end(),0.0);
+    profile->preprocessing.Observe(*std::max_element(preprocessing.begin(),preprocessing.end()));
+    // Prefix intervals are disjoint and ordered. Diagnostics form a state
+    // transducer: a slice inherits the preceding last nonempty problem string.
+    // Its prefix minimum is classified only after that incoming state is known.
+    problems[split_rule]="";
+    for(int i=0;i<parts;++i) {
+      auto &m=*subtree_workers[i];auto &r=*results[first+i];
+      if(stats) {stats->AddAdaptive(12,r.replay_face_trials);stats->AddAdaptive(13,r.replay_point_trials);}
+      foundmap[split_rule]+=m.foundmap[split_rule];canuse[split_rule]+=m.canuse[split_rule];
+      if(problems[split_rule]=="other") r.other=std::min(r.other,r.prefix_min);
+      else r.withoutother=std::min(r.withoutother,r.prefix_min);
+      if(!m.problems[split_rule].empty()) problems[split_rule]=m.problems[split_rule];
+    }
+  }
   if(stats) stats->AddRule(11,RuleElapsed(stamp));
   if(remote) {
     const auto wait=RuleClock::now();int bytes=0;
@@ -350,6 +431,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
       if(std::find(queue.order.begin(),queue.order.end(),id)==queue.order.end()) remote_rule_seconds+=queue.seconds[id];
     const double helper_preprocessing=std::max(0.0,results.back()->seconds-remote_rule_seconds);
     profile->overhead.Observe(packet_seconds+RuleElapsed(unpacking)+helper_preprocessing);
+    profile->plan_threads=0;
   }
   const double execution_seconds=RuleElapsed(stamp)+copy_seconds;
   if(adaptive) {
@@ -358,7 +440,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
       for(int id=0;id<rules.Size();++id) {
         profile->rules[id].Observe(queue.seconds[id]);cost.push_back(profile->rules[id].Upper());
       }
-      profile->order=AssignSearch(cost,workers,false).local;
+      profile->order=AssignSearch(cost,workers,false).local;profile->plan_threads=0;
       if(stats) stats->AddAdaptive(7,1); // sampled calls, separate from rule work
     }
     profile->copy.Observe(copy_seconds);
@@ -392,10 +474,12 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     int serial_found=ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,serial_error,nullptr,&reference);
     bool same=serial_found==found && RuleBitsEqual(serial_error,err) &&
       RuleBitsEqual(minother,parallel_other) && RuleBitsEqual(minwithoutother,parallel_without);
-    for(int i:foundmap.Range()) same=same && foundmap[i]==parallel_found[i] &&
-      canuse[i]==parallel_can[i] && problems[i]==parallel_problems[i];
+    int diagnostic_difference=-1;
+    for(int i:foundmap.Range()) if(foundmap[i]!=parallel_found[i] || canuse[i]!=parallel_can[i] || problems[i]!=parallel_problems[i])
+      {same=false;diagnostic_difference=i;}
+    const bool same_output=SameRuleOutput(*results[winner>=0?winner:0],p,f,e,d);
     // No-winner output must also preserve the input arrays and empty outputs.
-    same=same && SameRuleOutput(*results[winner>=0?winner:0],p,f,e,d);
+    same=same && same_output;
     unsigned long long face=0,point=0,maps=0;
     for(auto & r:results) {face+=r->face_trials;point+=r->point_trials;maps+=r->mappings;}
     same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
@@ -403,7 +487,13 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     if(!same) {
       if(stats) stats->AddRule(17,1);
       throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+
-                        " serial="+ToString(serial_found)+" parallel="+ToString(found));
+                        " serial="+ToString(serial_found)+" parallel="+ToString(found)+
+                        " split="+ToString(split_rule)+" diagnostic="+ToString(diagnostic_difference)+
+                        " output="+ToString(same_output)+" minima="+ToString(minother)+","+ToString(parallel_other)+
+                        "/"+ToString(minwithoutother)+","+ToString(parallel_without)+
+                        " trials="+ToString(face)+","+ToString(reference.face_trials)+
+                        "/"+ToString(point)+","+ToString(reference.point_trials)+
+                        "/"+ToString(maps)+","+ToString(reference.mappings));
     }
     // Serial verification has already materialized the exactly checked output.
   } else if(winner>=0) {
@@ -668,6 +758,11 @@ int Meshing3 :: ApplyRulesImpl
 	nfok .. first nfok-1 faces are mapped properly
 	*/
 
+      const bool sliced=queue && queue->face_end>0;
+      // Replay the prefix's mapping traversal (without geometry validation).
+      // The original DFS retains fused-face state across siblings. Starting
+      // from a clean slice would silently change its search, even with disjoint
+      // face ranges. Prefix replay reconstructs exactly that traversal state.
       int nfok = 2;
       RuleLegacyTimer regfa(300, !queue);
       RuleLegacyTimer regx2(base+50+rim+1, !queue);
@@ -686,16 +781,25 @@ int Meshing3 :: ApplyRulesImpl
 
 	      while (!ok)
 		{
-		  if (result) result->face_trials++;
 		  locfr++;
 		  if (locfr == actfnp + 1)
 		    {
 		      locfr = 1;
 		      locfi++;
-		      if (locfi > lfacesplit) break;
+		      if (locfi > (sliced && nfok==2 ? queue->face_end : lfacesplit)) {
+                              if(result && (!sliced || nfok!=2 || queue->face_end==lfacesplit)) {
+                                if(!sliced || nfok==2 || fmapi.Get(2)>=queue->face_begin) ++result->face_trials;
+                                else ++result->replay_face_trials;
+                              } else if(result) ++result->replay_face_trials;
+                              break;
+                            }
 		    }
 		  
 		  
+                  if(result) {
+                    if(!sliced || (nfok==2?locfi:fmapi.Get(2))>=queue->face_begin) ++result->face_trials;
+                    else ++result->replay_face_trials;
+                  }
 		  if (fnearness.Get(locfi) > rule->GetFNearness (nfok) ||
 		      fused.Get(locfi) ||
 		      actfnp != lfaces[locfi-1].GetNP() )
@@ -844,7 +948,10 @@ int Meshing3 :: ApplyRulesImpl
 			  while (!ok && locpi < lpoints.Size()-1+IndexBASE<PointIndex>())
 			    {
 			      ok = 1;
-			      if (result) result->point_trials++;
+			      if(result) {
+                                if(!sliced || fmapi.Get(2)>=queue->face_begin) ++result->point_trials;
+                                else ++result->replay_point_trials;
+                              }
 			      locpi++;
 			      
 			      if (pused[locpi] || 
@@ -904,6 +1011,9 @@ int Meshing3 :: ApplyRulesImpl
 		    {
 		      RuleLegacyTimer regfa2(302, !queue);
 
+                      if(sliced && fmapi.Get(2)<queue->face_begin) {
+                        npok=rule->GetNOldP();incnpok=0;continue;
+                      }
 		      if (result) result->mappings++;
 		      // all points are mapped
 		      
@@ -1425,7 +1535,9 @@ int Meshing3 :: ApplyRulesImpl
 			      rule_out << endl;
 			      */
 
-			      if (problems[rim] == "other")
+			      if (sliced && problems[rim].empty() && result)
+                                result->prefix_min=std::min(result->prefix_min,double(teterr));
+                              else if (problems[rim] == "other")
 				{
 				  if (teterr < local_minother)
 				    local_minother = teterr;

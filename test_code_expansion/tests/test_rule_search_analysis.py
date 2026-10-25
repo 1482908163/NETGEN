@@ -91,6 +91,20 @@ class RuleSearchAudit(unittest.TestCase):
         rows[1]['metrics']['search_remote_ready_received']=1
         with self.assertRaises(ValueError):analyze.inspect_search_policy(rows,meta)
 
+    def test_demand_and_subtree_coverage(self):
+        rows,meta=self.joint_fixture()
+        meta.update(search_remote='completed_anchor_demand_v3',search_policy='ordered_subtree_demand_v3')
+        for r in rows:
+            r['metrics'].update({k:0 for k in analyze.SEARCH_CREDIT_METRICS+analyze.SEARCH_DEMAND_METRICS+analyze.SEARCH_SUBTREE_METRICS})
+            r['metrics']['search_policy_sampled_calls']=0
+        rows[0]['metrics'].update(search_subtree_calls=1,search_subtree_tasks=2,search_remote_demand_sent=1)
+        rows[1]['metrics']['search_remote_demand_received']=1
+        analyze.inspect_search_policy(rows,meta)
+        for key,value in [('search_remote_demand_sent',2),('search_subtree_tasks',1),('search_subtree_calls',2),
+                          ('search_subtree_replay_face_trials',float('nan'))]:
+            broken=deepcopy(rows);broken[0]['metrics'][key]=value
+            with self.assertRaises(ValueError):analyze.inspect_search_policy(broken,meta)
+
     def test_post_work_fingerprint_catches_ghost_change_and_rank_swap(self):
         keys=('local_points_before_adjacency','local_surface_elements_before_adjacency',
               'local_volume_elements_before_adjacency','ghost_points_added','ghost_volume_elements_added')

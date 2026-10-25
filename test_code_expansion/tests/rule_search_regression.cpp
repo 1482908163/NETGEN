@@ -139,6 +139,35 @@ int main(int argc,char **argv) {
       for(auto i:deleted.Range()) Hash(int(deleted[i]));
     }
   }
+#ifndef RULE_SEARCH_REFERENCE
+  if(mode==6 && threads>1) {
+    // Stress the inherited DFS face state using shuffled prefixes and nearby
+    // points. Every call replays the original search including diagnostics.
+    Meshing3 stress(static_cast<const char **>(nullptr));
+    for(int trial=0;trial<120;++trial) {
+      Array<Point3d,PointIndex> p;
+      p.Append(Point3d(0,0,0));p.Append(Point3d(1,0,0));p.Append(Point3d(.5,.8660254037844386,0));
+      p.Append(Point3d(.5,.2886751345948129,-.816496580927726));
+      for(int i=0;i<trial%12;++i) p.Append(Point3d(double(random()%200)/100.,double(random()%200)/100.,-double(random()%200)/100.));
+      Array<int,PointIndex> allow(p.Size());allow=2;
+      Array<MiniElement2d> faces;
+      int ids[3]={0,1,2};std::shuffle(ids,ids+3,random);
+      const int tris[][3]={{1,2,3},{1,4,2},{2,4,3},{3,4,1}};
+      for(int i=0;i<4;++i) {
+        int k=i?ids[i-1]+1:0;MiniElement2d f(3);
+        for(int j=1;j<=3;++j)f.PNum(j)=tris[k][j-1];faces.Append(f);
+      }
+      INDEX_2_HASHTABLE<int> pairs(10);
+      for(int tolerance=1;tolerance<=5;++tolerance)for(int rotation=1;rotation<=3;++rotation) {
+        Array<Point3d,PointIndex> points(p);Array<MiniElement2d> f(faces);
+        NgArray<Element> elems;NgArray<INDEX> del;float error;
+        minother=minwithoutother=1e10;
+        stress.ApplyRulesTasks(points,allow,f,f.Size(),pairs,elems,del,tolerance,5.,rotation,error,6,&stats);
+      }
+    }
+    std::cout<<"stress_verified=1800\n";
+  }
+#endif
   // An empty rule set must preserve the original impossible result, without
   // dispatching an empty team or dereferencing a missing worker result.
   const char * empty_rules[]={nullptr};Meshing3 empty(empty_rules);
@@ -154,6 +183,9 @@ int main(int argc,char **argv) {
 #endif
   if(empty_result!=-1) return 5;
   ++calls;++impossible;Hash(empty_result);
+  if(mode>=5 && threads>1 && stats.adaptive_values[8].load()==0)
+    throw std::runtime_error("映射子树未被回归覆盖");
+  std::cout<<"subtree_calls="<<stats.adaptive_values[8].load()<<" tasks="<<stats.adaptive_values[9].load()<<"\n";
   team.reset();
   // Exercise the real front loop and its resource lifetime, not just ApplyRules.
   Mesh mesh;mesh.SetGlobalH(2.0);

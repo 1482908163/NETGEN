@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-25",
+  "parent_revision": "889f0fa71d5f4495ce57ac754bfa6821554378ad",
+  "status": "本地正确性与编排检查通过；超算完整构建和跨物理节点性能尚未验证",
+  "kernel": {
+    "cases": 18,
+    "original_fingerprint": "6d770e28fdeae775",
+    "forced_subtree_stress_replays": 3600,
+    "real_mpi_geometry_modes": 2,
+    "notes": "强制模式仅用于覆盖；生产模式是否触发取决于估计，不保证集群收益"
+  },
+  "protocol": {
+    "mpi_ranks": 4,
+    "scenarios": 5,
+    "completed_tasks_by_scenario": [
+      0,
+      12,
+      36,
+      0,
+      0
+    ],
+    "checks": [
+      "内容一致",
+      "需求闭合",
+      "信用闭合",
+      "预留/服务闭合",
+      "事件唤醒次数界",
+      "忙进程不等待对端进展"
+    ]
+  },
+  "borrowing": {
+    "mpi_ranks": 4,
+    "cpus": 8,
+    "checks": [
+      "异构操作",
+      "未知操作",
+      "小任务成本拒绝",
+      "两次增核",
+      "部分未知工作的一核试探",
+      "负收益退回保底核",
+      "失败后不重复试探",
+      "绑定不重叠",
+      "早期阶段原借核范围"
+    ]
+  },
+  "python_audits": 24,
+  "runner_and_node_scaling_tests": "通过",
+  "old_batch_reanalysis": {
+    "runs": 286,
+    "conclusions_unchanged": true
+  },
+  "default_batch": {
+    "surface_levels": [
+      2,
+      4
+    ],
+    "volume_refines": 2,
+    "main_nodes": [
+      64,
+      256
+    ],
+    "precheck_nodes": 64,
+    "main_repeats": 5,
+    "strategies": 11,
+    "jobs": 5,
+    "runs": 286,
+    "independent_jobs": true,
+    "shared_start_delay": true
+  },
+  "log_sha256": {
+    "kernel-v3-verified.log": "bc47f4f6c48f5ea5e7ffd097a9ae3d21420758f832b3637371b680972f6eb571",
+    "protocol-v3-final.log": "cb85f5260fd376c281ac254ebe74cb44b0c203495202897aaec9ccf83d3548f8",
+    "operation-v3-final.log": "8a54c850b3a3d7f5e648481706a69b5832cc193c79b8e8c587e890c3b8edeb08",
+    "python-v3-final.log": "937c937323b74ab5830708002bd69093af9cfcc433cef6200b99fa77aef176da",
+    "runner-v3-final.log": "0b48bd1a5ede603288ae4b9c72e71d3181898de18f01195573bddc5e2367d786",
+    "scaling-v3-final.log": "c627d2616e921135d5044e6055ed43807bcbb317edb097a33171acb8d46c8701",
+    "old-results-v3-final.log": "5355b1ab1a89ddb16983f9071d45f9e2520bd32327c52194cdd8fd9faa570b68"
+  },
+  "reference_source_sha256": {
+    "ruler3.cpp": "6ccb394ce32d20abf2a207caeb7bbf3be05daa808ae75f2e47e0e2871cd84677",
+    "meshing3.cpp": "8f4b00fa64e1b6c51a541c680ad30bbce8ec9ca5024e5d518a7370ffcdf63395"
+  },
+  "tested_file_sha256": {
+    "netgen/libsrc/meshing/meshing3.hpp": "c50de785c67148db7a9e2f0dfb4e40e8006f625a64400d3f041aa327282ad750",
+    "netgen/libsrc/meshing/meshtype.hpp": "a2509d3a10286c6a8e7ae803226e88de914abdc8c444b27e23a6bbdb5de44c22",
+    "netgen/libsrc/meshing/ruler3.cpp": "c5b0a3a0f3e2e51ea8ac8078e24e135ce8536048b5a35b7f1ec16e529c9556cc",
+    "netgen/libsrc/meshing/search_policy.hpp": "f2ffa2245bbda0458e73f47be7b140bbc847ef4d9313581723a171b02be09fcf",
+    "netgen/nglib/nglib.cpp": "b9e7059b5305ac0f2162906bddee2c1fd33d3aec03187e2896c7133d5ba0e1ce",
+    "netgen/nglib/nglib.h": "2267bfb680f98ef7d6dfc0644a44894203c1f1f55a8514e165690b253b9268a1",
+    "test_code_expansion/mesh_occ_mpi/distributed_search.h": "59791cc8d6c249afed9da0da7a5933bac7bc1cfc6f9500f22689f2cfd308594c",
+    "test_code_expansion/mesh_occ_mpi/node_resources.h": "1a17ba812e91df947ca297d0940a7651f0bed0bac004d773d2929c0d46560aa0",
+    "test_code_expansion/mesh_occ_mpi/occmesh_MPI_main.cpp": "f1694ac11489d9ab735b4c974f9ceb52c447a09309b4d9ce79f61f92b794cba1",
+    "test_code_expansion/strong_scaling/analyze_results.py": "67eb0d1ab0e135d32fb26362be1663e336a8d992a9b10e2f78aefc109b2467e0",
+    "test_code_expansion/strong_scaling/rule_search_batch.py": "0b426fc75ecfe8595181a92ed263c6ec3da7bcd15cb52ed30d3775c6d1dc98bd",
+    "test_code_expansion/strong_scaling/run_experiments.sh": "2ecdf7e81d7d25cdd2e721787c1bc90337b7af1d2449f9b50894020d8288476b",
+    "test_code_expansion/tests/distributed_search_regression.cpp": "21e031bf8c68c5e10dd0c0e3e934b6f0ec011eb46fe742b760ac0f359d94887f",
+    "test_code_expansion/tests/online_borrow_regression.cpp": "58560ff224eaf4e10026658bf3b44487116f271b860f52373369faf0916a5884",
+    "test_code_expansion/tests/rule_search_regression.cpp": "c1c6e6fdd33b19092a3cc708761c07c27cef12bae493a7d469286eace7a5832d",
+    "test_code_expansion/tests/run_rule_search_regression.py": "723ce7503ae68666c20fcfe98d4ccded9b1a20bf58d4ff2323fd4de1aaa1ea79",
+    "test_code_expansion/tests/search_api_regression.cpp": "f506c506e994e441d9ca4092082b3b445bdb09a7b68e6e27376eaf37aa46ea79",
+    "test_code_expansion/tests/test_rule_search_analysis.py": "8f620c6591ded754e3a59be1e3c58d1c54432ebe3133ebe0dc148e191175d5a0",
+    "test_code_expansion/tests/test_rule_search_batch.py": "28027ab90ae0fa64f366a0604fd8e4f05d948e51a4d119155fabd0e60c8ad46e"
+  },
+  "limitations": [
+    "本地 MPI 使用合成节点身份；不能充当物理跨节点性能证据",
+    "模型经验误差带不是统计置信区间",
+    "未知操作和非抢占安全点使试探没有硬时间损失上界",
+    "子树额外前缀遍历可能抵消并行收益",
+    "本版未改变全局网格分区，不能声称解决所有跨节点不均衡"
+  ]
+}

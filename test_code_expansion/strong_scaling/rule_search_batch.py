@@ -94,7 +94,7 @@ def initialize(root):
                 refines=int(os.environ['REFINES']), start_epoch=int(os.environ['START_EPOCH']),
                 dry_run=os.environ.get('DRY_RUN') == '1',
                 source_revision=os.environ.get('MESH_SOURCE_REVISION', 'manual'),
-                joint_revision='credit_operations_v2' if schedulers==JOINT_SCHEDULERS else None,
+                joint_revision='subtree_demand_v3' if schedulers==JOINT_SCHEDULERS else None,
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'])
     target = root/'rule_search_batch_plan.json'
     if target.exists():
@@ -142,7 +142,7 @@ def audit_job(root, job, plan):
             value = float(r[field])
             if not math.isfinite(value) or (field != 'paired_reduction_pct' and value <= 0):
                 raise ValueError('无效比较指标：'+field)
-    if plan.get('joint_revision')=='credit_operations_v2':
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'):
         review_joint_records(root,job,plan)
     return audit
 
@@ -158,11 +158,34 @@ def review_joint_records(root,job,plan):
             raise ValueError('精简结果覆盖不完整：'+scheduler)
         if any(r.get('post_work_profile')!='rank_counts_v1' or not r.get('scaling_work_sha256') for r in rows):
             raise ValueError('缺少后续工作量指纹：'+scheduler)
+        if plan.get('joint_revision')=='subtree_demand_v3':
+            if any(r.get('surface_levels')!=job['levels'] or r.get('volume_refines')!=plan['refines'] for r in rows):
+                raise ValueError('实际面/体细化级数与本批计划不一致：'+scheduler)
+            required=[]
+            if scheduler.startswith('node_search_'):
+                required+=['search_subtree_calls','search_subtree_tasks','search_subtree_replay_face_trials','search_subtree_replay_point_trials']
+            if scheduler in ('node_search_idle','node_search_remote','node_search_full'):
+                required+=['search_remote_demand_sent','search_remote_demand_received','search_remote_event_waits']
+            if scheduler in ('node_search_online','node_search_full'):
+                required+=['coop_operation_explores','coop_operation_rollbacks','coop_operation_unknown_types']
+            if any(k not in r for r in rows for k in required):
+                raise ValueError('缺少本版算法诊断，可能运行旧程序：'+scheduler)
+            if any(r.get('post_refine_elements_sum',0)<=0 for r in rows):
+                raise ValueError('缺少体细化后的实际网格计数：'+scheduler)
         records.extend(rows)
         formal=[r for r in rows if r['repeat']>0]
         coverage.append(dict(scheduler=scheduler,formal=len(formal),
+            generated_elements=formal[0].get('volume_kernel_elements_sum',0),
+            refined_elements=formal[0].get('post_refine_elements_sum',0),
+            subtree_replay_trials=sum(r.get('search_subtree_replay_face_trials',0)+r.get('search_subtree_replay_point_trials',0) for r in formal),
             remote_calls=sum(r.get('search_policy_remote_calls',0) for r in formal),
             ready_received=sum(r.get('search_remote_ready_received',0) for r in formal),
+            subtree_calls=sum(r.get('search_subtree_calls',0) for r in formal),
+            subtree_tasks=sum(r.get('search_subtree_tasks',0) for r in formal),
+            demand_sent=sum(r.get('search_remote_demand_sent',0) for r in formal),
+            event_waits=sum(r.get('search_remote_event_waits',0) for r in formal),
+            explores=sum(r.get('coop_operation_explores',0) for r in formal),
+            rollbacks=sum(r.get('coop_operation_rollbacks',0) for r in formal),
             cost_rejects=sum(r.get('search_remote_cost_rejects',0) for r in formal),
             critical_rejects=sum(r.get('search_remote_critical_rejects',0) for r in formal),
             control_max_seconds=max(r.get('search_remote_control_max_seconds',0) for r in formal)))
@@ -199,7 +222,7 @@ def summarize(root, plan):
                 else:
                     audit = audit_job(root, job, plan)
                     record['status'] = '通过'
-                    if plan.get('joint_revision')=='credit_operations_v2':
+                    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'):
                         for c in review_joint_records(root,job,plan):
                             coverage.append(dict(group=job['group'],levels=job['levels'],nodes=job['nodes'],**c))
                     for row in audit:
@@ -229,11 +252,13 @@ def summarize(root, plan):
                          f"加速比 {float(row['speedup']):.4f}；配对耗时下降中位数 {float(row['paired_reduction_pct']):.2f}%；"
                          f"胜出 {row['paired_wins']}/{row['paired_count']}。")
     for c in coverage:
+        if c['scheduler']=='node_rules_elastic' and plan.get('joint_revision')=='subtree_demand_v3':
+            lines.append(f"L{c['levels']}/{c['nodes']}节点，首个正式基准：生成后体单元 {c['generated_elements']:.0f}，体细化后 {c['refined_elements']:.0f}。")
         if c['scheduler'] in ('node_search_remote','node_search_full'):
             lines.append(f"L{c['levels']}/{c['nodes']}节点 {c['scheduler']}：正式远程任务 {c['remote_calls']}；"
-                         f"最大单次控制 {c['control_max_seconds']:.6f}s；"+
+                         f"最大单次控制 {c['control_max_seconds']:.6f}s；子树调用 {c['subtree_calls']}；额外前缀试探 {c['subtree_replay_trials']}；"+
                          ('已发生外派，收益另看配对对照。' if c['remote_calls'] else '未覆盖远程执行，不能声称跨节点收益。'))
-    if plan.get('joint_revision')=='credit_operations_v2': atomic(root/'batch_coverage.csv',csv_text(coverage))
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3'): atomic(root/'batch_coverage.csv',csv_text(coverage))
     lines += ['', '详细对照：batch_comparisons.csv；作业状态：batch_jobs.csv。',
               '失败数据保留；负收益不筛除；内部计时存在嵌套，不相加推算核心加速。',
               '硬终止可能无法执行完成回调；未收到完成记录的作业保持未完成，请查看调度日志。']

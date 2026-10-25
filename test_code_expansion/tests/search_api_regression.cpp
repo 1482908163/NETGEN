@@ -16,5 +16,8 @@ int main() {
     require(nglib::Ng_SetRuleSearchTransport(nullptr)==nglib::NG_OK);
     require(nglib::Ng_GenerateVolumeMeshCooperativeOperations(nullptr,nullptr,4,nullptr,
         mesh_node::NodeResources::poll_operations_callback,nullptr,nullptr)==nglib::NG_ERROR);
+    double old_stats[9]={};old_stats[8]=12345;nglib::Ng_GetVolumeSearchPolicyStats(old_stats);
+    require(old_stats[8]==12345);
+    double subtree[7]={};subtree[6]=54321;nglib::Ng_GetVolumeSearchSubtreeStats(subtree);require(subtree[6]==54321);
     std::cout<<"通过：旧传输结构、就绪扩展接口、操作借核回调编译与链接。\n";
 }

@@ -31,7 +31,7 @@ class BatchTests(unittest.TestCase):
         fake = self.folder/'fake_submit'
         fake.write_text('''#!/usr/bin/env python3
 import json,os,sys
-keys='START_EPOCH RUN_ROOT RULE_SEARCH_BATCH_GROUP RULE_SEARCH_BATCH_ROOT LEVELS REPEATS WARMUPS KERNEL_SCHEDULERS CLEANUP_RESULTS COMPACT_RESULTS MESH_EXPERIMENT_WORKER RULE_SEARCH_ALL RULE_SEARCH_SWEEP'.split()
+keys='START_EPOCH RUN_ROOT RULE_SEARCH_BATCH_GROUP RULE_SEARCH_BATCH_ROOT LEVELS REFINES REPEATS WARMUPS KERNEL_SCHEDULERS CLEANUP_RESULTS COMPACT_RESULTS MESH_EXPERIMENT_WORKER RULE_SEARCH_ALL RULE_SEARCH_SWEEP'.split()
 with open(os.environ['BATCH_CAPTURE'],'a') as f:f.write(json.dumps({'args':sys.argv[1:],'env':{k:os.environ.get(k) for k in keys}})+'\\n')
 if os.environ.get('FAIL_CHECK')=='1' and os.environ['RULE_SEARCH_BATCH_GROUP']=='precheck':sys.exit(19)
 print('12345')
@@ -63,6 +63,7 @@ print('12345')
             nodes = int(a[a.index('-N')+1]);ranks = int(a[a.index('-n')+1])
             actual.append((e['RULE_SEARCH_BATCH_GROUP'], int(e['LEVELS']), nodes, int(e['REPEATS'])))
             self.assertEqual(ranks, nodes*4)
+            self.assertEqual(e['REFINES'], '2')
             self.assertIn('--exclusive', a)
             self.assertFalse(any(s.startswith('--dependency') for s in a))
             self.assertEqual(e['KERNEL_SCHEDULERS'].split(), SCHEDULERS)
@@ -70,7 +71,7 @@ print('12345')
                 self.assertEqual(e[key], '1')
             self.assertEqual(e['RULE_SEARCH_ALL'], '0')
             self.assertEqual(e['RULE_SEARCH_SWEEP'], '0')
-        self.assertEqual(actual, [('precheck',2,16,1),('main',2,64,5),('main',2,256,5),
+        self.assertEqual(actual, [('precheck',2,64,1),('main',2,64,5),('main',2,256,5),
                                   ('main',4,64,5),('main',4,256,5)])
         self.assertIn('待运行', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
@@ -78,7 +79,7 @@ print('12345')
         result = self.launch(FAIL_CHECK='1')
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(len(self.calls()), 5)
-        state = json.loads((self.folder/'results/precheck/levels2/p64/rule_search_job_state.json').read_text())
+        state = json.loads((self.folder/'results/precheck/levels2/p256/rule_search_job_state.json').read_text())
         self.assertEqual(state['exit_code'], 125)
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
@@ -91,6 +92,8 @@ print('12345')
             self.assertEqual(tuple(r['env']['KERNEL_SCHEDULERS'].split()),batch.JOINT_SCHEDULERS)
         plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
         self.assertEqual(tuple(plan['contributions']),batch.JOINT_CONTRIBUTIONS)
+        self.assertEqual(plan['refines'],2)
+        self.assertEqual(plan['joint_revision'],'subtree_demand_v3')
 
     def test_joint_work_evidence_missing_or_changed_is_rejected(self):
         plan=dict(schedulers=['node_search_local','node_search_full'],seeds=[-1],joint_revision='credit_operations_v2')
@@ -107,6 +110,14 @@ print('12345')
         coverage=batch.review_joint_records(root,job,plan)
         self.assertEqual(len(coverage),2)
         self.assertEqual(coverage[1]['remote_calls'],0)  # Uncovered, not a correctness failure.
+        large_plan=dict(plan,joint_revision='subtree_demand_v3',refines=2)
+        with self.assertRaises(ValueError):batch.review_joint_records(root,job,large_plan)
+        for path in root.rglob('analysis_metrics.json'):
+            data=json.loads(path.read_text());data['result'].update(surface_levels=2,volume_refines=2,post_refine_elements_sum=640)
+            data['result'].update(dict.fromkeys(('search_subtree_calls','search_subtree_tasks','search_subtree_replay_face_trials','search_subtree_replay_point_trials','search_remote_demand_sent','search_remote_demand_received','search_remote_event_waits','coop_operation_explores','coop_operation_rollbacks','coop_operation_unknown_types'),0))
+            path.write_text(json.dumps(data))
+        batch.review_joint_records(root,job,large_plan)
+        with self.assertRaises(ValueError):batch.review_joint_records(root,job,dict(large_plan,refines=3))
         path=root/'main/levels2/kernel_node_search_full_t4/p256/repeat_1/analysis_metrics.json'
         data=json.loads(path.read_text());data['result']['scaling_work_sha256']='different'
         path.write_text(json.dumps(data))

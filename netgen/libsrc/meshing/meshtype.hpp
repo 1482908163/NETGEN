@@ -118,7 +118,7 @@ namespace netgen
     static constexpr int count = 12;
     static constexpr int front_count = 20;
     static constexpr int rule_count = 24;
-    static constexpr int adaptive_count = 8;
+    static constexpr int adaptive_count = 14;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
     std::atomic<double> rule_values[rule_count];

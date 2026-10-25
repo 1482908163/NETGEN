@@ -466,11 +466,11 @@ int main(int argc, char **argv) {
         profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
         profiler.add_metadata("rule_search_resource","phase0_base_only");
     }
-    if(adaptive_search) profiler.add_metadata("search_policy","structural_rule_credit_v2");
-    if(remote_search) profiler.add_metadata("search_remote","completed_anchor_credit_v2");
+    if(adaptive_search) profiler.add_metadata("search_policy","ordered_subtree_demand_v3");
+    if(remote_search) profiler.add_metadata("search_remote","completed_anchor_demand_v3");
     if(online_borrow) {
         profiler.add_metadata("node_checkpoints","node_work_v1");
-        profiler.add_metadata("node_work_policy","operation_composition_v2");
+        profiler.add_metadata("node_work_policy","operation_exploration_v3");
     }
     profiler.add_metadata("mesh_tasks",std::to_string(research.mesh_tasks));
     profiler.add_metadata("active_workers",std::to_string(research.mesh_tasks>0?p-1:p));
@@ -906,6 +906,9 @@ int main(int argc, char **argv) {
                                          "predicted_gain_seconds","remote_wait_seconds","reserved"};
                     for(int k=0;k<8;++k) profiler.set_metric(std::string("search_policy_")+names[k],values[k]);
                     profiler.set_metric("search_policy_sampled_calls",values[7]);
+                    double subtree[6]={};nglib::Ng_GetVolumeSearchSubtreeStats(subtree);
+                    const char *subtree_names[]={"calls","tasks","setup_seconds","wall_seconds","replay_face_trials","replay_point_trials"};
+                    for(int k=0;k<6;++k) profiler.set_metric(std::string("search_subtree_")+subtree_names[k],subtree[k]);
                 }
                 nglib::Ng_GetVolumeTaskManagerStats(team_after);
                 const char *team_names[]={"kernel_team_starts","kernel_team_start_seconds","kernel_team_stop_seconds"};

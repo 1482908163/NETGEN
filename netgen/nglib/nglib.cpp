@@ -430,8 +430,11 @@ namespace nglib
      if(status==NG_OK && transport) rule_transport.ready=ready;
      return status;
    }
+   NGLIB_API void Ng_GetVolumeSearchSubtreeStats(double * values) {
+     if(values) std::copy_n(last_search_policy_stats+8,6,values);
+   }
    NGLIB_API void Ng_GetVolumeSearchPolicyStats(double * values) {
-     if(values) std::copy_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,values);
+     if(values) std::copy_n(last_search_policy_stats,8,values);
    }
    NGLIB_API Ng_Result Ng_ExecuteRuleSearchPacket(const char * data,int bytes,char ** output,int * output_bytes) {
      if(!data || !output || !output_bytes) return NG_ERROR;

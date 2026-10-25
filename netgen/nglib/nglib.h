@@ -520,6 +520,7 @@ NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);
 NGLIB_API void Ng_GetVolumeRuleSearchStats(double * values); // 24 doubles
 // Adaptive modes 3/4 retain the old 24-value interface; diagnostics are separate.
 NGLIB_API void Ng_GetVolumeSearchPolicyStats(double * values); // 8 doubles
+NGLIB_API void Ng_GetVolumeSearchSubtreeStats(double * values); // 6 doubles: calls, tasks, setup, wall, replay face/point trials
 struct Ng_RuleSearchTransport {
   void * context;
   int (*offer)(void *,double,double,double);

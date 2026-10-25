@@ -1,7 +1,6 @@
 // Real MPI protocol test. Synthetic topology/gains are test-only, not benchmarks.
 #define NETGEN_SEARCH_PROTOCOL_TEST
 #include "../mesh_occ_mpi/distributed_search.h"
-#include "../mesh_occ_mpi/node_resources.h"
 #include <map>
 #include <iostream>
 #include <thread>
@@ -66,6 +65,12 @@ int main(int argc,char **argv) {
                 throw std::runtime_error("任务预留、返回和服务计数不闭合");
             double credits[2]={metrics.values["search_remote_ready_sent"],metrics.values["search_remote_ready_received"]};
             MPI_Allreduce(MPI_IN_PLACE,credits,2,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+            double demands[2]={metrics.values["search_remote_demand_sent"],metrics.values["search_remote_demand_received"]};
+            MPI_Allreduce(MPI_IN_PLACE,demands,2,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+            if(demands[0]!=demands[1]) throw std::runtime_error("需求请求未闭合");
+            if(metrics.values["search_remote_event_waits"]>2+metrics.values["search_remote_demand_received"]+
+                metrics.values["search_remote_ready_sent"]+metrics.values["search_remote_demand_sent"])
+                throw std::runtime_error("服务循环出现无消息重复唤醒");
             if(credits[0]!=credits[1]) throw std::runtime_error("终止时存在未回收信用");
             if(!rank) std::cout<<"协议场景 "<<test<<" 通过：请求 "<<stats[0]<<"，进程 "<<size<<"\n";
         }

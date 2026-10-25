@@ -26,7 +26,7 @@ class NodeResources {
     static constexpr int max_ranks=128, phases=8;
     struct Model {
         double n=0,sx=0,sy=0,sxx=0,sxy=0,error=0;
-        int samples=0;
+        int samples=0,min_threads=0,max_threads=0;
         void coefficients(double &a,double &b) const {
             double determinant=n*sxx-sx*sx;
             if(determinant>1e-15) {
@@ -34,10 +34,11 @@ class NodeResources {
                 a=std::max(0.0,(sy-b*sx)/n);
             } else { a=0; b=sx>0?sy/sx:0; }
         }
-        void observe(int k,double work,double seconds) {
+        void observe(int k,double work,double seconds,bool seed_from_first=false) {
+            min_threads=min_threads?std::min(min_threads,k):k;max_threads=std::max(max_threads,k);
             double x=1.0/k,y=seconds/std::max(1.0,work),a,b;
             coefficients(a,b);
-            error=.8*error+.2*std::abs(y-a-b*x);
+            error=!samples && seed_from_first?0:.8*error+.2*std::abs(y-a-b*x);
             n=.8*n+1;sx=.8*sx+x;sy=.8*sy+y;
             sxx=.8*sxx+x*x;sxy=.8*sxy+x*y;++samples;
         }
@@ -78,6 +79,12 @@ class NodeResources {
     double work_no_capacity=0,work_grants=0,work_reserved=0,work_already=0;
     double work_gain_estimate=0,work_restart_estimate=0;
     double operation_other_checks=0,operation_other_restarts=0;
+    double operation_partial=0,operation_explores=0,operation_rollbacks=0,operation_debt=0;
+    double operation_unknown_types=0,operation_missing_plan=0;
+    int operation_target=0,trial_threads=0;
+    double trial_budget=0,trial_spent=0;
+    Model trial_reference[8];
+    bool trial_active=false,trial_failed=false;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -443,19 +450,44 @@ public:
             fail("非法操作组成预测输入");
         lock();account_pool();auto &r=shared->rank[me];
         if(!r.active || r.done || checkpoint_old_threads) fail("操作借核检查生命周期错误");
+        bool rollback=false;
+        if(trial_active && completed>=0 && completed<8 && completed_work>0 && last>0) {
+            const auto &reference=trial_reference[completed];
+            if(reference.samples) {
+                double a,b;reference.coefficients(a,b);
+                const double before=completed_work*(a+b/trial_threads);
+                const double margin=completed_work*reference.error;
+                trial_spent+=std::max(0.0,last-before);
+                if(last>before+margin) rollback=true;
+                // An observed improvement pays for the trial; unknown types
+                // remain unmodelled, so this is not a global no-loss guarantee.
+                if(before-last-margin>0) trial_budget+=before-last-margin;
+            } else trial_spent+=last;
+            if(trial_spent>=trial_budget) rollback=true;
+        }
         if(completed>=0 && completed<8 && completed_work>0 && last>0)
-            r.operations[completed].observe(r.threads,completed_work,last);
+            r.operations[completed].observe(r.threads,completed_work,last,true);
+        if(rollback && r.threads>base) {
+            for(int c=0;c<shared->cpus;++c) if(shared->reserved[c]==me+1) shared->reserved[c]=0;
+            operation_target=base;checkpoint_old_threads=r.threads;++checkpoint_restarts;
+            ++operation_rollbacks;++work_grants;trial_active=false;trial_failed=true;
+            operation_debt+=trial_spent;unlock();checkpoint_seconds+=now()-stamp;return 1;
+        }
         r.operation_tail=0;r.progress_time=stamp;
-        if(!counts) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
-        double serial=0,parallel=0,error=0;
+        if(!counts) {++operation_missing_plan;++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        double serial=0,parallel=0,error=0;int unknown=0,identified=0,known=0;
         for(int op=0;op<8;++op) {
             if(counts[op]<0) fail("剩余操作计数非法");
             if(!counts[op]) continue;
             const auto &model=r.operations[op];
-            if(!model.samples) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+            if(!model.samples) {++unknown;continue;}
+            ++known;identified+=model.min_threads<model.max_threads;
             double a,b;model.coefficients(a,b);
             serial+=counts[op]*work*a;parallel+=counts[op]*work*b;error+=counts[op]*work*model.error;
         }
+        operation_unknown_types+=unknown;
+        if(!known) {++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        if(unknown) ++operation_partial;
         const double before=serial+parallel/r.threads;
         r.operation_tail=before;
         int extra=0;
@@ -467,8 +499,20 @@ public:
             const auto &peer=shared->rank[i];
             other=std::max(other,std::max(0.0,peer.operation_tail-(stamp-peer.progress_time)));
         }
-        auto choice=ChooseBorrowComposition(r.threads,r.threads+extra,serial,parallel,error,restart,other);
+        const bool exploratory=unknown || identified<known;
+        // One extra core is an identification experiment, not a fitted speedup
+        // claim. Its predicted known-work gain must pay both restart directions.
+        if(exploratory && (trial_active || trial_failed)) {
+            ++work_deferred;unlock();checkpoint_seconds+=now()-stamp;return 0;
+        }
+        auto choice=ChooseBorrowComposition(r.threads,r.threads+(exploratory?1:extra),
+            serial,parallel,error,restart*(exploratory?2:1),other);
         if(choice.threads<=r.threads) {++work_cost;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        if(exploratory) {
+            trial_active=true;trial_threads=r.threads;trial_budget=choice.gain;trial_spent=restart;
+            std::copy(std::begin(r.operations),std::end(r.operations),std::begin(trial_reference));++operation_explores;
+        }
+        operation_target=choice.threads;
         int reserve=choice.threads-r.threads;
         for(int c=0;c<shared->cpus;++c) {
             if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
@@ -637,6 +681,7 @@ public:
         if(mode==2 && phase!=5) {
             int fair=std::min(cap,fair_target());target=model_target(fair,cap);
         }
+        if(mode==14 && phase==6 && operation_target) target=std::min(operation_target,cap);
         if(phase==5) target=1;
         target=std::max(1,std::min(target,cap));
         if(protected_base() && phase!=5 && target<base)
@@ -657,10 +702,11 @@ public:
         }
         if(held!=target) fail("实际分配核数与租约目标不一致");
         if(checkpoint_old_threads) {
-            if((work_policy() || phaseaware_policy() || atomic_tail()) && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
+            if((work_policy() || phaseaware_policy() || atomic_tail()) && !(mode==14 && operation_target) && held<=checkpoint_old_threads) fail("已预留的增核请求没有兑现");
             if(held>checkpoint_old_threads) ++checkpoint_grants;
             else if(stage_policy()) {if(held<checkpoint_old_threads) ++stage_shrinks;else ++stage_unchanged;}
-            checkpoint_old_threads=0;
+            if(mode==14 && operation_target && held!=operation_target) fail("操作目标核数未兑现");
+            operation_target=0;checkpoint_old_threads=0;
         }
         seen_completion=shared->completion_generation;
         r.remaining=-1;r.last_operation=0;
@@ -719,6 +765,12 @@ public:
         cpu_set_t anchor;CPU_ZERO(&anchor);CPU_SET(shared->anchor[me],&anchor);pin(anchor);
     }
     template<class Profiler> void report(Profiler &p,bool include_stage=true) const {
+        p.set_metric("coop_operation_partial",operation_partial);
+        p.set_metric("coop_operation_explores",operation_explores);
+        p.set_metric("coop_operation_rollbacks",operation_rollbacks);
+        p.set_metric("coop_operation_trial_debt_seconds",operation_debt);
+        p.set_metric("coop_operation_unknown_types",operation_unknown_types);
+        p.set_metric("coop_operation_missing_plan",operation_missing_plan);
         p.set_metric("coop_operation_other_checks",operation_other_checks);
         p.set_metric("coop_operation_other_restarts",operation_other_restarts);
         const char *stage_names[]={"waits","wait_seconds","early_epochs","early_cores","reclaims","shrinks","unchanged","no_change","idle_core_seconds","early_core_seconds"};

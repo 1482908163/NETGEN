@@ -21,9 +21,13 @@ struct SearchEstimate {
   double Upper() const { return mean+deviation; }
 };
 struct SearchProfile {
-  SearchEstimate serial, parallel, copy, overhead;
+  SearchEstimate serial, parallel, copy, overhead, preprocessing, subtree;
+  int subtree_rule=-1;
   std::vector<SearchEstimate> rules;
   std::vector<int> order;
+  std::vector<int> remote_local,remote_jobs;
+  double remote_gain=0,remote_work=0;
+  int plan_threads=0;
   unsigned long long calls=0;
   // Logarithmic observation budget per structural bucket. Normal calls reuse
   // the learned ordering; they do not time every cheap rejected rule.

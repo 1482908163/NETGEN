@@ -13,6 +13,7 @@ int main(int argc,char **argv) {
         if(!valid){std::cerr<<why<<std::endl;MPI_Abort(MPI_COMM_WORLD,1);}
     };
     require(size==4,"租约回归需要四个同节点进程和八个可用核");
+    cpu_set_t initial_mask;sched_getaffinity(0,sizeof(initial_mask),&initial_mask);
     mesh_node::NodeResources resources(MPI_COMM_WORLD,2,14);
     resources.prepare(100);
     int held=0;
@@ -71,5 +72,29 @@ int main(int argc,char **argv) {
 
         std::cout<<"通过：异构操作与未知类型、小任务拒绝、两次增核、早期阶段借核、无核重叠。\n";
     }
-    MPI_Barrier(MPI_COMM_WORLD);MPI_Finalize();
+    MPI_Barrier(MPI_COMM_WORLD);
+    {
+        require(!sched_setaffinity(0,sizeof(initial_mask),&initial_mask),"恢复回归初始绑定失败");
+        MPI_Barrier(MPI_COMM_WORLD);
+        mesh_node::NodeResources trial(MPI_COMM_WORLD,2,14);trial.prepare(100);
+        int n=0;if(!rank)n=trial.acquire(6,100,0);else trial.finish();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(!rank) {
+            for(int i=0;i<12;++i)trial.poll_operations(100,0,100,.1,.00001,nullptr);
+            int partial[8]={20,1};
+            require(trial.poll_operations(100,0,100,.1,.00001,partial)==1,"已知工作足以摊销但被未知类型全部阻塞");
+            trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
+            require(n==3,"未识别模型未限制为一核试探");
+            require(trial.poll_operations(100,0,100,.5,.00001,partial)==1,"实测负收益未触发退回");
+            trial.release(6,100,n,.5);n=trial.acquire(6,100,0);
+            require(n==2,"退回没有恢复保底核");
+            require(!trial.poll_operations(100,0,100,.1,.00001,partial),"失败试探被重复发起");
+            trial.release(6,100,n,.1);trial.finish();Metrics m;trial.report(m);
+            require(m.values["coop_operation_explores"]==1 && m.values["coop_operation_rollbacks"]==1,"试探与退回诊断缺失");
+            require(m.values["coop_checkpoint_restarts"]==m.values["coop_checkpoint_grants"]+1,"退回错误计为增核");
+            std::cout<<"通过：部分未知操作、一核试探、负收益退回与禁止重复试探。\n";
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+    MPI_Finalize();
 }
