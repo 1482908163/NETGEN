@@ -1,0 +1,84 @@
+{
+  "schema": "rule_search_batch_v1",
+  "jobs": [
+    {
+      "key": "precheck/levels2/p256",
+      "group": "precheck",
+      "levels": 2,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 1
+    },
+    {
+      "key": "main/levels2/p256",
+      "group": "main",
+      "levels": 2,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels2/p1024",
+      "group": "main",
+      "levels": 2,
+      "nodes": 256,
+      "ranks": 1024,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels4/p256",
+      "group": "main",
+      "levels": 4,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 5
+    },
+    {
+      "key": "main/levels4/p1024",
+      "group": "main",
+      "levels": 4,
+      "nodes": 256,
+      "ranks": 1024,
+      "repeats": 5
+    }
+  ],
+  "schedulers": [
+    "node_original",
+    "node_fixed",
+    "node_elastic",
+    "node_rules_fixed",
+    "node_rules_elastic",
+    "node_search_local",
+    "node_search_idle",
+    "node_search_remote",
+    "node_search_online",
+    "node_search_full",
+    "node_search_elastic"
+  ],
+  "contributions": [
+    "search_adaptive",
+    "search_protocol",
+    "search_remote",
+    "search_online",
+    "search_remote_online",
+    "search_incremental",
+    "search_total",
+    "search_previous",
+    "search_order_elastic",
+    "search_model"
+  ],
+  "seeds": [
+    -1
+  ],
+  "threads": 4,
+  "ranks_per_node": 4,
+  "warmups": 1,
+  "refines": 2,
+  "start_epoch": 1792922121,
+  "dry_run": false,
+  "source_revision": "309a712",
+  "joint_revision": "subtree_demand_v3",
+  "input_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP",
+  "maxh": "1000",
+  "minh": "0"
+}

@@ -1,0 +1,14 @@
+关键进程阶段报告：0/55 次正式运行。
+上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。
+逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。
+node_original/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_fixed/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_elastic/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_rules_fixed/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_rules_elastic/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_local/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_idle/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_remote/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_online/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_full/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_elastic/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports

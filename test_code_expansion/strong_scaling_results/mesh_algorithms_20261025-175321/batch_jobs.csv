@@ -1,0 +1,6 @@
+key,group,levels,nodes,ranks,repeats,status,detail
+precheck/levels2/p256,precheck,2,64,256,1,通过,
+main/levels2/p256,main,2,64,256,5,通过,
+main/levels2/p1024,main,2,256,1024,5,通过,
+main/levels4/p256,main,4,64,256,5,失败,逐规模审计缺失或未通过：main/levels4/p256/kernel_issues.txt
+main/levels4/p1024,main,4,256,1024,5,失败,退出码 1；查看该作业日志和逐规模汇总

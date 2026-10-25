@@ -1,0 +1,595 @@
+退出码：15
+ Context ptr=0x40004412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5988,5990-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5989 [55]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn10557 [157]: pmixp_coll_ring.c:741: 0x400014006e20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn10557 [157]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:759: 0x400014006e20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:762: my peerid: 157:cn10557
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:769: neighbor id: next 158:cn10558, prev 156:cn10488
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:778: Context ptr=0x400014006ea0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:778: Context ptr=0x400014006ed8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:778: Context ptr=0x400014006f10, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9851,10435-10488,10558-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn10557 [157]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6116 [75]: pmixp_coll_ring.c:741: 0x40004412a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6116 [75]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:759: 0x40004412a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:762: my peerid: 75:cn6116
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:769: neighbor id: next 76:cn6117, prev 74:cn6115
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:778: Context ptr=0x40004412a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:778: Context ptr=0x40004412a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:778: Context ptr=0x40004412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6115,6117-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6116 [75]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn5994 [60]: pmixp_coll_ring.c:741: 0x400024006ee0: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn5994 [60]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:759: 0x400024006ee0: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:762: my peerid: 60:cn5994
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:769: neighbor id: next 61:cn5995, prev 59:cn5993
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:778: Context ptr=0x400024006f60, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:778: Context ptr=0x400024006f98, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:778: Context ptr=0x400024006fd0, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn5985 [51]: pmixp_coll_ring.c:741: 0x40002c12a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn5985 [51]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:759: 0x40002c12a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:762: my peerid: 51:cn5985
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:769: neighbor id: next 52:cn5986, prev 50:cn5984
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5984,5986-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5985 [51]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5993,5995-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5994 [60]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn5997 [63]: pmixp_coll_ring.c:741: 0x40002812a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn5997 [63]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:759: 0x40002812a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6137 [96]: pmixp_coll_ring.c:741: 0x40001012a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6137 [96]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:759: 0x40001012a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:762: my peerid: 63:cn5997
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:769: neighbor id: next 64:cn5998, prev 62:cn5996
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:778: Context ptr=0x40002812a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:778: Context ptr=0x40002812a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:778: Context ptr=0x40002812a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:762: my peerid: 96:cn6137
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:769: neighbor id: next 97:cn9846, prev 95:cn6136
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:778: Context ptr=0x40001012a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:778: Context ptr=0x40001012a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6135 [94]: pmixp_coll_ring.c:741: 0x40003412a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6135 [94]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:759: 0x40003412a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:778: Context ptr=0x40001012a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:762: my peerid: 94:cn6135
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:769: neighbor id: next 95:cn6136, prev 93:cn6134
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:778: Context ptr=0x40003412a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:778: Context ptr=0x40003412a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:778: Context ptr=0x40003412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6136,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6137 [96]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5996,5998-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5997 [63]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6128 [87]: pmixp_coll_ring.c:741: 0x40001412a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6128 [87]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:759: 0x40001412a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:762: my peerid: 87:cn6128
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:769: neighbor id: next 88:cn6129, prev 86:cn6127
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:778: Context ptr=0x40001412a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:778: Context ptr=0x40001412a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:778: Context ptr=0x40001412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6134,6136-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6135 [94]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6127,6129-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6128 [87]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn5990 [56]: pmixp_coll_ring.c:741: 0x40001812a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn5990 [56]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:759: 0x40001812a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:762: my peerid: 56:cn5990
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:769: neighbor id: next 57:cn5991, prev 55:cn5989
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:778: Context ptr=0x40001812a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:778: Context ptr=0x40001812a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:778: Context ptr=0x40001812a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5989,5991-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5990 [56]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6123 [82]: pmixp_coll_ring.c:741: 0x40001c12a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6123 [82]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6112 [71]: pmixp_coll_ring.c:741: 0x40003c12a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6112 [71]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:759: 0x40003c12a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6127 [86]: pmixp_coll_ring.c:741: 0x40002412a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6127 [86]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:759: 0x40002412a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:762: my peerid: 86:cn6127
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:769: neighbor id: next 87:cn6128, prev 85:cn6126
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:778: Context ptr=0x40002412a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:778: Context ptr=0x40002412a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:778: Context ptr=0x40002412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn5996 [62]: pmixp_coll_ring.c:741: 0x40002c12a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn5996 [62]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:759: 0x40002c12a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:759: 0x40001c12a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:762: my peerid: 82:cn6123
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:769: neighbor id: next 83:cn6124, prev 81:cn6122
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:778: Context ptr=0x40001c12a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:762: my peerid: 71:cn6112
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:769: neighbor id: next 72:cn6113, prev 70:cn6103
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:778: Context ptr=0x40003c12a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:778: Context ptr=0x40003c12a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:778: Context ptr=0x40003c12a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:762: my peerid: 62:cn5996
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:769: neighbor id: next 63:cn5997, prev 61:cn5995
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:778: Context ptr=0x40001c12a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:778: Context ptr=0x40001c12a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6126,6128-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:778: Context ptr=0x40002c12a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6113-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6127 [86]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6122,6124-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6112 [71]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5995,5997-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn5996 [62]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6123 [82]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6113 [72]: pmixp_coll_ring.c:741: 0x40002012a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6113 [72]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:759: 0x40002012a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:762: my peerid: 72:cn6113
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:769: neighbor id: next 73:cn6114, prev 71:cn6112
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:778: Context ptr=0x40002012a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:778: Context ptr=0x40002012a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:778: Context ptr=0x40002012a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112,6114-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6113 [72]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6129 [88]: pmixp_coll_ring.c:741: 0x40004412a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6129 [88]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:759: 0x40004412a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:762: my peerid: 88:cn6129
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:769: neighbor id: next 89:cn6130, prev 87:cn6128
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:778: Context ptr=0x40004412a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:778: Context ptr=0x40004412a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:778: Context ptr=0x40004412a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn9850 [101]: pmixp_coll_ring.c:741: 0x400020006ee0: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn9850 [101]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:759: 0x400020006ee0: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:762: my peerid: 101:cn9850
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:769: neighbor id: next 102:cn9851, prev 100:cn9849
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:778: Context ptr=0x400020006f60, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6128,6130-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:778: Context ptr=0x400020006f98, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:778: Context ptr=0x400020006fd0, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6129 [88]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9849,9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9850 [101]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6114 [73]: pmixp_coll_ring.c:741: 0x400030006f20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6114 [73]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:759: 0x400030006f20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:762: my peerid: 73:cn6114
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:769: neighbor id: next 74:cn6115, prev 72:cn6113
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:778: Context ptr=0x400030006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:778: Context ptr=0x400030006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:778: Context ptr=0x400030007010, #2, in-use=1
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6113,6115-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6114 [73]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6126 [85]: pmixp_coll_ring.c:741: 0x400030006f20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6126 [85]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:759: 0x400030006f20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn9847 [98]: pmixp_coll_ring.c:741: 0x400018006f20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn9847 [98]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:759: 0x400018006f20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:762: my peerid: 98:cn9847
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:769: neighbor id: next 99:cn9848, prev 97:cn9846
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:778: Context ptr=0x400018006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:778: Context ptr=0x400018006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:778: Context ptr=0x400018007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:762: my peerid: 85:cn6126
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:769: neighbor id: next 86:cn6127, prev 84:cn6125
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:778: Context ptr=0x400030006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:778: Context ptr=0x400030006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:778: Context ptr=0x400030007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6125,6127-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846,9848-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6126 [85]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9847 [98]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn9849 [100]: pmixp_coll_ring.c:741: 0x40003c006f20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn9849 [100]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:759: 0x40003c006f20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:762: my peerid: 100:cn9849
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:769: neighbor id: next 101:cn9850, prev 99:cn9848
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:778: Context ptr=0x40003c006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:778: Context ptr=0x40003c006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:778: Context ptr=0x40003c007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9848,9850-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9849 [100]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn11217 [211]: pmixp_coll_ring.c:741: 0x40001812a870: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn11217 [211]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6120 [79]: pmixp_coll_ring.c:741: 0x40003012a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6120 [79]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:759: 0x40003012a860: COLL_FENCE_RING state seq=2
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn11231 [225]: pmixp_coll_ring.c:741: 0x40003c006f60: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn11231 [225]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:759: 0x40003c006f60: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:762: my peerid: 225:cn11231
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:769: neighbor id: next 226:cn11232, prev 224:cn11230
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:778: Context ptr=0x40003c006fe0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:778: Context ptr=0x40003c007018, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn11222 [216]: pmixp_coll_ring.c:741: 0x400038006f60: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn11222 [216]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:759: 0x40001812a870: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:762: my peerid: 211:cn11217
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:769: neighbor id: next 212:cn11218, prev 210:cn11216
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:778: Context ptr=0x40001812a8f0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:762: my peerid: 79:cn6120
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:769: neighbor id: next 80:cn6121, prev 78:cn6119
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:778: Context ptr=0x40003012a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:778: Context ptr=0x40003012a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:778: Context ptr=0x40003012a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:778: Context ptr=0x40003c007050, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:759: 0x400038006f60: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:762: my peerid: 216:cn11222
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:769: neighbor id: next 217:cn11223, prev 215:cn11221
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:778: Context ptr=0x400038006fe0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:778: Context ptr=0x40001812a928, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:778: Context ptr=0x40001812a960, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11230,11232-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:778: Context ptr=0x400038007018, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:778: Context ptr=0x400038007050, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216,11218-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6119,6121-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6120 [79]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11231 [225]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11221,11223-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11222 [216]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn6125 [84]: pmixp_coll_ring.c:741: 0x40000812a860: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn6125 [84]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:759: 0x40000812a860: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11217 [211]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:762: my peerid: 84:cn6125
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:769: neighbor id: next 85:cn6126, prev 83:cn6124
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:778: Context ptr=0x40000812a8e0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:778: Context ptr=0x40000812a918, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:778: Context ptr=0x40000812a950, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6124,6126-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn6125 [84]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn9848 [99]: pmixp_coll_ring.c:741: 0x40002c006f20: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn9848 [99]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:759: 0x40002c006f20: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:762: my peerid: 99:cn9848
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:769: neighbor id: next 100:cn9849, prev 98:cn9847
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:778: Context ptr=0x40002c006fa0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:778: Context ptr=0x40002c006fd8, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:778: Context ptr=0x40002c007010, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9847,9849-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn9848 [99]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_reset_if_to: cn11219 [213]: pmixp_coll_ring.c:741: 0x400034006f60: collective timeout seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_log: cn11219 [213]: pmixp_coll.c:281: Dumping collective state
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:759: 0x400034006f60: COLL_FENCE_RING state seq=2
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:762: my peerid: 213:cn11219
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:769: neighbor id: next 214:cn11220, prev 212:cn11218
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:778: Context ptr=0x400034006fe0, #0, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:778: Context ptr=0x400034007018, #1, in-use=0
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:778: Context ptr=0x400034007050, #2, in-use=1
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:787: 	 seq=2 contribs: loc=1/prev=252/fwd=252
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:791: 	 neighbor contribs [256]:
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:824: 		 done contrib: cn[3345-3346,3925-3928,3931-3932,3937-3940,4027-4028,4030,4075-4079,4118-4122,5524-5525,5962-5999,6099-6103,6112-6137,9846-9851,10435-10488,10557-10575,10584-10601,10608-10611,10858-10863,10880-10885,11216-11218,11220-11243,11245-11259,11261]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:826: 		 wait contrib: cn[2742,11244,11260]
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:828: 	 status=PMIXP_COLL_RING_PROGRESS
+slurmstepd: error:  mpi/pmix_v3: pmixp_coll_ring_log: cn11219 [213]: pmixp_coll_ring.c:831: 	 buf (offset/size): 557161/1130655
+Abort(807498255): Fatal error in internal_Finalize: Other MPI error, error stack:
+internal_Finalize(50)...........: MPI_Finalize failed
+MPII_Finalize(370)..............: 
+MPID_Finalize(511)..............: 
+MPIDI_UCX_mpi_finalize_hook(401): 
+MPIR_pmi_barrier(341)...........: PMIx_Fence returned -24
+yhrun: error: cn5998: task 256: Exited with exit code 15
+yhrun: error: cn5988: task 216: Exited with exit code 15
+yhrun: error: cn11220: task 857: Exited with exit code 15
+yhrun: error: cn6116: task 301: Exited with exit code 15
+yhrun: error: cn10557: task 628: Exited with exit code 15
+yhrun: error: cn6132: task 364: Exited with exit code 15
+yhrun: error: cn5992: task 234: Exited with exit code 15
+yhrun: error: cn5994: task 241: Exited with exit code 15
+yhrun: error: cn6121: task 321: Exited with exit code 15
+yhrun: error: cn6137: task 385: Exited with exit code 15
+yhrun: error: cn6123: task 328: Exited with exit code 15
+yhrun: error: cn5985: task 205: Exited with exit code 15
+yhrun: error: cn6122: task 324: Exited with exit code 15
+yhrun: error: cn6127: task 346: Exited with exit code 15
+yhrun: error: cn5996: task 249: Exited with exit code 15
+yhrun: error: cn6126: task 343: Exited with exit code 15
+yhrun: error: cn9850: task 407: Exited with exit code 15
+yhrun: error: cn11222: task 864: Exited with exit code 15
+yhrun: error: cn5990: task 225: Exited with exit code 15
+yhrun: error: cn10610: task 787: Exited with exit code 15
+yhrun: error: cn6114: task 292: Exited with exit code 15
+yhrun: error: cn6135: task 378: Exited with exit code 15
+yhrun: error: cn11231: task 903: Exited with exit code 15
+yhrun: error: cn9849: task 400: Exited with exit code 15
+yhrun: error: cn11219: task 853: Exited with exit code 15
+yhrun: error: cn6120: task 318: Exited with exit code 15
+yhrun: error: cn11217: task 845: Exited with exit code 15
+yhrun: error: cn9848: task 396: Exited with exit code 15
+yhrun: error: cn4028: task 59: Exited with exit code 15

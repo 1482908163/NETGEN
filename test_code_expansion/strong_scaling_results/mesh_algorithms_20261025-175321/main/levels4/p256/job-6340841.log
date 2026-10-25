@@ -1,0 +1,25 @@
+预热验证失败：node_original_t4；跳过该策略的正式计时，保留诊断并继续其他策略。
+预热验证失败：node_rules_elastic_t4；跳过该策略的正式计时，保留诊断并继续其他策略。
+预热验证失败：node_search_local_t4；跳过该策略的正式计时，保留诊断并继续其他策略。
+RESULT: 3/5 measured runs, 5 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261025-175321/main/levels4/kernel_node_search_idle_t4/p256/RESULT_SUMMARY.txt
+RESULT: 5/5 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261025-175321/main/levels4/kernel_node_search_remote_t4/p256/RESULT_SUMMARY.txt
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1736, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1675, in main
+    summary[name+"_median"] = st.median(present) if present else None
+  File "/usr/lib/python3.8/statistics.py", line 435, in median
+    return (data[i - 1] + data[i])/2
+TypeError: unsupported operand type(s) for /: 'str' and 'int'
+RESULT: 3/5 measured runs, 5 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261025-175321/main/levels4/kernel_node_search_full_t4/p256/RESULT_SUMMARY.txt
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1736, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/analyze_results.py", line 1675, in main
+    summary[name+"_median"] = st.median(present) if present else None
+  File "/usr/lib/python3.8/statistics.py", line 435, in median
+    return (data[i - 1] + data[i])/2
+TypeError: unsupported operand type(s) for /: 'str' and 'int'
+RESULT: 5/5 measured runs, 0 issues; read /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261025-175321/main/levels4/kernel_node_fixed_t4/p256/RESULT_SUMMARY.txt
+slurmstepd: error: *** JOB 6340841 ON cn2743 CANCELLED AT 2026-10-25T22:00:22 ***
+Terminated
