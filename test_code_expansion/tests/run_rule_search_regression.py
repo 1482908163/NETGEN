@@ -61,7 +61,8 @@ def main():
             invoke(flags(entry)+['-I'+str(repo/'netgen/libsrc/meshing'), '-c', str(source), '-o', str(obj)])
             replacements[stem+'.cpp.o'] = str(obj)
         reference = output/'rule_search_reference'
-        invoke(flags(rule)+['-DRULE_SEARCH_REFERENCE', str(test)]+
+        legacy=[] if 'Meshing3::ExecuteRuleSearchPacket' in (args.reference_sources/'ruler3.cpp').read_text() else ['-DRULE_SEARCH_LEGACY_TRANSPORT']
+        invoke(flags(rule)+['-DRULE_SEARCH_REFERENCE']+legacy+[str(test)]+
                [replacements.get(Path(o).name, o) for o in objects]+libs+['-o', str(reference)])
         oracle = subprocess.check_output([str(reference), '1', '0'], text=True, cwd=output)
         (output/'reference.txt').write_text(oracle)
@@ -77,6 +78,11 @@ def main():
         if fingerprint != oracle:
             raise SystemExit(f'结果不一致：threads={threads}, mode={mode}')
         logs.append(f'threads={threads} mode={mode} remote={remote}\n{out}')
+    recovery=output/'generation_recovery'
+    invoke(flags(rule)+[str(repo/'test_code_expansion/tests/generation_recovery_regression.cpp')]+
+           objects+libs+['-o',str(recovery)])
+    out=subprocess.check_output([str(recovery)],text=True,cwd=output,timeout=180)
+    logs.append(out);print(out.strip())
     if args.mpi_prefix:
         mpi=args.mpi_prefix.resolve();mpi_binary=output/'rule_search_mpi'
         invoke([str(mpi/'bin/mpicxx')]+flags(rule)[1:]+['-DNETGEN_SEARCH_MPI_REGRESSION',str(test)]+

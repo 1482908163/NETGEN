@@ -44,6 +44,7 @@ void print_help() {
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware/node_rules_fixed/node_rules_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
+         "生成内部修复策略：node_rules_recovery / node_rules_recovery_online" << endl <<
          "联合搜索策略：node_search_local / node_search_idle / node_search_remote / node_search_online / node_search_full / node_search_elastic" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -319,13 +320,14 @@ int main(int argc, char **argv) {
     const bool adaptive_search=requested_scheduler=="node_search_local" || requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" ||
                                requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_search_elastic";
     const bool remote_search=requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" || requested_scheduler=="node_search_full";
-    const bool online_borrow=requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full";
+    const bool generation_recovery=requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online";
+    const bool online_borrow=requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_rules_recovery_online";
     if(adaptive_search) {
         research.kernel_scheduler=online_borrow?"node_online":requested_scheduler=="node_search_elastic"?"node_elastic":"node_fixed";
         rule_search_mode=profile_repeat<=0?4:3;
     }
-    if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic") {
-        research.kernel_scheduler=requested_scheduler=="node_rules_fixed"?"node_fixed":"node_elastic";
+    if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic" || generation_recovery) {
+        research.kernel_scheduler=online_borrow?"node_online":requested_scheduler=="node_rules_fixed"?"node_fixed":"node_elastic";
         // Verify every eligible rule call during quality warmup only. Formal
         // timing executes the same task path without the sequential replay.
         rule_search_mode=profile_repeat<=0?2:1;
@@ -466,7 +468,11 @@ int main(int argc, char **argv) {
         profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
         profiler.add_metadata("rule_search_resource","phase0_base_only");
     }
-    if(adaptive_search) profiler.add_metadata("search_revision","matched_tasks_v4");
+    if(research.kernel_threads>0) {
+        profiler.add_metadata("search_revision","generation_tail_v5");
+        profiler.add_metadata("generation_profile","generation_v1");
+        profiler.add_metadata("generation_recovery",generation_recovery?"ordered_team_v1":"off");
+    }
     if(adaptive_search) profiler.add_metadata("search_policy","ordered_subtree_demand_v3");
     if(remote_search) profiler.add_metadata("search_remote","completed_anchor_demand_v3");
     if(online_borrow) {
@@ -863,6 +869,7 @@ int main(int argc, char **argv) {
             double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={},rule_details[24]={};
             if(nglib::Ng_SetVolumeRuleSearchMode(rule_search_mode)!=nglib::NG_OK)
                 MPI_Abort(MPI_COMM_WORLD,2);
+            if(nglib::Ng_SetVolumeGenerationRecovery(generation_recovery?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -891,6 +898,13 @@ int main(int argc, char **argv) {
                 : nglib::Ng_GenerateVolumeMesh(submesh, &nmp);
             if(node_resources) {node_resources->finish();node_resources->report(profiler,research.kernel_scheduler!="node_native" && research.kernel_scheduler!="node_original");}
             if(research.kernel_threads>0) {
+                double generation[19]={};nglib::Ng_GetVolumeGenerationStats(generation);
+                const char *generation_names[]={"prepare_seconds","divide_seconds","domain_checks_seconds",
+                    "domain_setup_seconds","front_setup_seconds","recovery_seconds","recovery_topology_seconds",
+                    "recovery_smooth_seconds","recovery_combine_seconds","recovery_swap_seconds",
+                    "recovery_swap2_seconds","recovery_remove_seconds","domain_finalize_seconds",
+                    "merge_seconds","quality_seconds","recovery_sweeps","recovery_team_sweeps","domains","front_passes"};
+                for(int k=0;k<19;++k) profiler.set_metric(std::string("kernel_gen_")+generation_names[k],generation[k]);
                 nglib::Ng_GetVolumeFrontStats(front_details);
                 if(rule_search_mode>=0) {
                     nglib::Ng_GetVolumeRuleSearchStats(rule_details);

@@ -514,6 +514,9 @@ NGLIB_API Ng_Result Ng_GenerateVolumeMeshCooperativeStages(Ng_Mesh * mesh,
     int (*poll)(void *), int responsive, double * seconds, double * details);
 // Twenty advancing-front diagnostics from the last research volume-kernel call.
 NGLIB_API void Ng_GetVolumeFrontStats(double * values);
+// Separate API: existing kernel diagnostic array sizes remain unchanged.
+NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled);
+NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
 // Host-thread setting, applied only to the instrumented volume kernel.
 // -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);

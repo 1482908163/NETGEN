@@ -84,7 +84,7 @@ int main(int argc,char **argv) {
             int partial[8]={20,1};
             require(trial.poll_operations(100,0,100,.1,.00001,partial)==1,"已知工作足以摊销但被未知类型全部阻塞");
             trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
-            require(n==3,"未识别模型未限制为一核试探");
+            require(n==5,"唯一拖尾未回退到旧弹性池宽度");
             require(!trial.poll_operations(100,1,100,5.,.00001,nullptr),"未知操作被误计为试探损失");
             require(!trial.poll_operations(100,0,1000,5.,.00001,nullptr),"不同工作量范围被误判为加核退化");
             require(!trial.poll_operations(100,0,100,.5,.00001,nullptr),"单次噪声错误触发全局回退");
@@ -98,16 +98,57 @@ int main(int argc,char **argv) {
             int changed[8]={0,0,20};
             require(trial.poll_operations(100,2,100,1.,.00001,changed)==1,"单类失败封锁了后续有效操作");
             trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
-            require(n==3,"新操作试探没有兑现");
+            require(n==5,"新操作的唯一拖尾借核没有兑现");
             trial.poll_operations(100,2,100,.6,.00001,nullptr);
             trial.poll_operations(100,2,100,.6,.00001,nullptr);
             trial.release(6,100,n,.1);trial.finish();Metrics m;trial.report(m);
             require(m.values["coop_operation_explores"]==2 && m.values["coop_operation_rollbacks"]==1,"试探与退回诊断缺失");
             require(m.values["coop_operation_unmatched"]==2 && m.values["coop_operation_resolved"]==1,"匹配操作证据缺失");
+            require(m.values["coop_operation_tail_grants"]==2,"唯一拖尾借核诊断缺失");
             require(m.values["coop_checkpoint_restarts"]==m.values["coop_checkpoint_grants"]+1,"退回错误计为增核");
             std::cout<<"通过：未知类型与工作量隔离、重复负收益退回、新操作恢复试探和实测收益确认。\n";
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
+    for(int scenario=0;scenario<3;++scenario) {
+        require(!sched_setaffinity(0,sizeof(initial_mask),&initial_mask),"恢复测试绑定失败");
+        MPI_Barrier(MPI_COMM_WORLD);
+        mesh_node::NodeResources trial(MPI_COMM_WORLD,2,14);trial.prepare(100);
+        int n=0;if(!rank)n=trial.acquire(6,100,0);
+        if(rank==1)trial.finish();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(!rank) {
+            for(int i=0;i<12;++i)trial.poll_operations(100,0,100,scenario==0?(i%2?.11:.09):.1,.00001,nullptr);
+            int plan[8]={20};
+            require(trial.poll_operations(100,0,100,.1,.00001,plan)==1,"竞争期未启动试探");
+            trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
+            require(n==3,"竞争期未保持一核试探");
+            if(scenario==0) {
+                require(!trial.poll_operations(100,0,100,.1,.00001,nullptr),"中性样本错误重建");
+                require(!trial.poll_operations(100,0,100,.1,.00001,nullptr),"中性样本错误重建");
+            } else if(scenario==1) {
+                int unknown[8]={0,20};
+                require(!trial.poll_operations(100,1,100,.1,.00001,unknown),"未建模工作错误增核");
+            }
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(rank>=2)trial.finish();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(!rank) {
+            if(scenario==2) {
+                int plan[8]={20};
+                require(trial.poll_operations(100,1,100,.1,.00001,plan)==1,"未匹配试探阻塞唯一拖尾增核");
+                trial.release(6,100,n,.1);n=trial.acquire(6,100,0);
+                require(n==5,"唯一拖尾未兑现全部已完成来源空闲核");
+            }
+            trial.release(6,100,n,.1);trial.finish();Metrics m;trial.report(m);
+            require(m.values["coop_operation_resolved"]==0,"中性或耗尽样本被误报为已证实收益");
+            require(m.values["coop_operation_inconclusive"]==int(scenario!=1),"无定论试探未正确结束");
+            require(m.values["coop_operation_exhausted"]==int(scenario==1),"不可匹配的剩余计划未结束试探");
+            require(m.values["coop_operation_tail_grants"]==int(scenario==2),"唯一拖尾诊断错误");
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+    if(!rank)std::cout<<"通过：中性试探结束、参考耗尽、未匹配试探切换唯一拖尾；均不误报实测收益。\n";
     MPI_Finalize();
 }

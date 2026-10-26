@@ -315,7 +315,10 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('search_total','node_original','baseline','node_search_full','sparse'),
            ('search_previous','node_rules_elastic','sparse','node_search_full','sparse'),
            ('search_order_elastic','node_rules_elastic','sparse','node_search_elastic','sparse'),
-           ('search_model','node_search_elastic','sparse','node_search_online','sparse'))
+           ('search_model','node_search_elastic','sparse','node_search_online','sparse'),
+           ('generation_recovery','node_rules_elastic','sparse','node_rules_recovery','sparse'),
+           ('recovery_online','node_rules_recovery','sparse','node_rules_recovery_online','sparse'),
+           ('recovery_total','node_rules_elastic','sparse','node_rules_recovery_online','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -381,8 +384,34 @@ SEARCH_CREDIT_METRICS = tuple('search_remote_'+k for k in (
 SEARCH_SUBTREE_METRICS=tuple('search_subtree_'+k for k in ('calls','tasks','setup_seconds','wall_seconds','replay_face_trials','replay_point_trials'))
 SEARCH_DEMAND_METRICS=tuple('search_remote_'+k for k in ('demand_sent','demand_received','event_waits','event_wait_seconds'))
 OPERATION_V4_METRICS=tuple('coop_operation_'+k for k in ('matched','unmatched','resolved','blocked'))
+OPERATION_V5_METRICS=tuple('coop_operation_'+k for k in ('inconclusive','exhausted','tail_grants'))
+GENERATION_METRICS=tuple('kernel_gen_'+k for k in (
+    'prepare_seconds','divide_seconds','domain_checks_seconds','domain_setup_seconds','front_setup_seconds',
+    'recovery_seconds','recovery_topology_seconds','recovery_smooth_seconds','recovery_combine_seconds',
+    'recovery_swap_seconds','recovery_swap2_seconds','recovery_remove_seconds','domain_finalize_seconds',
+    'merge_seconds','quality_seconds','recovery_sweeps','recovery_team_sweeps','domains','front_passes'))
 SEARCH_SIZE_METRICS=('search_remote_latency_seconds','search_remote_seconds_per_byte')
 OPERATION_V3_METRICS=tuple('coop_operation_'+k for k in ('partial','explores','rollbacks','trial_debt_seconds','unknown_types','missing_plan'))
+
+def inspect_generation(rows, metadata, scheduler):
+    if metadata.get('generation_profile')!='generation_v1':
+        raise ValueError('missing generation profile')
+    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online') else 'off'
+    if metadata.get('generation_recovery')!=expected:
+        raise ValueError('unexpected generation recovery mode')
+    result={'generation_recovery':expected}
+    for key in GENERATION_METRICS:
+        values=[row.get('metrics',{}).get(key) for row in rows]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 for v in values):
+            raise ValueError('missing or invalid generation metric: '+key)
+        if key.endswith(('_sweeps','domains','passes')) and any(v!=int(v) for v in values):
+            raise ValueError('fractional generation count: '+key)
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for row in rows:
+        m=row['metrics'];sweeps=m['kernel_gen_recovery_sweeps'];covered=m['kernel_gen_recovery_team_sweeps']
+        if covered>sweeps or (expected=='off' and covered):
+            raise ValueError('invalid per-rank recovery team coverage')
+    return result
 
 CRITICAL_METRICS = (
     'volume_kernel_input_points','volume_kernel_input_surface_elements',
@@ -409,7 +438,8 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'front_local_points_mean','front_local_faces_mean','front_qualclass_mean',
     'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
     'front_unattributed_seconds','front_profile_coverage',
-    'coop_borrowed_core_seconds','first_loan_fraction')
+    'coop_borrowed_core_seconds','first_loan_fraction') + GENERATION_METRICS + OPERATION_V5_METRICS
+CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -428,7 +458,7 @@ def critical_rank_details(rows, result):
     for field in ('face_complete_elapsed','vertex_arrival_elapsed'):
         if all(field in r['metrics'] for r in rows):
             select(field,lambda r:r['metrics'][field])
-    for field in ('search_remote_control_seconds','search_remote_control_max_seconds','kernel_rules_max_call_seconds'):
+    for field in ('search_remote_control_seconds','search_remote_control_max_seconds','kernel_rules_max_call_seconds','kernel_gen_recovery_seconds'):
         if all(field in r['metrics'] for r in rows): select(field,lambda r:r['metrics'][field])
     node=slow['metrics'].get('coop_timeline_node')
     if node is not None:
@@ -564,6 +594,15 @@ def critical_overview(root,ranks,selected):
             f"前沿={compact(r['kernel_front_seconds_median'])}s；域内修复={compact(r['kernel_domain_repair_seconds_median'])}s；"
             f"外层修复={compact(r['kernel_repair_seconds_median'])}s；优化={compact(r['kernel_optimization_seconds_median'])}s；"
             f"借核={r['borrowed_repeats']}/{r['measured_repeats']} 次运行。")
+        if r.get('kernel_gen_recovery_seconds_median') is not None:
+            lines.append('  生成内部修复：'+ '；'.join(name+'='+compact(r.get('kernel_gen_'+key+'_median'))
+                for name,key in [('总秒数','recovery_seconds'),('拓扑维护秒数','recovery_topology_seconds'),
+                    ('平滑秒数','recovery_smooth_seconds'),('合并秒数','recovery_combine_seconds'),
+                    ('交换秒数','recovery_swap_seconds'),('二次交换秒数','recovery_swap2_seconds'),
+                    ('问题区域移除秒数','recovery_remove_seconds'),('修复轮数','recovery_sweeps'),
+                    ('新增线程组轮数','recovery_team_sweeps')]))
+            lines.append('  借核识别：'+ '；'.join(name+'='+compact(r.get('coop_operation_'+key+'_median'),0)
+                for name,key in [('无定论结束','inconclusive'),('参考耗尽','exhausted'),('单尾进程增核','tail_grants')]))
         if r.get('kernel_front_applyrules_seconds_median') is not None:
             lines.append(f"  front细分: ApplyRules={compact(r.get('kernel_front_applyrules_seconds_median'))}s "
                 f"GetLocals={compact(r.get('kernel_front_getlocals_seconds_median'))}s "
@@ -580,6 +619,7 @@ def critical_overview(root,ranks,selected):
                 f"覆盖率={compact(100*(r.get('front_profile_coverage_median') or 0))}% "
                 f"未归因={compact(r.get('front_unattributed_seconds_median'))}s。")
     lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
+    lines.append('生成内部修复总秒数包含其子项；域计时为各域累计，不能直接从并行生成墙钟时间相减。')
     lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
     (out/'CRITICAL_PATH_SUMMARY.txt').write_text('\n'.join(lines+issues)+'\n')
     return lines,issues
@@ -759,6 +799,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
             raise ValueError("invalid core time")
     metadata=dict(metadata)
     rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
+                  'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
                   'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
@@ -800,11 +841,14 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
     result.update(volume_workload_metrics(rows))
-    if metadata.get('search_revision')=='matched_tasks_v4':
-        result['search_revision']='matched_tasks_v4'
+    if metadata.get('search_revision') in ('matched_tasks_v4','generation_tail_v5'):
+        result['search_revision']=metadata['search_revision']
         extra=()
         if metadata.get('node_work_policy')=='operation_exploration_v3': extra+=OPERATION_V4_METRICS
         if metadata.get('search_remote')=='completed_anchor_demand_v3': extra+=SEARCH_SIZE_METRICS
+        if metadata['search_revision']=='generation_tail_v5':
+            result.update(inspect_generation(rows,metadata,requested_scheduler))
+            if metadata.get('node_work_policy')=='operation_exploration_v3': extra+=OPERATION_V5_METRICS
         for key in extra:
             values=[row.get('metrics',{}).get(key) for row in rows]
             if any(v is None or not math.isfinite(v) or v<0 for v in values):

@@ -14,7 +14,7 @@
 
 using namespace netgen;
 namespace netgen { extern double minother, minwithoutother; }
-#ifdef RULE_SEARCH_REFERENCE
+#ifdef RULE_SEARCH_LEGACY_TRANSPORT
 // The untouched parent predates the transport API; reference runs never use it.
 namespace netgen {
 std::string Meshing3::ExecuteRuleSearchPacket(const char *,int) {

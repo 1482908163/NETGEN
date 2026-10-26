@@ -120,15 +120,22 @@ namespace netgen
     static constexpr int front_count = 20;
     static constexpr int rule_count = 24;
     static constexpr int adaptive_count = 14;
+    static constexpr int generation_count = 19;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
     std::atomic<double> rule_values[rule_count];
     std::atomic<double> adaptive_values[adaptive_count];
+    std::atomic<double> generation_values[generation_count];
     VolumeKernelStats() {
       for(auto & v : values) v.store(0);
       for(auto & v : front_values) v.store(0);
       for(auto & v : rule_values) v.store(0);
       for(auto & v : adaptive_values) v.store(0);
+      for(auto & v : generation_values) v.store(0);
+    }
+    void AddGeneration(int i,double value) {
+      auto old=generation_values[i].load(std::memory_order_relaxed);
+      while(!generation_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
     }
     void AddAdaptive(int i,double value) { auto old=adaptive_values[i].load();
       while(!adaptive_values[i].compare_exchange_weak(old,old+value)) {} }
@@ -166,9 +173,21 @@ namespace netgen
   };
 
 
-  /*
-    Classes for NETGEN
-  */
+  struct VolumeGenerationTimer {
+    VolumeKernelStats *stats;
+    int index;
+    std::chrono::steady_clock::time_point start;
+    VolumeGenerationTimer(VolumeKernelStats *s,int i):stats(s),index(i) {
+      if(stats) start=std::chrono::steady_clock::now();
+    }
+    void Stop() {
+      if(stats) {
+        stats->AddGeneration(index,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+        stats=nullptr;
+      }
+    }
+    ~VolumeGenerationTimer() { Stop(); }
+  };
 
 
   enum ELEMENT_TYPE : unsigned char { 
@@ -1758,6 +1777,7 @@ namespace netgen
     bool volume_parallel_repair = false;
     bool volume_repair_frontier = false;
     VolumeKernelStats * volume_kernel_stats = nullptr;
+    bool volume_generation_recovery = false;
     const VolumeResources * volume_resources = nullptr;
     int volume_rule_search = -1; // -1: off; 0: serial profile; 1: tasks; 2: verified tasks
     const RuleSearchTransport * volume_rule_transport = nullptr;

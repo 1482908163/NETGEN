@@ -83,7 +83,7 @@ print('12345')
         self.assertEqual(state['exit_code'], 125)
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
-    def test_joint_plan_has_eleven_strategies_and_ten_contributions(self):
+    def test_joint_plan_has_all_thirteen_strategies_and_contributions(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='0')
         self.assertEqual(result.returncode,0,result.stderr)
         calls=self.calls();self.assertEqual(len(calls),5)
@@ -93,7 +93,7 @@ print('12345')
         plan=json.loads((self.folder/'results/rule_search_batch_plan.json').read_text())
         self.assertEqual(tuple(plan['contributions']),batch.JOINT_CONTRIBUTIONS)
         self.assertEqual(plan['refines'],2)
-        self.assertEqual(plan['joint_revision'],'matched_tasks_v4')
+        self.assertEqual(plan['joint_revision'],'generation_tail_v5')
 
     def test_focused_default_keeps_64_nodes_and_three_independent_jobs(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='1')
@@ -104,7 +104,7 @@ print('12345')
         self.assertTrue(all(j['nodes']==64 for j in plan['jobs']))
         self.assertEqual(plan['refines'],2)
         self.assertEqual({j['levels'] for j in plan['jobs']},{2,4})
-        self.assertEqual(sum((j['repeats']+1)*len(plan['schedulers']) for j in plan['jobs']),70)
+        self.assertEqual(sum((j['repeats']+1)*len(plan['schedulers']) for j in plan['jobs']),60)
         self.assertEqual(len({c['env']['START_EPOCH'] for c in self.calls()}),1)
 
     def test_joint_work_evidence_missing_or_changed_is_rejected(self):
@@ -141,6 +141,40 @@ print('12345')
         result = self.launch(RULE_SEARCH_MAIN_NODES='0')
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.capture.exists())
+
+    def test_v5_recovery_version_and_counters_are_required(self):
+        schedulers=['node_rules_elastic','node_rules_recovery','node_rules_recovery_online']
+        plan=dict(schedulers=schedulers,seeds=[-1],joint_revision='generation_tail_v5',refines=2)
+        job=dict(group='main',levels=4,ranks=256,repeats=1)
+        root=self.folder/'v5'
+        for scheduler in schedulers:
+            for rep in (0,1):
+                p=root/'main/levels4'/f'kernel_{scheduler}_t4/p256/repeat_{rep}/analysis_metrics.json'
+                p.parent.mkdir(parents=True,exist_ok=True)
+                r=dict(partition_seed=-1,repeat=rep,post_work_profile='rank_counts_v1',
+                       scaling_work_sha256='same',scaling_kernel_work_sha256='same',
+                       kernel_rules_face_trials=10,kernel_rules_point_trials=12,kernel_rules_mappings=4,
+                       surface_levels=4,volume_refines=2,post_refine_elements_sum=640,
+                       search_revision='generation_tail_v5',
+                       generation_recovery='off' if scheduler=='node_rules_elastic' else 'ordered_team_v1',
+                       kernel_gen_recovery_seconds=1,kernel_gen_recovery_sweeps=2,
+                       kernel_gen_recovery_team_sweeps=0 if scheduler=='node_rules_elastic' else 2)
+                r.update(dict.fromkeys(('coop_operation_explores','coop_operation_rollbacks','coop_operation_unknown_types',
+                                        'coop_operation_inconclusive','coop_operation_exhausted','coop_operation_tail_grants'),0))
+                p.write_text(json.dumps({'result':r}))
+        coverage=batch.review_joint_records(root,job,plan)
+        self.assertEqual([c['recovery_team_sweeps'] for c in coverage],[0,2,2])
+        p=root/'main/levels4/kernel_node_rules_recovery_online_t4/p256/repeat_1/analysis_metrics.json'
+        good=json.loads(p.read_text())
+        for key,value in [('search_revision','matched_tasks_v4'),('generation_recovery','off'),
+                          ('kernel_gen_recovery_team_sweeps',3),('coop_operation_tail_grants',float('nan')),
+                          ('scaling_kernel_work_sha256','changed')]:
+            with self.subTest(key=key):
+                bad=json.loads(json.dumps(good));bad['result'][key]=value;p.write_text(json.dumps(bad))
+                with self.assertRaises(ValueError):batch.review_joint_records(root,job,plan)
+        p.write_text(json.dumps(good))
+        good['result'].pop('coop_operation_exhausted');p.write_text(json.dumps(good))
+        with self.assertRaises(ValueError):batch.review_joint_records(root,job,plan)
 
     def test_dry_run_submits_nothing(self):
         result = self.launch(DRY_RUN='1')

@@ -89,8 +89,9 @@ class NodeResources {
     Model trial_reference[8][work_bins];
     bool trial_active=false;
     bool failed_context[8][work_bins]={};
-    int trial_harmful[8][work_bins]={},trial_good=0;
+    int trial_harmful[8][work_bins]={},trial_good=0,trial_matches=0;
     double operation_matched=0,operation_unmatched=0,operation_resolved=0,operation_blocked=0;
+    double operation_inconclusive=0,operation_exhausted=0,operation_tail_grants=0;
     double start_offset=0,finish_offset=0,first_loan=0,last_loan=0,loan_events=0;
     double node_idle=0,node_reserved=0,node_last=0;
     int node_leader=0;
@@ -461,7 +462,7 @@ public:
         if(trial_active && completed>=0 && completed<8 && completed_work>0 && last>0) {
             const auto &reference=trial_reference[completed][completed_bin];
             if(reference.samples) {
-                ++operation_matched;
+                ++operation_matched;++trial_matches;
                 double a,b;reference.coefficients(a,b);
                 const double before=completed_work*(a+b/trial_threads);
                 const double margin=completed_work*reference.error;
@@ -496,8 +497,23 @@ public:
             failed_context[completed][completed_bin]=true;
             operation_debt+=trial_spent;unlock();checkpoint_seconds+=now()-stamp;return 1;
         }
+        // A neutral matched pair ends identification too. This is not a measured
+        // speedup: updated operation models must independently justify growth.
+        if(trial_active && trial_matches>=2) {
+            trial_active=false;++operation_inconclusive;
+        }
         r.operation_tail=0;r.progress_time=stamp;
         if(!counts) {++operation_missing_plan;++work_unknown;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        int comparable_remaining=0;
+        for(int op=0;op<8;++op) {
+            if(counts[op]<0) fail("剩余操作计数非法");
+            if(trial_reference[op][WorkBin(work)].samples) comparable_remaining+=counts[op];
+        }
+        // The current work bucket and remaining histogram cannot provide two
+        // comparable samples. Retire this trial without claiming success/failure.
+        if(trial_active && trial_matches+comparable_remaining<2) {
+            trial_active=false;++operation_exhausted;
+        }
         double serial=0,parallel=0,error=0;int unknown=0,identified=0,known=0;
         for(int op=0;op<8;++op) {
             if(counts[op]<0) fail("剩余操作计数非法");
@@ -520,7 +536,8 @@ public:
         for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) ++extra;
         if(!extra) {++work_no_capacity;unlock();checkpoint_seconds+=now()-stamp;return 0;}
-        double other=0;
+        double other=0;bool sole_tail=true;
+        for(int i=0;i<size;++i) if(i!=me && !shared->rank[i].done) sole_tail=false;
         for(int i=0;i<size;++i) if(i!=me && shared->rank[i].active) {
             const auto &peer=shared->rank[i];
             other=std::max(other,std::max(0.0,peer.operation_tail-(stamp-peer.progress_time)));
@@ -528,18 +545,25 @@ public:
         const bool exploratory=unknown || identified<known;
         // One extra core is an identification experiment, not a fitted speedup
         // claim. Its predicted known-work gain must pay both restart directions.
-        if(trial_active) {
+        if(trial_active && !sole_tail) {
             ++work_deferred;unlock();checkpoint_seconds+=now()-stamp;return 0;
         }
-        auto choice=ChooseBorrowComposition(r.threads,r.threads+(exploratory?1:extra),
+        // With every local peer finished, allow the old elastic pool width.
+        // The work/restart-cost gate and repeated-harm return still apply. This
+        // baseline fallback is not evidence that an unidentifiable model improved.
+        auto choice=ChooseBorrowComposition(r.threads,r.threads+(exploratory && !sole_tail?1:extra),
             serial,parallel,error,restart*(exploratory?2:1),other);
         if(choice.threads<=r.threads) {++work_cost;unlock();checkpoint_seconds+=now()-stamp;return 0;}
+        if(sole_tail) {
+            if(trial_active) {trial_active=false;++operation_inconclusive;}
+            ++operation_tail_grants;
+        }
         if(exploratory) {
             trial_active=true;trial_threads=r.threads;trial_budget=choice.gain;trial_spent=restart;trial_credit=0;
             for(int op=0;op<8;++op) for(int bin=0;bin<work_bins;++bin) {
                 trial_reference[op][bin]=r.operations[op][bin];trial_harmful[op][bin]=0;
             }
-            trial_good=0;++operation_explores;
+            trial_good=0;trial_matches=0;++operation_explores;
         }
         operation_target=choice.threads;
         int reserve=choice.threads-r.threads;
@@ -798,6 +822,9 @@ public:
         p.set_metric("coop_operation_unmatched",operation_unmatched);
         p.set_metric("coop_operation_resolved",operation_resolved);
         p.set_metric("coop_operation_blocked",operation_blocked);
+        p.set_metric("coop_operation_inconclusive",operation_inconclusive);
+        p.set_metric("coop_operation_exhausted",operation_exhausted);
+        p.set_metric("coop_operation_tail_grants",operation_tail_grants);
         p.set_metric("coop_operation_partial",operation_partial);
         p.set_metric("coop_operation_explores",operation_explores);
         p.set_metric("coop_operation_rollbacks",operation_rollbacks);

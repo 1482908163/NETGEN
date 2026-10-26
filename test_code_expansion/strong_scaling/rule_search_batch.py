@@ -13,16 +13,17 @@ import tempfile
 import time
 
 SCHEDULERS = ('node_original', 'node_fixed', 'node_elastic', 'node_rules_fixed', 'node_rules_elastic')
-JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full','node_search_elastic')
-FOCUSED_SCHEDULERS = ('node_fixed','node_rules_fixed','node_rules_elastic','node_search_local','node_search_elastic','node_search_online','node_search_full')
-FOCUSED_CONTRIBUTIONS = ('search_adaptive','search_online','search_remote_online','search_previous','search_order_elastic','search_model')
+JOINT_SCHEDULERS = SCHEDULERS + ('node_search_local','node_search_idle','node_search_remote','node_search_online','node_search_full','node_search_elastic','node_rules_recovery','node_rules_recovery_online')
+FOCUSED_SCHEDULERS = ('node_rules_elastic','node_search_elastic','node_search_online','node_search_full','node_rules_recovery','node_rules_recovery_online')
+FOCUSED_CONTRIBUTIONS = ('search_remote_online','search_previous','search_order_elastic','search_model','generation_recovery','recovery_online','recovery_total')
 CONTRIBUTIONS = ('rule_search_fixed', 'rule_search_elastic', 'rule_search_borrowing', 'rule_search_total')
 JOINT_CONTRIBUTIONS = ('search_adaptive','search_protocol','search_remote','search_online',
-                       'search_remote_online','search_incremental','search_total','search_previous','search_order_elastic','search_model')
+                       'search_remote_online','search_incremental','search_total','search_previous','search_order_elastic','search_model','generation_recovery','recovery_online','recovery_total')
 LABELS = dict(zip(CONTRIBUTIONS, ('固定核规则并行', '借核基础上规则并行', '规则并行基础上借核', '相对原程序总收益')))
 LABELS.update(zip(JOINT_CONTRIBUTIONS,('规则搜索策略增量','跨节点协议开销','跨节点搜索增量',
                                      '在线借核增量','在线借核上的跨节点增量','相对原借核增量','联合方案总收益',
-                                     '相对上轮规则并行与借核','旧借核基础上的搜索排序','同搜索下操作模型净收益')))
+                                     '相对上轮规则并行与借核','旧借核基础上的搜索排序','同搜索下操作模型净收益',
+                                     '生成内部修复并行','修复并行下的新借核','修复并行与新借核总增量')))
 
 
 def atomic(path, content):
@@ -99,7 +100,7 @@ def initialize(root):
                 refines=int(os.environ['REFINES']), start_epoch=int(os.environ['START_EPOCH']),
                 dry_run=os.environ.get('DRY_RUN') == '1',
                 source_revision=os.environ.get('MESH_SOURCE_REVISION', 'manual'),
-                joint_revision='matched_tasks_v4' if joint else None,
+                joint_revision='generation_tail_v5' if joint else None,
                 input_path=os.environ['INPUT_PATH'], maxh=os.environ['MAXH'], minh=os.environ['MINH'])
     target = root/'rule_search_batch_plan.json'
     if target.exists():
@@ -147,7 +148,7 @@ def audit_job(root, job, plan):
             value = float(r[field])
             if not math.isfinite(value) or (field != 'paired_reduction_pct' and value <= 0):
                 raise ValueError('无效比较指标：'+field)
-    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'):
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4','generation_tail_v5'):
         review_joint_records(root,job,plan)
     return audit
 
@@ -163,7 +164,7 @@ def review_joint_records(root,job,plan):
             raise ValueError('精简结果覆盖不完整：'+scheduler)
         if any(r.get('post_work_profile')!='rank_counts_v1' or not r.get('scaling_work_sha256') for r in rows):
             raise ValueError('缺少后续工作量指纹：'+scheduler)
-        if plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4'):
+        if plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4','generation_tail_v5'):
             if any(r.get('surface_levels')!=job['levels'] or r.get('volume_refines')!=plan['refines'] for r in rows):
                 raise ValueError('实际面/体细化级数与本批计划不一致：'+scheduler)
             required=[]
@@ -171,15 +172,27 @@ def review_joint_records(root,job,plan):
                 required+=['search_subtree_calls','search_subtree_tasks','search_subtree_replay_face_trials','search_subtree_replay_point_trials']
             if scheduler in ('node_search_idle','node_search_remote','node_search_full'):
                 required+=['search_remote_demand_sent','search_remote_demand_received','search_remote_event_waits']
-            if scheduler in ('node_search_online','node_search_full'):
+            if scheduler in ('node_search_online','node_search_full','node_rules_recovery_online'):
                 required+=['coop_operation_explores','coop_operation_rollbacks','coop_operation_unknown_types']
             if any(k not in r for r in rows for k in required):
                 raise ValueError('缺少本版算法诊断，可能运行旧程序：'+scheduler)
             if any(r.get('post_refine_elements_sum',0)<=0 for r in rows):
                 raise ValueError('缺少体细化后的实际网格计数：'+scheduler)
-        if plan.get('joint_revision')=='matched_tasks_v4' and scheduler.startswith('node_search_'):
-            if any(r.get('search_revision')!='matched_tasks_v4' for r in rows):
+        if plan.get('joint_revision') in ('matched_tasks_v4','generation_tail_v5') and (scheduler.startswith('node_search_') or plan['joint_revision']=='generation_tail_v5'):
+            if any(r.get('search_revision')!=plan['joint_revision'] for r in rows):
                 raise ValueError('缺少本轮版本标识，不能误用旧可执行文件：'+scheduler)
+        if plan.get('joint_revision')=='generation_tail_v5':
+            expected_recovery='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online') else 'off'
+            if any(r.get('generation_recovery')!=expected_recovery for r in rows):
+                raise ValueError('生成内部修复模式缺失或不符：'+scheduler)
+            required=['kernel_gen_recovery_seconds','kernel_gen_recovery_sweeps','kernel_gen_recovery_team_sweeps']
+            if scheduler in ('node_search_online','node_search_full','node_rules_recovery_online'):
+                required+=['coop_operation_inconclusive','coop_operation_exhausted','coop_operation_tail_grants']
+            if any(k not in r or not isinstance(r[k],(int,float)) or not math.isfinite(r[k]) or r[k]<0 for r in rows for k in required):
+                raise ValueError('缺少有效的生成或借核诊断：'+scheduler)
+            if any(r['kernel_gen_recovery_team_sweeps']>r['kernel_gen_recovery_sweeps'] or
+                   (expected_recovery=='off' and r['kernel_gen_recovery_team_sweeps']!=0) for r in rows):
+                raise ValueError('生成修复线程组覆盖计数不合法：'+scheduler)
         records.extend(rows)
         formal=[r for r in rows if r['repeat']>0]
         coverage.append(dict(scheduler=scheduler,formal=len(formal),
@@ -192,6 +205,11 @@ def review_joint_records(root,job,plan):
             subtree_tasks=sum(r.get('search_subtree_tasks',0) for r in formal),
             demand_sent=sum(r.get('search_remote_demand_sent',0) for r in formal),
             event_waits=sum(r.get('search_remote_event_waits',0) for r in formal),
+            recovery_sweeps=sum(r.get('kernel_gen_recovery_sweeps',0) for r in formal),
+            recovery_team_sweeps=sum(r.get('kernel_gen_recovery_team_sweeps',0) for r in formal),
+            tail_grants=sum(r.get('coop_operation_tail_grants',0) for r in formal),
+            inconclusive=sum(r.get('coop_operation_inconclusive',0) for r in formal),
+            exhausted=sum(r.get('coop_operation_exhausted',0) for r in formal),
             explores=sum(r.get('coop_operation_explores',0) for r in formal),
             rollbacks=sum(r.get('coop_operation_rollbacks',0) for r in formal),
             cost_rejects=sum(r.get('search_remote_cost_rejects',0) for r in formal),
@@ -230,7 +248,7 @@ def summarize(root, plan):
                 else:
                     audit = audit_job(root, job, plan)
                     record['status'] = '通过'
-                    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'):
+                    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4','generation_tail_v5'):
                         for c in review_joint_records(root,job,plan):
                             coverage.append(dict(group=job['group'],levels=job['levels'],nodes=job['nodes'],**c))
                     for row in audit:
@@ -260,13 +278,13 @@ def summarize(root, plan):
                          f"加速比 {float(row['speedup']):.4f}；配对耗时下降中位数 {float(row['paired_reduction_pct']):.2f}%；"
                          f"胜出 {row['paired_wins']}/{row['paired_count']}。")
     for c in coverage:
-        if c['scheduler']=='node_rules_elastic' and plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4'):
+        if c['scheduler']=='node_rules_elastic' and plan.get('joint_revision') in ('subtree_demand_v3','matched_tasks_v4','generation_tail_v5'):
             lines.append(f"L{c['levels']}/{c['nodes']}节点，首个正式基准：生成后体单元 {c['generated_elements']:.0f}，体细化后 {c['refined_elements']:.0f}。")
         if c['scheduler'] in ('node_search_remote','node_search_full'):
             lines.append(f"L{c['levels']}/{c['nodes']}节点 {c['scheduler']}：正式远程任务 {c['remote_calls']}；"
                          f"最大单次控制 {c['control_max_seconds']:.6f}s；子树调用 {c['subtree_calls']}；额外前缀试探 {c['subtree_replay_trials']}；"+
                          ('已发生外派，收益另看配对对照。' if c['remote_calls'] else '未覆盖远程执行，不能声称跨节点收益。'))
-    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4'): atomic(root/'batch_coverage.csv',csv_text(coverage))
+    if plan.get('joint_revision') in ('credit_operations_v2','subtree_demand_v3','matched_tasks_v4','generation_tail_v5'): atomic(root/'batch_coverage.csv',csv_text(coverage))
     lines += ['', '详细对照：batch_comparisons.csv；作业状态：batch_jobs.csv。',
               '失败数据保留；负收益不筛除；内部计时存在嵌套，不相加推算核心加速。',
               '硬终止可能无法执行完成回调；未收到完成记录的作业保持未完成，请查看调度日志。']

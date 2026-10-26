@@ -388,11 +388,50 @@ namespace netgen
   }
 
 
+  void RecoverOpenElements(Mesh & mesh,const MeshingParameters & mp,int domain)
+  {
+    auto *stats=mp.volume_kernel_stats;
+    VolumeGenerationTimer total(stats,5);
+    if(stats) stats->AddGeneration(15,1);
+    MeshOptimize3d optmesh(mesh,mp,OPT_REST);
+    {
+      std::unique_ptr<VolumeResourceTeam> team;
+#ifndef EMSCRIPTEN
+      // Existing domain teams already provide workers; only the host acquires a lease.
+      if(mp.volume_generation_recovery && !ngcore::task_manager) {
+        team=std::make_unique<VolumeResourceTeam>(mp.volume_resources,7,mesh.GetNE(),mp.nthreads);
+        if(stats) stats->AddGeneration(16,1);
+      }
+#endif
+      const char *optstr="mcmstmcmstmcmstmcm";
+      for(size_t j=0;j<strlen(optstr);++j) {
+        if(team) team->Checkpoint(mesh.GetNE());
+        { VolumeGenerationTimer topology(stats,6);
+          mesh.FindOpenElements();mesh.CalcSurfacesOfNode();
+          mesh.FreeOpenElementsEnvironment(2);mesh.CalcSurfacesOfNode();
+        }
+        // Retain operation order, sorted candidate commits, and smoothing color order.
+        switch(optstr[j]) {
+          case 'm': {VolumeGenerationTimer t(stats,7);optmesh.ImproveMesh();break;}
+          case 'c': {VolumeGenerationTimer t(stats,8);optmesh.CombineImprove();break;}
+          case 's': {VolumeGenerationTimer t(stats,9);optmesh.SwapImprove();break;}
+          case 't': {VolumeGenerationTimer t(stats,10);optmesh.SwapImprove2();break;}
+        }
+      }
+    } // Join workers and return the lease before serial cavity removal.
+    { VolumeGenerationTimer remove(stats,11);
+      mesh.FindOpenElements(domain);PrintMessage(3,"Call remove problem");
+      RemoveProblem(mesh,domain);mesh.FindOpenElements(domain);
+    }
+  }
+
   void MeshDomain( MeshingData & md)
   {
     auto & mesh = *md.mesh;
     auto domain = md.domain;
     MeshingParameters & mp = md.mp;
+    if(mp.volume_kernel_stats) mp.volume_kernel_stats->AddGeneration(17,1);
+    VolumeGenerationTimer setup(mp.volume_kernel_stats,3);
 
     mesh.CalcSurfacesOfNode();
     mesh.FindOpenElements(md.domain);
@@ -404,6 +443,7 @@ namespace netgen
     for (int i = 1; i <= mesh.GetNOpenElements(); i++)
        md.meshing->AddBoundaryElement (mesh.OpenElement(i));
 
+    setup.Stop();
     if (mp.delaunay && mesh.GetNOpenElements())
     {
       int oldne = mesh.GetNE();
@@ -439,6 +479,7 @@ namespace netgen
          if (multithread.terminate)
            break;
          
+         VolumeGenerationTimer preparation(mp.volume_kernel_stats,4);
          mesh.FindOpenElements(domain);
          PrintMessage (5, mesh.GetNOpenElements(), " open faces");
          // GetOpenElements( mesh, domain )->Save("open_"+ToString(domain)+"_"+ToString(cntsteps)+".vol");
@@ -478,6 +519,8 @@ namespace netgen
 
          mp.giveuptol = 15 + 10 * cntsteps; 
          mp.sloppy = 5;
+         preparation.Stop();
+         if(mp.volume_kernel_stats) mp.volume_kernel_stats->AddGeneration(18,1);
          { VolumeKernelTimer time(mp.volume_kernel_stats,1);
          meshing.GenerateMesh (mesh, mp); }
          
@@ -494,31 +537,7 @@ namespace netgen
             meshed = 0;
             PrintMessage (5, mesh.GetNOpenElements(), " open faces found");
 
-            MeshOptimize3d optmesh(mesh, mp, OPT_REST);
-
-            const char * optstr = "mcmstmcmstmcmstmcm";
-            for (size_t j = 1; j <= strlen(optstr); j++)
-            {
-               mesh.FindOpenElements();
-               mesh.CalcSurfacesOfNode();
-               mesh.FreeOpenElementsEnvironment(2);
-               mesh.CalcSurfacesOfNode();
-
-               switch (optstr[j-1])
-               {
-               case 'c': optmesh.CombineImprove(); break;
-               case 'd': optmesh.SplitImprove(); break;
-               case 's': optmesh.SwapImprove(); break;
-               case 't': optmesh.SwapImprove2(); break;
-               case 'm': optmesh.ImproveMesh(); break;
-               }	  
-
-            }
-
-            mesh.FindOpenElements(domain);
-            PrintMessage (3, "Call remove problem");
-            RemoveProblem (mesh, domain);
-            mesh.FindOpenElements(domain);
+            RecoverOpenElements(mesh,mp,domain);
          }
          else
            {
@@ -528,6 +547,7 @@ namespace netgen
        }
     while (!meshed);
 
+    VolumeGenerationTimer finalize(mp.volume_kernel_stats,12);
     PrintMessage (3, "Check subdomain ", domain, " / ", mesh.GetNDomains());
 
     mesh.FindOpenElements(domain);
@@ -540,9 +560,11 @@ namespace netgen
       PrintError ("Surface mesh not consistent");
       throw NgException ("Stop meshing since surface mesh not consistent");
     }
+    finalize.Stop();
     { VolumeKernelTimer time(mp.volume_kernel_stats,2);
       RemoveIllegalElements (mesh, mp, domain); }
-    ConformToFreeSegments (mesh, domain);
+    { VolumeGenerationTimer conform(mp.volume_kernel_stats,12);
+      ConformToFreeSegments (mesh, domain); }
   }
 
   void MergeMeshes( Mesh & mesh, Array<MeshingData> & md )
@@ -622,6 +644,7 @@ namespace netgen
   {
     static Timer t("MeshVolume"); RegionTimer reg(t);
 
+     VolumeGenerationTimer preparation(mp.volume_kernel_stats,0);
      mesh3d.Compress();
 
      if(mesh3d.GetNDomains()==0)
@@ -638,13 +661,16 @@ namespace netgen
      if (!mesh3d.HasLocalHFunction())
          mesh3d.CalcLocalH(mp.grading);
 
-     auto md = DivideMesh(mesh3d, mp);
+     preparation.Stop();
+     auto md = [&] {VolumeGenerationTimer divide(mp.volume_kernel_stats,1);
+       return DivideMesh(mesh3d,mp); }();
 
      try
        {
      ParallelFor( md.Range(), [&](int i)
        {
          try {
+           VolumeGenerationTimer checks(mp.volume_kernel_stats,2);
            if (mp.checkoverlappingboundary)
              if (md[i].mesh->CheckOverlappingBoundary())
              {
@@ -656,6 +682,7 @@ namespace netgen
            if(md[i].mesh->GetGeometry()->GetGeomType() == Mesh::GEOM_OCC)
               FillCloseSurface( md[i] );
            CloseOpenQuads( md[i] );
+           checks.Stop();
            MeshDomain(md[i]);
          }
          catch (const Exception & e) {
@@ -672,9 +699,9 @@ namespace netgen
          return MESHING3_GIVEUP;
        }
 
-     MergeMeshes(mesh3d, md);
+     {VolumeGenerationTimer merge(mp.volume_kernel_stats,13);MergeMeshes(mesh3d,md);}
 
-     MeshQuality3d (mesh3d);
+     {VolumeGenerationTimer quality(mp.volume_kernel_stats,14);MeshQuality3d(mesh3d);}
 
      return MESHING3_OK;
   }  

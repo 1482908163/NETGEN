@@ -10,7 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   search_joint_all: 本轮联合方法，十一策略、十项对照；五个独立作业共同延时
+#   search_joint_all: 本轮生成修复与借核，默认六策略、三个独立作业共同延时
 #   rule_search_all: 上轮规则并行五策略：16节点预检＋L2/L4的64/256节点对照
 #   rule_search: 规则搜索并行预检；固定核/借核及各自规则任务版，预热逐调用验证
 #   borrow_large: 面细化2/3/4、体细化2，64/128/256/512节点，原程序与借核对照
@@ -26,10 +26,10 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-search_joint_all}"
 if [[ "${EXPERIMENT_PRESET}" == search_joint_all ]]; then
     export SEARCH_JOINT_EXPERIMENT=1
-    export KERNEL_SCHEDULERS="node_original node_fixed node_elastic node_rules_fixed node_rules_elastic node_search_local node_search_idle node_search_remote node_search_online node_search_full node_search_elastic"
+    export KERNEL_SCHEDULERS="node_original node_fixed node_elastic node_rules_fixed node_rules_elastic node_search_local node_search_idle node_search_remote node_search_online node_search_full node_search_elastic node_rules_recovery node_rules_recovery_online"
     export SEARCH_FOCUSED="${SEARCH_FOCUSED:-1}"
     if [[ "${SEARCH_FOCUSED}" == 1 ]]; then
-        export KERNEL_SCHEDULERS="node_fixed node_rules_fixed node_rules_elastic node_search_local node_search_elastic node_search_online node_search_full"
+        export KERNEL_SCHEDULERS="node_rules_elastic node_search_elastic node_search_online node_search_full node_rules_recovery node_rules_recovery_online"
         export RULE_SEARCH_MAIN_NODES="${RULE_SEARCH_MAIN_NODES:-64}"
         export RULE_SEARCH_MAIN_REPEATS="${RULE_SEARCH_MAIN_REPEATS:-3}"
     fi
@@ -238,7 +238,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {

@@ -463,6 +463,15 @@ namespace nglib
    }
 
    static thread_local double last_volume_front_stats[VolumeKernelStats::front_count] = {};
+   static thread_local double last_generation_stats[VolumeKernelStats::generation_count] = {};
+   static thread_local bool generation_recovery = false;
+   NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled) {
+     if(enabled!=0 && enabled!=1) return NG_ERROR;
+     generation_recovery=enabled!=0;return NG_OK;
+   }
+   NGLIB_API void Ng_GetVolumeGenerationStats(double *values) {
+     if(values) std::copy_n(last_generation_stats,VolumeKernelStats::generation_count,values);
+   }
 
    static Ng_Result GenerateVolumeKernelImpl (Ng_Mesh * mesh,
        Ng_Meshing_Parameters * mp, int threads, int schedule, double * seconds, double * details,
@@ -472,6 +481,7 @@ namespace nglib
          return NG_ERROR;
       std::fill_n(seconds,3,0.0);
       std::fill_n(last_volume_front_stats,VolumeKernelStats::front_count,0.0);
+      std::fill_n(last_generation_stats,VolumeKernelStats::generation_count,0.0);
       std::fill_n(last_volume_rule_stats,VolumeKernelStats::rule_count,0.0);
       std::fill_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,0.0);
       VolumeKernelStats stats;
@@ -492,6 +502,7 @@ namespace nglib
          local.volume_parallel_repair = schedule>=2;
          local.volume_repair_frontier = schedule==3;
          local.volume_kernel_stats = details ? &stats : nullptr;
+         local.volume_generation_recovery = generation_recovery;
          local.volume_resources = resources;
          local.volume_rule_search = volume_rule_search_mode;
          local.volume_rule_transport = has_rule_transport ? &rule_transport : nullptr;
@@ -509,6 +520,8 @@ namespace nglib
          if (measure(2,[&] { return OptimizeVolume(local,m); })!=MESHING3_OK)
             return NG_VOLUME_FAILURE;
          if(details) {
+            for(int i=0;i<VolumeKernelStats::generation_count;++i)
+              last_generation_stats[i]=stats.generation_values[i].load();
             stats.Add(11,m.MarkIllegalElements());
             for(int i=0;i<VolumeKernelStats::count;++i) details[i]=stats.values[i].load();
             for(int i=0;i<VolumeKernelStats::front_count;++i)

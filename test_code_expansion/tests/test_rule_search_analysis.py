@@ -14,6 +14,31 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_generation_profile_and_per_rank_coverage(self):
+        rows=[{'metrics':dict.fromkeys(analyze.GENERATION_METRICS,0.)} for _ in range(2)]
+        meta={'generation_profile':'generation_v1','generation_recovery':'ordered_team_v1'}
+        rows[0]['metrics'].update(kernel_gen_recovery_sweeps=2,kernel_gen_recovery_team_sweeps=2)
+        result=analyze.inspect_generation(rows,meta,'node_rules_recovery')
+        self.assertEqual(result['kernel_gen_recovery_sweeps'],2)
+        # Aggregate coverage would hide this impossible rank-local count.
+        rows[1]['metrics']['kernel_gen_recovery_team_sweeps']=1
+        rows[0]['metrics']['kernel_gen_recovery_team_sweeps']=1
+        with self.assertRaises(ValueError):analyze.inspect_generation(rows,meta,'node_rules_recovery')
+
+    def test_generation_diagnostics_cannot_be_missing_or_invalid(self):
+        meta={'generation_profile':'generation_v1','generation_recovery':'off'}
+        for key in analyze.GENERATION_METRICS:
+            for value in (None,-1,float('nan'),float('inf'),'0'):
+                with self.subTest(key=key,value=value):
+                    rows=[{'metrics':dict.fromkeys(analyze.GENERATION_METRICS,0.)}]
+                    rows[0]['metrics'][key]=value
+                    with self.assertRaises(ValueError):analyze.inspect_generation(rows,meta,'node_rules_elastic')
+        rows=[{'metrics':dict.fromkeys(analyze.GENERATION_METRICS,0.)}]
+        with self.assertRaises(ValueError):analyze.inspect_generation(rows,meta,'node_rules_recovery')
+        with self.assertRaises(ValueError):analyze.inspect_generation(rows,{},'node_rules_elastic')
+        rows[0]['metrics']['kernel_gen_recovery_sweeps']=.5
+        with self.assertRaises(ValueError):analyze.inspect_generation(rows,meta,'node_rules_elastic')
+
     def test_even_partial_group_keeps_labels_out_of_median(self):
         rows=[dict(post_work_profile='rank_counts_v1',search_revision='matched_tasks_v4',
                    seconds=x,scaling_work_sha256='fingerprint') for x in (1,2,3,4)]

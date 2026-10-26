@@ -21,5 +21,12 @@ int main() {
     double old_stats[9]={};old_stats[8]=12345;nglib::Ng_GetVolumeSearchPolicyStats(old_stats);
     require(old_stats[8]==12345);
     double subtree[7]={};subtree[6]=54321;nglib::Ng_GetVolumeSearchSubtreeStats(subtree);require(subtree[6]==54321);
+    require(nglib::Ng_SetVolumeGenerationRecovery(-1)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeGenerationRecovery(2)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeGenerationRecovery(1)==nglib::NG_OK);
+    require(nglib::Ng_SetVolumeGenerationRecovery(0)==nglib::NG_OK);
+    double generation[20]={};generation[19]=6789;
+    nglib::Ng_GetVolumeGenerationStats(generation);require(generation[19]==6789);
+    for(int i=0;i<19;++i) require(generation[i]==0);
     std::cout<<"通过：旧传输结构、就绪扩展接口、操作借核回调编译与链接。\n";
 }

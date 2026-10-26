@@ -1,0 +1,226 @@
+{
+  "date": "2026-10-26",
+  "revision": "generation_tail_v5",
+  "parent_commit": "903b551700ef9659f7911c816b27cd952546b72b",
+  "environment": {
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+    "python": "Python 3.12.14",
+    "mpi": "MPICH 3.4.3; real four local ranks",
+    "kernel": "Release USE_MPI=OFF USE_OCC=OFF USE_GUI=OFF USE_PYTHON=OFF USE_NATIVE_ARCH=OFF USE_NUMA=OFF"
+  },
+  "checks": [
+    {
+      "name": "kernel_build",
+      "status": "passed",
+      "log_sha256": "cd0486fe3d33777ccef8ff49ac986d23c8874789342d54d9e67b8e5885d0d9a7",
+      "evidence": [
+        "[158/165] Building CXX object CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "[159/165] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "[160/165] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "[161/165] Building CXX object CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "[162/165] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "[163/165] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "[164/165] Building CXX object CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "[165/165] Linking CXX shared library libnglib.so"
+      ]
+    },
+    {
+      "name": "rules_recovery_mpi",
+      "status": "passed",
+      "log_sha256": "0124d6fb937ff4eecf81b8a6f0471cbc577f396a1d8bbd70061787dd14c304d0",
+      "evidence": [
+        "通过：54 组开腔恢复与原串行坐标、单元顺序完全一致；包含线程重建及租约归还。",
+        "通过：恢复检查点异常时先回收工作线程，再归还核。",
+        "通过：四进程 MPI 真实规则任务，正式与重放两种模式；合成节点身份，非集群性能测试。",
+        "通过：18 组顺序/并行/重放、远程消息及资源生命周期检查；指纹 6d770e28fdeae775。",
+        "父版本源码对照：通过。",
+        "/workspace/scratch/54cbe57ee0b5/build-kernel/rule_search_tests/results.txt"
+      ]
+    },
+    {
+      "name": "online_borrow_four_ranks_eight_cpus",
+      "status": "passed",
+      "log_sha256": "c09a177ae267134fa3ec17d60aea0d397ac0fd4214de6dafa94b53304fe9dd83",
+      "evidence": [
+        "通过：异构操作与未知类型、小任务拒绝、两次增核、早期阶段借核、无核重叠。",
+        "通过：未知类型与工作量隔离、重复负收益退回、新操作恢复试探和实测收益确认。",
+        "通过：中性试探结束、参考耗尽、未匹配试探切换唯一拖尾；均不误报实测收益。"
+      ]
+    },
+    {
+      "name": "mpi_protocol_five_scenarios",
+      "status": "passed",
+      "log_sha256": "cb85f5260fd376c281ac254ebe74cb44b0c203495202897aaec9ccf83d3548f8",
+      "evidence": [
+        "协议场景 0 通过：请求 0，进程 4",
+        "协议场景 1 通过：请求 12，进程 4",
+        "协议场景 2 通过：请求 36，进程 4",
+        "协议场景 3 通过：请求 0，进程 4",
+        "协议场景 4 通过：请求 0，进程 4"
+      ]
+    },
+    {
+      "name": "python_analysis_batch",
+      "status": "passed",
+      "log_sha256": "0d7935e629c7c8a0c49a7eb1fadc26c94aec8153ea273295a2a13b261eb08b22",
+      "evidence": [
+        "test_only_audited_complete_jobs_expose_comparisons (test_rule_search_batch.BatchTests.test_only_audited_complete_jobs_expose_comparisons) ... ok",
+        "test_report_failure_never_aborts_worker_or_masks_experiment_failure (test_rule_search_batch.BatchTests.test_report_failure_never_aborts_worker_or_masks_experiment_failure) ... ok",
+        "test_v5_recovery_version_and_counters_are_required (test_rule_search_batch.BatchTests.test_v5_recovery_version_and_counters_are_required) ... ok",
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 29 tests in 2.710s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "name": "runner",
+      "status": "passed",
+      "log_sha256": "0b48bd1a5ede603288ae4b9c72e71d3181898de18f01195573bddc5e2367d786",
+      "evidence": [
+        "p3: 已冻结同规模模型（训练 -1/17，评价 41）",
+        "p3: 已冻结同规模模型（训练 -1/17，评价 41）",
+        "PASS: Slurm spool path, failure continuation, warmup filtering, compressed resume, lossless analysis, cleanup opt-out, failure/active/symlink protection, configuration guard"
+      ]
+    },
+    {
+      "name": "node_scaling",
+      "status": "passed",
+      "log_sha256": "c627d2616e921135d5044e6055ed43807bcbb317edb097a33171acb8d46c8701",
+      "evidence": [
+        "node scaling summary: pairing, workload, quality, pending and failure checks passed without build stamps",
+        "pre-refine workload: actual counts and missing-data checks passed"
+      ]
+    },
+    {
+      "name": "search_policy",
+      "status": "passed",
+      "log_sha256": "da77f16659fa347eed176a2e5357e4a3a234a98f9e5f460ec63a04e7649d3f80",
+      "evidence": [
+        "通过：小任务、串行占比、关键路径和预测不确定性拒绝；任务覆盖无遗漏。"
+      ]
+    }
+  ],
+  "reference_fingerprint": "6d770e28fdeae775",
+  "rule_cases": 18,
+  "forced_subtree_replays": 3600,
+  "recovery_exact_cases": 54,
+  "recovery_checkpoint_exception": true,
+  "python_unittest_count": 29,
+  "old_batch": "mesh_algorithms_20261026-040300",
+  "old_batch_comparisons": [
+    {
+      "level": 2,
+      "control": "node_rules_elastic",
+      "candidate": "node_search_elastic",
+      "paired_reduction_pct": [
+        0.2851947939018107,
+        7.3136364222711965,
+        1.6625735225356264
+      ],
+      "median_paired_reduction_pct": 1.6625735225356264,
+      "wins": 3
+    },
+    {
+      "level": 2,
+      "control": "node_search_elastic",
+      "candidate": "node_search_online",
+      "paired_reduction_pct": [
+        0.5795581980573838,
+        -3.369988758029252,
+        -9.667479701641412
+      ],
+      "median_paired_reduction_pct": -3.369988758029252,
+      "wins": 1
+    },
+    {
+      "level": 2,
+      "control": "node_rules_elastic",
+      "candidate": "node_search_full",
+      "paired_reduction_pct": [
+        2.201328338373809,
+        5.30025322243346,
+        -1.3958092003979905
+      ],
+      "median_paired_reduction_pct": 2.201328338373809,
+      "wins": 2
+    },
+    {
+      "level": 4,
+      "control": "node_rules_elastic",
+      "candidate": "node_search_elastic",
+      "paired_reduction_pct": [
+        -1.2410806518074358,
+        -0.70554025509868,
+        0.46891562437764156
+      ],
+      "median_paired_reduction_pct": -0.70554025509868,
+      "wins": 1
+    },
+    {
+      "level": 4,
+      "control": "node_search_elastic",
+      "candidate": "node_search_online",
+      "paired_reduction_pct": [
+        -0.9276053382357485,
+        -0.204654297457596,
+        -1.74258378433656
+      ],
+      "median_paired_reduction_pct": -0.9276053382357485,
+      "wins": 0
+    },
+    {
+      "level": 4,
+      "control": "node_rules_elastic",
+      "candidate": "node_search_full",
+      "paired_reduction_pct": [
+        -3.406235476789732,
+        -2.655002325064837,
+        -2.6955160639922315
+      ],
+      "median_paired_reduction_pct": -2.6955160639922315,
+      "wins": 0
+    }
+  ],
+  "commands": [
+    "cmake -S netgen -B \"$BUILD_DIR\" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DUSE_MPI=OFF -DUSE_OCC=OFF -DUSE_GUI=OFF -DUSE_PYTHON=OFF -DUSE_NATIVE_ARCH=OFF -DUSE_NUMA=OFF",
+    "cmake --build \"$BUILD_DIR\" -j4",
+    "python test_code_expansion/tests/run_rule_search_regression.py --build-dir \"$BUILD_DIR\" --reference-sources \"$REFERENCE_DIR\" --mpi-prefix \"$MPI_PREFIX\"",
+    "\"$MPI_PREFIX/bin/mpicxx\" -std=c++17 -O2 test_code_expansion/tests/online_borrow_regression.cpp -o \"$TEST_DIR/borrow\"",
+    "taskset -c 0-7 \"$MPI_PREFIX/bin/mpiexec\" -n 4 \"$TEST_DIR/borrow\"",
+    "\"$MPI_PREFIX/bin/mpicxx\" -std=c++17 -O2 test_code_expansion/tests/distributed_search_regression.cpp -o \"$TEST_DIR/protocol\"",
+    "\"$MPI_PREFIX/bin/mpiexec\" -n 4 \"$TEST_DIR/protocol\"",
+    "python -m unittest discover -s test_code_expansion/tests -p 'test_rule_search_*.py'",
+    "python test_code_expansion/tests/test_runner.py",
+    "python test_code_expansion/tests/test_node_scaling.py",
+    "g++ -std=c++17 -O2 test_code_expansion/tests/search_policy_regression.cpp -o \"$TEST_DIR/policy\" && \"$TEST_DIR/policy\"",
+    "bash -n test_code_expansion/strong_scaling/run_experiments.sh"
+  ],
+  "reproduction_notes": [
+    "REFERENCE_DIR contains unchanged parent ruler3.cpp and meshing3.cpp; serial ApplyRules is the oracle.",
+    "Recovery oracle reproduces the parent recovery operation sequence; fixtures have open cavities and are nontrivially changed.",
+    "taskset CPU identifiers must be adapted to the local eight-CPU test allocation. Do not use this local test mask as a cluster configuration.",
+    "MPICH 5.0.2 failed communication initialization locally; successful evidence uses MPICH 3.4.3."
+  ],
+  "unverified": [
+    "Full OCC application build on the supercomputer",
+    "Physical cross-node execution and speedup",
+    "Production STEP recovery geometry/work equivalence; next warmup remains mandatory"
+  ],
+  "next_batch": {
+    "strategies": 6,
+    "independent_jobs": 3,
+    "nodes": 64,
+    "ranks": 256,
+    "base_threads_per_rank": 4,
+    "surface_levels": [
+      2,
+      4
+    ],
+    "volume_refines": 2,
+    "warmups": 18,
+    "formal_runs": 42,
+    "total_runs": 60
+  }
+}
