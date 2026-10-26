@@ -1,0 +1,20 @@
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_rules_elastic_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_rules_elastic_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_rules_recovery_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_rules_recovery_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_elastic_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_elastic_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_full_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_full_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_online_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261026-214721/main/levels4/kernel_node_search_online_t4/p256/analysis/issues.txt'
+缺少 node_fixed 固定资源对照
+sparse_natural: quality ['structural_errors']
+sparse_natural: quality warmup not successfully finalized
+sparse_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+sparse_natural: quality ['structural_errors']
+sparse_natural: quality warmup not successfully finalized
+sparse_natural: quality ['structural_errors', 'incomplete_tet_coverage']
+sparse_natural: quality warmup not successfully finalized
+sparse_natural: quality ['structural_errors']
+sparse_natural: quality warmup not successfully finalized
+node_rules_elastic/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_elastic/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_online/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_search_full/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_rules_recovery/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports

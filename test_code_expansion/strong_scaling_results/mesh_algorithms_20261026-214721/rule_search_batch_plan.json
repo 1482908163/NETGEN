@@ -1,0 +1,60 @@
+{
+  "schema": "rule_search_batch_v1",
+  "jobs": [
+    {
+      "key": "precheck/levels2/p256",
+      "group": "precheck",
+      "levels": 2,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 1
+    },
+    {
+      "key": "main/levels2/p256",
+      "group": "main",
+      "levels": 2,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 3
+    },
+    {
+      "key": "main/levels4/p256",
+      "group": "main",
+      "levels": 4,
+      "nodes": 64,
+      "ranks": 256,
+      "repeats": 3
+    }
+  ],
+  "schedulers": [
+    "node_rules_elastic",
+    "node_search_elastic",
+    "node_search_online",
+    "node_search_full",
+    "node_rules_recovery",
+    "node_rules_recovery_online"
+  ],
+  "contributions": [
+    "search_remote_online",
+    "search_previous",
+    "search_order_elastic",
+    "search_model",
+    "generation_recovery",
+    "recovery_online",
+    "recovery_total"
+  ],
+  "seeds": [
+    -1
+  ],
+  "threads": 4,
+  "ranks_per_node": 4,
+  "warmups": 1,
+  "refines": 2,
+  "start_epoch": 1793022561,
+  "dry_run": false,
+  "source_revision": "0798451",
+  "joint_revision": "generation_tail_v5",
+  "input_path": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/inputData/wholewall3solid.STEP",
+  "maxh": "1000",
+  "minh": "0"
+}
