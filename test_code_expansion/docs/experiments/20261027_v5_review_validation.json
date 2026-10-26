@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-27",
+  "source_results_commit": "4cb24948b3878d81b0b1bca3ff7af9c1428c2a26",
+  "batch": "mesh_algorithms_20261026-214721",
+  "run_revision": "0798451",
+  "planned_runs": 60,
+  "attempted": 45,
+  "exit_zero": 40,
+  "quality_failed": 4,
+  "segfaults": 1,
+  "skipped_after_failed_warmups": 15,
+  "verified_l2_jobs": [
+    {
+      "job": "precheck/levels2/p256",
+      "comparisons": 7,
+      "valid": true
+    },
+    {
+      "job": "main/levels2/p256",
+      "comparisons": 7,
+      "valid": true
+    }
+  ],
+  "l2_main_pairs": [
+    {
+      "control": "node_rules_elastic",
+      "candidate": "node_rules_recovery",
+      "paired_reductions_pct": [
+        19.137851298948828,
+        13.561853196749174,
+        13.24297097421291
+      ],
+      "median_paired_reduction_pct": 13.561853196749174,
+      "wins": 3,
+      "repeats": 3
+    },
+    {
+      "control": "node_rules_recovery",
+      "candidate": "node_rules_recovery_online",
+      "paired_reductions_pct": [
+        -6.7359875886114695,
+        -5.615390770074802,
+        0.5135609702070831
+      ],
+      "median_paired_reduction_pct": -5.615390770074802,
+      "wins": 1,
+      "repeats": 3
+    },
+    {
+      "control": "node_rules_elastic",
+      "candidate": "node_rules_recovery_online",
+      "paired_reductions_pct": [
+        13.69098699856146,
+        8.708013479335719,
+        13.688521214200588
+      ],
+      "median_paired_reduction_pct": 13.688521214200588,
+      "wins": 3,
+      "repeats": 3
+    },
+    {
+      "control": "node_rules_elastic",
+      "candidate": "node_search_full",
+      "paired_reductions_pct": [
+        -4.3026575379932375,
+        -12.531173997097733,
+        -6.559372348980741
+      ],
+      "median_paired_reduction_pct": -6.559372348980741,
+      "wins": 0,
+      "repeats": 3
+    }
+  ],
+  "l4_same_batch_speedup": null,
+  "l4_unresolved": true,
+  "tests": {
+    "analysis_batch": 31,
+    "failure_diagnostics": 5,
+    "runner": "passed",
+    "shell_syntax": "passed",
+    "real_debug_address_resolution": "passed",
+    "original_statuses_preserved": true
+  },
+  "notes": [
+    "Real L2 audits rerun in disposable copy; SUCCESS markers restored only from exit-zero run_status rows with matching cached identities. Original results not modified.",
+    "No kernel algorithm change or new cluster job in this revision.",
+    "Missing failed quality details cannot be inferred from totals; collect them from the existing cluster result directory."
+  ]
+}

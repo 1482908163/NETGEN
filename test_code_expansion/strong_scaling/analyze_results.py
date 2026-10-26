@@ -1399,6 +1399,15 @@ def write_overview(root, runs, summaries, errors):
     (root/"RESULT_SUMMARY.txt").write_text("\n".join(lines)+"\n")
     return expected, complete
 
+def node_comparison_control(threads, scheduler, selected):
+    """Focused rule experiments retain their declared elastic control."""
+    available={(int(t),s) for t,s in selected}
+    if ((int(threads),'node_fixed') not in available and
+            scheduler.startswith(('node_rules_','node_search_')) and
+            (int(threads),'node_rules_elastic') in available):
+        return 'node_rules_elastic'
+    return 'node_fixed'
+
 def kernel_overview(root, ranks):
     """Variant runs stay isolated; this summary never adds stage maxima."""
     report=[];issues=[];workloads={};illegal_max={};paired_times={}
@@ -1452,7 +1461,7 @@ def kernel_overview(root, ranks):
                         (key[0],'node_native',*key[2:]) in workloads else
                         'repair' if key[1] in ('node_native','node_scoped','node_fixed') and
                         (key[0],'repair',*key[2:]) in workloads else
-                        'node_fixed' if key[1].startswith('node_') else 'static')
+                        node_comparison_control(key[0],key[1],selected) if key[1].startswith('node_') else 'static')
         reference=workloads.get((key[0],reference_name,*key[2:]))
         if len(counts)!=1 or (reference is not None and counts!=reference):
             issues.append(f"{key}: per-run volume counts differ")
@@ -1481,10 +1490,11 @@ def kernel_overview(root, ranks):
                 row['paired_wins_vs_'+reference]=sum(v>0 for v in changes)
                 row['paired_reduction_pct_vs_'+reference]=st.median(changes) if changes else None
         if row['scheduler'].startswith('node_') and row['scheduler']!='node_original':
-            control=indexed.get(('node_fixed',*key))
-            if control is None: issues.append("缺少 node_fixed 固定资源对照")
+            reference=node_comparison_control(row['threads'],row['scheduler'],selected)
+            control=indexed.get((reference,*key))
+            if control is None: issues.append('缺少 '+reference+' 资源对照')
             elif control['volume_elements']!=row['volume_elements']:
-                issues.append(f"{row['scheduler']}: volume count differs from node_fixed")
+                issues.append(f"{row['scheduler']}: volume count differs from {reference}")
     out=root/f"p{ranks}";out.mkdir(exist_ok=True)
     audit_lines,audit_issues=ablation_reports(root,ranks,selected,indexed,paired_times)
     issues.extend(audit_issues)

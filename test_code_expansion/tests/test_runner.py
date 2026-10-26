@@ -80,6 +80,8 @@ out=pathlib.Path(value('--profile-dir'))
     assert (success/'mesh/source.STEP').read_text()=='keep input'
     assert (success/'mesh/volfined/notes.txt').exists() and (success/'mesh/meshQuality/meshQuality0.txt').exists()
     assert (failed/'mesh/volfined/volfined0.vol').exists() and (failed/'run.log').exists()
+    assert json.loads((failed/'failure_diagnostics.json').read_text())['exit_code']==9
+    assert not (failed/'SUCCESS').exists()
     runs=list(csv.DictReader((pdir/'analysis/runs.csv').open()))
     assert len(runs)==1 and runs[0]['repeat']=='1' and runs[0]['algorithm']=='sparse'
     stages=list(csv.DictReader((pdir/'analysis/stages.csv').open()))

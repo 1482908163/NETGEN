@@ -598,7 +598,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" || -f "${out}/analysis_metrics.json" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/analysis_metrics.json" "${out}/failure_summary.txt"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/analysis_metrics.json" "${out}/failure_summary.txt" "${out}/failure_diagnostics.json"
             touch "${out}/RUNNING"
             args=("${common[@]}" --algorithm "${a}" --partition-seed "${seed}" --rank-shift "${rank_shift}"
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
@@ -621,25 +621,10 @@ SIGNATURE
             fi
             if ((rc!=0)); then
                 failures=$((failures+1))
-                # run.log 已在用户的忽略规则中；另存不超过64KiB的可上传故障摘要。
-                python3 - "${out}" "$rc" <<'FAILURE'
-import pathlib,sys,re,collections,json
-folder=pathlib.Path(sys.argv[1])
-stages=collections.defaultdict(set)
-with (folder/'run.log').open(errors='replace') as stream:
-    for line in stream:
-        match=re.search(r'\[EXIT_CHECKPOINT\] rank=(\d+) stage=([\w.]+)',line)
-        if match: stages[match[2]].add(int(match[1]))
-counts={k:len(v) for k,v in stages.items()}
-# Checkpoints locate the last observed phase, not the cause of a kill/timeout.
-header='收尾各阶段已观测进程数：'+json.dumps(counts,ensure_ascii=False)+'\n'
-
-with (folder/'run.log').open('rb') as stream:
-    stream.seek(0,2)
-    stream.seek(max(0,stream.tell()-65536))
-    tail=stream.read().decode('utf-8',errors='replace')
-(folder/'failure_summary.txt').write_text('退出码：'+sys.argv[2]+'\n'+header+tail)
-FAILURE
+                # 导出细粒度质量错误与匹配当前二进制的调用位置；不改变原失败退出码。
+                python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" --exit-code "$rc" || {
+                    printf '退出码：%s\n故障诊断导出失败；原始 run.log 保留。\n' "$rc" > "${out}/failure_summary.txt"
+                }
             fi
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${a}" "${mode}" "${rep}" "${rc}" "${out}" "${seed}" >> "${status_file}"
         done

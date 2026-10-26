@@ -5,6 +5,12 @@ import importlib.util
 from pathlib import Path
 import unittest
 import sys
+import csv
+import io
+import os
+import tempfile
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 path=Path(__file__).resolve().parents[1]/'strong_scaling/analyze_results.py'
 sys.path.insert(0,str(path.parent))
@@ -14,6 +20,36 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_focused_overview_uses_selected_elastic_control(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            for scheduler in ('node_rules_elastic','node_rules_recovery','node_rules_recovery_online'):
+                folder=root/f'kernel_{scheduler}_t4/p256/analysis';folder.mkdir(parents=True)
+                (folder/'issues.txt').write_text('')
+                summary=dict(algorithm='sparse',timing='natural',partition_seed=-1,successful_repeats=1,
+                             core_median=2,volume_elements_sum_median=64,kernel_generation_seconds_median=1,
+                             kernel_repair_seconds_median=.1,kernel_optimization_seconds_median=.2)
+                run=dict(algorithm='sparse',timing='natural',partition_seed=-1,repeat=1,core_seconds=2,
+                         volume_elements_sum=64,kernel_final_illegal=0)
+                for name,row in [('summary.csv',summary),('runs.csv',run)]:
+                    with (folder/name).open('w') as f:
+                        w=csv.DictWriter(f,fieldnames=row);w.writeheader();w.writerow(row)
+            with patch.dict(os.environ,{},clear=True),patch.object(analyze,'ablation_reports',return_value=([],[])),patch.object(analyze,'critical_overview',return_value=([],[])),redirect_stdout(io.StringIO()):
+                analyze.kernel_overview(root,256)
+                self.assertEqual((root/'p256/kernel_issues.txt').read_text().strip(),'')
+                # Selecting a baseline which is absent still fails; a different
+                # available candidate must never silently become the baseline.
+                with patch.dict(os.environ,{'KERNEL_THREAD_COUNTS':'4','KERNEL_SCHEDULERS':'node_rules_recovery'}):
+                    with self.assertRaises(SystemExit):analyze.kernel_overview(root,256)
+                self.assertIn('缺少 node_fixed',(root/'p256/kernel_issues.txt').read_text())
+
+    def test_unrelated_modes_still_require_fixed_control(self):
+        selected=[('4','node_rules_elastic'),('4','node_rules_recovery')]
+        self.assertEqual(analyze.node_comparison_control(4,'node_rules_recovery',selected),'node_rules_elastic')
+        self.assertEqual(analyze.node_comparison_control(8,'node_rules_recovery',selected),'node_fixed')
+        self.assertEqual(analyze.node_comparison_control(4,'node_elastic',selected),'node_fixed')
+        self.assertEqual(analyze.node_comparison_control(4,'node_rules_recovery',selected+[('4','node_fixed')]),'node_fixed')
+
     def test_generation_profile_and_per_rank_coverage(self):
         rows=[{'metrics':dict.fromkeys(analyze.GENERATION_METRICS,0.)} for _ in range(2)]
         meta={'generation_profile':'generation_v1','generation_recovery':'ordered_team_v1'}
