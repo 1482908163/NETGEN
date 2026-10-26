@@ -1,0 +1,43 @@
+{
+  "schema": "failure_diagnostics_v1",
+  "exit_code": 139,
+  "quality_read_error": "quality_summary.json unavailable; no per-rank error category can be inferred",
+  "log_source": "run.log",
+  "exit_checkpoints": {},
+  "messages": [
+    "[cn2474:838504:0:838504] Caught signal 11 (Segmentation fault: address not mapped to object at address 0x4000c0a38118)",
+    "0  /usr/local/ucx/lib/libucs.so.0(ucs_handle_error+0x2d4) [0x40001577779c]",
+    "1  /usr/local/ucx/lib/libucs.so.0(+0x2a92c) [0x40001577792c]",
+    "2  /usr/local/ucx/lib/libucs.so.0(+0x2acd4) [0x400015777cd4]",
+    "3  linux-vdso.so.1(__kernel_rt_sigreturn+0) [0x40000e9715b8]",
+    "4  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/../install/lib/libnglib.so(_ZN5nglib11Ng_GetPointEPPviPd+0x14) [0x40000ee031f4]",
+    "5  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x430ac0]",
+    "6  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4102b0]",
+    "7  /usr/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0xe8) [0x400015014e10]",
+    "8  /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi() [0x4148e0]",
+    "yhrun: error: cn2474: task 73: Segmentation fault"
+  ],
+  "frames": [
+    {
+      "binary": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "address": "0x430ac0",
+      "expected_sha256": "09f2438d6e330a35f0d66ca21355bfd4419f776f4bbe9339b50ac7015662d022",
+      "status": "symbols_unavailable",
+      "location": "com_baryVolumeElements(void*, int, std::map<Baryvrtx, std::__cxx11::list<int, std::allocator<int> >, CompBarycvrtx, std::allocator<std::pair<Baryvrtx const, std::__cxx11::list<int, std::allocator<int> > > > >&, std::map<Barycentric, int, CompBarycentric, std::allocator<std::pair<Barycentric const, int> > >&, std::map<int, std::__cxx11::list<int, std::allocator<int> >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::list<int, std::allocator<int> > > > >&, long*, long*, std::__cxx11::list<VEindex, std::allocator<VEindex> >&, int, int)\n??:?"
+    },
+    {
+      "binary": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "address": "0x4102b0",
+      "expected_sha256": "09f2438d6e330a35f0d66ca21355bfd4419f776f4bbe9339b50ac7015662d022",
+      "status": "symbols_unavailable",
+      "location": "main\n??:?"
+    },
+    {
+      "binary": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/build/mesh_occ_mpi/mesh_occ_mpi",
+      "address": "0x4148e0",
+      "expected_sha256": "09f2438d6e330a35f0d66ca21355bfd4419f776f4bbe9339b50ac7015662d022",
+      "status": "symbols_unavailable",
+      "location": "_start\n??:?"
+    }
+  ]
+}

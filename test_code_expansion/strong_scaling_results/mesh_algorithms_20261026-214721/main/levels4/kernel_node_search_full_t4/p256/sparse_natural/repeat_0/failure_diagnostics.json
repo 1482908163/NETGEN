@@ -1,0 +1,88 @@
+{
+  "schema": "failure_diagnostics_v1",
+  "exit_code": 1,
+  "quality": {
+    "identity": {
+      "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547",
+      "MESH_BINARY_SHA256": "09f2438d6e330a35f0d66ca21355bfd4419f776f4bbe9339b50ac7015662d022",
+      "MESH_SOURCE_REVISION": "0798451",
+      "MESH_KERNEL_SHA256": "6c9d2f6e3cd80a3b94bc0879e49ef25143b3309b77da3249d1a4aecc8aabdaa8",
+      "numlevels": "4",
+      "numrefine": "2",
+      "maxh": "1000.000000",
+      "minh": "0.000000",
+      "partition_seed": "-1",
+      "partition_variant": "metis_seed",
+      "rank_shift": "0",
+      "RANKS_PER_NODE": "4",
+      "CPUS_PER_TASK": "4",
+      "kernel_threads": "4"
+    },
+    "counts": {
+      "points": 271836564,
+      "elements": 1484829312,
+      "surfaces": 96182272,
+      "checked": 1484829301,
+      "invalid_indices": 11,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 1484829301,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 44,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 55
+    },
+    "issues": [
+      "structural_errors",
+      "incomplete_tet_coverage"
+    ],
+    "structural_pass": false,
+    "failed_ranks": [
+      {
+        "points": 1453308,
+        "elements": 8039232,
+        "surfaces": 466944,
+        "checked": 8039221,
+        "invalid_indices": 11,
+        "unsupported": 0,
+        "nonfinite_points": 0,
+        "repeated_vertices": 0,
+        "zero_volume": 0,
+        "positive": 0,
+        "negative": 8039221,
+        "nonmanifold": 0,
+        "same_side_faces": 0,
+        "missing_surface": 44,
+        "orphan_surface": 0,
+        "duplicate_surface": 0,
+        "internal_marked": 0,
+        "zero_surface_area": 0,
+        "hard_errors": 55,
+        "shape_min": 0.02221067588246726,
+        "shape_sum": 5273074.30458496,
+        "angle_min": 0.3227516132493683,
+        "angle_max": 179.66384949558892,
+        "abs_volume": 13336.209948520678,
+        "rank": 73
+      }
+    ],
+    "per_rank_available": true
+  },
+  "log_source": "run.log",
+  "exit_checkpoints": {
+    "profile.begin": 256,
+    "profile.end": 256,
+    "resources.closed": 256,
+    "finalize.begin": 256,
+    "finalize.end": 256
+  },
+  "messages": [],
+  "frames": []
+}
