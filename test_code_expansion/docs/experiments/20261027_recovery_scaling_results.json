@@ -1,0 +1,588 @@
+{
+  "batch": "mesh_algorithms_20261027-165049",
+  "audit": {
+    "runs": 36,
+    "warmups": 9,
+    "formal": 27
+  },
+  "scales": {
+    "256": {
+      "nodes": 64,
+      "ranks": 256,
+      "strategies": {
+        "node_rules_elastic": {
+          "seconds": [
+            73.48625364500003,
+            73.59529255500001,
+            73.503840696
+          ],
+          "median_seconds": 73.503840696,
+          "critical_ranks": [
+            73,
+            73,
+            73
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 61.43429619600033,
+            "kernel_generation_seconds": 47.587534728,
+            "kernel_front_seconds": 9.281531596,
+            "kernel_front_applyrules_seconds": 3.7977023880000145,
+            "front_unattributed_seconds": 3.986624697000006,
+            "kernel_gen_recovery_seconds": 27.639230896999997,
+            "kernel_gen_recovery_topology_seconds": 9.083095723,
+            "kernel_gen_recovery_smooth_seconds": 14.112376997999998,
+            "volume_refine_seconds": 9.129601490000141
+          },
+          "observed_speedup_vs_64_nodes": 1.0
+        },
+        "node_rules_recovery": {
+          "seconds": [
+            56.77513990500006,
+            55.23930615099994,
+            56.059415128999944
+          ],
+          "median_seconds": 56.059415128999944,
+          "critical_ranks": [
+            73,
+            73,
+            73
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 44.68385251800032,
+            "kernel_generation_seconds": 30.626331652,
+            "kernel_front_seconds": 9.270217049,
+            "kernel_front_applyrules_seconds": 3.794226237999989,
+            "front_unattributed_seconds": 3.9827281829999803,
+            "kernel_gen_recovery_seconds": 10.680936926000001,
+            "kernel_gen_recovery_topology_seconds": 4.246802048000001,
+            "kernel_gen_recovery_smooth_seconds": 3.6631931970000013,
+            "volume_refine_seconds": 9.238814113999979
+          },
+          "observed_speedup_vs_64_nodes": 1.0
+        },
+        "node_rules_recovery_online": {
+          "seconds": [
+            54.76028770499988,
+            55.762765284000125,
+            55.99671224400004
+          ],
+          "median_seconds": 55.762765284000125,
+          "critical_ranks": [
+            73,
+            73,
+            73
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 44.37572260699949,
+            "kernel_generation_seconds": 30.224392281,
+            "kernel_front_seconds": 9.253792089,
+            "kernel_front_applyrules_seconds": 3.7972724329999847,
+            "front_unattributed_seconds": 3.968920202999998,
+            "kernel_gen_recovery_seconds": 10.538246045,
+            "kernel_gen_recovery_topology_seconds": 4.240126737,
+            "kernel_gen_recovery_smooth_seconds": 3.5761436210000004,
+            "volume_refine_seconds": 9.276565785999992
+          },
+          "observed_speedup_vs_64_nodes": 1.0
+        }
+      },
+      "comparisons": {
+        "generation_recovery": {
+          "paired_reduction_pct": [
+            22.74046221042728,
+            24.941794191907164,
+            23.73267220028321
+          ],
+          "paired_median_pct": 23.73267220028321,
+          "median_time_reduction_pct": 23.73267220028321,
+          "wins": 3,
+          "pairs": 3
+        },
+        "recovery_online": {
+          "paired_reduction_pct": [
+            3.5488282430858997,
+            -0.9476207604224518,
+            0.11185076557723717
+          ],
+          "paired_median_pct": 0.11185076557723717,
+          "median_time_reduction_pct": 0.5291704244812179,
+          "wins": 2,
+          "pairs": 3
+        },
+        "recovery_total": {
+          "paired_reduction_pct": [
+            25.482270507981262,
+            24.230527051269068,
+            23.817977790312504
+          ],
+          "paired_median_pct": 24.230527051269068,
+          "median_time_reduction_pct": 24.13625634254146,
+          "wins": 3,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 1683150,
+      "work": {
+        "scaling_kernel_work_sha256": "28339308971ea02ca7ad16d25eb1a8d39061f221ba0eeb68ef33797b48301094",
+        "scaling_work_sha256": "5f23e8f511872a6687a4e3742c82076b0536f9d341393518379adc957d1d424a",
+        "volume_kernel_elements_sum": 23200458,
+        "post_refine_elements_sum": 1484829312,
+        "volume_elements_sum": 1484829312
+      },
+      "quality": {
+        "counts": {
+          "points": 271836564,
+          "elements": 1484829312,
+          "surfaces": 96182272,
+          "checked": 1484829312,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1484829312,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.00038983705978167687,
+        "shape_mean": 0.7170229229235053,
+        "angle_min": 0.001318871809458711,
+        "angle_max": 179.99802597183796,
+        "abs_volume": 15477851.65479295,
+        "shape_hist": [
+          12732,
+          477986,
+          6204814,
+          32475908,
+          96722940,
+          194917092,
+          290254606,
+          362587812,
+          356590950,
+          144584472
+        ],
+        "surface_fingerprint_sha256": "54cc2ee516b35ae115e6d7b6a5b892c40b46d6740a071e5d56e22b3802ed42f6",
+        "volume_fingerprint_sha256": "a27e6d690d1b1937dcf24e32c9e7899a29e65616b6849adefc4fd9b6fc7d488c",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "generated_work_growth_pct_vs_256": 0.0
+    },
+    "512": {
+      "nodes": 128,
+      "ranks": 512,
+      "strategies": {
+        "node_rules_elastic": {
+          "seconds": [
+            45.489681479999945,
+            45.78357616599999,
+            45.96678290900002
+          ],
+          "median_seconds": 45.78357616599999,
+          "critical_ranks": [
+            463,
+            463,
+            463
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 38.788580695000064,
+            "kernel_generation_seconds": 30.608757116,
+            "kernel_front_seconds": 5.492305845,
+            "kernel_front_applyrules_seconds": 2.6525894969999966,
+            "front_unattributed_seconds": 1.9609220440000046,
+            "kernel_gen_recovery_seconds": 19.533244426000003,
+            "kernel_gen_recovery_topology_seconds": 7.140464366000001,
+            "kernel_gen_recovery_smooth_seconds": 8.941053832999998,
+            "volume_refine_seconds": 5.617451287999984
+          },
+          "observed_speedup_vs_64_nodes": 1.6054630688850768
+        },
+        "node_rules_recovery": {
+          "seconds": [
+            34.72250330999998,
+            35.09396084499997,
+            35.64146451399995
+          ],
+          "median_seconds": 35.09396084499997,
+          "critical_ranks": [
+            196,
+            196,
+            196
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 28.411892529999818,
+            "kernel_generation_seconds": 20.042306949,
+            "kernel_front_seconds": 8.628631447,
+            "kernel_front_applyrules_seconds": 3.6339476459999913,
+            "front_unattributed_seconds": 4.1149583149999795,
+            "kernel_gen_recovery_seconds": 5.743984016000001,
+            "kernel_gen_recovery_topology_seconds": 2.292311571000001,
+            "kernel_gen_recovery_smooth_seconds": 1.957052317,
+            "volume_refine_seconds": 5.678613521999978
+          },
+          "observed_speedup_vs_64_nodes": 1.5974091775105812
+        },
+        "node_rules_recovery_online": {
+          "seconds": [
+            34.92915108300002,
+            35.23424846199998,
+            35.16752739699996
+          ],
+          "median_seconds": 35.16752739699996,
+          "critical_ranks": [
+            196,
+            196,
+            196
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 28.416446418000135,
+            "kernel_generation_seconds": 20.062335882,
+            "kernel_front_seconds": 8.60611749,
+            "kernel_front_applyrules_seconds": 3.5977261929999966,
+            "front_unattributed_seconds": 4.114341966999978,
+            "kernel_gen_recovery_seconds": 5.807847572,
+            "kernel_gen_recovery_topology_seconds": 2.3320297290000003,
+            "kernel_gen_recovery_smooth_seconds": 1.952693508,
+            "volume_refine_seconds": 5.593193316000054
+          },
+          "observed_speedup_vs_64_nodes": 1.5856322412009292
+        }
+      },
+      "comparisons": {
+        "generation_recovery": {
+          "paired_reduction_pct": [
+            23.669495629979032,
+            23.348144064242828,
+            22.46256479475842
+          ],
+          "paired_median_pct": 23.348144064242828,
+          "median_time_reduction_pct": 23.348144064242828,
+          "wins": 3,
+          "pairs": 3
+        },
+        "recovery_online": {
+          "paired_reduction_pct": [
+            -0.5951407683803867,
+            -0.39974859953717523,
+            1.3297352492735781
+          ],
+          "paired_median_pct": -0.39974859953717523,
+          "median_time_reduction_pct": -0.20962738382512835,
+          "wins": 1,
+          "pairs": 3
+        },
+        "recovery_total": {
+          "paired_reduction_pct": [
+            23.215221679762653,
+            23.041729343620375,
+            23.493607402065177
+          ],
+          "paired_median_pct": 23.215221679762653,
+          "median_time_reduction_pct": 23.187460783991288,
+          "wins": 3,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 1990434,
+      "work": {
+        "scaling_kernel_work_sha256": "84589c08865e2cb256fcf7fe7303960d3260b94967ba60d33d7015207af56ef4",
+        "scaling_work_sha256": "7dd30457257c26d79a03eedea9bed8c316f0abec0b7152cfc3eae33fa53531d4",
+        "volume_kernel_elements_sum": 24354775,
+        "post_refine_elements_sum": 1558705600,
+        "volume_elements_sum": 1558705600
+      },
+      "quality": {
+        "counts": {
+          "points": 289087553,
+          "elements": 1558705600,
+          "surfaces": 115245056,
+          "checked": 1558705600,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1558705600,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.026889959932028126,
+        "shape_mean": 0.7115631173173217,
+        "angle_min": 0.3881290177887642,
+        "angle_max": 179.41270847795022,
+        "abs_volume": 15477851.65479296,
+        "shape_hist": [
+          14060,
+          566746,
+          7039754,
+          35946287,
+          106948647,
+          212903957,
+          313544055,
+          379428076,
+          359751840,
+          142562178
+        ],
+        "surface_fingerprint_sha256": "e1c2df9ccaec370128163ba4431b23e2e16c4ff818a88d129e5b3a2a3038af3d",
+        "volume_fingerprint_sha256": "ee04362ea79e3c843fee67901b6c2c26f2796b1e8a2828813f4a27c7577230da",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "generated_work_growth_pct_vs_256": 4.975406088966006
+    },
+    "1024": {
+      "nodes": 256,
+      "ranks": 1024,
+      "strategies": {
+        "node_rules_elastic": {
+          "seconds": [
+            25.070317536000005,
+            25.305325557000003,
+            25.11111662000002
+          ],
+          "median_seconds": 25.11111662000002,
+          "critical_ranks": [
+            92,
+            92,
+            92
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 20.135064419000003,
+            "kernel_generation_seconds": 16.414755026,
+            "kernel_front_seconds": 6.8020249569999995,
+            "kernel_front_applyrules_seconds": 4.1465544099999585,
+            "front_unattributed_seconds": 1.8763208950000045,
+            "kernel_gen_recovery_seconds": 6.6981667389999995,
+            "kernel_gen_recovery_topology_seconds": 2.2043347369999995,
+            "kernel_gen_recovery_smooth_seconds": 3.2516583249999993,
+            "volume_refine_seconds": 2.25643177500001
+          },
+          "observed_speedup_vs_64_nodes": 2.9271434563549863
+        },
+        "node_rules_recovery": {
+          "seconds": [
+            20.746033623000002,
+            20.176021590000005,
+            20.29832058300002
+          ],
+          "median_seconds": 20.29832058300002,
+          "critical_ranks": [
+            92,
+            92,
+            92
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 15.382225070000004,
+            "kernel_generation_seconds": 11.777576065,
+            "kernel_front_seconds": 6.746844567,
+            "kernel_front_applyrules_seconds": 4.112531393999965,
+            "front_unattributed_seconds": 1.8958605150000176,
+            "kernel_gen_recovery_seconds": 2.264884377,
+            "kernel_gen_recovery_topology_seconds": 0.9778973209999999,
+            "kernel_gen_recovery_smooth_seconds": 0.5182927009999999,
+            "volume_refine_seconds": 2.2830369230000116
+          },
+          "observed_speedup_vs_64_nodes": 2.761776024758919
+        },
+        "node_rules_recovery_online": {
+          "seconds": [
+            20.472279039,
+            20.591600720000002,
+            20.81145475599999
+          ],
+          "median_seconds": 20.591600720000002,
+          "critical_ranks": [
+            92,
+            92,
+            92
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 15.68880273600007,
+            "kernel_generation_seconds": 11.940509908,
+            "kernel_front_seconds": 6.703847402000001,
+            "kernel_front_applyrules_seconds": 4.10524027499997,
+            "front_unattributed_seconds": 1.8742503650000106,
+            "kernel_gen_recovery_seconds": 2.3827656,
+            "kernel_gen_recovery_topology_seconds": 1.1012243369999999,
+            "kernel_gen_recovery_smooth_seconds": 0.546228153,
+            "volume_refine_seconds": 2.290694368000004
+          },
+          "observed_speedup_vs_64_nodes": 2.7080345060226145
+        }
+      },
+      "comparisons": {
+        "generation_recovery": {
+          "paired_reduction_pct": [
+            17.248620432471583,
+            20.269662033971038,
+            19.16599771260986
+          ],
+          "paired_median_pct": 19.16599771260986,
+          "median_time_reduction_pct": 19.16599771260986,
+          "wins": 3,
+          "pairs": 3
+        },
+        "recovery_online": {
+          "paired_reduction_pct": [
+            1.3195514331785563,
+            -2.0597674727210524,
+            -2.527963684984469
+          ],
+          "paired_median_pct": -2.0597674727210524,
+          "median_time_reduction_pct": -1.444849271154025,
+          "wins": 1,
+          "pairs": 3
+        },
+        "recovery_total": {
+          "paired_reduction_pct": [
+            18.34056744752993,
+            18.627402466656207,
+            17.12254348966512
+          ],
+          "paired_median_pct": 18.34056744752993,
+          "median_time_reduction_pct": 17.99806821971588,
+          "wins": 3,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 2489691,
+      "work": {
+        "scaling_kernel_work_sha256": "edf6739ecdb9c88a899e71f62c131118b815d28da0e50d16ee95621e5666861b",
+        "scaling_work_sha256": "dd2d3b2e23397c73e880f99d9b8b739d1e0ebec9504ff6e857a9af4462c4190e",
+        "volume_kernel_elements_sum": 26416687,
+        "post_refine_elements_sum": 1690667968,
+        "volume_elements_sum": 1690667968
+      },
+      "quality": {
+        "counts": {
+          "points": 317688597,
+          "elements": 1690667968,
+          "surfaces": 140795904,
+          "checked": 1690667968,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1690667968,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.00041863955830544674,
+        "shape_mean": 0.7048632010151388,
+        "angle_min": 0.004232330684555589,
+        "angle_max": 179.99576766931546,
+        "abs_volume": 15477851.654792948,
+        "shape_hist": [
+          24570,
+          715968,
+          8502342,
+          42284756,
+          124033430,
+          241855718,
+          348308976,
+          409147270,
+          373222644,
+          142572294
+        ],
+        "surface_fingerprint_sha256": "344072054c712355bc75ddea4e0a0d6145e03db8f786dea1a11b7c9859d35f37",
+        "volume_fingerprint_sha256": "86335e445a569d823021b74a96a2992ce794cb7f4b425121ebf6c1cf18a84478",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "generated_work_growth_pct_vs_256": 13.862782364037818
+    }
+  },
+  "source_sha256": {
+    "levels4/kernel_node_rules_elastic_t4/p256/run_status.tsv": "cc93175c0abb99c65a348ba609a1156bd827a9c68364f8654c221d949afe7381",
+    "levels4/kernel_node_rules_elastic_t4/p256/sparse_natural/repeat_0/analysis_metrics.json": "90f0e2e6cb4be94253ef5dc2661c1e0a329e6826691040b537609e2560997b92",
+    "levels4/kernel_node_rules_elastic_t4/p256/sparse_natural/repeat_1/analysis_metrics.json": "d34163d2cebcf20f6226aa87a62cfc32aa0f1075b47115601e55636582348503",
+    "levels4/kernel_node_rules_elastic_t4/p256/sparse_natural/repeat_2/analysis_metrics.json": "a186ec27ab45327a1e4493df76e75654cee2a3b48f7b3405be73bf29d5ffead1",
+    "levels4/kernel_node_rules_elastic_t4/p256/sparse_natural/repeat_3/analysis_metrics.json": "9e262dcaf9b0f3e3d0ee8a49a08af103bd09354186f1228a51c3909c6907c6b3",
+    "levels4/kernel_node_rules_recovery_t4/p256/run_status.tsv": "9baff94671866808ee8405cdaef0c7bb2914ccea402eedab309a72c3989edc07",
+    "levels4/kernel_node_rules_recovery_t4/p256/sparse_natural/repeat_0/analysis_metrics.json": "373f980592fff64b95b01f72b1d4287789a5aacf2a8a6e7b8b7d54005797a0ed",
+    "levels4/kernel_node_rules_recovery_t4/p256/sparse_natural/repeat_1/analysis_metrics.json": "78c39fcb64002f38822af462290d1c0d7c0043d52713286479ae9d6988aa6c1e",
+    "levels4/kernel_node_rules_recovery_t4/p256/sparse_natural/repeat_2/analysis_metrics.json": "4df7cc39e00b083e547cbb3739ac1896c04755f858e7737e264fe8667bee77a0",
+    "levels4/kernel_node_rules_recovery_t4/p256/sparse_natural/repeat_3/analysis_metrics.json": "13b7c1ba2f9e021c6aa75a9c6d0d54a0fb482ed9fd80872e1251b15e1072bbdf",
+    "levels4/kernel_node_rules_recovery_online_t4/p256/run_status.tsv": "d643f4e553e67c5a3825ba9a6514a54b408409440a9b67f78abbebf87860c1ed",
+    "levels4/kernel_node_rules_recovery_online_t4/p256/sparse_natural/repeat_0/analysis_metrics.json": "bb13583e47c6d031eab09b06bc0e554875bca45cfad626e15e7b83acf6567572",
+    "levels4/kernel_node_rules_recovery_online_t4/p256/sparse_natural/repeat_1/analysis_metrics.json": "8cde1231bf3f130e342a5d4f97cc0e2f75db83bb6596605c3ae4be84ae43a183",
+    "levels4/kernel_node_rules_recovery_online_t4/p256/sparse_natural/repeat_2/analysis_metrics.json": "60f2ddef3734d7e1d0fab998efeb7b823f447c9a92200598505c298cf16c8b84",
+    "levels4/kernel_node_rules_recovery_online_t4/p256/sparse_natural/repeat_3/analysis_metrics.json": "e8600be16e2b57841e55f1998af693d344d21a49ecebd23b5b13c79825e727a6",
+    "levels4/p256/ablation_summary.csv": "2676225dc21821e3059a8b46bf6757039dc7dff962c34ca76d8217f858677b4e",
+    "levels4/kernel_node_rules_elastic_t4/p512/run_status.tsv": "aa1131f78349bb8632c928de632f303fba7087cbb81a5ffc4c1efb435b40f92b",
+    "levels4/kernel_node_rules_elastic_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "f5935dad52b84777c03c58e73263ce74aad3bde992cf4472648912b1574c04dc",
+    "levels4/kernel_node_rules_elastic_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "1da94c048ba3e832c73eda8b05c43f3f196892e4a027df654b980acfc56edc64",
+    "levels4/kernel_node_rules_elastic_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "d845ed1c5663c129347d0296a871614daa1c0812383316d52d066268830adbea",
+    "levels4/kernel_node_rules_elastic_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "d031f069f20cf9beb497cb93295b31c8a02801f441f0bb88764a919a05736d13",
+    "levels4/kernel_node_rules_recovery_t4/p512/run_status.tsv": "b07cd81674cd200d8270144cab968cc1a9215b9b65e5ae6cbe78cd969881a677",
+    "levels4/kernel_node_rules_recovery_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "af0ec27062e8a10c217ae46d74780f7116f7596be441e67e7ed888246a6e1f0e",
+    "levels4/kernel_node_rules_recovery_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "cfe9bf63f38a541e7fac51cf973f216fa03dbc6b04f9beec472cdf4e37d39130",
+    "levels4/kernel_node_rules_recovery_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "6aba7a0db6efac958eeef3f010498c6452d18ff69d65b464c712b76b8c990d91",
+    "levels4/kernel_node_rules_recovery_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "97c1b450fbb0aa0bde786055125b0933542f5fd429a48fd08cb2c99d71b0c3f3",
+    "levels4/kernel_node_rules_recovery_online_t4/p512/run_status.tsv": "5999c94b6cb3ff645d3cc2c48fb26b4dc24d91408244fb60ad0c497e985506e1",
+    "levels4/kernel_node_rules_recovery_online_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "d85a316c5fc73e37fcbf1db67d4cfacbf81adcfdd88413376478ad4ab867c489",
+    "levels4/kernel_node_rules_recovery_online_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "d242d5f069dda558c8c90ef20cb29eb7e6334bfbaba83ec9facc4deaf49d695e",
+    "levels4/kernel_node_rules_recovery_online_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "e9627d2a616ebc91ba737baf78a832e9a5851cdaf8b0fca9a9698daf3ee8d5e7",
+    "levels4/kernel_node_rules_recovery_online_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "ecc289b7d64fd766c2bbbc856f1978dfff77e0084eb69fade338d65d620ca65a",
+    "levels4/p512/ablation_summary.csv": "384fe0bf7097d8a0fb691cf8f73e5cdfe883d745495c7f059af67f00274aed3f",
+    "levels4/kernel_node_rules_elastic_t4/p1024/run_status.tsv": "1fa6a0b5fcf9fe6e108226fafcac5554e02d91c82e4073f55009edd393ac2f61",
+    "levels4/kernel_node_rules_elastic_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "41aa5a67769f42f10db0e76a974e0ae28fe07b21d5d9dca3d1517fc1716748bd",
+    "levels4/kernel_node_rules_elastic_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "360421e80f8b92c8f0719aa5e4a15b5eb3731ae37e9936779f0e6cbfdad03470",
+    "levels4/kernel_node_rules_elastic_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "dc3a6b8f47c36d05d81982c3f1ff7900aba3e2575abba714bdeb8f891595ca1b",
+    "levels4/kernel_node_rules_elastic_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "57255aac332bd86e4f49dd6f893bce2da4c3f736c935f424fc243e94e32d7576",
+    "levels4/kernel_node_rules_recovery_t4/p1024/run_status.tsv": "1761fa03eebd34db2cb274710093e92f6abb5d4ab6fa4ceaaea5de568484f7e2",
+    "levels4/kernel_node_rules_recovery_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "9be8335392b6d45a4cb511f76b2b64ecc9b0a55e5f89af29b645f20b741191b2",
+    "levels4/kernel_node_rules_recovery_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "16298786c51bd8268b93c44cc0e41616bb21d227b115b1b509ff8cf0a7a7fd19",
+    "levels4/kernel_node_rules_recovery_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "03e46b985c8875be845b3f3d0237128ad87fe8d9a692e8affb436314597e46a8",
+    "levels4/kernel_node_rules_recovery_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "16fc6194215d617686288da5084873ecf153814791649680a9990c8d315dc414",
+    "levels4/kernel_node_rules_recovery_online_t4/p1024/run_status.tsv": "b65f6a458a061b15b9d5bb6da6f13622319d7975bd1d2105655c697e5acb5736",
+    "levels4/kernel_node_rules_recovery_online_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "0ed05bd511f0a77390d9f3e1e94e52146e09084d0a4f1c4b9e42f56d8d86c592",
+    "levels4/kernel_node_rules_recovery_online_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "4897b499803ea8b544da404413fb7a1288d2a5bdd2a42be7dde1d47ceeae3f12",
+    "levels4/kernel_node_rules_recovery_online_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "4d5f2b7c839a80d39651034af85a567e18b78189685030b0bf137bd853bed88f",
+    "levels4/kernel_node_rules_recovery_online_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "90e3406c2d2e7f3a125c610683534d3074d894d502bb729f54462b0309dddaae",
+    "levels4/p1024/ablation_summary.csv": "a29cef09b92e6fcad8732080366b1548149693d3cac0277886bd6007750ce9bc"
+  },
+  "identity": {
+    "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547",
+    "MESH_BINARY_SHA256": "c7aeef539a18e334d222a11f3d38477f9435853a8b98656eaff51b9760db1eab",
+    "MESH_SOURCE_REVISION": "manual",
+    "MESH_KERNEL_SHA256": "86aac1636b5e5ead0bfea01c50e2d9a7d3d712b78708cd6101476a24b6aca454",
+    "numlevels": "4",
+    "numrefine": "2",
+    "maxh": "1000.000000",
+    "minh": "0.000000",
+    "partition_seed": "-1",
+    "partition_variant": "metis_seed",
+    "rank_shift": "0",
+    "RANKS_PER_NODE": "4",
+    "CPUS_PER_TASK": "4",
+    "kernel_threads": "4"
+  },
+  "limitations": [
+    "只有预热执行完整质量审计；正式轮核查工作签名与已保存来源，不能声称正式轮逐单元审计。",
+    "节点数改变时生成网格数量与工作签名改变；耗时比不是固定离散网格的严格强扩展效率。",
+    "每组仅三次正式重复，逐轮胜出不等于统计显著性。",
+    "SOURCE_REVISION=manual；可核查二进制哈希，不能据此证明确切源码提交。",
+    "保存了完整性功能版本，未保留成功运行的每条阶段指纹日志。",
+    "128节点的关键计算进程变化；不同进程阶段时间之差不能作为同进程优化归因。"
+  ]
+}
