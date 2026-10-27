@@ -85,6 +85,18 @@ def main():
     logs.append(out);print(out.strip())
     if args.mpi_prefix:
         mpi=args.mpi_prefix.resolve();mpi_binary=output/'rule_search_mpi'
+        integrity=output/'mesh_integrity'
+        invoke([str(mpi/'bin/mpicxx')]+flags(rule)[1:]+[
+            str(repo/'test_code_expansion/tests/mesh_integrity_api_regression.cpp')]+
+            objects+libs+['-o',str(integrity)])
+        logs.append(subprocess.check_output([str(mpi/'bin/mpiexec'),'-n','2',str(integrity)],text=True,cwd=output,timeout=30))
+        for failure in ('invalid','changed'):
+            result=subprocess.run([str(mpi/'bin/mpiexec'),'-n','2',str(integrity),failure],
+                                  text=True,capture_output=True,cwd=output,timeout=30)
+            if result.returncode!=86 or '[MESH_EVIDENCE]' not in result.stderr:
+                raise SystemExit('完整性保护未按预期停止：'+failure+'\n'+result.stderr)
+            logs.append(result.stderr)
+        print('通过：真实内核有界连接读取及两进程坏索引/只读阶段变更拦截。')
         invoke([str(mpi/'bin/mpicxx')]+flags(rule)[1:]+['-DNETGEN_SEARCH_MPI_REGRESSION',str(test)]+
                objects+libs+['-o',str(mpi_binary)])
         mpi_binary.chmod(mpi_binary.stat().st_mode|0o111)

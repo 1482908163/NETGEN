@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <sstream>
+#include <iomanip>
 #include <string>
 #include <vector>
 
@@ -23,6 +25,19 @@ struct Face {
     bool operator<(const Face &other) const { return v<other.v; }
 };
 struct Result {
+    struct Sample {
+        const char *kind;
+        std::array<int,4> ids;
+        std::uint64_t entity;
+        int volume=0,surface=0,orientation=0;
+    };
+    std::vector<Sample> samples;
+    void sample(const char *kind,const int *v,int n,std::uint64_t entity,
+                int volume=0,int surface=0,int orientation=0) {
+        if(samples.size()>=8) return;
+        Sample s{kind,{},entity,volume,surface,orientation};
+        std::copy(v,v+n,s.ids.begin());samples.push_back(s);
+    }
     std::uint64_t points=0,elements=0,surfaces=0,checked=0;
     std::uint64_t invalid_indices=0,unsupported=0,nonfinite_points=0;
     std::uint64_t repeated_vertices=0,zero_volume=0,positive=0,negative=0;
@@ -93,7 +108,7 @@ template<class MeshAccess> Result inspect(const MeshAccess &mesh) {
     const int fv[4][3]={{1,2,3},{0,3,2},{0,1,3},{0,2,1}};
     for(std::uint64_t i=1;i<=r.elements;++i) {
         int v[10]{};if(!mesh.tetrahedron(int(i),v)) {++r.unsupported;continue;}
-        if(!valid(v,4)) continue;
+        if(!valid(v,4)) {r.sample("invalid_tetrahedron",v,4,i);continue;}
         auto ids=std::array<int,4>{{v[0],v[1],v[2],v[3]}};std::sort(ids.begin(),ids.end());
         if(std::adjacent_find(ids.begin(),ids.end())!=ids.end()) {++r.repeated_vertices;continue;}
         bool ok=true;for(int j=0;j<4;++j) if(!finite[v[j]]) ok=false;if(!ok) continue;
@@ -130,7 +145,7 @@ template<class MeshAccess> Result inspect(const MeshAccess &mesh) {
     }
     for(std::uint64_t i=1;i<=r.surfaces;++i) {
         int v[10]{};if(!mesh.triangle(int(i),v)) {++r.unsupported;continue;}
-        if(!valid(v,3)) continue;
+        if(!valid(v,3)) {r.sample("invalid_triangle",v,3,i);continue;}
         if(!finite[v[0]]||!finite[v[1]]||!finite[v[2]]) continue;
         const auto n=cross(sub(points[v[1]],points[v[0]]),sub(points[v[2]],points[v[0]]));
         if(dot(n,n)==0) ++r.zero_surface_area;
@@ -149,8 +164,88 @@ template<class MeshAccess> Result inspect(const MeshAccess &mesh) {
         if(!volume&&surface) ++r.orphan_surface;
         if(surface>1) r.duplicate_surface+=surface-1; // May be a two-sided material interface: compare with control.
         if(volume==2&&surface) ++r.internal_marked;
+        if(volume>2 || (volume==2&&orientation) || (volume==1&&!surface) || (!volume&&surface))
+            r.sample(volume>2?"nonmanifold":volume==2?"same_side_faces":volume?"missing_surface":"orphan_surface",
+                     faces[i].v.data(),3,0,volume,surface,orientation);
         i=j;
     }
     return r;
+}
+
+// O(1) extra memory. Ordered local IDs detect changes even when geometric
+// element sets are identical. Only compare stages that must not mutate mesh.
+struct Connectivity {
+    std::uint64_t points=0,elements=0,surfaces=0,invalid=0,unsupported=0;
+    std::uint64_t point_hash=14695981039346656037ULL,index_hash=14695981039346656037ULL;
+    std::vector<Result::Sample> samples;
+    bool operator==(const Connectivity &b) const {
+        return points==b.points && elements==b.elements && surfaces==b.surfaces &&
+            invalid==b.invalid && unsupported==b.unsupported && point_hash==b.point_hash && index_hash==b.index_hash;
+    }
+};
+inline bool valid_indices(const int *v,int n,int np) {
+    for(int k=0;k<n;++k) if(v[k]<1 || v[k]>np) return false;
+    return true;
+}
+template<class MeshAccess> Connectivity connectivity(const MeshAccess &mesh) {
+    Connectivity c;c.points=mesh.np();c.elements=mesh.ne();c.surfaces=mesh.nse();
+    for(std::uint64_t i=1;i<=c.points;++i) {
+        auto p=mesh.point(int(i));
+        for(double x:p) {std::uint64_t bits;std::memcpy(&bits,&x,sizeof(bits));c.point_hash=mix(c.point_hash,bits);}
+    }
+    for(int surface=0;surface<2;++surface) {
+        const auto count=surface?c.surfaces:c.elements;const int n=surface?3:4;
+        c.index_hash=mix(c.index_hash,count);
+        for(std::uint64_t i=1;i<=count;++i) {
+            int v[10]{};bool supported=surface?mesh.triangle(int(i),v):mesh.tetrahedron(int(i),v);
+            c.index_hash=mix(c.index_hash,supported);
+            if(!supported) ++c.unsupported;
+            else {
+                for(int k=0;k<n;++k) c.index_hash=mix(c.index_hash,std::uint64_t(v[k]));
+                if(valid_indices(v,n,int(c.points))) continue;
+                ++c.invalid;
+            }
+            if(c.samples.size()<8) {
+                Result::Sample s{supported?(surface?"invalid_triangle":"invalid_tetrahedron"):"unsupported",{},i};
+                std::copy(v,v+n,s.ids.begin());c.samples.push_back(s);
+            }
+        }
+    }
+    return c;
+}
+
+// Compact evidence for the bounded failing face set: re-read the incident
+// tetrahedra from the live mesh, without adding a per-face owner array (large).
+template<class MeshAccess,class Emit> void evidence(const MeshAccess &mesh,const Result &r,Emit emit) {
+    for(const auto &s:r.samples) {
+        std::ostringstream out;out<<"\"kind\":\""<<s.kind<<"\",\"entity\":"<<s.entity
+            <<",\"ids\":["<<s.ids[0]<<','<<s.ids[1]<<','<<s.ids[2]<<','<<s.ids[3]
+            <<"],\"volume\":"<<s.volume<<",\"surface\":"<<s.surface<<",\"orientation\":"<<s.orientation;
+        emit(out.str());
+    }
+    std::vector<int> emitted(r.samples.size(),0);
+    for(int i=1;i<=mesh.ne() && !r.samples.empty();++i) {
+        int v[10]{};if(!mesh.tetrahedron(i,v) || !valid_indices(v,4,mesh.np())) continue;
+        for(std::size_t j=0;j<r.samples.size();++j) {
+            const auto &s=r.samples[j];if(s.entity || emitted[j]>=4) continue;
+            int matched=0;for(int k=0;k<3;++k) if(std::find(v,v+4,s.ids[k])!=v+4) ++matched;
+            if(matched!=3) continue;
+            ++emitted[j];std::array<Point,4> x;
+            std::ostringstream out;out<<std::setprecision(20)<<"\"kind\":\"incident_tetrahedron\",\"sample\":"<<j
+                <<",\"entity\":"<<i<<",\"ids\":["<<v[0]<<','<<v[1]<<','<<v[2]<<','<<v[3]<<"],\"xyz\":[";
+            for(int k=0;k<4;++k) {
+                auto p=mesh.point(v[k]);x[k]={{p[0],p[1],p[2]}};
+                out<<(k?",":"")<<'[';
+                for(int a=0;a<3;++a) {
+                    if(a) out<<',';
+                    if(std::isfinite(p[a])) out<<p[a];else out<<"null";
+                }
+                out<<']';
+            }
+            const auto det=dot(sub(x[1],x[0]),cross(sub(x[2],x[0]),sub(x[3],x[0])));
+            out<<"],\"det\":";if(std::isfinite(det)) out<<det;else out<<"null";
+            emit(out.str());
+        }
+    }
 }
 } // namespace mesh_audit

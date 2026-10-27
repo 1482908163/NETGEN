@@ -83,6 +83,18 @@ print('12345')
         self.assertEqual(state['exit_code'], 125)
         self.assertIn('存在失败', (self.folder/'results/RESULT_SUMMARY.txt').read_text())
 
+    def test_diagnostic_followup_only_submits_level4(self):
+        schedulers=' '.join(batch.FOCUSED_SCHEDULERS)
+        result=self.launch(EXPERIMENT_PRESET='rule_search',RULE_SEARCH_LEVELS='4',
+                           PROCESS_COUNTS='256',REPEATS='3',KERNEL_SCHEDULERS=schedulers)
+        self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),1)
+        e,a=calls[0]['env'],calls[0]['args']
+        self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
+        self.assertEqual(e['KERNEL_SCHEDULERS'],schedulers)
+        self.assertEqual(a[a.index('-N')+1],'64')
+        self.assertEqual(a[a.index('-n')+1],'256')
+
     def test_joint_plan_has_all_thirteen_strategies_and_contributions(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='0')
         self.assertEqual(result.returncode,0,result.stderr)

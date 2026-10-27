@@ -770,6 +770,11 @@ NGLIB_API void Ng_CSG_Generate_SecondOrder (Ng_CSG_Geometry * geom,
 
 NGLIB_API Ng_Volume_Element_Type
 Ng_GetVolumeElement (Ng_Mesh * mesh, int num, int * pi, int &domainidx);
+
+// Bounded linear connectivity readers. Reject invalid element numbers/types
+// before copying; callers must validate vertex IDs before reading coordinates.
+NGLIB_API Ng_Result Ng_GetTetrahedronConnectivity(Ng_Mesh *mesh, int num, int *pi, int &domainidx);
+NGLIB_API Ng_Result Ng_GetTriangleConnectivity(Ng_Mesh *mesh, int num, int *pi);
 NGLIB_API void Ng_AddSurfaceElementwithIndex(Ng_Mesh * mesh, Ng_Surface_Element_Type et, int * pi, int index);
 
 NGLIB_API Ng_Surface_Element_Type

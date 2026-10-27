@@ -1230,6 +1230,31 @@ NGLIB_API int My_Ng_AddFaceDescriptor(Ng_Mesh * mesh, int surfnr, int domin, int
     return ((Mesh*)mesh)->AddFaceDescriptor(FaceDescriptor(surfnr, domin, domout, tlosurf));
 }
 
+// These entry points never copy a corrupt/unsupported point count into the
+// caller's fixed-size buffer. Vertex IDs remain visible for diagnostics.
+NGLIB_API Ng_Result Ng_GetTetrahedronConnectivity(Ng_Mesh *mesh, int num, int *pi, int &domainidx) {
+    if (!mesh || !pi) return NG_ERROR;
+    std::fill(pi, pi+4, 0); domainidx=0;
+    const Mesh &m=*reinterpret_cast<Mesh*>(mesh);
+    if (num<1 || num>m.GetNE()) return NG_ERROR;
+    const Element &el=m.VolumeElement(num);
+    if (el.GetNP()!=4 || el.GetType()!=TET) return NG_ERROR;
+    domainidx=el.GetIndex();
+    for (int k=0;k<4;++k) pi[k]=el[k];
+    return NG_OK;
+}
+
+NGLIB_API Ng_Result Ng_GetTriangleConnectivity(Ng_Mesh *mesh, int num, int *pi) {
+    if (!mesh || !pi) return NG_ERROR;
+    std::fill(pi, pi+3, 0);
+    const Mesh &m=*reinterpret_cast<Mesh*>(mesh);
+    if (num<1 || num>m.GetNSE()) return NG_ERROR;
+    const Element2d &el=m.SurfaceElement(num);
+    if (el.GetNP()!=3 || el.GetType()!=TRIG) return NG_ERROR;
+    for (int k=0;k<3;++k) pi[k]=el[k];
+    return NG_OK;
+}
+
 NGLIB_API Ng_Volume_Element_Type
 Ng_GetVolumeElement (Ng_Mesh * mesh, int num, int * pi, int &domainidx) {
     const Element & el = ((Mesh*)mesh)->VolumeElement(num);

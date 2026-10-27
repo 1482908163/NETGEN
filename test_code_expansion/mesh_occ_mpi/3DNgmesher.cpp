@@ -19,6 +19,7 @@ namespace nglib
 {
 #include <nglib.h>
 }
+#include "ng_mesh_audit.h"
 //数组排序，整个数组元素将按升序排序
 void SortInt(int *v)
 {
@@ -933,6 +934,11 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 	// std::map< IntPair, int, IntPairCompare >::iterator emi;
 	int index = -1;
 	int oldnse = nglib::Ng_GetNSE((nglib::Ng_Mesh *)submesh);
+	if(newfaces.size()!=static_cast<std::size_t>(oldnse)) {
+		const int counts[2]={oldnse,static_cast<int>(newfaces.size())};
+		mesh_audit::reject(MPI_COMM_WORLD,"refine_surface_count",0,counts,2,
+		                  nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh));
+	}
 	require_local_mesh_capacity(static_cast<GlobalCount>(oldnse) * 4, MPI_COMM_WORLD);
 	require_local_mesh_capacity(static_cast<GlobalCount>(nglib::Ng_GetNE((nglib::Ng_Mesh *)submesh)) * 8, MPI_COMM_WORLD);
 	li = newfaces.begin();
@@ -944,6 +950,9 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 			v[k] = (*li).lsvrtx[k];
 			// each face has three points
 			vbarycv[k] = (*li).barycv[k];
+			if(!mesh_audit::valid_indices(&v[k],1,nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh)))
+				mesh_audit::reject(MPI_COMM_WORLD,"refine_surface_point",i+1,&v[k],1,
+				                  nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh));
 			nglib::Ng_GetPoint((nglib::Ng_Mesh *)submesh, v[k], vxyz[k]);
 		}
 		for (int k = 0; k < 3; k++)
@@ -1016,7 +1025,10 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 
 	for (i = 0; i < oldne; i++)
 	{
-		nglib::Ng_GetVolumeElement((nglib::Ng_Mesh *)submesh, i + 1, Ev, domainidx);
+		if(nglib::Ng_GetTetrahedronConnectivity((nglib::Ng_Mesh *)submesh,i+1,Ev,domainidx)!=nglib::NG_OK ||
+		   !mesh_audit::valid_indices(Ev,4,nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh)))
+			mesh_audit::reject(MPI_COMM_WORLD,"refine_volume_input",i+1,Ev,4,
+			                  nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh));
 		for (int k = 0; k < 4; k++)
 		{
 			// Each face has three points
@@ -1403,6 +1415,8 @@ GlobalId *com_barycoords(
 		{
 			brcy = ib->first;
 			locid = ib->second;
+			if(!mesh_audit::valid_indices(&locid,1,numverts))
+				mesh_audit::reject(comm,"vertex_numbering_local",0,&locid,1,numverts);
 
 		// ���߽綥�������ȫ�ֶ�������.
 			bvrtx.gvrtx[0] = brcy.gvrtx[0];
@@ -1594,7 +1608,10 @@ GlobalId *com_barycoords(
 		{
 			for (j = 0; j < r_length[i]; j++)
 			{
-				locid = baryc2locvrtxmap[r_data[i][j]];
+				const auto found=baryc2locvrtxmap.find(r_data[i][j]);
+				locid=found==baryc2locvrtxmap.end()?0:found->second;
+				if(!mesh_audit::valid_indices(&locid,1,numverts))
+					mesh_audit::reject(comm,"vertex_exchange_unpack",j+1,&locid,1,numverts);
 				if (newgid[locid] != -1)
 					printf("%d> Error: remote global id %d\n", mypid, locid);
 				newgid[locid] = (r_data[i][j].newgid + globoffsets[src[i]]);
@@ -1647,12 +1664,15 @@ GlobalId *com_baryVolumeElements(
 
 	MPI_Datatype mpivetype = volume_element_mpi_type(comm);
 
-	int entity[4];
+	int entity[4]{};
+	const int point_count=nglib::Ng_GetNP(mesh);
 	{
 		scaling::StageScope profile_stage("volume_exchange_pack", "compute");
 		for (int i = 0; i < num_keys; ++i)
 		{
-			nglib::Ng_GetVolumeElement(mesh, i + 1, entity, domainidx);
+			if(nglib::Ng_GetTetrahedronConnectivity(mesh,i+1,entity,domainidx)!=nglib::NG_OK ||
+			   !mesh_audit::valid_indices(entity,4,point_count))
+				mesh_audit::reject(comm,"volume_exchange_pack",i+1,entity,4,point_count);
 			pid_tmp.clear();
 			std::map<int, int> num_adjPoints;
 

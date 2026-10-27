@@ -14,8 +14,7 @@ def quality_details(q):
     failed=[]
     for row in q.get('per_rank',[]):
         if row.get('hard_errors',0) or row.get('checked')!=row.get('elements'):
-            failed.append({k:v for k,v in row.items() if k not in
-                           ('surface_sum','surface_xor','volume_sum','volume_xor','shape_hist')})
+            failed.append(dict(row))  # Keep fingerprints: they distinguish geometry from audit failures.
     return dict(identity=q.get('identity'),counts=q.get('counts'),issues=q.get('issues'),
                 structural_pass=q.get('structural_pass'),failed_ranks=failed,
                 per_rank_available='per_rank' in q)
@@ -57,7 +56,10 @@ def resolve_frames(text, configuration, cache):
                 try:
                     proc=subprocess.run(['addr2line','-f','-C','-e',str(path),address],
                                         text=True,capture_output=True,timeout=15)
-                    item.update(status='resolved' if proc.returncode==0 and '??' not in proc.stdout else 'symbols_unavailable',
+                    lines=proc.stdout.strip().splitlines()
+                    status=('resolved' if '??' not in proc.stdout else
+                            'function_only' if lines and lines[0] not in ('??','?') else 'symbols_unavailable')
+                    item.update(status=status if proc.returncode==0 and lines else 'symbols_unavailable',
                                 location=proc.stdout.strip()[:4096])
                 except (OSError,subprocess.TimeoutExpired) as e:
                     item.update(status='resolver_failed',error=str(e))
@@ -77,7 +79,8 @@ def collect(directory, cache=None, exit_code=None):
     # observed exit-stage rank sets. A long finalization tail must not hide errors.
     candidates=[directory/'run.log',directory/'run.log.gz',summary]
     log=next((p for p in candidates if p.is_file()),None)
-    stages={};diagnostics=[];tail=''
+    stages={};diagnostics=[];tail='';checkpoints={};evidence=[];evidence_dropped=0;malformed=0
+    affected={r['rank'] for r in data.get('quality',{}).get('failed_ranks',[]) if 'rank' in r}
     if log:
         opener=gzip.open if log.suffix=='.gz' else open
         with opener(log,'rt',errors='replace') as stream:
@@ -85,6 +88,21 @@ def collect(directory, cache=None, exit_code=None):
                 tail=(tail+line)[-32768:]
                 m=re.search(r'\[EXIT_CHECKPOINT\] rank=(\d+) stage=([\w.]+)',line)
                 if m:stages.setdefault(m[2],set()).add(int(m[1]))
+                if '[MESH_EVIDENCE] ' in line:
+                    try:
+                        record=json.loads(line.split('[MESH_EVIDENCE] ',1)[1])
+                        if not isinstance(record,dict) or not isinstance(record.get('rank'),int):raise ValueError('rank')
+                        rank=record['rank']
+                        if record.get('kind')=='checkpoint':
+                            checkpoints.setdefault(rank,[]).append(record)
+                            if record.get('invalid') or record.get('unsupported') or record.get('unchanged') is False:
+                                affected.add(rank)
+                        else:
+                            affected.add(rank)
+                            if len(evidence)<128:evidence.append(record)
+                            else:evidence_dropped+=1
+                    except (ValueError,TypeError):malformed+=1
+                    continue  # Progress lines must not exhaust the error/stack budget.
                 if re.search(r'Caught signal|Segmentation fault|\[MESH_|\[IO_ERROR\]|\[MPI_ERROR\]|^\s*\d+\s+\S+\([^)]*\)\s+\[0x',line):
                     if len(diagnostics)<128:diagnostics.append(line.strip()[:2048])
         data['log_source']=log.name
@@ -100,7 +118,14 @@ def collect(directory, cache=None, exit_code=None):
                 saved=json.loads(m[1])
                 if isinstance(saved,dict) and all(isinstance(v,int) and v>=0 for v in saved.values()):counts=saved
             except ValueError:pass
-    data.update(exit_checkpoints=counts,messages=diagnostics)
+    checkpoint_counts={}
+    for rows in checkpoints.values():
+        for row in rows:
+            stage=row.get('stage','unknown');checkpoint_counts[stage]=checkpoint_counts.get(stage,0)+1
+    data.update(exit_checkpoints=counts,messages=diagnostics,
+                mesh_evidence=evidence,mesh_evidence_dropped=evidence_dropped,mesh_evidence_malformed=malformed,
+                mesh_checkpoint_counts=checkpoint_counts,
+                mesh_checkpoints=[row for rank,rows in sorted(checkpoints.items()) if rank in affected for row in rows])
     configuration=directory.parent.parent/'configuration.txt'
     data['frames']=resolve_frames('\n'.join(diagnostics),configuration.read_text() if configuration.exists() else '',cache)
     (directory/'failure_diagnostics.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
@@ -109,6 +134,8 @@ def collect(directory, cache=None, exit_code=None):
         if 'quality' in data:
             header+='质量问题：'+json.dumps(data['quality'],ensure_ascii=False)+'\n'
         header+='关键错误：\n'+'\n'.join(diagnostics)+'\n'
+        for record in data['mesh_checkpoints']+evidence:
+            header+='[MESH_EVIDENCE] '+json.dumps(record,ensure_ascii=False)+'\n'
         summary.write_text(header+tail)
     return data
 

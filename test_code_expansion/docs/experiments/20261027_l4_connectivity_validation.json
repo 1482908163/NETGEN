@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-27",
+  "source_parent": "bc153a663b4333c0264d6524ecf1a768e6dae06d",
+  "root_cause": "not established; protection and evidence only",
+  "validation": {
+    "kernel_build": "PASS: actual Netgen Release without OCC/MPI",
+    "volume_audit": "PASS: 24 permutations, same-side incident evidence, invalid IDs, bounded samples, ID/coordinate fingerprints",
+    "address_undefined_sanitizers": "PASS: fixture; ASAN_OPTIONS=detect_leaks=0; leak checking unsupported in host",
+    "bounded_api": "PASS: actual mesh and public readers, element bounds/types and output sentinels",
+    "mpi_integrity": "PASS: two ranks normal; invalid ID and read-only coordinate mutation each abort 86",
+    "diagnostics_integration": "PASS: observed invalid ID and checkpoint retained after real two-rank abort",
+    "recovery": "PASS: 54 exact reference cases and exception cleanup",
+    "rule_search": "PASS: 18 configurations, original reference fingerprint 6d770e28fdeae775",
+    "mpi_rule_search": "PASS: four ranks, normal and replay",
+    "python_rules_analysis_batch": "PASS: 32 tests (17 analysis + 15 batch)",
+    "python_diagnostics": "PASS: 7 tests",
+    "runner": "PASS",
+    "shell_syntax": "PASS",
+    "followup_matrix": "PASS: fake submission captures one 64-node/256-rank L4 job, six strategies, warmup1+repeat3"
+  },
+  "limitations": [
+    "No full OCC/METIS host application build in this environment",
+    "No new cluster result",
+    "LeakSanitizer cannot inspect host process metadata",
+    "MPI abort may terminate peer ranks before their own evidence is emitted"
+  ]
+}

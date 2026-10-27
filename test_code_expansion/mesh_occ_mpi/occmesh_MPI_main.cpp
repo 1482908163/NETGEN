@@ -28,6 +28,7 @@ using namespace std;
 namespace nglib {
 #include <nglib.h>
 }
+#include "ng_mesh_audit.h"
 #include "createElmerOutput.h"
 
 //打印帮助信息
@@ -491,6 +492,7 @@ int main(int argc, char **argv) {
     profiler.add_metadata("core_only",profile_core_only?"true":"false");
     if(validate_volume) {
         profiler.add_metadata("mesh_quality","volume_audit_v1");
+        profiler.add_metadata("mesh_integrity","stage_fingerprint_v1");
         profiler.add_metadata("quality_face_reference",research.verify_faces?"allgather":"baseline");
     }
     profiler.add_metadata("partition_contract",research.mesh_tasks>0?"fixed closed tasks; rank zero dispatcher":"one partition per MPI rank");
@@ -961,10 +963,16 @@ int main(int argc, char **argv) {
         time[4] = double(currtime4 - currtime3);
         }
 
+        mesh_audit::Connectivity validated_connectivity;
+        if(validate_volume)
+            validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,"kernel_complete");
         {
             scaling::StageScope profile_stage("volume_refine", "compute");
             for (i = 0; i < numrefine; i++) {
                 Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap);
+                if(validate_volume)
+                    validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,
+                        ("refine_"+std::to_string(i+1)).c_str());
             }
         }
 
@@ -985,19 +993,10 @@ int main(int argc, char **argv) {
         profiler.set_metric("local_volume_elements_before_adjacency", local_volume_elements_before_adjacency);
         if(validate_volume) {
             scaling::StageScope quality_stage("volume_audit", "validation");
-            struct AuditAccess {
-                nglib::Ng_Mesh *mesh;
-                int np() const {return nglib::Ng_GetNP(mesh);}
-                int ne() const {return nglib::Ng_GetNE(mesh);}
-                int nse() const {return nglib::Ng_GetNSE(mesh);}
-                std::array<double,3> point(int i) const {
-                    std::array<double,3> p{};nglib::Ng_GetPoint(mesh,i,p.data());return p;
-                }
-                bool tetrahedron(int i,int *v) const {return nglib::Ng_GetVolumeElement(mesh,i,v)==nglib::NG_TET;}
-                bool triangle(int i,int *v) const {return nglib::Ng_GetSurfaceElement(mesh,i,v)==nglib::NG_TRIG;}
-            };
-            const auto quality=mesh_audit::inspect(AuditAccess{submesh});
+            const auto quality=mesh_audit::inspect(mesh_audit::NgAccess{submesh});
             quality.report(profiler);
+            mesh_audit::report_evidence({submesh},MPI_COMM_WORLD,quality);
+            mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,"audit_complete",&validated_connectivity);
             // VerifyFaceClosure has already returned successfully in PartFaceCreate.
             profiler.set_metric("quality_face_reference_passed",research.verify_faces?1:0);
         }
@@ -1036,6 +1035,8 @@ int main(int argc, char **argv) {
 
             GlobalId *newid = com_barycoords(submesh, MPI_COMM_WORLD, barycvrtx2adjprocsmap,
                                         baryc2locvrtxmap, adjbarycs, numParts, VEgid, id);
+            if(validate_volume)
+                mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,"vertex_numbering_complete",&validated_connectivity);
 
 
             // int pointdebug = nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh);
