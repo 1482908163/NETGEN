@@ -95,6 +95,29 @@ print('12345')
         self.assertEqual(a[a.index('-N')+1],'64')
         self.assertEqual(a[a.index('-n')+1],'256')
 
+    def test_recovery_scaling_default_submits_three_node_counts(self):
+        self.env.pop('EXPERIMENT_PRESET',None)
+        for k in ('PROCESS_COUNTS','RULE_SEARCH_LEVELS','KERNEL_SCHEDULERS','REPEATS','REFINES'):
+            self.env.pop(k,None)
+        result=self.launch();self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),3)
+        self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
+        layouts=[]
+        for r in calls:
+            e,a=r['env'],r['args'];layouts.append((int(a[a.index('-N')+1]),int(a[a.index('-n')+1])))
+            self.assertEqual(e['KERNEL_SCHEDULERS'].split(),
+                             ['node_rules_elastic','node_rules_recovery','node_rules_recovery_online'])
+            self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
+            self.assertFalse(any(s.startswith('--dependency') for s in a))
+        self.assertEqual(layouts,[(64,256),(128,512),(256,1024)])
+
+    def test_recovery_scaling_allows_explicit_smaller_matrix(self):
+        result=self.launch(EXPERIMENT_PRESET='recovery_scaling',PROCESS_COUNTS='256 512',
+                           RULE_SEARCH_LEVELS='2',REPEATS='2')
+        self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),2)
+        self.assertTrue(all(r['env']['LEVELS']=='2' and r['env']['REPEATS']=='2' for r in calls))
+
     def test_joint_plan_has_all_thirteen_strategies_and_contributions(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='0')
         self.assertEqual(result.returncode,0,result.stderr)

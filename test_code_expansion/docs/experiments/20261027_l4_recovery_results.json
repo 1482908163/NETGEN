@@ -1,0 +1,310 @@
+{
+  "upload_commit": "6cc282ba5abb78be4d3fb22d5b0105ad3efbef9a",
+  "batch": "mesh_algorithms_20261027-121027",
+  "date": "2026-10-27",
+  "audit": {
+    "attempted": 24,
+    "success": 24,
+    "warmups": 6,
+    "formal": 18,
+    "same_identity": true,
+    "same_geometry_fingerprints": true,
+    "same_generated_and_refined_work_signatures": true,
+    "all_formal_critical_compute_rank": 73
+  },
+  "identity": {
+    "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547",
+    "MESH_BINARY_SHA256": "c7aeef539a18e334d222a11f3d38477f9435853a8b98656eaff51b9760db1eab",
+    "MESH_SOURCE_REVISION": "manual",
+    "MESH_KERNEL_SHA256": "86aac1636b5e5ead0bfea01c50e2d9a7d3d712b78708cd6101476a24b6aca454",
+    "numlevels": "4",
+    "numrefine": "2",
+    "maxh": "1000.000000",
+    "minh": "0.000000",
+    "partition_seed": "-1",
+    "partition_variant": "metis_seed",
+    "rank_shift": "0",
+    "RANKS_PER_NODE": "4",
+    "CPUS_PER_TASK": "4",
+    "kernel_threads": "4"
+  },
+  "quality": {
+    "schema": "volume_audit_v1",
+    "algorithm": "sparse",
+    "ranks": 256,
+    "seed": -1,
+    "threads": 4,
+    "counts": {
+      "points": 271836564,
+      "elements": 1484829312,
+      "surfaces": 96182272,
+      "checked": 1484829312,
+      "invalid_indices": 0,
+      "unsupported": 0,
+      "nonfinite_points": 0,
+      "repeated_vertices": 0,
+      "zero_volume": 0,
+      "positive": 0,
+      "negative": 1484829312,
+      "nonmanifold": 0,
+      "same_side_faces": 0,
+      "missing_surface": 0,
+      "orphan_surface": 0,
+      "duplicate_surface": 0,
+      "internal_marked": 0,
+      "zero_surface_area": 0,
+      "hard_errors": 0
+    },
+    "issues": [],
+    "structural_pass": true,
+    "shape_min": 0.00038983705978167687,
+    "shape_mean": 0.7170229229235053,
+    "angle_min": 0.001318871809458711,
+    "angle_max": 179.99802597183796,
+    "abs_volume": 15477851.65479295,
+    "shape_hist": [
+      12732,
+      477986,
+      6204814,
+      32475908,
+      96722940,
+      194917092,
+      290254606,
+      362587812,
+      356590950,
+      144584472
+    ],
+    "face_reference": "allgather",
+    "surface_fingerprint_sha256": "54cc2ee516b35ae115e6d7b6a5b892c40b46d6740a071e5d56e22b3802ed42f6",
+    "volume_fingerprint_sha256": "a27e6d690d1b1937dcf24e32c9e7899a29e65616b6849adefc4fd9b6fc7d488c"
+  },
+  "times": {
+    "node_rules_elastic": {
+      "seconds": [
+        73.064917347,
+        73.16622546300005,
+        72.54368020200013
+      ],
+      "median": 73.064917347,
+      "minimum": 72.54368020200013,
+      "maximum": 73.16622546300005
+    },
+    "node_rules_recovery": {
+      "seconds": [
+        55.94717778499995,
+        56.06529896899997,
+        55.21665189700002
+      ],
+      "median": 55.94717778499995,
+      "minimum": 55.21665189700002,
+      "maximum": 56.06529896899997
+    },
+    "node_rules_recovery_online": {
+      "seconds": [
+        55.93945127199993,
+        55.871418228999914,
+        56.104059835000044
+      ],
+      "median": 55.93945127199993,
+      "minimum": 55.871418228999914,
+      "maximum": 56.104059835000044
+    },
+    "node_search_elastic": {
+      "seconds": [
+        75.31652786699999,
+        74.08217708799998,
+        73.83172275399988
+      ],
+      "median": 74.08217708799998,
+      "minimum": 73.83172275399988,
+      "maximum": 75.31652786699999
+    },
+    "node_search_online": {
+      "seconds": [
+        73.64609526199996,
+        75.07874532599999,
+        74.11442893899994
+      ],
+      "median": 74.11442893899994,
+      "minimum": 73.64609526199996,
+      "maximum": 75.07874532599999
+    },
+    "node_search_full": {
+      "seconds": [
+        73.39672042300003,
+        75.30600512800004,
+        73.93786504800005
+      ],
+      "median": 73.93786504800005,
+      "minimum": 73.39672042300003,
+      "maximum": 75.30600512800004
+    }
+  },
+  "comparisons": [
+    {
+      "contribution": "search_remote_online",
+      "control": "node_search_online",
+      "candidate": "node_search_full",
+      "paired_reductions_pct": [
+        0.33861243846365907,
+        -0.3026952581762776,
+        0.2382314665680174
+      ],
+      "paired_median_pct": 0.2382314665680174,
+      "paired_wins": 2
+    },
+    {
+      "contribution": "search_previous",
+      "control": "node_rules_elastic",
+      "candidate": "node_search_full",
+      "paired_reductions_pct": [
+        -0.45412092156928985,
+        -2.924545651302002,
+        -1.9218556904168071
+      ],
+      "paired_median_pct": -1.9218556904168071,
+      "paired_wins": 0
+    },
+    {
+      "contribution": "search_order_elastic",
+      "control": "node_rules_elastic",
+      "candidate": "node_search_elastic",
+      "paired_reductions_pct": [
+        -3.0816575201291663,
+        -1.2518776514761187,
+        -1.775540678958043
+      ],
+      "paired_median_pct": -1.775540678958043,
+      "paired_wins": 0
+    },
+    {
+      "contribution": "search_model",
+      "control": "node_search_elastic",
+      "candidate": "node_search_online",
+      "paired_reductions_pct": [
+        2.217883182227698,
+        -1.3452199667623344,
+        -0.3829061200996131
+      ],
+      "paired_median_pct": -0.3829061200996131,
+      "paired_wins": 1
+    },
+    {
+      "contribution": "generation_recovery",
+      "control": "node_rules_elastic",
+      "candidate": "node_rules_recovery",
+      "paired_reductions_pct": [
+        23.428124171693042,
+        23.372705624465983,
+        23.884959043644415
+      ],
+      "paired_median_pct": 23.428124171693042,
+      "paired_wins": 3
+    },
+    {
+      "contribution": "recovery_online",
+      "control": "node_rules_recovery",
+      "candidate": "node_rules_recovery_online",
+      "paired_reductions_pct": [
+        0.0138103713286708,
+        0.3458123715834538,
+        -1.6071382590443495
+      ],
+      "paired_median_pct": 0.0138103713286708,
+      "paired_wins": 2
+    },
+    {
+      "contribution": "recovery_total",
+      "control": "node_rules_elastic",
+      "candidate": "node_rules_recovery_online",
+      "paired_reductions_pct": [
+        23.43869903207827,
+        23.63769228842626,
+        22.661685099547547
+      ],
+      "paired_median_pct": 23.43869903207827,
+      "paired_wins": 3
+    }
+  ],
+  "critical_rank73": {
+    "node_rules_elastic": {
+      "compute_seconds": 61.59680276300014,
+      "kernel_generation_seconds": 47.765735473,
+      "kernel_gen_recovery_seconds": 27.726195061,
+      "kernel_gen_recovery_topology_seconds": 9.146945719000001,
+      "kernel_gen_recovery_smooth_seconds": 14.147940699,
+      "kernel_front_seconds": 9.417963174,
+      "volume_refine_seconds": 9.146547897000005,
+      "kernel_optimization_seconds": 2.54142051,
+      "coop_borrowed_core_seconds": 54.779479416
+    },
+    "node_rules_recovery": {
+      "compute_seconds": 44.26854826900001,
+      "kernel_generation_seconds": 30.357418951,
+      "kernel_gen_recovery_seconds": 10.608627069,
+      "kernel_gen_recovery_topology_seconds": 4.219018473999999,
+      "kernel_gen_recovery_smooth_seconds": 3.6366178540000003,
+      "kernel_front_seconds": 9.222979248,
+      "volume_refine_seconds": 9.098684198,
+      "kernel_optimization_seconds": 2.634827768,
+      "coop_borrowed_core_seconds": 84.35771955
+    },
+    "node_rules_recovery_online": {
+      "compute_seconds": 44.892776486000116,
+      "kernel_generation_seconds": 30.613925796,
+      "kernel_gen_recovery_seconds": 10.65522273,
+      "kernel_gen_recovery_topology_seconds": 4.251194613000002,
+      "kernel_gen_recovery_smooth_seconds": 3.599842131,
+      "kernel_front_seconds": 9.406341606,
+      "volume_refine_seconds": 9.353221763999954,
+      "kernel_optimization_seconds": 2.798754898,
+      "coop_borrowed_core_seconds": 77.626832357
+    },
+    "node_search_elastic": {
+      "compute_seconds": 62.30051870099987,
+      "kernel_generation_seconds": 48.322895732,
+      "kernel_gen_recovery_seconds": 27.726606681,
+      "kernel_gen_recovery_topology_seconds": 9.165040592999999,
+      "kernel_gen_recovery_smooth_seconds": 14.119308047,
+      "kernel_front_seconds": 9.670309553,
+      "volume_refine_seconds": 9.12068167000001,
+      "kernel_optimization_seconds": 2.622770761,
+      "coop_borrowed_core_seconds": 56.94954242400001,
+      "search_policy_remote_calls": 0
+    },
+    "node_search_online": {
+      "compute_seconds": 62.07211811299999,
+      "kernel_generation_seconds": 47.905594003,
+      "kernel_gen_recovery_seconds": 27.611382787,
+      "kernel_gen_recovery_topology_seconds": 9.067832438,
+      "kernel_gen_recovery_smooth_seconds": 14.120636333,
+      "kernel_front_seconds": 9.639164745,
+      "volume_refine_seconds": 9.249246577000008,
+      "kernel_optimization_seconds": 2.841212765,
+      "coop_borrowed_core_seconds": 50.368133556,
+      "search_policy_remote_calls": 0
+    },
+    "node_search_full": {
+      "compute_seconds": 62.16159711099999,
+      "kernel_generation_seconds": 47.94922854,
+      "kernel_gen_recovery_seconds": 27.609211567000003,
+      "kernel_gen_recovery_topology_seconds": 9.062253612000001,
+      "kernel_gen_recovery_smooth_seconds": 14.151984297999999,
+      "kernel_front_seconds": 9.82937569,
+      "volume_refine_seconds": 9.247775221999973,
+      "kernel_optimization_seconds": 2.812782049,
+      "coop_borrowed_core_seconds": 49.840373232000005,
+      "search_policy_remote_calls": 0,
+      "search_remote_probes": 39009,
+      "search_remote_grants": 0,
+      "search_remote_no_ready": 39009
+    }
+  },
+  "caveats": [
+    "Source revision is manual; binary and kernel hashes agree within this batch",
+    "Successful compact files do not retain stage checkpoint logs or integrity version; this is added prospectively",
+    "No repeated failure does not establish prior failure root cause",
+    "Control is previous rule-parallel elastic mode, not original serial program",
+    "Only one 64-node allocation and three formal repetitions; no cross-node scalability conclusion yet"
+  ]
+}

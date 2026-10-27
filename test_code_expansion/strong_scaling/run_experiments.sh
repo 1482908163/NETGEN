@@ -10,8 +10,9 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   search_joint_all: 本轮生成修复与借核，默认六策略、三个独立作业共同延时
-#   rule_search_all: 上轮规则并行五策略：16节点预检＋L2/L4的64/256节点对照
+#   recovery_scaling: 本轮恢复并行扩展验证，面4/体2，64/128/256节点，三策略
+#   search_joint_all: 上轮生成修复与借核，六策略、三个独立作业共同延时
+#   rule_search_all: 规则并行五策略：64节点预检＋L2/L4的64/256节点对照
 #   rule_search: 规则搜索并行预检；固定核/借核及各自规则任务版，预热逐调用验证
 #   borrow_large: 面细化2/3/4、体细化2，64/128/256/512节点，原程序与借核对照
 #   borrow_workload: 固定2048进程，比较生成前表面细化2/3/4级
@@ -23,7 +24,15 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-search_joint_all}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-recovery_scaling}"
+if [[ "${EXPERIMENT_PRESET}" == recovery_scaling ]]; then
+    export RULE_SEARCH_ALL=0 RULE_SEARCH_SWEEP=1
+    export RULE_SEARCH_LEVELS="${RULE_SEARCH_LEVELS:-4}"
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_rules_elastic node_rules_recovery node_rules_recovery_online}"
+    export REPEATS="${REPEATS:-3}" REFINES="${REFINES:-2}"
+    EXPERIMENT_PRESET=rule_search
+fi
 if [[ "${EXPERIMENT_PRESET}" == search_joint_all ]]; then
     export SEARCH_JOINT_EXPERIMENT=1
     export KERNEL_SCHEDULERS="node_original node_fixed node_elastic node_rules_fixed node_rules_elastic node_search_local node_search_idle node_search_remote node_search_online node_search_full node_search_elastic node_rules_recovery node_rules_recovery_online"

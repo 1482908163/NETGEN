@@ -20,6 +20,28 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_quality_compaction_retains_integrity_version_without_inventing_old_evidence(self):
+        meta=dict.fromkeys(analyze.QUALITY_IDENTITY,'fixture')
+        meta.update(mesh_quality='volume_audit_v1',timing_mode='natural',core_only='true',
+                    feature_schema='mesh_comm_v1',algorithm='sparse',quality_face_reference='allgather',
+                    kernel_scheduler='node_rules_recovery',partition_seed='-1',kernel_threads='4')
+        m={'quality_'+k:0 for k in analyze.QUALITY_COUNTS}
+        m.update(quality_points=4,quality_elements=1,quality_surfaces=4,quality_checked=1,quality_negative=1,
+                 quality_shape_min=.5,quality_shape_sum=.5,quality_angle_min=30,quality_angle_max=90,
+                 quality_abs_volume=1,quality_face_reference_passed=1,local_points_before_adjacency=4,
+                 local_volume_elements_before_adjacency=1,local_surface_elements_before_adjacency=4)
+        m.update({'quality_shape_bin_'+str(i):int(i==5) for i in range(10)})
+        m.update({'quality_'+k+'_'+half:0 for k in ('surface_sum','surface_xor','volume_sum','volume_xor')
+                  for half in ('hi','lo')})
+        rows=[dict(rank=0,repeat=0,metrics=m)]
+        old=analyze.compact_quality(analyze.inspect_quality(rows,meta))
+        self.assertEqual(old['integrity_profile'],'unavailable')
+        meta['mesh_integrity']='stage_fingerprint_v1'
+        new=analyze.compact_quality(analyze.inspect_quality(rows,meta))
+        self.assertEqual(new['integrity_profile'],'stage_fingerprint_v1')
+        self.assertEqual(old['volume_fingerprint_sha256'],new['volume_fingerprint_sha256'])
+        self.assertEqual(old['counts'],new['counts'])
+
     def test_focused_overview_uses_selected_elastic_control(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)

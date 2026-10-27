@@ -232,7 +232,7 @@ def inspect_quality(rows, metadata):
         angle_max=max((q['angle_max'] for q in nonempty),default=0),
         abs_volume=sum(q['abs_volume'] for q in audited),
         shape_hist=[sum(q['shape_hist'][i] for q in audited) for i in range(10)],
-        face_reference=reference)
+        face_reference=reference,integrity_profile=metadata.get('mesh_integrity','unavailable'))
     return result
 
 def compare_quality(control, candidate):
