@@ -517,6 +517,9 @@ NGLIB_API void Ng_GetVolumeFrontStats(double * values);
 // Separate API: existing kernel diagnostic array sizes remain unchanged.
 NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled);
 NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
+// 0=original, 1=bounded closure/cached ray matrices, 2=exact replay.
+NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
+NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles
 // Host-thread setting, applied only to the instrumented volume kernel.
 // -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);

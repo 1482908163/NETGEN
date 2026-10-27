@@ -72,6 +72,33 @@ class RuleSearchAudit(unittest.TestCase):
         self.assertEqual(analyze.node_comparison_control(4,'node_elastic',selected),'node_fixed')
         self.assertEqual(analyze.node_comparison_control(4,'node_rules_recovery',selected+[('4','node_fixed')]),'node_fixed')
 
+    def test_front_group_control_requires_both_declared_variants(self):
+        selected=[('4','node_rules_recovery'),('4','node_rules_recovery_front')]
+        for _,mode in selected:
+            self.assertEqual(analyze.node_comparison_control(4,mode,selected),'node_rules_recovery')
+        self.assertEqual(analyze.node_comparison_control(4,'node_rules_recovery_front',selected[1:]),'node_fixed')
+
+    def test_front_group_replay_coverage_and_old_cache_compatibility(self):
+        meta={'front_group_profile':'bounded_group_v1','front_group_mode':'2'}
+        metrics=dict.fromkeys(analyze.GROUP_METRICS,0.)
+        metrics.update(kernel_group_calls=4,kernel_group_rejected=2,kernel_group_verified=4,
+                       kernel_group_inside_calls=1,kernel_group_inside_verified=1)
+        rows=[{'metrics':metrics}]
+        actual=analyze.inspect_front_group(rows,meta,'node_rules_recovery_front',0)
+        self.assertEqual(actual['kernel_group_verified'],4)
+        self.assertEqual(analyze.inspect_front_group([],{},'node_rules_recovery',1),{})
+        with self.assertRaises(ValueError):analyze.inspect_front_group(rows,{},'node_rules_recovery_front',0)
+        for key,value in [('kernel_group_verified',3),('kernel_group_mismatches',1),
+                          ('kernel_group_inside_verified',0),('kernel_group_rejected',5),
+                          ('kernel_group_calls',0),('kernel_group_build_seconds',float('nan'))]:
+            broken=deepcopy(rows);broken[0]['metrics'][key]=value
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                analyze.inspect_front_group(broken,meta,'node_rules_recovery_front',0)
+        with self.assertRaises(ValueError):analyze.inspect_front_group(rows,meta,'node_rules_recovery_front',1)
+        metrics.update(kernel_group_verified=0,kernel_group_inside_verified=0)
+        meta['front_group_mode']='1'
+        analyze.inspect_front_group(rows,meta,'node_rules_recovery_front',1)
+
     def test_generation_profile_and_per_rank_coverage(self):
         rows=[{'metrics':dict.fromkeys(analyze.GENERATION_METRICS,0.)} for _ in range(2)]
         meta={'generation_profile':'generation_v1','generation_recovery':'ordered_team_v1'}

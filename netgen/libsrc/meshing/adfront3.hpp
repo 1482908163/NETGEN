@@ -268,6 +268,8 @@ public:
 
   bool PointInsideGroup(const Array<PointIndex, PointIndex> &grouppindex,
                         const Array<MiniElement2d>& groupfaces) const;
+  bool PointInsideGroupCached(const Array<PointIndex, PointIndex> &grouppindex,
+                              const Array<MiniElement2d>& groupfaces) const;
 
   ///
   void GetFaceBoundingBox (int i, Box3d & box) const;
@@ -289,6 +291,14 @@ public:
                  Array<MiniElement2d> & groupelements,
                  Array<PointIndex, PointIndex> & pindex,
                  Array<INDEX> & findex);
+
+  // False proves the original group fails the caller's triangular-face/size
+  // gate. Accepted output retains ALL valid points and original array order.
+  bool GetGroupBounded(int fi, int maxfaces,
+                      Array<MeshPoint, PointIndex> & grouppoints,
+                      Array<MiniElement2d> & groupelements,
+                      Array<PointIndex, PointIndex> & pindex,
+                      Array<INDEX> & findex);
 
   ///
   void DeleteFace (INDEX fi);

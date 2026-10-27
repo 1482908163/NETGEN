@@ -1,0 +1,106 @@
+{
+  "base_commit": "10ddeca20181fb1d30f43dc2ad2fd2977cd9a688",
+  "date": "2026-10-27",
+  "candidate": "node_rules_recovery_front",
+  "control": "node_rules_recovery",
+  "cluster_tested": false,
+  "full_occ_host_build_tested": false,
+  "validation": {
+    "kernel_release_build": "passed (MPI/OCC off)",
+    "group_differential_cases": 852,
+    "accepted": 354,
+    "rejected": 498,
+    "inside_differential_cases": 120,
+    "full_front_runs": 18,
+    "original_generator_fingerprint": "4c9fd38560ad4752",
+    "recovery_cases": 54,
+    "rule_cases": 18,
+    "rule_fingerprint": "6d770e28fdeae775",
+    "real_mpi_ranks": 4,
+    "analysis_batch_tests": 38,
+    "runner_regression": "passed",
+    "targeted_address_undefined_sanitizers": "passed",
+    "leak_sanitizer": false,
+    "all_objects_sanitized": false
+  },
+  "microbenchmark": {
+    "kind": "synthetic only; not cluster or core speedup",
+    "repeats": 5,
+    "statistic": "median",
+    "group_original_seconds": 0.00588351,
+    "group_bounded_seconds": 7.4693e-05,
+    "inside_original_seconds": 0.00147047,
+    "inside_cached_seconds": 0.000259911
+  },
+  "matrix": {
+    "nodes": [
+      64,
+      128,
+      256
+    ],
+    "ranks": [
+      256,
+      512,
+      1024
+    ],
+    "surface_levels": 4,
+    "volume_refines": 2,
+    "base_threads": 4,
+    "strategies": 2,
+    "warmups_per_strategy": 1,
+    "formal_repeats": 3,
+    "total_runs": 24
+  },
+  "logs": {
+    "kernel_build": {
+      "sha256": "0f4e1182a95945ff971cdb228799f3722cb02568f200030ed7099660df8f1961",
+      "tail": [
+        "[103/106] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "[104/106] Building CXX object CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "[105/106] Building CXX object CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "[106/106] Linking CXX shared library libnglib.so"
+      ]
+    },
+    "regression": {
+      "sha256": "4776946f6fdac0f3c22ca2015daec72665d22e634bda0997d847318b7deea1cf",
+      "tail": [
+        "[MESH_EVIDENCE] {\"rank\":0,\"host\":\"8a7408f20f8c\",\"stage\":\"fixture_before\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\"}",
+        "[MESH_EVIDENCE] {\"rank\":0,\"host\":\"8a7408f20f8c\",\"stage\":\"fixture_after\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\",\"unchanged\":true}",
+        "[MESH_EVIDENCE] {\"rank\":1,\"host\":\"8a7408f20f8c\",\"stage\":\"fixture_before\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\"}",
+        "[MESH_EVIDENCE] {\"rank\":1,\"host\":\"8a7408f20f8c\",\"stage\":\"fixture_after\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\",\"unchanged\":true}",
+        "通过：852 组闭包差分（接受 354，拒绝 498）；120 组射线判断；18 次完整前沿生成（含拒绝回退）及重放。",
+        "front_fingerprint=4c9fd38560ad4752",
+        "通过：完整前沿生成与修改前 meshing3.cpp 源码指纹一致。",
+        "通过：54 组开腔恢复与原串行坐标、单元顺序完全一致；包含线程重建及租约归还。",
+        "通过：恢复检查点异常时先回收工作线程，再归还核。",
+        "通过：真实内核有界连接读取及两进程坏索引/只读阶段变更拦截。",
+        "通过：四进程 MPI 真实规则任务，正式与重放两种模式；合成节点身份，非集群性能测试。",
+        "通过：18 组顺序/并行/重放、远程消息及资源生命周期检查；指纹 6d770e28fdeae775。",
+        "父版本源码对照：通过。",
+        "/workspace/scratch/54cbe57ee0b5/build-kernel/rule_search_tests/results.txt"
+      ]
+    },
+    "sanitizer": {
+      "sha256": "3f834b20ae8b4eecc5dc43ab18d5599cff2f3694122e198c58b799956cbab462",
+      "tail": [
+        "通过：852 组闭包差分（接受 354，拒绝 498）；120 组射线判断；18 次完整前沿生成（含拒绝回退）及重放。",
+        "front_fingerprint=4c9fd38560ad4752"
+      ]
+    },
+    "runner": {
+      "sha256": "0b48bd1a5ede603288ae4b9c72e71d3181898de18f01195573bddc5e2367d786",
+      "tail": [
+        "p3: 已冻结同规模模型（训练 -1/17，评价 41）",
+        "p3: 已冻结同规模模型（训练 -1/17，评价 41）",
+        "PASS: Slurm spool path, failure continuation, warmup filtering, compressed resume, lossless analysis, cleanup opt-out, failure/active/symlink protection, configuration guard"
+      ]
+    },
+    "microbenchmark": {
+      "sha256": "5c689404c7a0370f81c66bb7ec7ec052c38b9b8465fecfd785e8af141bebf2cb",
+      "tail": [
+        "通过：852 组闭包差分（接受 354，拒绝 498）；120 组射线判断；18 次完整前沿生成（含拒绝回退）及重放。",
+        "MICROBENCH {\"group_original_seconds\":0.00588351,\"group_bounded_seconds\":7.4693e-05,\"inside_original_seconds\":0.00147047,\"inside_cached_seconds\":0.000259911}"
+      ]
+    }
+  }
+}

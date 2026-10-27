@@ -68,6 +68,21 @@ def main():
         (output/'reference.txt').write_text(oracle)
         oracle = re.search(r'fingerprint=(\w+)', oracle)[1]
     logs = []
+    front_group=output/'front_group'
+    invoke(flags(rule)+[str(repo/'test_code_expansion/tests/front_group_regression.cpp')]+
+           objects+libs+['-o',str(front_group)])
+    out=subprocess.check_output([str(front_group)],text=True,cwd=output,timeout=120)
+    logs.append(out);print(out.strip())
+    if args.reference_sources:
+        reference_front=output/'front_group_reference'
+        invoke(flags(rule)+['-DFRONT_GROUP_ORIGINAL_GENERATOR',
+               str(repo/'test_code_expansion/tests/front_group_regression.cpp')]+
+               [replacements.get('meshing3.cpp.o',o) if Path(o).name=='meshing3.cpp.o' else o for o in objects]+
+               libs+['-o',str(reference_front)])
+        before=subprocess.check_output([str(reference_front)],text=True,cwd=output,timeout=120)
+        if re.search(r'front_fingerprint=(\w+)',out)[1]!=re.search(r'front_fingerprint=(\w+)',before)[1]:
+            raise SystemExit('完整前沿生成与修改前源码不同')
+        logs.append(before);print('通过：完整前沿生成与修改前 meshing3.cpp 源码指纹一致。')
     cases=[(1,-1,0),(4,-1,0),(1,0,0),(1,2,0),(2,1,0),(2,2,0),(4,1,0),(4,2,0),
            (2,5,0),(2,6,0),(4,5,0),(4,6,0),(2,3,0),(2,4,0),(4,3,0),(4,4,0),(2,4,1),(4,4,1)]
     for threads, mode, remote in cases:

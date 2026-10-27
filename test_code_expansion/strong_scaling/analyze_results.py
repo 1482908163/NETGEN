@@ -318,7 +318,8 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('search_model','node_search_elastic','sparse','node_search_online','sparse'),
            ('generation_recovery','node_rules_elastic','sparse','node_rules_recovery','sparse'),
            ('recovery_online','node_rules_recovery','sparse','node_rules_recovery_online','sparse'),
-           ('recovery_total','node_rules_elastic','sparse','node_rules_recovery_online','sparse'))
+           ('recovery_total','node_rules_elastic','sparse','node_rules_recovery_online','sparse'),
+           ('front_group','node_rules_recovery','sparse','node_rules_recovery_front','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -392,11 +393,39 @@ GENERATION_METRICS=tuple('kernel_gen_'+k for k in (
     'merge_seconds','quality_seconds','recovery_sweeps','recovery_team_sweeps','domains','front_passes'))
 SEARCH_SIZE_METRICS=('search_remote_latency_seconds','search_remote_seconds_per_byte')
 OPERATION_V3_METRICS=tuple('coop_operation_'+k for k in ('partial','explores','rollbacks','trial_debt_seconds','unknown_types','missing_plan'))
+GROUP_METRICS=tuple('kernel_group_'+k for k in ('build_seconds','inner_seconds','inside_seconds',
+    'calls','rejected','verified','inside_calls','inside_verified','mismatches'))
+
+def inspect_front_group(rows, metadata, scheduler, repeat):
+    candidate=scheduler=='node_rules_recovery_front'
+    if not candidate and 'front_group_profile' not in metadata:
+        return {}  # Historical data did not measure this path.
+    expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
+    if metadata.get('front_group_profile')!='bounded_group_v1' or metadata.get('front_group_mode')!=expected:
+        raise ValueError('missing or unexpected front-group profile/mode')
+    result={'front_group_profile':'bounded_group_v1','front_group_mode':expected}
+    for key in GROUP_METRICS:
+        values=[r.get('metrics',{}).get(key) for r in rows]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 for v in values):
+            raise ValueError('missing or invalid front-group metric: '+key)
+        if not key.endswith('_seconds') and any(v!=int(v) for v in values):
+            raise ValueError('fractional front-group count')
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for r in rows:
+        m=r['metrics'];calls=m['kernel_group_calls'];inside=m['kernel_group_inside_calls']
+        if (m['kernel_group_mismatches'] or m['kernel_group_rejected']>calls or
+            inside>calls-m['kernel_group_rejected'] or
+            m['kernel_group_verified']!=(calls if expected=='2' else 0) or
+            m['kernel_group_inside_verified']!=(inside if expected=='2' else 0)):
+            raise ValueError('invalid front-group replay coverage')
+    if candidate and result['kernel_group_calls']==0:
+        raise ValueError('front-group candidate path was not exercised')
+    return result
 
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -439,7 +468,8 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
     'front_unattributed_seconds','front_profile_coverage',
     'coop_borrowed_core_seconds','first_loan_fraction') + GENERATION_METRICS + OPERATION_V5_METRICS
-CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS
+CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS
+CRITICAL_SUMMARY_METRICS += GROUP_METRICS
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -489,6 +519,7 @@ def critical_rank_details(rows, result):
             'kernel_front_applyrules_seconds','kernel_front_validate_seconds','kernel_front_candidate_seconds',
             'kernel_front_commit_seconds','kernel_front_retry_seconds'))
         front_total=m.get('kernel_front_seconds')
+        front_parts+=sum(m.get(key,0) for key in GROUP_METRICS[:3])
         item['front_instrumented_seconds']=front_parts
         item['front_unattributed_seconds']=(max(0.0,front_total-front_parts) if front_total is not None else None)
         item['front_profile_coverage']=(front_parts/front_total if front_total and front_total>0 else None)
@@ -618,6 +649,12 @@ def critical_overview(root,ranks,selected):
                 f"重试率={compact(100*(r.get('front_retry_rate_median') or 0))}% "
                 f"覆盖率={compact(100*(r.get('front_profile_coverage_median') or 0))}% "
                 f"未归因={compact(r.get('front_unattributed_seconds_median'))}s。")
+        if r.get('kernel_group_build_seconds_median') is not None:
+            lines.append('  前沿组：'+ '；'.join(name+'='+compact(r.get('kernel_group_'+key+'_median'))
+                for name,key in [('构造秒数','build_seconds'),('找内点秒数','inner_seconds'),
+                    ('包含判断秒数','inside_seconds'),('调用','calls'),('拒绝','rejected'),
+                    ('组重放','verified'),('包含判断调用','inside_calls'),('包含判断重放','inside_verified'),
+                    ('不一致','mismatches')]))
     lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
     lines.append('生成内部修复总秒数包含其子项；域计时为各域累计，不能直接从并行生成墙钟时间相减。')
     lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
@@ -800,6 +837,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     metadata=dict(metadata)
     rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
+                  'node_rules_recovery_front':'node_elastic',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
                   'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
@@ -841,6 +879,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
     result.update(volume_workload_metrics(rows))
+    result.update(inspect_front_group(rows,metadata,requested_scheduler,rows[0]['repeat']))
     if metadata.get('search_revision') in ('matched_tasks_v4','generation_tail_v5'):
         result['search_revision']=metadata['search_revision']
         extra=()
@@ -1402,6 +1441,11 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
+    if (scheduler in ('node_rules_recovery','node_rules_recovery_front') and
+        (int(threads),'node_fixed') not in available and
+        (int(threads),'node_rules_elastic') not in available and
+        {(int(threads),'node_rules_recovery'),(int(threads),'node_rules_recovery_front')} <= available):
+        return 'node_rules_recovery'
     if ((int(threads),'node_fixed') not in available and
             scheduler.startswith(('node_rules_','node_search_')) and
             (int(threads),'node_rules_elastic') in available):

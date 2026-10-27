@@ -25,6 +25,12 @@ int main() {
     require(nglib::Ng_SetVolumeGenerationRecovery(2)==nglib::NG_ERROR);
     require(nglib::Ng_SetVolumeGenerationRecovery(1)==nglib::NG_OK);
     require(nglib::Ng_SetVolumeGenerationRecovery(0)==nglib::NG_OK);
+    require(nglib::Ng_SetVolumeFrontGroupMode(-1)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeFrontGroupMode(3)==nglib::NG_ERROR);
+    for(int mode:{2,1,0}) require(nglib::Ng_SetVolumeFrontGroupMode(mode)==nglib::NG_OK);
+    double group_stats[11];std::fill_n(group_stats,11,-7.0);
+    nglib::Ng_GetVolumeFrontGroupStats(group_stats+1);
+    require(group_stats[0]==-7.0 && group_stats[10]==-7.0);
     double generation[20]={};generation[19]=6789;
     nglib::Ng_GetVolumeGenerationStats(generation);require(generation[19]==6789);
     for(int i=0;i<19;++i) require(generation[i]==0);

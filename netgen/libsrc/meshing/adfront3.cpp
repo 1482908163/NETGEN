@@ -781,6 +781,58 @@ void AdFront3 :: GetGroup (int fi,
 }
 
 
+bool AdFront3 :: GetGroupBounded(int fi, int maxfaces,
+                                Array<MeshPoint, PointIndex> & grouppoints,
+                                Array<MiniElement2d> & groupelements,
+                                Array<PointIndex, PointIndex> & pindex,
+                                Array<INDEX> & findex)
+{
+  // Membership only grows. A face with two marked vertices remains in the
+  // final closure; count each face once PER PASS, never across passes.
+  pingroup.SetSize(points.Size());
+  pingroup = 0;
+  for (int j = 1; j <= 3; ++j)
+    pingroup[faces.Get(fi).Face().PNum(j)] = 1;
+  bool changed;
+  do {
+    changed = false;
+    int admitted = 0;
+    for (const auto & f : faces) if (f.Valid()) {
+      const auto & face = f.Face();
+      int fused = 0;
+      for (int j = 1; j <= 3; ++j)
+        if (pingroup[face.PNum(j)]) ++fused;
+      if (fused < 2) continue;
+      if (face.GetNP() != 3 || ++admitted > maxfaces) return false;
+      for (int j = 1; j <= 3; ++j) if (!pingroup[face.PNum(j)]) {
+        pingroup[face.PNum(j)] = 1;
+        changed = true;
+      }
+    }
+  } while (changed);
+
+  // Deliberately preserve the original all-valid-point list, including points
+  // outside this closure. FindInnerPoint consumes this exact ordered input.
+  invpindex.SetSize(points.Size());
+  for (PointIndex pi : points.Range()) if (points[pi].Valid()) {
+    grouppoints.Append(points[pi].P());
+    pindex.Append(pi);
+    invpindex[pi] = pindex.Size()-1 + IndexBASE<PointIndex>();
+  }
+  for (int i = 1; i <= faces.Size(); ++i) if (faces.Get(i).Valid()) {
+    int fused = 0;
+    for (int j = 1; j <= 3; ++j)
+      if (pingroup[faces.Get(i).Face().PNum(j)]) ++fused;
+    if (fused >= 2) {
+      groupelements.Append(faces.Get(i).Face());
+      findex.Append(i);
+    }
+  }
+  for (auto & e : groupelements)
+    for (int j = 1; j <= 3; ++j) e.PNum(j) = invpindex[e.PNum(j)];
+  return true;
+}
+
 void AdFront3 :: SetStartFront (int /* baseelnp */)
 {
   for (INDEX i = 1; i <= faces.Size(); i++)
@@ -847,6 +899,48 @@ bool AdFront3 :: PointInsideGroup(const Array<PointIndex, PointIndex> &grouppind
         if (count % 2 == 1)
           return true;
     }
+  return false;
+}
+
+bool AdFront3 :: PointInsideGroupCached(
+    const Array<PointIndex, PointIndex> &grouppindex,
+    const Array<MiniElement2d> &groupfaces) const
+{
+  // Same ray, matrices, multiplication order, face order and point order as
+  // PointInsideGroup. Cache only point-independent values within this call.
+  Array<char, PointIndex> member(points.Size());
+  member = 0;
+  for (const auto & f : groupfaces)
+    for (int j = 1; j <= 3; ++j) member[grouppindex[f.PNum(j)]] = 1;
+  std::vector<std::unique_ptr<DenseMatrix>> inverses;
+  bool prepared = false;
+  Vector b(3), u(3);
+  for (auto pi : Range(points)) {
+    if (member[pi]) continue;
+    if (!prepared) {
+      Vec<3> dir = { 0.123871, 0.15432, -0.43989 };
+      DenseMatrix a(3);
+      for (const auto & f : groupfaces) {
+        const auto & p1 = points[grouppindex[f.PNum(1)]].P();
+        auto v1 = points[grouppindex[f.PNum(2)]].P() - p1;
+        auto v2 = points[grouppindex[f.PNum(3)]].P() - p1;
+        for (auto i : Range(3)) { a(i,0)=v1[i]; a(i,1)=v2[i]; a(i,2)=-dir[i]; }
+        auto inverse = std::make_unique<DenseMatrix>(3);
+        CalcInverse(a, *inverse);
+        inverses.push_back(std::move(inverse));
+      }
+      prepared = true;
+    }
+    const auto & p = points[pi].P();
+    int count = 0, face_index = 0;
+    for (const auto & f : groupfaces) {
+      const auto & p1 = points[grouppindex[f.PNum(1)]].P();
+      for (auto i : Range(3)) b(i) = p[i] - p1[i];
+      inverses[face_index++]->Mult(b, u);
+      if (u(0)>=0 && u(1)>=0 && u(0)+u(1)<=1 && u(2)>0) ++count;
+    }
+    if (count % 2 == 1) return true;
+  }
   return false;
 }
 

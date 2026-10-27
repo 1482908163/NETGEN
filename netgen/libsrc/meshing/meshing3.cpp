@@ -270,6 +270,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   stat.qualclass = 1;
   auto * front_stats = mp.volume_kernel_stats;
   double front_local[VolumeKernelStats::front_count] = {};
+  double group_local[VolumeKernelStats::group_count] = {};
   double * front_values = front_stats ? front_local : nullptr;
   struct FrontTimer {
     double * values;
@@ -293,6 +294,14 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
         else stats->AddFront(i,values[i]);
     }
   } front_flush{front_stats,front_values};
+  struct GroupFlush {
+    VolumeKernelStats * stats;
+    double * values;
+    ~GroupFlush() {
+      if(stats) for(int i=0;i<VolumeKernelStats::group_count;++i) stats->AddGroup(i,values[i]);
+    }
+  } group_flush{front_stats,group_local};
+  double * group_values = front_stats ? group_local : nullptr;
 
   while (1)
     {
@@ -436,18 +445,71 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 	  grouppindex.SetSize (0);
 	  groupfindex.SetSize (0);
 	  
-	  adfront -> GetGroup (findex[0], grouppoints, groupfaces, 
-			       grouppindex, groupfindex);
-
-	  bool onlytri = 1;
-          for (auto & f : groupfaces)
-            if (f.GetNP() != 3) 
-              onlytri = 0;
-            
-              
-	  if (onlytri && groupfaces.Size() <= 20 + 2*stat.qualclass &&
-	      FindInnerPoint (grouppoints, groupfaces, inp) &&
-              !adfront->PointInsideGroup(grouppindex, groupfaces))
+          if(group_values) group_values[3] += 1;
+          bool eligible;
+          {
+            FrontTimer time(group_values,0);
+            if(mp.volume_front_group_mode) {
+              eligible = adfront->GetGroupBounded(findex[0],20+2*stat.qualclass,
+                  grouppoints,groupfaces,grouppindex,groupfindex);
+            } else {
+              adfront->GetGroup(findex[0],grouppoints,groupfaces,grouppindex,groupfindex);
+              eligible = groupfaces.Size() <= 20+2*stat.qualclass;
+              for(const auto & f : groupfaces) if(f.GetNP()!=3) eligible=false;
+            }
+          }
+          if(mp.volume_front_group_mode==2) {
+            Array<MeshPoint,PointIndex> refpoints;
+            Array<MiniElement2d> reffaces;
+            Array<PointIndex,PointIndex> refindex;
+            Array<INDEX> reffindex;
+            adfront->GetGroup(findex[0],refpoints,reffaces,refindex,reffindex);
+            bool reference = reffaces.Size() <= 20+2*stat.qualclass;
+            for(const auto & f : reffaces) if(f.GetNP()!=3) reference=false;
+            bool same = eligible==reference;
+            if(eligible && reference) {
+              same = same && refpoints.Size()==grouppoints.Size() && reffaces.Size()==groupfaces.Size();
+              if(same) {
+                for(auto i : refpoints.Range()) {
+                  same = same && refindex[i]==grouppindex[i];
+                  for(int k=0;k<3;++k) same = same && refpoints[i](k)==grouppoints[i](k);
+                }
+                for(auto i : reffaces.Range()) {
+                  same = same && reffindex[i]==groupfindex[i];
+                  for(int k=1;k<=3;++k) same = same && reffaces[i].PNum(k)==groupfaces[i].PNum(k);
+                }
+              }
+            }
+            if(group_values) group_values[5] += 1;
+            if(!same) {
+              if(group_values) group_values[8] += 1;
+              throw NgException("Front group replay mismatch");
+            }
+          }
+          if(!eligible && group_values) group_values[4] += 1;
+          bool inner = false, inside = true;
+          if(eligible) {
+            FrontTimer time(group_values,1);
+            inner = FindInnerPoint(grouppoints,groupfaces,inp);
+          }
+          if(inner) {
+            if(group_values) group_values[6] += 1;
+            {
+              FrontTimer time(group_values,2);
+              inside = mp.volume_front_group_mode
+                ? adfront->PointInsideGroupCached(grouppindex,groupfaces)
+                : adfront->PointInsideGroup(grouppindex,groupfaces);
+            }
+            if(mp.volume_front_group_mode==2) {
+              bool reference = adfront->PointInsideGroup(grouppindex,groupfaces);
+              if(group_values) group_values[7] += 1;
+              if(reference!=inside) {
+                if(group_values) group_values[8] += 1;
+                throw NgException("Front inside-group replay mismatch");
+              }
+            }
+          }
+	  if (inner && !inside)
 	    {
               FrontTimer commit_time(front_values,6);
 	      (*testout) << "inner point found" << endl;
