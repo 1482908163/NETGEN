@@ -31,6 +31,13 @@ int main() {
     double group_stats[11];std::fill_n(group_stats,11,-7.0);
     nglib::Ng_GetVolumeFrontGroupStats(group_stats+1);
     require(group_stats[0]==-7.0 && group_stats[10]==-7.0);
+    require(nglib::Ng_SetVolumeRecoveryTopologyMode(-1)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeRecoveryTopologyMode(3)==nglib::NG_ERROR);
+    for(int mode:{2,1,0}) require(nglib::Ng_SetVolumeRecoveryTopologyMode(mode)==nglib::NG_OK);
+    double topology_stats[7];std::fill_n(topology_stats,7,-9.0);
+    nglib::Ng_GetVolumeRecoveryTopologyStats(topology_stats+1);
+    require(topology_stats[0]==-9.0 && topology_stats[6]==-9.0);
+    for(int i=1;i<=5;++i) require(topology_stats[i]==0);
     double generation[20]={};generation[19]=6789;
     nglib::Ng_GetVolumeGenerationStats(generation);require(generation[19]==6789);
     for(int i=0;i<19;++i) require(generation[i]==0);

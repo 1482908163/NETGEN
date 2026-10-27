@@ -23,6 +23,7 @@ class Mesh;
 /// Build tet-mesh
 DLL_HEADER MESHING3_RESULT MeshVolume (const MeshingParameters & mp, Mesh& mesh3d);
 // Original ordered open-front recovery sweep; optional host-owned worker team.
+DLL_HEADER void PrepareRecoveryTopology(Mesh & mesh, const MeshingParameters & mp);
 DLL_HEADER void RecoverOpenElements(Mesh & mesh, const MeshingParameters & mp, int domain);
 
 /// Build mixed-element mesh

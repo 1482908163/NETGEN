@@ -388,6 +388,52 @@ namespace netgen
   }
 
 
+  static void VerifyRecoveryTopology(Mesh &mesh,VolumeKernelStats *stats)
+  {
+    std::vector<int> types,faces;
+    std::vector<bool> fixed;
+    for(const auto &p:mesh.Points()) types.push_back(int(p.Type()));
+    for(const auto &e:mesh.VolumeElements()) fixed.push_back(e.Flags().fixed);
+    auto open_faces=[&]() {
+      std::vector<int> result;
+      for(int j=1;j<=mesh.GetNOpenElements();++j) {
+        const auto &e=mesh.OpenElement(j);
+        result.push_back(int(e.GetType()));result.push_back(e.GetIndex());
+        for(auto pi:e.PNums()) result.push_back(int(pi));
+      }
+      return result;
+    };
+    faces=open_faces();
+    mesh.FindOpenElements();mesh.CalcSurfacesOfNode();
+    mesh.FreeOpenElementsEnvironment(2);mesh.CalcSurfacesOfNode();
+    size_t i=0;bool same=faces==open_faces();
+    for(const auto &p:mesh.Points()) same=bool(same & (types[i++]==int(p.Type())));
+    i=0;
+    for(const auto &e:mesh.VolumeElements()) same=bool(same & (fixed[i++]==e.Flags().fixed));
+    if(stats) stats->AddTopology(2,1);
+    if(!same) {
+      if(stats) stats->AddTopology(3,1);
+      throw NgException("Recovery topology replay mismatch");
+    }
+  }
+
+  void PrepareRecoveryTopology(Mesh & mesh,const MeshingParameters & mp)
+  {
+    auto *stats=mp.volume_kernel_stats;
+    if(stats) stats->AddTopology(0,1);
+    mesh.FindOpenElements();
+    const bool optimized=mp.volume_recovery_topology_mode>0 && mesh.GetDimension()==3;
+    // FreeOpenElementsEnvironment reads connectivity/open faces only. Its writes
+    // are element fixed flags and point types. In 3D CalcSurfacesOfNode resets
+    // EVERY point type before classifying it, and rebuilds both lookup tables.
+    // The first of the original two surface rebuilds has no surviving effect.
+    if(!optimized) mesh.CalcSurfacesOfNode();
+    mesh.FreeOpenElementsEnvironment(2);mesh.CalcSurfacesOfNode();
+    if(!optimized) return;
+    if(stats) {stats->AddTopology(1,1);stats->AddTopology(4,1);}
+    if(mp.volume_recovery_topology_mode==2) VerifyRecoveryTopology(mesh,stats);
+  }
+
   void RecoverOpenElements(Mesh & mesh,const MeshingParameters & mp,int domain)
   {
     auto *stats=mp.volume_kernel_stats;
@@ -404,11 +450,27 @@ namespace netgen
       }
 #endif
       const char *optstr="mcmstmcmstmcmstmcm";
+      std::vector<POINTTYPE> smooth_types;
+      const bool reuse=mp.volume_recovery_topology_mode>0 && mesh.GetDimension()==3;
       for(size_t j=0;j<strlen(optstr);++j) {
         if(team) team->Checkpoint(mesh.GetNE());
         { VolumeGenerationTimer topology(stats,6);
-          mesh.FindOpenElements();mesh.CalcSurfacesOfNode();
-          mesh.FreeOpenElementsEnvironment(2);mesh.CalcSurfacesOfNode();
+          if(reuse && j>0 && optstr[j-1]=='m') {
+            // ImproveMesh changes coordinates only, apart from point metadata:
+            // BuildBoundaryEdges fixes open-face points, and PointFunction may
+            // assign MeshPoint from Point. Restore classification saved BEFORE
+            // smoothing; keep the new coordinates/layer/singularity unchanged.
+            // Connectivity, open-face order and element fixed flags did not change.
+            if(smooth_types.size()!=mesh.GetNP()) throw NgException("Smoothing changed point count");
+            size_t k=0;for(auto &p:mesh.Points()) p.SetType(smooth_types[k++]);
+            mesh.DeleteBoundaryEdges(); // original final CalcSurfacesOfNode clears it
+            if(stats) {stats->AddTopology(0,1);stats->AddTopology(1,1);stats->AddTopology(4,2);}
+            if(mp.volume_recovery_topology_mode==2) VerifyRecoveryTopology(mesh,stats);
+          } else PrepareRecoveryTopology(mesh,mp);
+          if(reuse && optstr[j]=='m' && j+1<strlen(optstr)) {
+            smooth_types.clear();smooth_types.reserve(mesh.GetNP());
+            for(const auto &p:mesh.Points()) smooth_types.push_back(p.Type());
+          }
         }
         // Retain operation order, sorted candidate commits, and smoothing color order.
         switch(optstr[j]) {

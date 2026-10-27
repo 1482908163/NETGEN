@@ -45,7 +45,7 @@ void print_help() {
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware/node_rules_fixed/node_rules_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
-         "生成内部修复策略：node_rules_recovery / node_rules_recovery_online / node_rules_recovery_front" << endl <<
+         "生成内部修复策略：node_rules_recovery / node_rules_recovery_online / node_rules_recovery_front / node_rules_recovery_topology" << endl <<
          "联合搜索策略：node_search_local / node_search_idle / node_search_remote / node_search_online / node_search_full / node_search_elastic" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
          "--cut-growth <比例> : 允许新增切分面比例，默认0.05" << endl <<
@@ -321,7 +321,9 @@ int main(int argc, char **argv) {
     const bool adaptive_search=requested_scheduler=="node_search_local" || requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" ||
                                requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_search_elastic";
     const bool remote_search=requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" || requested_scheduler=="node_search_full";
-    const bool front_group=requested_scheduler=="node_rules_recovery_front";
+    const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology";
+    const int recovery_topology_mode=recovery_topology?(profile_repeat<=0?2:1):0;
+    const bool front_group=requested_scheduler=="node_rules_recovery_front" || recovery_topology;
     const bool generation_recovery=requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online" || front_group;
     const int front_group_mode=front_group?(profile_repeat<=0?2:1):0;
     const bool online_borrow=requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_rules_recovery_online";
@@ -475,6 +477,8 @@ int main(int argc, char **argv) {
         profiler.add_metadata("search_revision","generation_tail_v5");
         profiler.add_metadata("generation_profile","generation_v1");
         profiler.add_metadata("generation_recovery",generation_recovery?"ordered_team_v1":"off");
+        profiler.add_metadata("recovery_topology_profile","ordered_topology_reuse_v1");
+        profiler.add_metadata("recovery_topology_mode",std::to_string(recovery_topology_mode));
         profiler.add_metadata("front_group_profile","bounded_group_v1");
         profiler.add_metadata("front_group_mode",std::to_string(front_group_mode));
     }
@@ -877,6 +881,7 @@ int main(int argc, char **argv) {
                 MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeGenerationRecovery(generation_recovery?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeFrontGroupMode(front_group_mode)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
+            if(nglib::Ng_SetVolumeRecoveryTopologyMode(recovery_topology_mode)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             double team_before[3]={},team_after[3]={};
             if(research.kernel_threads>0) nglib::Ng_GetVolumeTaskManagerStats(team_before);
             nglib::Ng_VolumeResources callbacks{node_resources.get(),mesh_node::NodeResources::acquire_callback,mesh_node::NodeResources::release_callback};
@@ -913,6 +918,9 @@ int main(int argc, char **argv) {
                     "merge_seconds","quality_seconds","recovery_sweeps","recovery_team_sweeps","domains","front_passes"};
                 for(int k=0;k<19;++k) profiler.set_metric(std::string("kernel_gen_")+generation_names[k],generation[k]);
                 nglib::Ng_GetVolumeFrontStats(front_details);
+                double topology[5]={};nglib::Ng_GetVolumeRecoveryTopologyStats(topology);
+                const char *topology_names[]={"calls","optimized","verified","mismatches","skipped_rebuilds"};
+                for(int k=0;k<5;++k) profiler.set_metric(std::string("kernel_topology_")+topology_names[k],topology[k]);
                 double groups[9]={};nglib::Ng_GetVolumeFrontGroupStats(groups);
                 const char *group_names[]={"build_seconds","inner_seconds","inside_seconds","calls",
                     "rejected","verified","inside_calls","inside_verified","mismatches"};

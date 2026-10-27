@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-28",
+  "base_commit": "20dc740b7dbe196ae39fa8b199b96d8240b03289",
+  "profile": "ordered_topology_reuse_v1",
+  "status": "local_validation_passed_cluster_pending",
+  "kernel_build": "Release, USE_MPI/OCC/GUI/PYTHON/NATIVE_ARCH/NUMA=OFF",
+  "host_main_build": "not tested: local OCC/METIS unavailable",
+  "preparation_cases": 14,
+  "full_recovery_cases": 150,
+  "python_tests": 41,
+  "front_closure_cases": 852,
+  "inside_cases": 120,
+  "full_front_generations": 18,
+  "front_fingerprint": "4c9fd38560ad4752",
+  "rule_cases": 18,
+  "rule_fingerprint": "6d770e28fdeae775",
+  "mpi_ranks": 4,
+  "sanitizer": {
+    "instrumented": [
+      "netgen/libsrc/meshing/meshfunc.cpp",
+      "test_code_expansion/tests/generation_recovery_regression.cpp"
+    ],
+    "flags": [
+      "-O1",
+      "-g",
+      "-fsanitize=address,undefined",
+      "-fno-omit-frame-pointer"
+    ],
+    "ASAN_OPTIONS": "detect_leaks=0",
+    "UBSAN_OPTIONS": "halt_on_error=1",
+    "full_kernel_instrumented": false,
+    "status": "passed"
+  },
+  "counts_per_recovery_sweep": {
+    "steps": 18,
+    "reuse_after_smooth": 7,
+    "original_find_open": 18,
+    "candidate_find_open": 11,
+    "original_surface_rebuilds": 36,
+    "candidate_surface_rebuilds": 11,
+    "skipped_surface_rebuilds": 25
+  },
+  "benchmarks": [
+    {
+      "case": "topology_benchmark",
+      "elements": 10367.0,
+      "original_seconds": 0.00286563,
+      "optimized_seconds": 0.00284402,
+      "samples": 5.0,
+      "reduction_pct": 0.754109916493062
+    },
+    {
+      "case": "topology_benchmark",
+      "elements": 82943.0,
+      "original_seconds": 0.0238225,
+      "optimized_seconds": 0.0224984,
+      "samples": 5.0,
+      "reduction_pct": 5.55819078602161
+    },
+    {
+      "case": "recovery_benchmark",
+      "grid": 6.0,
+      "original_seconds": 0.0511445,
+      "optimized_seconds": 0.0476857,
+      "original_topology_seconds": 0.00793343,
+      "optimized_topology_seconds": 0.00483111,
+      "samples": 5.0,
+      "reduction_pct": 6.762799519009876
+    },
+    {
+      "case": "recovery_benchmark",
+      "grid": 10.0,
+      "original_seconds": 0.208464,
+      "optimized_seconds": 0.19131,
+      "original_topology_seconds": 0.0307343,
+      "optimized_topology_seconds": 0.0183383,
+      "samples": 5.0,
+      "reduction_pct": 8.228758922403866
+    }
+  ],
+  "benchmark_method": "same process, serial, alternating old/new order, one discarded warmup, five measured repetitions, medians; each pair checks exact state",
+  "cluster_plan": {
+    "nodes": [
+      64,
+      128,
+      256
+    ],
+    "ranks": [
+      256,
+      512,
+      1024
+    ],
+    "surface_levels": 4,
+    "volume_refines": 2,
+    "modes": [
+      "node_rules_recovery_front",
+      "node_rules_recovery_topology"
+    ],
+    "warmups": 1,
+    "formal_repeats": 3,
+    "total_runs": 24
+  },
+  "logs": {
+    "topology_build.log": {
+      "sha256": "fca9d0f9802af3aff574c1677b557052103b61fe4bf85861ae94c7054f82add7",
+      "bytes": 14802
+    },
+    "topology_build_final.log": {
+      "sha256": "c6a8282106bc1aa6331d0f0b8bf9a3d99e51bbdbfebc6a07b44bbff0397908fc",
+      "bytes": 618
+    },
+    "topology_regression_final.log": {
+      "sha256": "3ab73446d2837c000cdad184ffab829536c6a4e86a3cc4b9ba2eb9d2ef3ca3f5",
+      "bytes": 1888
+    },
+    "topology_differential.log": {
+      "sha256": "42fe94a969c219cee92e0fda3ca21846952c56d4188538fc94395ca3e90122be",
+      "bytes": 289
+    },
+    "topology_sanitizer.log": {
+      "sha256": "42fe94a969c219cee92e0fda3ca21846952c56d4188538fc94395ca3e90122be",
+      "bytes": 289
+    },
+    "topology_python_final.log": {
+      "sha256": "1045b52a997589a75e0bc25384760ffff6c0c329eac5f05bcffd0d7ab454677f",
+      "bytes": 140
+    },
+    "topology_runner.log": {
+      "sha256": "0b48bd1a5ede603288ae4b9c72e71d3181898de18f01195573bddc5e2367d786",
+      "bytes": 292
+    },
+    "topology_benchmark.log": {
+      "sha256": "896305fc6f863c22cfb87c88c3a523060b9423234095b153801557f2b0ea09e4",
+      "bytes": 528
+    }
+  }
+}

@@ -118,7 +118,7 @@ print('12345')
         calls=self.calls();self.assertEqual(len(calls),2)
         self.assertTrue(all(r['env']['LEVELS']=='2' and r['env']['REPEATS']=='2' for r in calls))
 
-    def test_front_recovery_default_uses_same_batch_control(self):
+    def test_topology_recovery_default_uses_same_batch_control(self):
         self.env.pop('EXPERIMENT_PRESET',None)
         for k in ('PROCESS_COUNTS','RULE_SEARCH_LEVELS','KERNEL_SCHEDULERS','REPEATS','REFINES'):
             self.env.pop(k,None)
@@ -127,10 +127,16 @@ print('12345')
         self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
         for r in calls:
             e=r['env']
-            self.assertEqual(e['KERNEL_SCHEDULERS'].split(),['node_rules_recovery','node_rules_recovery_front'])
+            self.assertEqual(e['KERNEL_SCHEDULERS'].split(),['node_rules_recovery_front','node_rules_recovery_topology'])
             self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
             self.assertFalse(any(a.startswith('--dependency') for a in r['args']))
         self.assertEqual([r['args'][r['args'].index('-N')+1] for r in calls],['64','128','256'])
+
+    def test_explicit_front_preset_remains_available(self):
+        result=self.launch(EXPERIMENT_PRESET='front_recovery')
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertTrue(all(r['env']['KERNEL_SCHEDULERS'].split()==
+            ['node_rules_recovery','node_rules_recovery_front'] for r in self.calls()))
 
     def test_joint_plan_has_all_thirteen_strategies_and_contributions(self):
         result=self.launch(EXPERIMENT_PRESET='search_joint_all',SEARCH_FOCUSED='0')

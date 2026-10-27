@@ -72,6 +72,33 @@ class RuleSearchAudit(unittest.TestCase):
         self.assertEqual(analyze.node_comparison_control(4,'node_elastic',selected),'node_fixed')
         self.assertEqual(analyze.node_comparison_control(4,'node_rules_recovery',selected+[('4','node_fixed')]),'node_fixed')
 
+    def test_topology_control_requires_declared_pair(self):
+        selected=[('4','node_rules_recovery_front'),('4','node_rules_recovery_topology')]
+        for _,mode in selected:
+            self.assertEqual(analyze.node_comparison_control(4,mode,selected),'node_rules_recovery_front')
+        self.assertEqual(analyze.node_comparison_control(4,selected[1][1],selected[1:]),'node_fixed')
+        self.assertEqual(analyze.node_comparison_control(4,selected[1][1],selected+[('4','node_rules_recovery')]),'node_rules_recovery_front')
+
+    def test_topology_replay_rejects_incomplete_or_formal_replay(self):
+        meta={'recovery_topology_profile':'ordered_topology_reuse_v1','recovery_topology_mode':'2'}
+        metrics=dict(zip(analyze.TOPOLOGY_METRICS,[18,18,18,0,25]))
+        metrics['kernel_gen_recovery_sweeps']=1
+        rows=[{'metrics':metrics}]
+        mode='node_rules_recovery_topology'
+        result=analyze.inspect_recovery_topology(rows,meta,mode,0)
+        self.assertEqual(result['kernel_topology_verified'],18)
+        for key,value in [('kernel_topology_verified',15),('kernel_topology_mismatches',1),
+                          ('kernel_topology_skipped_rebuilds',15),('kernel_topology_calls',15),
+                          ('kernel_topology_optimized',15),('kernel_topology_calls',float('nan')),
+                          ('kernel_gen_recovery_sweeps',2)]:
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                analyze.inspect_recovery_topology([{'metrics':dict(metrics,**{key:value})}],meta,mode,0)
+        with self.assertRaises(ValueError):analyze.inspect_recovery_topology(rows,meta,mode,1)
+        meta['recovery_topology_mode']='1';metrics['kernel_topology_verified']=0
+        analyze.inspect_recovery_topology(rows,meta,mode,1)
+        self.assertEqual(analyze.inspect_recovery_topology([],{},'node_rules_recovery_front',1),{})
+        with self.assertRaises(ValueError):analyze.inspect_recovery_topology(rows,{},mode,1)
+
     def test_front_group_control_requires_both_declared_variants(self):
         selected=[('4','node_rules_recovery'),('4','node_rules_recovery_front')]
         for _,mode in selected:

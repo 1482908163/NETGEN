@@ -520,6 +520,10 @@ NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
 // 0=original, 1=bounded closure/cached ray matrices, 2=exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
 NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles
+// 0 original, 1 deduplicate/reuse, 2 exact type/flag/open-face replay (3D only).
+NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode);
+// calls, optimized, verified, mismatches, skipped_rebuilds; 5 doubles.
+NGLIB_API void Ng_GetVolumeRecoveryTopologyStats(double * values);
 // Host-thread setting, applied only to the instrumented volume kernel.
 // -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);
