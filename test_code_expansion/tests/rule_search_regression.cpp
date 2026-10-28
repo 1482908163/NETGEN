@@ -42,6 +42,9 @@ int main(int argc,char **argv) {
   if(rank) {service.ServeUntilComplete(execute_packet);MPI_Finalize();return 0;}
 #endif
   Meshing3 mesher(static_cast<const char **>(nullptr));
+  const int shared=argc>4?std::atoi(argv[4]):0;
+  const int variant=argc>5?std::atoi(argv[5]):0;
+  mesher.SetSharedRulePreparation(shared);
   struct Loopback {std::string output;int calls=0;void *service=nullptr;} loopback;
   RuleSearchTransport transport;
   transport.context=&loopback;
@@ -122,16 +125,18 @@ int main(int argc,char **argv) {
     Array<int,PointIndex> allow(input.Size());allow=2;
     for(auto i:allow.Range()) if(int(i)>4) allow[i]=(sample+int(i))%3;
     INDEX_2_HASHTABLE<int> pairs(10);
+    if(variant==1) {pairs.Set(INDEX_2(1,4),1);pairs.Set(INDEX_2(2,3),1);}
+    const int split=variant==2?1+sample%faces.Size():faces.Size();
     for(int tolerance=1;tolerance<=7;tolerance++) for(int rotation=1;rotation<=3;rotation++) {
       Array<Point3d,PointIndex> p(input);Array<MiniElement2d> f(faces);
       NgArray<Element> elements;NgArray<INDEX> deleted;
       float error=0;minother=minwithoutother=1e10;
       int found;
 #ifdef RULE_SEARCH_REFERENCE
-      found=mesher.ApplyRules(p,allow,f,f.Size(),pairs,elements,deleted,
+      found=mesher.ApplyRules(p,allow,f,split,pairs,elements,deleted,
                              tolerance,sample%2?5.:1.,rotation,error);
 #else
-      found=mesher.ApplyRulesTasks(p,allow,f,f.Size(),pairs,elements,deleted,
+      found=mesher.ApplyRulesTasks(p,allow,f,split,pairs,elements,deleted,
                                   tolerance,sample%2?5.:1.,rotation,error,mode,&stats);
 #endif
       ++calls;if(found>0)++successes;else if(found==0)++retries;else ++impossible;
@@ -218,6 +223,7 @@ int main(int argc,char **argv) {
     l.valid=l.valid && phase==0 && n==l.threads && !ngcore::task_manager;
   };
   MeshingParameters mp;mp.maxh=2.;mp.uselocalh=0;mp.sloppy=5.;mp.nthreads=threads;
+  mp.volume_shared_rule_preparation=shared;
   mp.volume_rule_search=mode;mp.volume_resources=&resources;mp.volume_kernel_stats=&stats;
   int status=front.GenerateMesh(mesh,mp);
   if(status!=MESHING3_OK || mesh.GetNE()!=1 || mesh.GetNP()!=4) return 3;
@@ -233,6 +239,15 @@ int main(int argc,char **argv) {
   std::cout<<"parallel="<<stats.rule_values[1]<<" verified="<<stats.rule_values[2]
            <<" serial="<<stats.rule_values[3]<<" debug_fallbacks="<<stats.rule_values[16]
            <<" mismatches="<<stats.rule_values[17]<<" mappings="<<stats.rule_values[8]<<"\n";
+  const double shared_calls=stats.shared_rule_values[0].load();
+  const bool enabled=shared && (mode==1 || mode==2) && threads>1;
+  if(shared_calls!=(enabled?stats.rule_values[1].load():0) ||
+     stats.shared_rule_values[2]!=(enabled?threads*shared_calls:0) ||
+     stats.shared_rule_values[3]!=(enabled?(threads-1)*shared_calls:0) ||
+     stats.shared_rule_values[4]!=(enabled && mode==2?shared_calls:0) || stats.shared_rule_values[5]!=0)
+    throw std::runtime_error("共享预处理覆盖不完整");
+  std::cout<<"shared_calls="<<shared_calls<<" build_seconds="<<stats.shared_rule_values[1]
+           <<" rule_wall_seconds="<<stats.rule_values[9]<<" verified_shared="<<stats.shared_rule_values[4]<<"\n";
   std::cout<<"remote_packets="<<loopback.calls<<" adaptive_serial="<<stats.adaptive_values[1]<<"\n";
   if(remote && !loopback.calls) return 6;
   if(threads>1 && mode>0 && stats.rule_values[1]==0) return 2;

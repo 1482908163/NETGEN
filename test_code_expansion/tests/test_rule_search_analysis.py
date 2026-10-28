@@ -20,6 +20,48 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_shared_rule_coverage(self):
+        mode='node_rules_recovery_shared'
+        meta=dict(shared_rule_profile='call_snapshot_v1',shared_rule_preparation='on',kernel_threads='4')
+        m=dict.fromkeys(analyze.SHARED_RULE_METRICS,0.)
+        m.update(kernel_shared_calls=3,kernel_shared_consumers=12,kernel_shared_avoided_builds=9,
+                 kernel_shared_verified=3,kernel_rules_parallel_calls=3)
+        analyze.inspect_shared_rules([dict(metrics=m)],meta,mode,0)
+        for k,v in [('kernel_shared_verified',2),('kernel_shared_mismatches',1),('kernel_shared_consumers',13),
+                    ('kernel_shared_avoided_builds',8),('kernel_shared_calls',2),('kernel_shared_build_seconds',float('nan'))]:
+            with self.subTest(k=k),self.assertRaises(ValueError):
+                analyze.inspect_shared_rules([dict(metrics=dict(m,**{k:v}))],meta,mode,0)
+        with self.assertRaises(ValueError):analyze.inspect_shared_rules([dict(metrics=m)],meta,mode,1)
+        m['kernel_shared_verified']=0
+        analyze.inspect_shared_rules([dict(metrics=m)],meta,mode,1)
+        m.update(dict.fromkeys(analyze.SHARED_RULE_METRICS,0.));meta['shared_rule_preparation']='off'
+        analyze.inspect_shared_rules([dict(metrics=m)],meta,'node_rules_recovery_topology',1)
+        self.assertEqual(analyze.inspect_shared_rules([],{},'node_rules_recovery_topology',1),{})
+
+    def test_shared_rule_control(self):
+        pair=[('4','node_rules_recovery_topology'),('4','node_rules_recovery_shared')]
+        for _,mode in pair:self.assertEqual(analyze.node_comparison_control(4,mode,pair),'node_rules_recovery_topology')
+        self.assertEqual(analyze.node_comparison_control(4,pair[1][1],pair[1:]),'node_fixed')
+
+    def test_all_rank_columnar_roundtrip(self):
+        meta=dict(rank_phase_profile='all_ranks_v1',MESH_BINARY_SHA256='binary')
+        rows=[dict(rank=i,metadata=meta,metrics={'kernel_generation_seconds':i+1},
+                   stages={'volume_refine':{'seconds':.5}}) for i in (2,0,1)]
+        result=dict(repeat=1,ranks=3)
+        phases=analyze.compact_rank_phases(rows,result)
+        self.assertEqual([r[0] for r in phases['rows']],[0,1,2])
+        self.assertIsNone(phases['rows'][0][phases['columns'].index('kernel_shared_calls')])
+        self.assertEqual(phases['rows'][0][phases['columns'].index('volume_refine_seconds')],.5)
+        with tempfile.TemporaryDirectory() as d:
+            analyze.save_compact_run(Path(d),result,[],[],phases)
+            restored={};got,_=analyze.inspect(Path(d)/'analysis_metrics.json',phase_sink=restored)
+            self.assertEqual(got,result);self.assertEqual(restored,phases)
+        self.assertEqual(analyze.compact_rank_phases(rows,dict(repeat=0,ranks=3)),{})
+        with self.assertRaises(ValueError):analyze.compact_rank_phases(rows[:2],result)
+        rows[0]['metrics']['kernel_generation_seconds']=float('nan')
+        with self.assertRaises(ValueError):analyze.compact_rank_phases(rows,result)
+
+
     def test_quality_compaction_retains_integrity_version_without_inventing_old_evidence(self):
         meta=dict.fromkeys(analyze.QUALITY_IDENTITY,'fixture')
         meta.update(mesh_quality='volume_audit_v1',timing_mode='natural',core_only='true',

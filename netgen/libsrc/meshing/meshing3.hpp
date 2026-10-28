@@ -37,6 +37,7 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  bool shared_rule_preparation=false;
   bool standard_rules=false;
   const RuleSearchTransport * search_transport=nullptr;
   std::map<int,SearchProfile> search_profiles;
@@ -74,6 +75,7 @@ public:
   
   ///
   // The caller owns a fixed-size task team; this method never changes affinity.
+  void SetSharedRulePreparation(bool enabled) { shared_rule_preparation=enabled; }
   int ApplyRulesTasks(Array<Point3d, PointIndex> & lpoints,
                       Array<int, PointIndex> & allowpoint,
                       Array<MiniElement2d> & lfaces, INDEX lfacesplit,

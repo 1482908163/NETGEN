@@ -517,6 +517,10 @@ NGLIB_API void Ng_GetVolumeFrontStats(double * values);
 // Separate API: existing kernel diagnostic array sizes remain unchanged.
 NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled);
 NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
+// Per-call immutable preparation: calls, build seconds, consumers, avoided builds,
+// verified calls, mismatches. Existing statistics arrays keep their sizes.
+NGLIB_API Ng_Result Ng_SetVolumeSharedRulePreparation(int enabled);
+NGLIB_API void Ng_GetVolumeSharedRuleStats(double * values); // 6 doubles
 // 0=original, 1=bounded closure/cached ray matrices, 2=exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
 NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles

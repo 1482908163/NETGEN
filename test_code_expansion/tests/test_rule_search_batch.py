@@ -132,6 +132,17 @@ print('12345')
             self.assertFalse(any(a.startswith('--dependency') for a in r['args']))
         self.assertEqual([r['args'][r['args'].index('-N')+1] for r in calls],['64','128','256'])
 
+    def test_shared_rules_is_optional_and_limited_to_one_scale(self):
+        for k in ('PROCESS_COUNTS','KERNEL_SCHEDULERS','REPEATS','REFINES','RULE_SEARCH_LEVELS'):
+            self.env.pop(k,None)
+        result=self.launch(EXPERIMENT_PRESET='shared_rules')
+        self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),1)
+        e=calls[0]['env']
+        self.assertEqual(e['KERNEL_SCHEDULERS'].split(),['node_rules_recovery_topology','node_rules_recovery_shared'])
+        self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
+        args=calls[0]['args'];self.assertEqual(args[args.index('-N')+1],'64')
+
     def test_explicit_front_preset_remains_available(self):
         result=self.launch(EXPERIMENT_PRESET='front_recovery')
         self.assertEqual(result.returncode,0,result.stderr)

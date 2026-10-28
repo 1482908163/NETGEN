@@ -38,6 +38,12 @@ int main() {
     nglib::Ng_GetVolumeRecoveryTopologyStats(topology_stats+1);
     require(topology_stats[0]==-9.0 && topology_stats[6]==-9.0);
     for(int i=1;i<=5;++i) require(topology_stats[i]==0);
+    require(nglib::Ng_SetVolumeSharedRulePreparation(-1)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeSharedRulePreparation(2)==nglib::NG_ERROR);
+    for(int enabled:{1,0}) require(nglib::Ng_SetVolumeSharedRulePreparation(enabled)==nglib::NG_OK);
+    double shared[8];std::fill_n(shared,8,-11.0);nglib::Ng_GetVolumeSharedRuleStats(shared+1);
+    require(shared[0]==-11.0 && shared[7]==-11.0);
+    for(int i=1;i<=6;++i) require(shared[i]==0);
     double generation[20]={};generation[19]=6789;
     nglib::Ng_GetVolumeGenerationStats(generation);require(generation[19]==6789);
     for(int i=0;i<19;++i) require(generation[i]==0);

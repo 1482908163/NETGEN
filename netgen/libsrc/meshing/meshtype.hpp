@@ -123,6 +123,7 @@ namespace netgen
     static constexpr int generation_count = 19;
     static constexpr int group_count = 9;
     static constexpr int topology_count = 5;
+    static constexpr int shared_rule_count = 6;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
     std::atomic<double> rule_values[rule_count];
@@ -130,6 +131,7 @@ namespace netgen
     std::atomic<double> generation_values[generation_count];
     std::atomic<double> group_values[group_count];
     std::atomic<double> topology_values[topology_count];
+    std::atomic<double> shared_rule_values[shared_rule_count];
     VolumeKernelStats() {
       for(auto & v : values) v.store(0);
       for(auto & v : front_values) v.store(0);
@@ -138,6 +140,11 @@ namespace netgen
       for(auto & v : generation_values) v.store(0);
       for(auto & v : group_values) v.store(0);
       for(auto & v : topology_values) v.store(0);
+      for(auto & v : shared_rule_values) v.store(0);
+    }
+    void AddSharedRules(int i,double value) {
+      auto old=shared_rule_values[i].load(std::memory_order_relaxed);
+      while(!shared_rule_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
     }
     void AddGeneration(int i,double value) {
       auto old=generation_values[i].load(std::memory_order_relaxed);
@@ -1796,6 +1803,7 @@ namespace netgen
     int volume_recovery_topology_mode = 0;
     int volume_front_group_mode = 0; // 0=original, 1=bounded/cached, 2=exact replay
     const VolumeResources * volume_resources = nullptr;
+    bool volume_shared_rule_preparation = false;
     int volume_rule_search = -1; // -1: off; 0: serial profile; 1: tasks; 2: verified tasks
     const RuleSearchTransport * volume_rule_transport = nullptr;
     int volume_candidate_schedule = 0; // 0: original ranges; 1: cavity-weighted claims

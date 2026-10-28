@@ -51,9 +51,120 @@ extern double minwithoutother;
 
 
 
+// Immutable preparation of a single front snapshot. Preserve the original
+// ordered relaxation sweeps and arithmetic; never retain it across calls.
+struct RuleSearchPreparation {
+  NgArray<int, PointIndex::BASE> pnearness;
+  NgArray<int> fnearness;
+  NgArrayMem<Box3d,100> triboxes;
+  INDEX_2_CLOSED_HASHTABLE<int> ledges{100};
+  RuleSearchPreparation(const Array<Point3d,PointIndex> &lpoints,
+      const Array<MiniElement2d> &lfaces, INDEX lfacesplit,
+      const INDEX_2_HASHTABLE<int> &connectedpairs, bool useedges) {
+  pnearness.SetSize (lpoints.Size());
+  fnearness.SetSize (lfacesplit);
+
+  pnearness = INT_MAX/10;
+
+  for (PointIndex pi : lfaces[0].PNums())
+    pnearness[pi] = 0;
+
+
+
+
+
+  for (int loop = 0; loop < 2; loop++)
+    {
+
+      for (int i = 0; i < lfacesplit; i++)
+	{
+	  const MiniElement2d & hface = lfaces[i];
+
+	  int minn = INT_MAX-1;
+	  for (PointIndex pi : hface.PNums())
+	    {
+	      int hi = pnearness[pi];
+	      if (hi < minn) minn = hi;
+	    }
+	  if (minn < INT_MAX/10)
+	    for (PointIndex pi : hface.PNums())
+	      if (pnearness[pi] > minn+1)
+		pnearness[pi] = minn+1;
+	}
+
+      for (int i = 1; i <= connectedpairs.GetNBags(); i++)
+	for (int j = 1; j <= connectedpairs.GetBagSize(i); j++)
+	  {
+	    INDEX_2 edge;
+	    int val;
+	    connectedpairs.GetData (i, j, edge, val);
+
+	    if (pnearness[edge.I1()] > pnearness[edge.I2()] + 1)
+	      pnearness[edge.I1()] = pnearness[edge.I2()] + 1;
+
+	    if (pnearness[edge.I2()] > pnearness[edge.I1()] + 1)
+	      pnearness[edge.I2()] = pnearness[edge.I1()] + 1;
+	  }
+    }
+
+  for (int i : fnearness.Range())
+    {
+      int sum = 0;
+      for (PointIndex pi : lfaces[i].PNums())
+        sum += pnearness[pi];
+      fnearness[i] = sum;
+    }
+
+
+
+
+
+  // find bounding boxes of faces
+
+  triboxes.SetSize (lfaces.Size());
+  // for (int i = 0; i < lfaces.Size(); i++)
+  for (auto i : lfaces.Range())
+    {
+      const MiniElement2d & face = lfaces[i];
+      triboxes[i].SetPoint (lpoints[face[0]]);
+      for (int j = 1; j < face.GetNP(); j++)
+	triboxes[i].AddPoint (lpoints[face[j]]);
+    }
+
+
+
+
+
+
+
+  if (useedges)
+    {
+      ledges.SetSize (5 * lfacesplit);
+
+      for (int j = 0; j < lfacesplit; j++)
+	// if (fnearness[j] <= 5)
+	  {
+	    const MiniElement2d & face = lfaces[j];
+	    int newp, oldp;
+
+	    newp = face[face.GetNP()-1];
+	    for (int k = 0; k < face.GetNP(); k++)
+	      {
+		oldp = newp;
+		newp = face[k];
+		ledges.Set (INDEX_2::Sort(oldp, newp), 1);
+	      }
+	  }
+    }
+
+
+  }
+};
+
 // Each rule is claimed exactly once. Its mutable free-zone and diagnostic slots
 // are exclusively owned until the team joins. Front and rotation order stay serial.
 struct RuleSearchQueue {
+  const RuleSearchPreparation *prepared=nullptr; // valid until the team joins
   std::atomic<int> next{0};
   std::vector<int> order;
   std::vector<double> seconds;
@@ -315,6 +426,17 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   const double copy_seconds=RuleElapsed(stamp);
   if(stats) stats->AddRule(10,copy_seconds);
   RuleSearchQueue queue(rules.Size(),sample);
+  std::unique_ptr<RuleSearchPreparation> preparation;
+  // Restrict sharing to the ordered local team; adaptive/remote paths stay unchanged.
+  const bool share=shared_rule_preparation && !adaptive;
+  if(share) {
+    const auto setup=RuleClock::now();bool edges=false;
+    for(const auto &rule:rules) edges=edges || rule->GetNEd();
+    preparation=std::make_unique<RuleSearchPreparation>(p,f,split,pairs,edges);
+    queue.prepared=preparation.get();
+    if(stats) {stats->AddSharedRules(0,1);stats->AddSharedRules(1,RuleElapsed(setup));
+      stats->AddSharedRules(2,workers);stats->AddSharedRules(3,workers-1);}
+  }
   bool remote=false;
   double packet_seconds=0;
   RulePacket remote_request;
@@ -510,7 +632,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
     if(stats) {stats->AddRule(2,workers>1?1:0);stats->AddRule(14,RuleElapsed(verify_begin));}
     if(!same) {
-      if(stats) stats->AddRule(17,1);
+      if(stats) {stats->AddRule(17,1);if(share)stats->AddSharedRules(5,1);}
       throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+
                         " serial="+ToString(serial_found)+" parallel="+ToString(found)+
                         " split="+ToString(split_rule)+" diagnostic="+ToString(diagnostic_difference)+
@@ -520,6 +642,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
                         "/"+ToString(point)+","+ToString(reference.point_trials)+
                         "/"+ToString(maps)+","+ToString(reference.mappings));
     }
+    if(share && stats) stats->AddSharedRules(4,1);
     // Serial verification has already materialized the exactly checked output.
   } else if(winner>=0) {
     p=results[winner]->points;f=results[winner]->faces;
@@ -593,6 +716,9 @@ int Meshing3 :: ApplyRulesImpl
   // determine topological distance of faces and points to
   // base element
 
+  RuleLegacyTimer reg2(98, !queue);
+  const auto *shared=queue?queue->prepared:nullptr;
+  if(!shared) {
   pnearness.SetSize (lpoints.Size());
   fnearness.SetSize (lfacesplit);
 
@@ -601,7 +727,7 @@ int Meshing3 :: ApplyRulesImpl
   for (PointIndex pi : lfaces[0].PNums())
     pnearness[pi] = 0;
   
-  RuleLegacyTimer reg2(98, !queue);
+
   
   if (!queue) NgProfiler::StartTimer (90);
 
@@ -692,6 +818,12 @@ int Meshing3 :: ApplyRulesImpl
     }
 
   if (!queue) NgProfiler::StopTimer (92);
+  }
+  const auto &point_nearness=shared?shared->pnearness:pnearness;
+  const auto &face_nearness=shared?shared->fnearness:fnearness;
+  const auto &face_boxes=shared?shared->triboxes:triboxes;
+  const auto &local_edges=shared?shared->ledges:ledges;
+
 
   RuleLegacyTimer reg3(99, !queue);
 
@@ -825,7 +957,7 @@ int Meshing3 :: ApplyRulesImpl
                     if(!sliced || (nfok==2?locfi:fmapi.Get(2))>=queue->face_begin) ++result->face_trials;
                     else ++result->replay_face_trials;
                   }
-		  if (fnearness.Get(locfi) > rule->GetFNearness (nfok) ||
+		  if (face_nearness.Get(locfi) > rule->GetFNearness (nfok) ||
 		      fused.Get(locfi) ||
 		      actfnp != lfaces[locfi-1].GetNP() )
 		    {
@@ -980,7 +1112,7 @@ int Meshing3 :: ApplyRulesImpl
 			      locpi++;
 			      
 			      if (pused[locpi] || 
-				  pnearness[locpi] > rule->GetPNearness(npok))
+				  point_nearness[locpi] > rule->GetPNearness(npok))
 				{
 				  ok = 0;
 				}
@@ -1061,7 +1193,7 @@ int Meshing3 :: ApplyRulesImpl
 			  INDEX_2 in2(pmap.Get(rule->GetEdge(i).i1),
 				      pmap.Get(rule->GetEdge(i).i2));
 			  in2.Sort();
-			  if (!ledges.Used (in2)) ok = 0;
+			  if (!local_edges.Used (in2)) ok = 0;
 			}
 
 
@@ -1210,7 +1342,7 @@ int Meshing3 :: ApplyRulesImpl
 			      int triin;
 			      const MiniElement2d & lfacei = lfaces[i-1];
 
-			      if (!triboxes.Elem(i).Intersect (rule->fzbox))
+			      if (!face_boxes.Get(i).Intersect (rule->fzbox))
 				triin = 0;
 			      else
 				{

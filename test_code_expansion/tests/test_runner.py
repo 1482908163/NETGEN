@@ -40,7 +40,7 @@ for folder, name in [('test_occ','test_occ.vol'),('refinedSurfmesh','refinedSurf
 print('diagnostic log '*1000)
 if algorithm=='baseline' and repeat==1: sys.exit(9)
 row={'rank':0,'ranks':1,'repeat':repeat,'experiment':algorithm,
-     'metadata':{'algorithm':algorithm,'timing_mode':'natural','core_only':'true','description':'sample '*1000,
+     'metadata':{'algorithm':algorithm,'timing_mode':'natural','core_only':'true','rank_phase_profile':'all_ranks_v1','description':'sample '*1000,
                  'partition_seed':value('--partition-seed')},
      'metrics':{'core_seconds':1,'local_volume_elements_before_adjacency':10},
      'stages':{'face_pipeline_total':{'seconds':0.1,'calls':1}}}
@@ -109,6 +109,9 @@ out=pathlib.Path(value('--profile-dir'))
     compact_pdir=tmp/'compact_results/p1'
     compact_run=compact_pdir/'sparse_natural/repeat_1'
     assert (compact_run/'analysis_metrics.json').exists()
+    phases=json.loads((compact_run/'analysis_metrics.json').read_text())['rank_phases']
+    assert phases['schema']=='all_ranks_v1' and len(phases['rows'])==1
+    assert phases['rows'][0][0]==0 and 'volume_refine_seconds' in phases['columns']
     assert not list(compact_run.glob('rank_profiles.jsonl*')) and not list(compact_run.glob('run.log*'))
     assert not (compact_run/'mesh/volfined/volfined0.vol').exists()
     assert (compact_run/'mesh/source.STEP').exists()

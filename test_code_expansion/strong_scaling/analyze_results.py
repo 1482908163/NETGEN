@@ -99,10 +99,11 @@ def compact_quality(q):
     return q
 
 
-def save_compact_run(directory, result, details, critical):
+def save_compact_run(directory, result, details, critical, rank_phases=None):
     if 'mesh_quality' in result:
         compact_quality(result['mesh_quality'])
     payload = dict(schema='analysis_metrics_v1', result=result, stages=details, critical=critical)
+    if rank_phases:payload['rank_phases']=rank_phases
     target = directory/'analysis_metrics.json'
     temporary = target.with_suffix('.json.tmp')
     temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), allow_nan=False)+'\n')
@@ -320,7 +321,8 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('recovery_online','node_rules_recovery','sparse','node_rules_recovery_online','sparse'),
            ('recovery_total','node_rules_elastic','sparse','node_rules_recovery_online','sparse'),
            ('front_group','node_rules_recovery','sparse','node_rules_recovery_front','sparse'),
-           ('recovery_topology','node_rules_recovery_front','sparse','node_rules_recovery_topology','sparse'))
+           ('recovery_topology','node_rules_recovery_front','sparse','node_rules_recovery_topology','sparse'),
+           ('shared_rules','node_rules_recovery_topology','sparse','node_rules_recovery_shared','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -398,7 +400,7 @@ GROUP_METRICS=tuple('kernel_group_'+k for k in ('build_seconds','inner_seconds',
     'calls','rejected','verified','inside_calls','inside_verified','mismatches'))
 
 def inspect_front_group(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology')
+    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared')
     if not candidate and 'front_group_profile' not in metadata:
         return {}  # Historical data did not measure this path.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -427,7 +429,7 @@ TOPOLOGY_METRICS=tuple('kernel_topology_'+k for k in
     ('calls','optimized','verified','mismatches','skipped_rebuilds'))
 
 def inspect_recovery_topology(rows, metadata, scheduler, repeat):
-    candidate=scheduler=='node_rules_recovery_topology'
+    candidate=scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared')
     if not candidate and 'recovery_topology_profile' not in metadata:
         return {}  # Historical files remain readable.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -452,10 +454,66 @@ def inspect_recovery_topology(rows, metadata, scheduler, repeat):
         raise ValueError('recovery topology candidate path was not exercised')
     return result
 
+SHARED_RULE_METRICS=tuple('kernel_shared_'+k for k in
+    ('calls','build_seconds','consumers','avoided_builds','verified','mismatches'))
+
+def inspect_shared_rules(rows, metadata, scheduler, repeat):
+    candidate=scheduler=='node_rules_recovery_shared'
+    if not candidate and 'shared_rule_profile' not in metadata:return {}
+    expected='on' if candidate else 'off'
+    if metadata.get('shared_rule_profile')!='call_snapshot_v1' or metadata.get('shared_rule_preparation')!=expected:
+        raise ValueError('missing or unexpected shared-rule profile')
+    result={'shared_rule_profile':'call_snapshot_v1','shared_rule_preparation':expected}
+    for key in SHARED_RULE_METRICS:
+        values=[r.get('metrics',{}).get(key) for r in rows]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or
+               (not key.endswith('_seconds') and v!=int(v)) for v in values):
+            raise ValueError('invalid shared-rule metric: '+key)
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for r in rows:
+        m=r['metrics'];calls=m['kernel_shared_calls'];consumers=m['kernel_shared_consumers']
+        if (calls!=(m['kernel_rules_parallel_calls'] if candidate else 0) or
+            m['kernel_shared_verified']!=(calls if candidate and repeat<=0 else 0) or
+            m['kernel_shared_mismatches'] or m['kernel_shared_avoided_builds']!=consumers-calls or
+            consumers<2*calls or consumers>int(metadata['kernel_threads'])*calls or
+            (not candidate and any(m[k] for k in SHARED_RULE_METRICS))):
+            raise ValueError('shared-rule work/replay coverage mismatch')
+    if candidate and result['kernel_shared_calls']==0:raise ValueError('shared preparation not exercised')
+    return result
+
+# Keep small columnar records for every rank, including migrating critical ranks.
+RANK_PHASE_FIELDS=tuple(dict.fromkeys((
+    'compute_seconds','face_complete_elapsed','vertex_arrival_elapsed',
+    'kernel_generation_seconds','kernel_front_seconds','kernel_front_applyrules_seconds',
+    'kernel_delaunay_seconds','kernel_domain_repair_seconds','kernel_repair_seconds',
+    'kernel_optimization_seconds','volume_refine_seconds','volume_kernel_elements',
+    'volume_kernel_input_surface_elements','local_volume_elements_before_adjacency',
+    'kernel_front_iterations','kernel_front_rotations','kernel_rules_calls','kernel_rules_parallel_calls',
+    'kernel_rules_face_trials','kernel_rules_point_trials','kernel_rules_mappings',
+    'kernel_rules_copy_seconds','kernel_rules_dispatch_seconds','kernel_rules_wall_seconds')+
+    GENERATION_METRICS+GROUP_METRICS+TOPOLOGY_METRICS+SHARED_RULE_METRICS))
+
+def compact_rank_phases(rows, result):
+    metadata=rows[0]['metadata']
+    if metadata.get('rank_phase_profile')!='all_ranks_v1' or result['repeat']<=0:return {}
+    records=[]
+    for r in sorted(rows,key=lambda r:r['rank']):
+        values=dict(r['metrics'])
+        values['compute_seconds']=sum(seconds(r,s) for s in COMPUTE)
+        values['volume_refine_seconds']=seconds(r,'volume_refine')
+        record=[r['rank'],values.get('coop_timeline_node')]+[values.get(k) for k in RANK_PHASE_FIELDS]
+        if any(v is not None and (not isinstance(v,(int,float)) or not math.isfinite(v) or v<0) for v in record):
+            raise ValueError('invalid all-rank phase metric')
+        records.append(record)
+    if [r[0] for r in records]!=list(range(result['ranks'])):raise ValueError('incomplete all-rank phase records')
+    return dict(schema='all_ranks_v1',columns=['rank','node',*RANK_PHASE_FIELDS],rows=records,
+                identity={k:metadata.get(k,'unset') for k in
+                          ('MESH_SOURCE_REVISION','MESH_INPUT_SHA256','MESH_BINARY_SHA256','MESH_KERNEL_SHA256')})
+
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -498,8 +556,8 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
     'front_unattributed_seconds','front_profile_coverage',
     'coop_borrowed_core_seconds','first_loan_fraction') + GENERATION_METRICS + OPERATION_V5_METRICS
-CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS
-CRITICAL_SUMMARY_METRICS += GROUP_METRICS + TOPOLOGY_METRICS
+CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS
+CRITICAL_SUMMARY_METRICS += GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -846,13 +904,14 @@ def post_work_fingerprint(rows):
     return hashlib.sha256(json.dumps(workload,separators=(',',':')).encode()).hexdigest()
 
 
-def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
+def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phase_sink=None):
     if path.name == 'analysis_metrics.json':
         cached = json.loads(path.read_text())
         if cached.get('schema') != 'analysis_metrics_v1':
             raise ValueError('未知精简分析数据格式')
         if critical_sink is not None:
             critical_sink.extend(cached['critical'])
+        if phase_sink is not None:phase_sink.update(cached.get('rank_phases',{}))
         return cached['result'], cached['stages']
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt") as stream:
@@ -872,7 +931,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_rules_recovery_front':'node_elastic',
-                  'node_rules_recovery_topology':'node_elastic',
+                  'node_rules_recovery_topology':'node_elastic','node_rules_recovery_shared':'node_elastic',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
                   'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
@@ -916,6 +975,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
     result.update(volume_workload_metrics(rows))
     result.update(inspect_front_group(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_recovery_topology(rows,metadata,requested_scheduler,rows[0]['repeat']))
+    result.update(inspect_shared_rules(rows,metadata,requested_scheduler,rows[0]['repeat']))
     if metadata.get('search_revision') in ('matched_tasks_v4','generation_tail_v5'):
         result['search_revision']=metadata['search_revision']
         extra=()
@@ -1392,6 +1452,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None):
         result["mesh_quality"]=inspect_quality(rows,rows[0]["metadata"])
     if critical_sink is not None:
         critical_sink.extend(critical_rank_details(rows,result))
+    if phase_sink is not None:phase_sink.update(compact_rank_phases(rows,result))
     return result, detail
 
 def write_csv(path, rows):
@@ -1477,6 +1538,10 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
+    if (scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared') and
+        not any((int(threads),s) in available for s in ('node_fixed','node_rules_elastic','node_rules_recovery','node_rules_recovery_front')) and
+        {(int(threads),'node_rules_recovery_topology'),(int(threads),'node_rules_recovery_shared')} <= available):
+        return 'node_rules_recovery_topology'
     if (scheduler in ('node_rules_recovery_front','node_rules_recovery_topology') and
         (int(threads),'node_fixed') not in available and
         (int(threads),'node_rules_elastic') not in available and
@@ -1766,14 +1831,14 @@ def main():
             with run_guard(args.root) as acquired:
                 if not acquired or (args.root/"RUNNING").exists():
                     raise ValueError("run is still active; finalization skipped")
-                critical=[]
-                result,details=inspect(profile_path(args.root), critical_sink=critical)
+                critical=[];rank_phases={}
+                result,details=inspect(profile_path(args.root), critical_sink=critical,phase_sink=rank_phases)
                 if 'mesh_quality' in result:
                     q=result['mesh_quality']
                     (args.root/'quality_summary.json').write_text(json.dumps(q,indent=2,allow_nan=False)+'\n')
                     if not q['structural_pass']: raise ValueError('volume quality audit failed: '+str(q['issues']))
                 if os.environ.get('COMPACT_RESULTS') == '1' and not args.keep_artifacts:
-                    save_compact_run(args.root, result, details, critical)
+                    save_compact_run(args.root, result, details, critical,rank_phases)
                 (args.root/"SUCCESS").touch()
                 if not args.keep_artifacts:
                     try_cleanup(args.root)

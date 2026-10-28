@@ -93,6 +93,16 @@ def main():
         if fingerprint != oracle:
             raise SystemExit(f'结果不一致：threads={threads}, mode={mode}')
         logs.append(f'threads={threads} mode={mode} remote={remote}\n{out}')
+    for variant in (0,1,2):
+        expected=subprocess.check_output([str(reference if args.reference_sources else binary),'1','0','0','0',str(variant)],text=True,cwd=output)
+        expected=re.search(r'fingerprint=(\w+)',expected)[1]
+        for threads in (1,2,4):
+            for mode in (1,2):
+                out=subprocess.check_output([str(binary),str(threads),str(mode),'0','1',str(variant)],text=True,cwd=output,timeout=120)
+                if re.search(r'fingerprint=(\w+)',out)[1]!=expected:
+                    raise SystemExit('共享规则预处理与原源码结果不一致')
+                logs.append(out)
+    print('通过：18 组共享规则预处理差分，含连接点、内外面分割、三角/四边面、串行回退及原源码对照。')
     recovery=output/'generation_recovery'
     invoke(flags(rule)+[str(repo/'test_code_expansion/tests/generation_recovery_regression.cpp')]+
            objects+libs+['-o',str(recovery)])
