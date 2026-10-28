@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """独立复核恢复并行三规模实验；只读原始缓存，输出可追溯的 JSON。
 
-用法：python3 review_recovery_scaling.py <批次目录> <输出 JSON> [--front-group]
+用法：python3 review_recovery_scaling.py <批次目录> <输出 JSON> [--front-group | --recovery-topology]
 要求每组 1 次质量预热、3 次正式重复；缺失或矛盾数据直接失败。
 """
 import csv
@@ -28,7 +28,8 @@ def require(condition, message):
 
 
 def check_group(r, mode, repeat):
-    expected = '2' if mode.endswith('_front') and repeat == 0 else '1' if mode.endswith('_front') else '0'
+    active = mode in ('node_rules_recovery_front', 'node_rules_recovery_topology')
+    expected = '2' if active and repeat == 0 else '1' if active else '0'
     require(r.get('front_group_profile') == 'bounded_group_v1' and r.get('front_group_mode') == expected,
             '前沿组模式或版本不符')
     counts = {k: r['kernel_group_' + k] for k in ('calls', 'rejected', 'verified', 'inside_calls', 'inside_verified', 'mismatches')}
@@ -44,10 +45,34 @@ def check_group(r, mode, repeat):
     return counts
 
 
-def review(batch, front_group=False):
+def check_topology(r, mode, repeat, aggregate=True):
+    candidate = mode == 'node_rules_recovery_topology'
+    expected = '2' if candidate and repeat == 0 else '1' if candidate else '0'
+    if aggregate:
+        require(r.get('recovery_topology_profile') == 'ordered_topology_reuse_v1' and
+                r.get('recovery_topology_mode') == expected, '恢复拓扑模式或版本不符')
+    counts = {k: r['kernel_topology_' + k] for k in
+              ('calls', 'optimized', 'verified', 'mismatches', 'skipped_rebuilds')}
+    sweeps = r['kernel_gen_recovery_sweeps']
+    require(all(isinstance(v, (int, float)) and math.isfinite(v) and v >= 0 and v == int(v)
+                for v in [sweeps, *counts.values()]), '无效恢复拓扑计数')
+    require(counts == dict(calls=18*sweeps, optimized=18*sweeps if candidate else 0,
+                          verified=18*sweeps if expected == '2' else 0, mismatches=0,
+                          skipped_rebuilds=25*sweeps if candidate else 0), '恢复拓扑重放或省略计数不符')
+    if aggregate and candidate:
+        require(sweeps > 0, '恢复拓扑优化未触发')
+    return counts
+
+
+def review(batch, front_group=False, recovery_topology=False):
+    require(not (front_group and recovery_topology), '只能选择一种对照模式')
+    front_group = front_group or recovery_topology
     modes = ('node_rules_recovery', 'node_rules_recovery_front') if front_group else MODES
     comparisons = [('front_group', 0, 1)] if front_group else [
         ('generation_recovery', 0, 1), ('recovery_online', 1, 2), ('recovery_total', 0, 2)]
+    if recovery_topology:
+        modes = ('node_rules_recovery_front', 'node_rules_recovery_topology')
+        comparisons = [('recovery_topology', 0, 1)]
     root = batch / 'levels4'
     report = {'batch': batch.name, 'audit': {'runs': 0, 'warmups': 0, 'formal': 0},
               'scales': {}, 'source_sha256': {}}
@@ -63,6 +88,7 @@ def review(batch, front_group=False):
         quality_reference = None
         work_reference = None
         group_reference = None
+        topology_reference = None
         retained = {}
         for mode in modes:
             retained[mode] = []
@@ -78,13 +104,20 @@ def review(batch, front_group=False):
                 path = group / 'sparse_natural' / f'repeat_{repeat}' / 'analysis_metrics.json'
                 data = json.loads(read(path))
                 r = data['result']
+                if recovery_topology:
+                    topology_counts = check_topology(r, mode, repeat)
+                    if topology_reference is None:
+                        topology_reference = topology_counts['calls']
+                    require(topology_counts['calls'] == topology_reference, f'{path}: 恢复轮数不一致')
+                    if repeat == 0 and mode == modes[-1]:
+                        scale['candidate_warmup_topology_replay'] = topology_counts
                 if front_group:
                     counts = check_group(r, mode, repeat)
                     signature = {k: counts[k] for k in ('calls', 'rejected', 'inside_calls')}
                     if group_reference is None:
                         group_reference = signature
                     require(signature == group_reference, f'{path}: 同规模前沿组工作次数不一致')
-                    if repeat == 0 and mode.endswith('_front'):
+                    if repeat == 0 and mode == modes[-1]:
                         scale['candidate_warmup_group_replay'] = counts
                 require((r['ranks'], r['repeat'], r['algorithm'], r['timing'], r['partition_seed'],
                          r['surface_levels'], r['volume_refines']) ==
@@ -134,6 +167,9 @@ def review(batch, front_group=False):
                     require(math.isclose(float(c['run_core_seconds']), seconds), f'{path}: 核心时间矛盾')
                     times.append(seconds)
                     critical.append(c)
+                    if recovery_topology:
+                        for row in data['critical']:
+                            check_topology(row, mode, repeat, aggregate=False)
                     retained[mode].append(data['critical'])
                     report['audit']['formal'] += 1
             scale['strategies'][mode] = {
@@ -141,6 +177,10 @@ def review(batch, front_group=False):
                 'critical_ranks': [int(c['rank']) for c in critical],
                 'critical_phase_medians': {k: median(float(c[k]) for c in critical) for k in PHASES},
             }
+            if recovery_topology:
+                scale['strategies'][mode]['compute_critical_by_repeat'] = [
+                    {k: c[k] for k in ('repeat', 'rank', 'face_complete_elapsed', 'vertex_arrival_elapsed', *PHASES)}
+                    for c in critical]
         scale['work'] = work_reference
         scale['quality'] = quality_reference
         published = {r['contribution']: r for r in csv.DictReader(
@@ -167,6 +207,12 @@ def review(batch, front_group=False):
             ranks_to_match = sorted({rank for s in scale['strategies'].values() for rank in s['critical_ranks']})
             scale['matched_ranks'] = {}
             for rank in ranks_to_match:
+                if recovery_topology:
+                    missing = {mode: [i+1 for i, run in enumerate(retained[mode])
+                                      if not any(c['rank'] == rank for c in run)] for mode in modes}
+                    if any(missing.values()):
+                        scale.setdefault('unmatched_ranks', {})[str(rank)] = {'missing_repeats': missing}
+                        continue  # Explicitly retain the gap; never substitute another rank.
                 matched = {}
                 count_reference = None
                 for mode in modes:
@@ -180,13 +226,19 @@ def review(batch, front_group=False):
                                 c['source_revision'] == identity['MESH_SOURCE_REVISION'], '同进程来源不符')
                         require(all(c['kernel_group_' + k] == 0 for k in ('verified', 'inside_verified', 'mismatches')),
                                 '正式关键进程含重放或不一致')
+                        if recovery_topology:
+                            check_topology(c, mode, repeat, aggregate=False)
                         signature = {k: c[k] for k in ('kernel_front_iterations', 'kernel_front_rotations',
                             'kernel_front_successful_iterations', 'kernel_front_failed_iterations',
                             'kernel_group_calls', 'kernel_group_rejected', 'kernel_group_inside_calls')}
+                        if recovery_topology:
+                            signature['kernel_topology_calls'] = c['kernel_topology_calls']
                         if count_reference is None:
                             count_reference = signature
                         require(signature == count_reference, f'{ranks}/{rank}: 前沿决定次数不一致')
                     fields = set(PHASES) | {k for k in rows[0] if k.startswith(('kernel_gen_', 'kernel_group_'))}
+                    if recovery_topology:
+                        fields |= {k for k in rows[0] if k.startswith('kernel_topology_')}
                     fields |= {'kernel_delaunay_seconds', 'kernel_domain_repair_seconds',
                                'kernel_repair_seconds', 'kernel_optimization_seconds'}
                     matched[mode] = {
@@ -210,7 +262,7 @@ def review(batch, front_group=False):
         '每组仅三次正式重复，逐轮胜出不等于统计显著性。',
         'SOURCE_REVISION=manual；可核查二进制哈希，不能据此证明确切源码提交。',
         '保存了完整性功能版本，未保留成功运行的每条阶段指纹日志。',
-        '128节点的关键计算进程变化；不同进程阶段时间之差不能作为同进程优化归因。',
+        '关键计算进程可能随策略或重复变化；不同进程阶段时间之差不能作为同进程优化归因。',
     ]
     if front_group:
         report['limitations'].append('逐进程原画像已清理；独立检查覆盖总重放计数和保留的关键进程，不重建未保存的逐调用日志。')
@@ -218,8 +270,9 @@ def review(batch, front_group=False):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) not in (3, 4) or (len(sys.argv) == 4 and sys.argv[3] != '--front-group'):
+    if len(sys.argv) not in (3, 4) or (len(sys.argv) == 4 and sys.argv[3] not in ('--front-group', '--recovery-topology')):
         raise SystemExit(__doc__)
-    result = review(Path(sys.argv[1]), front_group=len(sys.argv) == 4)
+    option = sys.argv[3] if len(sys.argv) == 4 else ''
+    result = review(Path(sys.argv[1]), front_group=option == '--front-group', recovery_topology=option == '--recovery-topology')
     Path(sys.argv[2]).write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(result['audit'], ensure_ascii=False))

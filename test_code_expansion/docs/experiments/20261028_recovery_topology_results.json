@@ -1,0 +1,2381 @@
+{
+  "batch": "mesh_algorithms_20261028-030221",
+  "audit": {
+    "runs": 24,
+    "warmups": 6,
+    "formal": 18
+  },
+  "scales": {
+    "256": {
+      "nodes": 64,
+      "ranks": 256,
+      "strategies": {
+        "node_rules_recovery_front": {
+          "seconds": [
+            55.3016471169999,
+            54.43009093499995,
+            54.887011624999786
+          ],
+          "median_seconds": 54.887011624999786,
+          "critical_ranks": [
+            73,
+            73,
+            73
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 43.7402485340001,
+            "kernel_generation_seconds": 29.658309065,
+            "kernel_front_seconds": 8.51091556,
+            "kernel_front_applyrules_seconds": 3.7713052830000104,
+            "front_unattributed_seconds": 0.3157550729999805,
+            "kernel_gen_recovery_seconds": 10.664500490999998,
+            "kernel_gen_recovery_topology_seconds": 4.175294333999999,
+            "kernel_gen_recovery_smooth_seconds": 3.7419767239999997,
+            "volume_refine_seconds": 9.19464933900008
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 73,
+              "face_complete_elapsed": 0.8113155150001603,
+              "vertex_arrival_elapsed": 44.55208035800001,
+              "compute_seconds": 43.7402485340001,
+              "kernel_generation_seconds": 29.658309065,
+              "kernel_front_seconds": 8.51091556,
+              "kernel_front_applyrules_seconds": 3.7713052830000104,
+              "front_unattributed_seconds": 0.3157550729999805,
+              "kernel_gen_recovery_seconds": 10.665595247999999,
+              "kernel_gen_recovery_topology_seconds": 4.160369371,
+              "kernel_gen_recovery_smooth_seconds": 3.8013683200000004,
+              "volume_refine_seconds": 9.19464933900008
+            },
+            {
+              "repeat": 2,
+              "rank": 73,
+              "face_complete_elapsed": 0.7133122570000978,
+              "vertex_arrival_elapsed": 43.804745811999965,
+              "compute_seconds": 43.09047528199994,
+              "kernel_generation_seconds": 29.469704427,
+              "kernel_front_seconds": 8.449184191,
+              "kernel_front_applyrules_seconds": 3.7165047509999996,
+              "front_unattributed_seconds": 0.29199817699997865,
+              "kernel_gen_recovery_seconds": 10.645057651,
+              "kernel_gen_recovery_topology_seconds": 4.175294333999999,
+              "kernel_gen_recovery_smooth_seconds": 3.7419767239999997,
+              "volume_refine_seconds": 8.980967129999954
+            },
+            {
+              "repeat": 3,
+              "rank": 73,
+              "face_complete_elapsed": 0.9132622350000474,
+              "vertex_arrival_elapsed": 45.30147897400002,
+              "compute_seconds": 44.387080464999826,
+              "kernel_generation_seconds": 30.321106083,
+              "kernel_front_seconds": 8.706858452999999,
+              "kernel_front_applyrules_seconds": 3.825085471999986,
+              "front_unattributed_seconds": 0.33787997200002806,
+              "kernel_gen_recovery_seconds": 10.664500490999998,
+              "kernel_gen_recovery_topology_seconds": 4.22497035,
+              "kernel_gen_recovery_smooth_seconds": 3.652686696,
+              "volume_refine_seconds": 9.260746561999895
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 1.0
+        },
+        "node_rules_recovery_topology": {
+          "seconds": [
+            52.92635093700005,
+            54.77907580499982,
+            53.045101135000095
+          ],
+          "median_seconds": 53.045101135000095,
+          "critical_ranks": [
+            73,
+            73,
+            73
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 42.40412504599999,
+            "kernel_generation_seconds": 28.189173546,
+            "kernel_front_seconds": 8.581821101,
+            "kernel_front_applyrules_seconds": 3.8165366140000008,
+            "front_unattributed_seconds": 0.3202514229999984,
+            "kernel_gen_recovery_seconds": 8.884463263,
+            "kernel_gen_recovery_topology_seconds": 2.2974249799999997,
+            "kernel_gen_recovery_smooth_seconds": 3.7144089219999996,
+            "volume_refine_seconds": 9.369356892000042
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 73,
+              "face_complete_elapsed": 0.6866417979999824,
+              "vertex_arrival_elapsed": 43.00266504000001,
+              "compute_seconds": 42.315362992000246,
+              "kernel_generation_seconds": 28.189173546,
+              "kernel_front_seconds": 8.581821101,
+              "kernel_front_applyrules_seconds": 3.8165366140000008,
+              "front_unattributed_seconds": 0.3202514229999984,
+              "kernel_gen_recovery_seconds": 8.884463263,
+              "kernel_gen_recovery_topology_seconds": 2.366067262,
+              "kernel_gen_recovery_smooth_seconds": 3.7144089219999996,
+              "volume_refine_seconds": 9.369356892000042
+            },
+            {
+              "repeat": 2,
+              "rank": 73,
+              "face_complete_elapsed": 1.028142070000058,
+              "vertex_arrival_elapsed": 43.726747125999964,
+              "compute_seconds": 42.69755588199996,
+              "kernel_generation_seconds": 28.520107134,
+              "kernel_front_seconds": 8.939840177999999,
+              "kernel_front_applyrules_seconds": 3.8663772799999965,
+              "front_unattributed_seconds": 0.3251704869999994,
+              "kernel_gen_recovery_seconds": 8.758029055,
+              "kernel_gen_recovery_topology_seconds": 2.2974249799999997,
+              "kernel_gen_recovery_smooth_seconds": 3.638562589,
+              "volume_refine_seconds": 9.207494611999891
+            },
+            {
+              "repeat": 3,
+              "rank": 73,
+              "face_complete_elapsed": 0.7208621629999925,
+              "vertex_arrival_elapsed": 43.126457769000126,
+              "compute_seconds": 42.40412504599999,
+              "kernel_generation_seconds": 28.091393189,
+              "kernel_front_seconds": 8.552923171,
+              "kernel_front_applyrules_seconds": 3.7835426499999913,
+              "front_unattributed_seconds": 0.30566241099999836,
+              "kernel_gen_recovery_seconds": 8.991293427999999,
+              "kernel_gen_recovery_topology_seconds": 2.2905881100000003,
+              "kernel_gen_recovery_smooth_seconds": 3.9137370199999992,
+              "volume_refine_seconds": 9.401521760999913
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 1.0
+        }
+      },
+      "comparisons": {
+        "recovery_topology": {
+          "paired_reduction_pct": [
+            4.29516353278685,
+            -0.6411616515883178,
+            3.355822143468168
+          ],
+          "paired_median_pct": 3.355822143468168,
+          "median_time_reduction_pct": 3.355822143468168,
+          "wins": 2,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 1683150,
+      "candidate_warmup_topology_replay": {
+        "calls": 774,
+        "optimized": 774,
+        "verified": 774,
+        "mismatches": 0,
+        "skipped_rebuilds": 1075
+      },
+      "candidate_warmup_group_replay": {
+        "calls": 46370,
+        "rejected": 2723,
+        "verified": 46370,
+        "inside_calls": 1937,
+        "inside_verified": 1937,
+        "mismatches": 0
+      },
+      "work": {
+        "scaling_kernel_work_sha256": "28339308971ea02ca7ad16d25eb1a8d39061f221ba0eeb68ef33797b48301094",
+        "scaling_work_sha256": "5f23e8f511872a6687a4e3742c82076b0536f9d341393518379adc957d1d424a",
+        "volume_kernel_elements_sum": 23200458,
+        "post_refine_elements_sum": 1484829312,
+        "volume_elements_sum": 1484829312
+      },
+      "quality": {
+        "counts": {
+          "points": 271836564,
+          "elements": 1484829312,
+          "surfaces": 96182272,
+          "checked": 1484829312,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1484829312,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.00038983705978167687,
+        "shape_mean": 0.7170229229235053,
+        "angle_min": 0.001318871809458711,
+        "angle_max": 179.99802597183796,
+        "abs_volume": 15477851.65479295,
+        "shape_hist": [
+          12732,
+          477986,
+          6204814,
+          32475908,
+          96722940,
+          194917092,
+          290254606,
+          362587812,
+          356590950,
+          144584472
+        ],
+        "surface_fingerprint_sha256": "54cc2ee516b35ae115e6d7b6a5b892c40b46d6740a071e5d56e22b3802ed42f6",
+        "volume_fingerprint_sha256": "a27e6d690d1b1937dcf24e32c9e7899a29e65616b6849adefc4fd9b6fc7d488c",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "matched_ranks": {
+        "73": {
+          "node_rules_recovery_front": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                43.7402485340001,
+                43.09047528199994,
+                44.387080464999826
+              ],
+              "front_unattributed_seconds": [
+                0.3157550729999805,
+                0.29199817699997865,
+                0.33787997200002806
+              ],
+              "kernel_delaunay_seconds": [
+                6.446165282,
+                6.332308551,
+                6.68362453
+              ],
+              "kernel_domain_repair_seconds": [
+                1.76163328,
+                1.758297117,
+                1.861110637
+              ],
+              "kernel_front_applyrules_seconds": [
+                3.7713052830000104,
+                3.7165047509999996,
+                3.825085471999986
+              ],
+              "kernel_front_seconds": [
+                8.51091556,
+                8.449184191,
+                8.706858452999999
+              ],
+              "kernel_gen_divide_seconds": [
+                1.148e-05,
+                1.048e-05,
+                9.98e-06
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.516499929,
+                0.515930321,
+                0.522635108
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.186865694,
+                0.19688868699999998,
+                0.198974843
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.095794669,
+                0.094324689,
+                0.098522008
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.59690205,
+                0.597539118,
+                0.604418031
+              ],
+              "kernel_gen_merge_seconds": [
+                2.54e-06,
+                9.61e-07,
+                1.92e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.019239659,
+                0.019916548,
+                0.022045818
+              ],
+              "kernel_gen_quality_seconds": [
+                0.029197492,
+                0.028848347,
+                0.029055872
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.687605871,
+                0.6850304359999999,
+                0.7181013839999999
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                1.2464466889999999,
+                1.245957282,
+                1.2823039509999998
+              ],
+              "kernel_gen_recovery_seconds": [
+                10.665595247999999,
+                10.645057651,
+                10.664500490999998
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                3.8013683200000004,
+                3.7419767239999997,
+                3.652686696
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.47715506100000005,
+                0.47534811499999996,
+                0.47911998299999997
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.258915844,
+                0.260629887,
+                0.263452572
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                4.160369371,
+                4.175294333999999,
+                4.22497035
+              ],
+              "kernel_generation_seconds": [
+                29.658309065,
+                29.469704427,
+                30.321106083
+              ],
+              "kernel_group_build_seconds": [
+                2.6781131410000016,
+                2.7170742730000055,
+                2.743947875000003
+              ],
+              "kernel_group_inner_seconds": [
+                0.03199398199999998,
+                0.03159877099999998,
+                0.03183448799999998
+              ],
+              "kernel_group_inside_seconds": [
+                0.222108929,
+                0.22211099099999995,
+                0.23641793099999997
+              ],
+              "kernel_optimization_seconds": [
+                2.698584765,
+                2.530845054,
+                2.601576963
+              ],
+              "kernel_repair_seconds": [
+                1.845259085,
+                1.773561182,
+                1.843800704
+              ],
+              "volume_refine_seconds": [
+                9.19464933900008,
+                8.980967129999954,
+                9.260746561999895
+              ]
+            },
+            "medians": {
+              "compute_seconds": 43.7402485340001,
+              "front_unattributed_seconds": 0.3157550729999805,
+              "kernel_delaunay_seconds": 6.446165282,
+              "kernel_domain_repair_seconds": 1.76163328,
+              "kernel_front_applyrules_seconds": 3.7713052830000104,
+              "kernel_front_seconds": 8.51091556,
+              "kernel_gen_divide_seconds": 1.048e-05,
+              "kernel_gen_domain_checks_seconds": 0.516499929,
+              "kernel_gen_domain_finalize_seconds": 0.19688868699999998,
+              "kernel_gen_domain_setup_seconds": 0.095794669,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.597539118,
+              "kernel_gen_merge_seconds": 1.92e-06,
+              "kernel_gen_prepare_seconds": 0.019916548,
+              "kernel_gen_quality_seconds": 0.029055872,
+              "kernel_gen_recovery_combine_seconds": 0.687605871,
+              "kernel_gen_recovery_remove_seconds": 1.2464466889999999,
+              "kernel_gen_recovery_seconds": 10.664500490999998,
+              "kernel_gen_recovery_smooth_seconds": 3.7419767239999997,
+              "kernel_gen_recovery_swap2_seconds": 0.47715506100000005,
+              "kernel_gen_recovery_swap_seconds": 0.260629887,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 4.175294333999999,
+              "kernel_generation_seconds": 29.658309065,
+              "kernel_group_build_seconds": 2.7170742730000055,
+              "kernel_group_calls": 3411.0,
+              "kernel_group_inner_seconds": 0.03183448799999998,
+              "kernel_group_inside_calls": 29.0,
+              "kernel_group_inside_seconds": 0.22211099099999995,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 289.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 2.601576963,
+              "kernel_repair_seconds": 1.843800704,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 0.0,
+              "kernel_topology_skipped_rebuilds": 0.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 9.19464933900008
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 15572,
+              "kernel_front_rotations": 46629,
+              "kernel_front_successful_iterations": 4854,
+              "kernel_front_failed_iterations": 10718,
+              "kernel_group_calls": 3411,
+              "kernel_group_rejected": 289,
+              "kernel_group_inside_calls": 29,
+              "kernel_topology_calls": 36
+            }
+          },
+          "node_rules_recovery_topology": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                42.315362992000246,
+                42.69755588199996,
+                42.40412504599999
+              ],
+              "front_unattributed_seconds": [
+                0.3202514229999984,
+                0.3251704869999994,
+                0.30566241099999836
+              ],
+              "kernel_delaunay_seconds": [
+                6.554804571,
+                6.480442143,
+                6.472875102
+              ],
+              "kernel_domain_repair_seconds": [
+                1.871902548,
+                1.843687204,
+                1.785804222
+              ],
+              "kernel_front_applyrules_seconds": [
+                3.8165366140000008,
+                3.8663772799999965,
+                3.7835426499999913
+              ],
+              "kernel_front_seconds": [
+                8.581821101,
+                8.939840177999999,
+                8.552923171
+              ],
+              "kernel_gen_divide_seconds": [
+                1.1381e-05,
+                1.188e-05,
+                1.092e-05
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.521954646,
+                0.52482123,
+                0.516240114
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.190478257,
+                0.196907565,
+                0.19168042500000002
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.099378594,
+                0.098255019,
+                0.095685406
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.5886799819999999,
+                0.607084214,
+                0.600520707
+              ],
+              "kernel_gen_merge_seconds": [
+                1.76e-06,
+                1.7e-06,
+                2.1e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.022079816,
+                0.022149817,
+                0.020388314
+              ],
+              "kernel_gen_quality_seconds": [
+                0.029131812,
+                0.029296854,
+                0.029515018
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.7550623569999999,
+                0.7019748290000001,
+                0.73050041
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                1.233533579,
+                1.282036779,
+                1.259479164
+              ],
+              "kernel_gen_recovery_seconds": [
+                8.884463263,
+                8.758029055,
+                8.991293427999999
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                3.7144089219999996,
+                3.638562589,
+                3.9137370199999992
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.49776516299999995,
+                0.49943626799999996,
+                0.49680846
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.27043907,
+                0.299055279,
+                0.262915045
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                2.366067262,
+                2.2974249799999997,
+                2.2905881100000003
+              ],
+              "kernel_generation_seconds": [
+                28.189173546,
+                28.520107134,
+                28.091393189
+              ],
+              "kernel_group_build_seconds": [
+                2.6860065329999983,
+                2.862867218,
+                2.715900145999993
+              ],
+              "kernel_group_inner_seconds": [
+                0.03215145999999996,
+                0.03177226399999996,
+                0.03249169000000005
+              ],
+              "kernel_group_inside_seconds": [
+                0.22249122499999996,
+                0.22176711999999998,
+                0.22183637000000003
+              ],
+              "kernel_optimization_seconds": [
+                2.639665615,
+                2.656112596,
+                2.609454169
+              ],
+              "kernel_repair_seconds": [
+                1.766304491,
+                1.949686708,
+                1.960591979
+              ],
+              "volume_refine_seconds": [
+                9.369356892000042,
+                9.207494611999891,
+                9.401521760999913
+              ]
+            },
+            "medians": {
+              "compute_seconds": 42.40412504599999,
+              "front_unattributed_seconds": 0.3202514229999984,
+              "kernel_delaunay_seconds": 6.480442143,
+              "kernel_domain_repair_seconds": 1.843687204,
+              "kernel_front_applyrules_seconds": 3.8165366140000008,
+              "kernel_front_seconds": 8.581821101,
+              "kernel_gen_divide_seconds": 1.1381e-05,
+              "kernel_gen_domain_checks_seconds": 0.521954646,
+              "kernel_gen_domain_finalize_seconds": 0.19168042500000002,
+              "kernel_gen_domain_setup_seconds": 0.098255019,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.600520707,
+              "kernel_gen_merge_seconds": 1.76e-06,
+              "kernel_gen_prepare_seconds": 0.022079816,
+              "kernel_gen_quality_seconds": 0.029296854,
+              "kernel_gen_recovery_combine_seconds": 0.73050041,
+              "kernel_gen_recovery_remove_seconds": 1.259479164,
+              "kernel_gen_recovery_seconds": 8.884463263,
+              "kernel_gen_recovery_smooth_seconds": 3.7144089219999996,
+              "kernel_gen_recovery_swap2_seconds": 0.49776516299999995,
+              "kernel_gen_recovery_swap_seconds": 0.27043907,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 2.2974249799999997,
+              "kernel_generation_seconds": 28.189173546,
+              "kernel_group_build_seconds": 2.715900145999993,
+              "kernel_group_calls": 3411.0,
+              "kernel_group_inner_seconds": 0.03215145999999996,
+              "kernel_group_inside_calls": 29.0,
+              "kernel_group_inside_seconds": 0.22183637000000003,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 289.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 2.639665615,
+              "kernel_repair_seconds": 1.949686708,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 36.0,
+              "kernel_topology_skipped_rebuilds": 50.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 9.369356892000042
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 15572,
+              "kernel_front_rotations": 46629,
+              "kernel_front_successful_iterations": 4854,
+              "kernel_front_failed_iterations": 10718,
+              "kernel_group_calls": 3411,
+              "kernel_group_rejected": 289,
+              "kernel_group_inside_calls": 29,
+              "kernel_topology_calls": 36
+            }
+          }
+        }
+      },
+      "generated_work_growth_pct_vs_256": 0.0
+    },
+    "512": {
+      "nodes": 128,
+      "ranks": 512,
+      "strategies": {
+        "node_rules_recovery_front": {
+          "seconds": [
+            33.332175305999954,
+            33.69407366799999,
+            33.46320969900012
+          ],
+          "median_seconds": 33.46320969900012,
+          "critical_ranks": [
+            463,
+            463,
+            463
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 26.774875320999968,
+            "kernel_generation_seconds": 18.664369706,
+            "kernel_front_seconds": 5.235252146,
+            "kernel_front_applyrules_seconds": 2.628316855000009,
+            "front_unattributed_seconds": 0.1815024530000091,
+            "kernel_gen_recovery_seconds": 7.878033224999999,
+            "kernel_gen_recovery_topology_seconds": 3.334453965,
+            "kernel_gen_recovery_smooth_seconds": 2.3265688680000003,
+            "volume_refine_seconds": 5.6033474939999905
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 463,
+              "face_complete_elapsed": 1.219952138999929,
+              "vertex_arrival_elapsed": 27.996107734999896,
+              "compute_seconds": 26.774875320999968,
+              "kernel_generation_seconds": 18.652616526,
+              "kernel_front_seconds": 5.247257992,
+              "kernel_front_applyrules_seconds": 2.628316855000009,
+              "front_unattributed_seconds": 0.1934195279999953,
+              "kernel_gen_recovery_seconds": 7.819723863,
+              "kernel_gen_recovery_topology_seconds": 3.334453965,
+              "kernel_gen_recovery_smooth_seconds": 2.23555095,
+              "volume_refine_seconds": 5.646356804999982
+            },
+            {
+              "repeat": 2,
+              "rank": 463,
+              "face_complete_elapsed": 1.217710334000003,
+              "vertex_arrival_elapsed": 28.292245834000028,
+              "compute_seconds": 27.073535467999932,
+              "kernel_generation_seconds": 18.928067389,
+              "kernel_front_seconds": 5.158201773999999,
+              "kernel_front_applyrules_seconds": 2.6689394449999955,
+              "front_unattributed_seconds": 0.1815024530000091,
+              "kernel_gen_recovery_seconds": 8.144948114,
+              "kernel_gen_recovery_topology_seconds": 3.4225854879999984,
+              "kernel_gen_recovery_smooth_seconds": 2.4542064199999998,
+              "volume_refine_seconds": 5.6033474939999905
+            },
+            {
+              "repeat": 3,
+              "rank": 463,
+              "face_complete_elapsed": 1.3307642300001135,
+              "vertex_arrival_elapsed": 28.09683202500014,
+              "compute_seconds": 26.765099184000064,
+              "kernel_generation_seconds": 18.664369706,
+              "kernel_front_seconds": 5.235252146,
+              "kernel_front_applyrules_seconds": 2.6240835380000034,
+              "front_unattributed_seconds": 0.16444144000000271,
+              "kernel_gen_recovery_seconds": 7.878033224999999,
+              "kernel_gen_recovery_topology_seconds": 3.309453941,
+              "kernel_gen_recovery_smooth_seconds": 2.3265688680000003,
+              "volume_refine_seconds": 5.560207639000055
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 1.6402195760270961
+        },
+        "node_rules_recovery_topology": {
+          "seconds": [
+            32.253200076999974,
+            32.414605416000086,
+            32.665000047000035
+          ],
+          "median_seconds": 32.414605416000086,
+          "critical_ranks": [
+            196,
+            463,
+            196
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 25.751525333000245,
+            "kernel_generation_seconds": 17.492699542,
+            "kernel_front_seconds": 6.514330513,
+            "kernel_front_applyrules_seconds": 3.475058516000012,
+            "front_unattributed_seconds": 0.25329091999995956,
+            "kernel_gen_recovery_seconds": 5.223047846,
+            "kernel_gen_recovery_topology_seconds": 1.3341444599999994,
+            "kernel_gen_recovery_smooth_seconds": 2.2653289670000003,
+            "volume_refine_seconds": 5.690975775000197
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 196,
+              "face_complete_elapsed": 1.0608299590001025,
+              "vertex_arrival_elapsed": 26.920638522000104,
+              "compute_seconds": 25.858808972999896,
+              "kernel_generation_seconds": 17.492699542,
+              "kernel_front_seconds": 6.541749939,
+              "kernel_front_applyrules_seconds": 3.5082453070000006,
+              "front_unattributed_seconds": 0.259651548999976,
+              "kernel_gen_recovery_seconds": 5.223047846,
+              "kernel_gen_recovery_topology_seconds": 1.3341444599999994,
+              "kernel_gen_recovery_smooth_seconds": 2.2159810650000002,
+              "volume_refine_seconds": 5.703803733999962
+            },
+            {
+              "repeat": 2,
+              "rank": 463,
+              "face_complete_elapsed": 1.335693820000074,
+              "vertex_arrival_elapsed": 27.056447433000017,
+              "compute_seconds": 25.719783502999917,
+              "kernel_generation_seconds": 17.526213874,
+              "kernel_front_seconds": 5.1982753729999995,
+              "kernel_front_applyrules_seconds": 2.6652961590000013,
+              "front_unattributed_seconds": 0.177723364000002,
+              "kernel_gen_recovery_seconds": 6.70376693,
+              "kernel_gen_recovery_topology_seconds": 1.8587658670000002,
+              "kernel_gen_recovery_smooth_seconds": 2.5410157709999988,
+              "volume_refine_seconds": 5.517562096000006
+            },
+            {
+              "repeat": 3,
+              "rank": 196,
+              "face_complete_elapsed": 1.3413470039999993,
+              "vertex_arrival_elapsed": 27.09383774799994,
+              "compute_seconds": 25.751525333000245,
+              "kernel_generation_seconds": 17.330189718,
+              "kernel_front_seconds": 6.514330513,
+              "kernel_front_applyrules_seconds": 3.475058516000012,
+              "front_unattributed_seconds": 0.25329091999995956,
+              "kernel_gen_recovery_seconds": 5.206251039,
+              "kernel_gen_recovery_topology_seconds": 1.314395346,
+              "kernel_gen_recovery_smooth_seconds": 2.2653289670000003,
+              "volume_refine_seconds": 5.690975775000197
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 1.636456790210275
+        }
+      },
+      "comparisons": {
+        "recovery_topology": {
+          "paired_reduction_pct": [
+            3.23703814435945,
+            3.7973094752714376,
+            2.3853349967918103
+          ],
+          "paired_median_pct": 3.23703814435945,
+          "median_time_reduction_pct": 3.1336034182978034,
+          "wins": 3,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 1990434,
+      "candidate_warmup_topology_replay": {
+        "calls": 1008,
+        "optimized": 1008,
+        "verified": 1008,
+        "mismatches": 0,
+        "skipped_rebuilds": 1400
+      },
+      "candidate_warmup_group_replay": {
+        "calls": 58106,
+        "rejected": 3276,
+        "verified": 58106,
+        "inside_calls": 2424,
+        "inside_verified": 2424,
+        "mismatches": 0
+      },
+      "work": {
+        "scaling_kernel_work_sha256": "84589c08865e2cb256fcf7fe7303960d3260b94967ba60d33d7015207af56ef4",
+        "scaling_work_sha256": "7dd30457257c26d79a03eedea9bed8c316f0abec0b7152cfc3eae33fa53531d4",
+        "volume_kernel_elements_sum": 24354775,
+        "post_refine_elements_sum": 1558705600,
+        "volume_elements_sum": 1558705600
+      },
+      "quality": {
+        "counts": {
+          "points": 289087553,
+          "elements": 1558705600,
+          "surfaces": 115245056,
+          "checked": 1558705600,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1558705600,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.026889959932028126,
+        "shape_mean": 0.7115631173173217,
+        "angle_min": 0.3881290177887642,
+        "angle_max": 179.41270847795022,
+        "abs_volume": 15477851.65479296,
+        "shape_hist": [
+          14060,
+          566746,
+          7039754,
+          35946287,
+          106948647,
+          212903957,
+          313544055,
+          379428076,
+          359751840,
+          142562178
+        ],
+        "surface_fingerprint_sha256": "e1c2df9ccaec370128163ba4431b23e2e16c4ff818a88d129e5b3a2a3038af3d",
+        "volume_fingerprint_sha256": "ee04362ea79e3c843fee67901b6c2c26f2796b1e8a2828813f4a27c7577230da",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "matched_ranks": {
+        "196": {
+          "node_rules_recovery_front": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                26.538931055999683,
+                26.29966951999984,
+                26.490994252999826
+              ],
+              "front_unattributed_seconds": [
+                0.2677092419999596,
+                0.2529600159999683,
+                0.2569487729999729
+              ],
+              "kernel_delaunay_seconds": [
+                3.329154475,
+                3.373185996,
+                3.342284157
+              ],
+              "kernel_domain_repair_seconds": [
+                1.044767243,
+                1.076394608,
+                1.228575385
+              ],
+              "kernel_front_applyrules_seconds": [
+                3.5614818100000183,
+                3.5003762590000003,
+                3.513384981999996
+              ],
+              "kernel_front_seconds": [
+                6.629062632,
+                6.535934835999999,
+                6.5416428159999995
+              ],
+              "kernel_gen_divide_seconds": [
+                9.76e-06,
+                1.152e-05,
+                9.8e-06
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.192970026,
+                0.193624293,
+                0.192043566
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.108900889,
+                0.104330198,
+                0.1038551
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.05221897,
+                0.052927618,
+                0.052580387
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.343400887,
+                0.333366218,
+                0.325464855
+              ],
+              "kernel_gen_merge_seconds": [
+                1.86e-06,
+                1.74e-06,
+                5.72e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.010825399,
+                0.010782518,
+                0.010928222
+              ],
+              "kernel_gen_quality_seconds": [
+                0.015508089,
+                0.015764592,
+                0.022744054
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.375521339,
+                0.399847764,
+                0.39007087700000004
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                0.704082544,
+                0.694606041,
+                0.69905057
+              ],
+              "kernel_gen_recovery_seconds": [
+                5.822412287000001,
+                5.813213588,
+                5.992264521
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                2.020548651,
+                2.003074601,
+                2.0404525110000002
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.267624821,
+                0.271972528,
+                0.279669465
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.149015026,
+                0.152189361,
+                0.152091819
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                2.2657600510000004,
+                2.2551404329999998,
+                2.3631240780000002
+              ],
+              "kernel_generation_seconds": [
+                18.010939198,
+                17.967469664,
+                18.275533698
+              ],
+              "kernel_group_build_seconds": [
+                1.1273395339999992,
+                1.1184259759999995,
+                1.100649874999999
+              ],
+              "kernel_group_inner_seconds": [
+                0.02565253899999998,
+                0.025010804000000005,
+                0.024533221999999986
+              ],
+              "kernel_group_inside_seconds": [
+                0.7593745940000001,
+                0.7562839199999998,
+                0.7564541520000001
+              ],
+              "kernel_optimization_seconds": [
+                1.662355344,
+                1.55487723,
+                1.450877668
+              ],
+              "kernel_repair_seconds": [
+                1.041094263,
+                1.105462153,
+                1.024420184
+              ],
+              "volume_refine_seconds": [
+                5.653570264999985,
+                5.501686579999955,
+                5.565982778000034
+              ]
+            },
+            "medians": {
+              "compute_seconds": 26.490994252999826,
+              "front_unattributed_seconds": 0.2569487729999729,
+              "kernel_delaunay_seconds": 3.342284157,
+              "kernel_domain_repair_seconds": 1.076394608,
+              "kernel_front_applyrules_seconds": 3.513384981999996,
+              "kernel_front_seconds": 6.5416428159999995,
+              "kernel_gen_divide_seconds": 9.8e-06,
+              "kernel_gen_domain_checks_seconds": 0.192970026,
+              "kernel_gen_domain_finalize_seconds": 0.104330198,
+              "kernel_gen_domain_setup_seconds": 0.052580387,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.333366218,
+              "kernel_gen_merge_seconds": 1.86e-06,
+              "kernel_gen_prepare_seconds": 0.010825399,
+              "kernel_gen_quality_seconds": 0.015764592,
+              "kernel_gen_recovery_combine_seconds": 0.39007087700000004,
+              "kernel_gen_recovery_remove_seconds": 0.69905057,
+              "kernel_gen_recovery_seconds": 5.822412287000001,
+              "kernel_gen_recovery_smooth_seconds": 2.020548651,
+              "kernel_gen_recovery_swap2_seconds": 0.271972528,
+              "kernel_gen_recovery_swap_seconds": 0.152091819,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 2.2657600510000004,
+              "kernel_generation_seconds": 18.010939198,
+              "kernel_group_build_seconds": 1.1184259759999995,
+              "kernel_group_calls": 3251.0,
+              "kernel_group_inner_seconds": 0.025010804000000005,
+              "kernel_group_inside_calls": 159.0,
+              "kernel_group_inside_seconds": 0.7564541520000001,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 913.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 1.55487723,
+              "kernel_repair_seconds": 1.041094263,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 0.0,
+              "kernel_topology_skipped_rebuilds": 0.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 5.565982778000034
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 14226,
+              "kernel_front_rotations": 42603,
+              "kernel_front_successful_iterations": 4723,
+              "kernel_front_failed_iterations": 9503,
+              "kernel_group_calls": 3251,
+              "kernel_group_rejected": 913,
+              "kernel_group_inside_calls": 159,
+              "kernel_topology_calls": 36
+            }
+          },
+          "node_rules_recovery_topology": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                25.858808972999896,
+                25.39824556499991,
+                25.751525333000245
+              ],
+              "front_unattributed_seconds": [
+                0.259651548999976,
+                0.25984821099998,
+                0.25329091999995956
+              ],
+              "kernel_delaunay_seconds": [
+                3.324847809,
+                3.318337129,
+                3.320390752
+              ],
+              "kernel_domain_repair_seconds": [
+                1.211922408,
+                1.084735738,
+                1.128229624
+              ],
+              "kernel_front_applyrules_seconds": [
+                3.5082453070000006,
+                3.5132788830000017,
+                3.475058516000012
+              ],
+              "kernel_front_seconds": [
+                6.541749939,
+                6.549114320000001,
+                6.514330513
+              ],
+              "kernel_gen_divide_seconds": [
+                1.064e-05,
+                1.024e-05,
+                9.36e-06
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.192584582,
+                0.192365789,
+                0.192628192
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.111776219,
+                0.109333501,
+                0.10580978199999999
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.052332871,
+                0.05274165,
+                0.052261604
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.332494829,
+                0.330836717,
+                0.326808551
+              ],
+              "kernel_gen_merge_seconds": [
+                1.62e-06,
+                1.14e-06,
+                1.76e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.010875459,
+                0.01073532,
+                0.010891062
+              ],
+              "kernel_gen_quality_seconds": [
+                0.015935674,
+                0.015678335,
+                0.015504813
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.44344926000000007,
+                0.428301265,
+                0.424794603
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                0.7036255,
+                0.698830787,
+                0.6881284270000001
+              ],
+              "kernel_gen_recovery_seconds": [
+                5.223047846,
+                4.980909982,
+                5.206251039
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                2.2159810650000002,
+                2.0714164619999993,
+                2.2653289670000003
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.307945322,
+                0.274562505,
+                0.284118173
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.15823726700000001,
+                0.156931252,
+                0.178655474
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                1.3341444599999994,
+                1.2627045080000008,
+                1.314395346
+              ],
+              "kernel_generation_seconds": [
+                17.492699542,
+                17.099366519,
+                17.330189718
+              ],
+              "kernel_group_build_seconds": [
+                1.1142059069999997,
+                1.111597159,
+                1.1334761339999997
+              ],
+              "kernel_group_inner_seconds": [
+                0.025984338000000013,
+                0.025329568999999996,
+                0.024675400000000004
+              ],
+              "kernel_group_inside_seconds": [
+                0.7562391280000003,
+                0.7586937369999999,
+                0.7561635470000002
+              ],
+              "kernel_optimization_seconds": [
+                1.476456374,
+                1.562828079,
+                1.51191311
+              ],
+              "kernel_repair_seconds": [
+                1.013764265,
+                1.056689584,
+                1.051326684
+              ],
+              "volume_refine_seconds": [
+                5.703803733999962,
+                5.510653899999966,
+                5.690975775000197
+              ]
+            },
+            "medians": {
+              "compute_seconds": 25.751525333000245,
+              "front_unattributed_seconds": 0.259651548999976,
+              "kernel_delaunay_seconds": 3.320390752,
+              "kernel_domain_repair_seconds": 1.128229624,
+              "kernel_front_applyrules_seconds": 3.5082453070000006,
+              "kernel_front_seconds": 6.541749939,
+              "kernel_gen_divide_seconds": 1.024e-05,
+              "kernel_gen_domain_checks_seconds": 0.192584582,
+              "kernel_gen_domain_finalize_seconds": 0.109333501,
+              "kernel_gen_domain_setup_seconds": 0.052332871,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.330836717,
+              "kernel_gen_merge_seconds": 1.62e-06,
+              "kernel_gen_prepare_seconds": 0.010875459,
+              "kernel_gen_quality_seconds": 0.015678335,
+              "kernel_gen_recovery_combine_seconds": 0.428301265,
+              "kernel_gen_recovery_remove_seconds": 0.698830787,
+              "kernel_gen_recovery_seconds": 5.206251039,
+              "kernel_gen_recovery_smooth_seconds": 2.2159810650000002,
+              "kernel_gen_recovery_swap2_seconds": 0.284118173,
+              "kernel_gen_recovery_swap_seconds": 0.15823726700000001,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 1.314395346,
+              "kernel_generation_seconds": 17.330189718,
+              "kernel_group_build_seconds": 1.1142059069999997,
+              "kernel_group_calls": 3251.0,
+              "kernel_group_inner_seconds": 0.025329568999999996,
+              "kernel_group_inside_calls": 159.0,
+              "kernel_group_inside_seconds": 0.7562391280000003,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 913.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 1.51191311,
+              "kernel_repair_seconds": 1.051326684,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 36.0,
+              "kernel_topology_skipped_rebuilds": 50.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 5.690975775000197
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 14226,
+              "kernel_front_rotations": 42603,
+              "kernel_front_successful_iterations": 4723,
+              "kernel_front_failed_iterations": 9503,
+              "kernel_group_calls": 3251,
+              "kernel_group_rejected": 913,
+              "kernel_group_inside_calls": 159,
+              "kernel_topology_calls": 36
+            }
+          }
+        },
+        "463": {
+          "node_rules_recovery_front": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                26.774875320999968,
+                27.073535467999932,
+                26.765099184000064
+              ],
+              "front_unattributed_seconds": [
+                0.1934195279999953,
+                0.1815024530000091,
+                0.16444144000000271
+              ],
+              "kernel_delaunay_seconds": [
+                3.101283485,
+                3.14898335,
+                3.122322764
+              ],
+              "kernel_domain_repair_seconds": [
+                1.045125845,
+                1.061805175,
+                0.992006116
+              ],
+              "kernel_front_applyrules_seconds": [
+                2.628316855000009,
+                2.6689394449999955,
+                2.6240835380000034
+              ],
+              "kernel_front_seconds": [
+                5.247257992,
+                5.158201773999999,
+                5.235252146
+              ],
+              "kernel_gen_divide_seconds": [
+                1.024e-05,
+                8.7e-06,
+                9.18e-06
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.28314293,
+                0.278565879,
+                0.277140471
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.100387025,
+                0.097399671,
+                0.10063388
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.06040539,
+                0.060301368,
+                0.059444277
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.41480687299999996,
+                0.408140938,
+                0.413609711
+              ],
+              "kernel_gen_merge_seconds": [
+                2.04e-06,
+                2.94e-06,
+                1.8e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.012937628,
+                0.012649084,
+                0.012516167
+              ],
+              "kernel_gen_quality_seconds": [
+                0.014436985,
+                0.014453024,
+                0.01447005
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.553464933,
+                0.571194839,
+                0.5649317460000001
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                0.973909272,
+                0.975430829,
+                0.960220262
+              ],
+              "kernel_gen_recovery_seconds": [
+                7.819723863,
+                8.144948114,
+                7.878033224999999
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                2.23555095,
+                2.4542064199999998,
+                2.3265688680000003
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.40051696999999997,
+                0.403966011,
+                0.40103188399999995
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.23358666399999997,
+                0.23665758100000003,
+                0.230803689
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                3.334453965,
+                3.4225854879999984,
+                3.309453941
+              ],
+              "kernel_generation_seconds": [
+                18.652616526,
+                18.928067389,
+                18.664369706
+              ],
+              "kernel_group_build_seconds": [
+                1.4288969129999998,
+                1.3164693209999998,
+                1.4623764539999984
+              ],
+              "kernel_group_inner_seconds": [
+                0.03156205199999999,
+                0.031211629000000008,
+                0.030715563999999952
+              ],
+              "kernel_group_inside_seconds": [
+                0.08003611100000001,
+                0.07948334600000001,
+                0.07982749400000001
+              ],
+              "kernel_optimization_seconds": [
+                1.303497333,
+                1.322219027,
+                1.338914525
+              ],
+              "kernel_repair_seconds": [
+                0.922147242,
+                0.971874209,
+                0.951011935
+              ],
+              "volume_refine_seconds": [
+                5.646356804999982,
+                5.6033474939999905,
+                5.560207639000055
+              ]
+            },
+            "medians": {
+              "compute_seconds": 26.774875320999968,
+              "front_unattributed_seconds": 0.1815024530000091,
+              "kernel_delaunay_seconds": 3.122322764,
+              "kernel_domain_repair_seconds": 1.045125845,
+              "kernel_front_applyrules_seconds": 2.628316855000009,
+              "kernel_front_seconds": 5.235252146,
+              "kernel_gen_divide_seconds": 9.18e-06,
+              "kernel_gen_domain_checks_seconds": 0.278565879,
+              "kernel_gen_domain_finalize_seconds": 0.100387025,
+              "kernel_gen_domain_setup_seconds": 0.060301368,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 4.0,
+              "kernel_gen_front_setup_seconds": 0.413609711,
+              "kernel_gen_merge_seconds": 2.04e-06,
+              "kernel_gen_prepare_seconds": 0.012649084,
+              "kernel_gen_quality_seconds": 0.014453024,
+              "kernel_gen_recovery_combine_seconds": 0.5649317460000001,
+              "kernel_gen_recovery_remove_seconds": 0.973909272,
+              "kernel_gen_recovery_seconds": 7.878033224999999,
+              "kernel_gen_recovery_smooth_seconds": 2.3265688680000003,
+              "kernel_gen_recovery_swap2_seconds": 0.40103188399999995,
+              "kernel_gen_recovery_swap_seconds": 0.23358666399999997,
+              "kernel_gen_recovery_sweeps": 3.0,
+              "kernel_gen_recovery_team_sweeps": 3.0,
+              "kernel_gen_recovery_topology_seconds": 3.334453965,
+              "kernel_generation_seconds": 18.664369706,
+              "kernel_group_build_seconds": 1.4288969129999998,
+              "kernel_group_calls": 3147.0,
+              "kernel_group_inner_seconds": 0.031211629000000008,
+              "kernel_group_inside_calls": 20.0,
+              "kernel_group_inside_seconds": 0.07982749400000001,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 259.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 1.322219027,
+              "kernel_repair_seconds": 0.951011935,
+              "kernel_topology_calls": 54.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 0.0,
+              "kernel_topology_skipped_rebuilds": 0.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 5.6033474939999905
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 10660,
+              "kernel_front_rotations": 31920,
+              "kernel_front_successful_iterations": 2276,
+              "kernel_front_failed_iterations": 8384,
+              "kernel_group_calls": 3147,
+              "kernel_group_rejected": 259,
+              "kernel_group_inside_calls": 20,
+              "kernel_topology_calls": 54
+            }
+          },
+          "node_rules_recovery_topology": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                25.3455723940001,
+                25.719783502999917,
+                25.62085775600019
+              ],
+              "front_unattributed_seconds": [
+                0.18008118400001027,
+                0.177723364000002,
+                0.17838739500000145
+              ],
+              "kernel_delaunay_seconds": [
+                3.135896621,
+                3.164015901,
+                3.136156584
+              ],
+              "kernel_domain_repair_seconds": [
+                1.033168988,
+                1.061094287,
+                1.126524954
+              ],
+              "kernel_front_applyrules_seconds": [
+                2.6409414379999943,
+                2.6652961590000013,
+                2.6448593170000025
+              ],
+              "kernel_front_seconds": [
+                5.183076,
+                5.1982753729999995,
+                5.145152683000001
+              ],
+              "kernel_gen_divide_seconds": [
+                9.98e-06,
+                1.178e-05,
+                1.1401e-05
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.278352616,
+                0.277696789,
+                0.277781889
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.098873608,
+                0.098548364,
+                0.099053941
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.060216707,
+                0.060003385,
+                0.060578331
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.41740086099999996,
+                0.40493612,
+                0.41121981900000004
+              ],
+              "kernel_gen_merge_seconds": [
+                1.9e-06,
+                1.86e-06,
+                1.62e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.012829926,
+                0.012926667,
+                0.012638884
+              ],
+              "kernel_gen_quality_seconds": [
+                0.015578658,
+                0.014492386,
+                0.01444735
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.5613184029999999,
+                0.5969797530000001,
+                0.571024532
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                1.002133635,
+                0.9484309020000001,
+                0.949208472
+              ],
+              "kernel_gen_recovery_seconds": [
+                6.350992904000001,
+                6.70376693,
+                6.304097073000001
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                2.2973183080000004,
+                2.5410157709999988,
+                2.3017336290000006
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.400251329,
+                0.428144524,
+                0.401014562
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.23891542500000001,
+                0.24414924500000001,
+                0.23611971399999998
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                1.7943137149999995,
+                1.8587658670000002,
+                1.771861557
+              ],
+              "kernel_generation_seconds": [
+                17.136693649,
+                17.526213874,
+                17.118607274
+              ],
+              "kernel_group_build_seconds": [
+                1.3666168729999995,
+                1.374070490000001,
+                1.3339164850000003
+              ],
+              "kernel_group_inner_seconds": [
+                0.030685676999999977,
+                0.030740029000000002,
+                0.030717770999999998
+              ],
+              "kernel_group_inside_seconds": [
+                0.079400744,
+                0.079595631,
+                0.07944916700000001
+              ],
+              "kernel_optimization_seconds": [
+                1.393680462,
+                1.38909349,
+                1.534915964
+              ],
+              "kernel_repair_seconds": [
+                0.959774231,
+                1.042441714,
+                1.065445697
+              ],
+              "volume_refine_seconds": [
+                5.6096187860000555,
+                5.517562096000006,
+                5.653095628000074
+              ]
+            },
+            "medians": {
+              "compute_seconds": 25.62085775600019,
+              "front_unattributed_seconds": 0.17838739500000145,
+              "kernel_delaunay_seconds": 3.136156584,
+              "kernel_domain_repair_seconds": 1.061094287,
+              "kernel_front_applyrules_seconds": 2.6448593170000025,
+              "kernel_front_seconds": 5.183076,
+              "kernel_gen_divide_seconds": 1.1401e-05,
+              "kernel_gen_domain_checks_seconds": 0.277781889,
+              "kernel_gen_domain_finalize_seconds": 0.098873608,
+              "kernel_gen_domain_setup_seconds": 0.060216707,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 4.0,
+              "kernel_gen_front_setup_seconds": 0.41121981900000004,
+              "kernel_gen_merge_seconds": 1.86e-06,
+              "kernel_gen_prepare_seconds": 0.012829926,
+              "kernel_gen_quality_seconds": 0.014492386,
+              "kernel_gen_recovery_combine_seconds": 0.571024532,
+              "kernel_gen_recovery_remove_seconds": 0.949208472,
+              "kernel_gen_recovery_seconds": 6.350992904000001,
+              "kernel_gen_recovery_smooth_seconds": 2.3017336290000006,
+              "kernel_gen_recovery_swap2_seconds": 0.401014562,
+              "kernel_gen_recovery_swap_seconds": 0.23891542500000001,
+              "kernel_gen_recovery_sweeps": 3.0,
+              "kernel_gen_recovery_team_sweeps": 3.0,
+              "kernel_gen_recovery_topology_seconds": 1.7943137149999995,
+              "kernel_generation_seconds": 17.136693649,
+              "kernel_group_build_seconds": 1.3666168729999995,
+              "kernel_group_calls": 3147.0,
+              "kernel_group_inner_seconds": 0.030717770999999998,
+              "kernel_group_inside_calls": 20.0,
+              "kernel_group_inside_seconds": 0.07944916700000001,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 259.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 1.393680462,
+              "kernel_repair_seconds": 1.042441714,
+              "kernel_topology_calls": 54.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 54.0,
+              "kernel_topology_skipped_rebuilds": 75.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 5.6096187860000555
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 10660,
+              "kernel_front_rotations": 31920,
+              "kernel_front_successful_iterations": 2276,
+              "kernel_front_failed_iterations": 8384,
+              "kernel_group_calls": 3147,
+              "kernel_group_rejected": 259,
+              "kernel_group_inside_calls": 20,
+              "kernel_topology_calls": 54
+            }
+          }
+        }
+      },
+      "generated_work_growth_pct_vs_256": 4.975406088966006
+    },
+    "1024": {
+      "nodes": 256,
+      "ranks": 1024,
+      "strategies": {
+        "node_rules_recovery_front": {
+          "seconds": [
+            19.603502138999943,
+            19.519041073999915,
+            19.478175035999925
+          ],
+          "median_seconds": 19.519041073999915,
+          "critical_ranks": [
+            92,
+            92,
+            92
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 14.753532864999897,
+            "kernel_generation_seconds": 11.027597361,
+            "kernel_front_seconds": 6.034803504,
+            "kernel_front_applyrules_seconds": 4.106652659999983,
+            "front_unattributed_seconds": 0.31482627200000657,
+            "kernel_gen_recovery_seconds": 2.17533885,
+            "kernel_gen_recovery_topology_seconds": 0.950057374,
+            "kernel_gen_recovery_smooth_seconds": 0.513696383,
+            "volume_refine_seconds": 2.2623233959999425
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 92,
+              "face_complete_elapsed": 1.8508943560000262,
+              "vertex_arrival_elapsed": 16.608547342000065,
+              "compute_seconds": 14.756943514999875,
+              "kernel_generation_seconds": 10.964788591,
+              "kernel_front_seconds": 6.034803504,
+              "kernel_front_applyrules_seconds": 4.106652659999983,
+              "front_unattributed_seconds": 0.31482627200000657,
+              "kernel_gen_recovery_seconds": 2.17533885,
+              "kernel_gen_recovery_topology_seconds": 0.950057374,
+              "kernel_gen_recovery_smooth_seconds": 0.513696383,
+              "volume_refine_seconds": 2.2623233959999425
+            },
+            {
+              "repeat": 2,
+              "rank": 92,
+              "face_complete_elapsed": 1.7698993539999037,
+              "vertex_arrival_elapsed": 16.448965331999943,
+              "compute_seconds": 14.677871239999831,
+              "kernel_generation_seconds": 11.036000475,
+              "kernel_front_seconds": 6.145235181,
+              "kernel_front_applyrules_seconds": 4.153271384999973,
+              "front_unattributed_seconds": 0.32502696300000444,
+              "kernel_gen_recovery_seconds": 2.1477132,
+              "kernel_gen_recovery_topology_seconds": 0.9439772890000001,
+              "kernel_gen_recovery_smooth_seconds": 0.5126232890000001,
+              "volume_refine_seconds": 2.247922012999993
+            },
+            {
+              "repeat": 3,
+              "rank": 92,
+              "face_complete_elapsed": 1.7551808939999773,
+              "vertex_arrival_elapsed": 16.509740892999957,
+              "compute_seconds": 14.753532864999897,
+              "kernel_generation_seconds": 11.027597361,
+              "kernel_front_seconds": 6.027458319000001,
+              "kernel_front_applyrules_seconds": 4.068720618000002,
+              "front_unattributed_seconds": 0.31154835199997777,
+              "kernel_gen_recovery_seconds": 2.215907004,
+              "kernel_gen_recovery_topology_seconds": 0.977022586,
+              "kernel_gen_recovery_smooth_seconds": 0.515621166,
+              "volume_refine_seconds": 2.3127831770000284
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 2.8119727509622034
+        },
+        "node_rules_recovery_topology": {
+          "seconds": [
+            19.097079571999984,
+            19.154075447000082,
+            19.422417191000022
+          ],
+          "median_seconds": 19.154075447000082,
+          "critical_ranks": [
+            92,
+            92,
+            440
+          ],
+          "critical_phase_medians": {
+            "compute_seconds": 14.45711874899996,
+            "kernel_generation_seconds": 10.681841542,
+            "kernel_front_seconds": 6.092591159,
+            "kernel_front_applyrules_seconds": 4.099990207999974,
+            "front_unattributed_seconds": 0.3178040099999979,
+            "kernel_gen_recovery_seconds": 1.75760974,
+            "kernel_gen_recovery_topology_seconds": 0.5204614570000001,
+            "kernel_gen_recovery_smooth_seconds": 0.556321426,
+            "volume_refine_seconds": 2.265009513999985
+          },
+          "compute_critical_by_repeat": [
+            {
+              "repeat": 1,
+              "rank": 92,
+              "face_complete_elapsed": 1.588855307000017,
+              "vertex_arrival_elapsed": 16.021603216000017,
+              "compute_seconds": 14.431987179000089,
+              "kernel_generation_seconds": 10.841125309,
+              "kernel_front_seconds": 6.1153920920000004,
+              "kernel_front_applyrules_seconds": 4.099990207999974,
+              "front_unattributed_seconds": 0.3384839720000219,
+              "kernel_gen_recovery_seconds": 1.843624975,
+              "kernel_gen_recovery_topology_seconds": 0.567150519,
+              "kernel_gen_recovery_smooth_seconds": 0.556321426,
+              "volume_refine_seconds": 2.26193222400002
+            },
+            {
+              "repeat": 2,
+              "rank": 92,
+              "face_complete_elapsed": 1.7653250690000277,
+              "vertex_arrival_elapsed": 16.24056223399998,
+              "compute_seconds": 14.45711874899996,
+              "kernel_generation_seconds": 10.681841542,
+              "kernel_front_seconds": 6.092591159,
+              "kernel_front_applyrules_seconds": 4.108187634999998,
+              "front_unattributed_seconds": 0.3178040099999979,
+              "kernel_gen_recovery_seconds": 1.75760974,
+              "kernel_gen_recovery_topology_seconds": 0.5204614570000001,
+              "kernel_gen_recovery_smooth_seconds": 0.5144969339999999,
+              "volume_refine_seconds": 2.265009513999985
+            },
+            {
+              "repeat": 3,
+              "rank": 440,
+              "face_complete_elapsed": 1.7523921169999994,
+              "vertex_arrival_elapsed": 16.419021597000096,
+              "compute_seconds": 14.66601381299995,
+              "kernel_generation_seconds": 9.604090103,
+              "kernel_front_seconds": 4.738396772,
+              "kernel_front_applyrules_seconds": 3.293098925999999,
+              "front_unattributed_seconds": 0.1869765860000081,
+              "kernel_gen_recovery_seconds": 1.735783041,
+              "kernel_gen_recovery_topology_seconds": 0.406367397,
+              "kernel_gen_recovery_smooth_seconds": 0.8185246489999999,
+              "volume_refine_seconds": 3.121199236999928
+            }
+          ],
+          "observed_speedup_vs_64_nodes": 2.769389798102108
+        }
+      },
+      "comparisons": {
+        "recovery_topology": {
+          "paired_reduction_pct": [
+            2.5833270168214573,
+            1.8697928121375829,
+            0.28625805496074186
+          ],
+          "paired_median_pct": 1.8697928121375829,
+          "median_time_reduction_pct": 1.8697928121375829,
+          "wins": 3,
+          "pairs": 3
+        }
+      },
+      "verified_rule_calls_per_warmup": 2489691,
+      "candidate_warmup_topology_replay": {
+        "calls": 1296,
+        "optimized": 1296,
+        "verified": 1296,
+        "mismatches": 0,
+        "skipped_rebuilds": 1800
+      },
+      "candidate_warmup_group_replay": {
+        "calls": 78696,
+        "rejected": 3545,
+        "verified": 78696,
+        "inside_calls": 2954,
+        "inside_verified": 2954,
+        "mismatches": 0
+      },
+      "work": {
+        "scaling_kernel_work_sha256": "edf6739ecdb9c88a899e71f62c131118b815d28da0e50d16ee95621e5666861b",
+        "scaling_work_sha256": "dd2d3b2e23397c73e880f99d9b8b739d1e0ebec9504ff6e857a9af4462c4190e",
+        "volume_kernel_elements_sum": 26416687,
+        "post_refine_elements_sum": 1690667968,
+        "volume_elements_sum": 1690667968
+      },
+      "quality": {
+        "counts": {
+          "points": 317688597,
+          "elements": 1690667968,
+          "surfaces": 140795904,
+          "checked": 1690667968,
+          "invalid_indices": 0,
+          "unsupported": 0,
+          "nonfinite_points": 0,
+          "repeated_vertices": 0,
+          "zero_volume": 0,
+          "positive": 0,
+          "negative": 1690667968,
+          "nonmanifold": 0,
+          "same_side_faces": 0,
+          "missing_surface": 0,
+          "orphan_surface": 0,
+          "duplicate_surface": 0,
+          "internal_marked": 0,
+          "zero_surface_area": 0,
+          "hard_errors": 0
+        },
+        "shape_min": 0.00041863955830544674,
+        "shape_mean": 0.7048632010151388,
+        "angle_min": 0.004232330684555589,
+        "angle_max": 179.99576766931546,
+        "abs_volume": 15477851.654792948,
+        "shape_hist": [
+          24570,
+          715968,
+          8502342,
+          42284756,
+          124033430,
+          241855718,
+          348308976,
+          409147270,
+          373222644,
+          142572294
+        ],
+        "surface_fingerprint_sha256": "344072054c712355bc75ddea4e0a0d6145e03db8f786dea1a11b7c9859d35f37",
+        "volume_fingerprint_sha256": "86335e445a569d823021b74a96a2992ce794cb7f4b425121ebf6c1cf18a84478",
+        "integrity_profile": "stage_fingerprint_v1"
+      },
+      "matched_ranks": {
+        "92": {
+          "node_rules_recovery_front": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                14.756943514999875,
+                14.677871239999831,
+                14.753532864999897
+              ],
+              "front_unattributed_seconds": [
+                0.31482627200000657,
+                0.32502696300000444,
+                0.31154835199997777
+              ],
+              "kernel_delaunay_seconds": [
+                1.616388289,
+                1.707402873,
+                1.671017721
+              ],
+              "kernel_domain_repair_seconds": [
+                0.565577894,
+                0.46105376,
+                0.535070902
+              ],
+              "kernel_front_applyrules_seconds": [
+                4.106652659999983,
+                4.153271384999973,
+                4.068720618000002
+              ],
+              "kernel_front_seconds": [
+                6.034803504,
+                6.145235181,
+                6.027458319000001
+              ],
+              "kernel_gen_divide_seconds": [
+                1.044e-05,
+                9.68e-06,
+                1.0041e-05
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.12909818,
+                0.131362392,
+                0.131177719
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.047991096999999996,
+                0.0468297,
+                0.047124549
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.029436495,
+                0.030390068,
+                0.030430471
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.14856035499999998,
+                0.150501502,
+                0.148576566
+              ],
+              "kernel_gen_merge_seconds": [
+                2.04e-06,
+                1.68e-06,
+                2.88e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.005990184,
+                0.006190648,
+                0.00636413
+              ],
+              "kernel_gen_quality_seconds": [
+                0.00566654,
+                0.006261088,
+                0.00636099
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.164396218,
+                0.158068268,
+                0.174093228
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                0.300143751,
+                0.29926423999999996,
+                0.297210632
+              ],
+              "kernel_gen_recovery_seconds": [
+                2.17533885,
+                2.1477132,
+                2.215907004
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                0.513696383,
+                0.5126232890000001,
+                0.515621166
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.128323269,
+                0.125149846,
+                0.13115632
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.074967196,
+                0.072808827,
+                0.074714439
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                0.950057374,
+                0.9439772890000001,
+                0.977022586
+              ],
+              "kernel_generation_seconds": [
+                10.964788591,
+                11.036000475,
+                11.027597361
+              ],
+              "kernel_group_build_seconds": [
+                0.5656896059999997,
+                0.6039149400000001,
+                0.5845828860000001
+              ],
+              "kernel_group_inner_seconds": [
+                0.02648264700000006,
+                0.027305773999999998,
+                0.025744393999999986
+              ],
+              "kernel_group_inside_seconds": [
+                0.30733705499999997,
+                0.3077528540000001,
+                0.30571143
+              ],
+              "kernel_optimization_seconds": [
+                0.886001472,
+                0.725026442,
+                0.751907596
+              ],
+              "kernel_repair_seconds": [
+                0.519768508,
+                0.540143916,
+                0.532964753
+              ],
+              "volume_refine_seconds": [
+                2.2623233959999425,
+                2.247922012999993,
+                2.3127831770000284
+              ]
+            },
+            "medians": {
+              "compute_seconds": 14.753532864999897,
+              "front_unattributed_seconds": 0.31482627200000657,
+              "kernel_delaunay_seconds": 1.671017721,
+              "kernel_domain_repair_seconds": 0.535070902,
+              "kernel_front_applyrules_seconds": 4.106652659999983,
+              "kernel_front_seconds": 6.034803504,
+              "kernel_gen_divide_seconds": 1.0041e-05,
+              "kernel_gen_domain_checks_seconds": 0.131177719,
+              "kernel_gen_domain_finalize_seconds": 0.047124549,
+              "kernel_gen_domain_setup_seconds": 0.030390068,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.148576566,
+              "kernel_gen_merge_seconds": 2.04e-06,
+              "kernel_gen_prepare_seconds": 0.006190648,
+              "kernel_gen_quality_seconds": 0.006261088,
+              "kernel_gen_recovery_combine_seconds": 0.164396218,
+              "kernel_gen_recovery_remove_seconds": 0.29926423999999996,
+              "kernel_gen_recovery_seconds": 2.17533885,
+              "kernel_gen_recovery_smooth_seconds": 0.513696383,
+              "kernel_gen_recovery_swap2_seconds": 0.128323269,
+              "kernel_gen_recovery_swap_seconds": 0.074714439,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 0.950057374,
+              "kernel_generation_seconds": 11.027597361,
+              "kernel_group_build_seconds": 0.5845828860000001,
+              "kernel_group_calls": 3727.0,
+              "kernel_group_inner_seconds": 0.02648264700000006,
+              "kernel_group_inside_calls": 109.0,
+              "kernel_group_inside_seconds": 0.30733705499999997,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 445.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 0.751907596,
+              "kernel_repair_seconds": 0.532964753,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 0.0,
+              "kernel_topology_skipped_rebuilds": 0.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 2.2623233959999425
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 17346,
+              "kernel_front_rotations": 51960,
+              "kernel_front_successful_iterations": 4741,
+              "kernel_front_failed_iterations": 12605,
+              "kernel_group_calls": 3727,
+              "kernel_group_rejected": 445,
+              "kernel_group_inside_calls": 109,
+              "kernel_topology_calls": 36
+            }
+          },
+          "node_rules_recovery_topology": {
+            "seconds_by_repeat": {
+              "compute_seconds": [
+                14.431987179000089,
+                14.45711874899996,
+                13.95804089499984
+              ],
+              "front_unattributed_seconds": [
+                0.3384839720000219,
+                0.3178040099999979,
+                0.302212743999978
+              ],
+              "kernel_delaunay_seconds": [
+                1.660055307,
+                1.744480275,
+                1.623294066
+              ],
+              "kernel_domain_repair_seconds": [
+                0.582859444,
+                0.493017791,
+                0.46848838
+              ],
+              "kernel_front_applyrules_seconds": [
+                4.099990207999974,
+                4.108187634999998,
+                4.062969647000008
+              ],
+              "kernel_front_seconds": [
+                6.1153920920000004,
+                6.092591159,
+                5.982897295
+              ],
+              "kernel_gen_divide_seconds": [
+                9.04e-06,
+                1.084e-05,
+                1.142e-05
+              ],
+              "kernel_gen_domain_checks_seconds": [
+                0.131873368,
+                0.130744483,
+                0.128309289
+              ],
+              "kernel_gen_domain_finalize_seconds": [
+                0.043618964999999996,
+                0.045737325,
+                0.044336288
+              ],
+              "kernel_gen_domain_setup_seconds": [
+                0.029065656,
+                0.029902762,
+                0.028864347
+              ],
+              "kernel_gen_front_setup_seconds": [
+                0.14881097000000001,
+                0.153487585,
+                0.143976617
+              ],
+              "kernel_gen_merge_seconds": [
+                1.68e-06,
+                2.7e-06,
+                1.34e-06
+              ],
+              "kernel_gen_prepare_seconds": [
+                0.006002666,
+                0.006076306,
+                0.005779342
+              ],
+              "kernel_gen_quality_seconds": [
+                0.006140868,
+                0.006081126,
+                0.005804982
+              ],
+              "kernel_gen_recovery_combine_seconds": [
+                0.18440267899999996,
+                0.168829341,
+                0.161859415
+              ],
+              "kernel_gen_recovery_remove_seconds": [
+                0.29521434700000004,
+                0.292625165,
+                0.284091146
+              ],
+              "kernel_gen_recovery_seconds": [
+                1.843624975,
+                1.75760974,
+                1.7121607440000002
+              ],
+              "kernel_gen_recovery_smooth_seconds": [
+                0.556321426,
+                0.5144969339999999,
+                0.52428659
+              ],
+              "kernel_gen_recovery_swap2_seconds": [
+                0.126725876,
+                0.126037157,
+                0.12343671
+              ],
+              "kernel_gen_recovery_swap_seconds": [
+                0.075623762,
+                0.07371838,
+                0.07368454399999999
+              ],
+              "kernel_gen_recovery_topology_seconds": [
+                0.567150519,
+                0.5204614570000001,
+                0.5131653320000001
+              ],
+              "kernel_generation_seconds": [
+                10.841125309,
+                10.681841542,
+                10.339464998
+              ],
+              "kernel_group_build_seconds": [
+                0.5923001900000003,
+                0.5935084739999995,
+                0.575102784
+              ],
+              "kernel_group_inner_seconds": [
+                0.024878538999999974,
+                0.024484860999999976,
+                0.025987881999999993
+              ],
+              "kernel_group_inside_seconds": [
+                0.30406264699999996,
+                0.3056260760000001,
+                0.30714382900000015
+              ],
+              "kernel_optimization_seconds": [
+                0.719123696,
+                0.687775297,
+                0.682462792
+              ],
+              "kernel_repair_seconds": [
+                0.487178854,
+                0.532077841,
+                0.535506569
+              ],
+              "volume_refine_seconds": [
+                2.26193222400002,
+                2.265009513999985,
+                2.278879896000035
+              ]
+            },
+            "medians": {
+              "compute_seconds": 14.431987179000089,
+              "front_unattributed_seconds": 0.3178040099999979,
+              "kernel_delaunay_seconds": 1.660055307,
+              "kernel_domain_repair_seconds": 0.493017791,
+              "kernel_front_applyrules_seconds": 4.099990207999974,
+              "kernel_front_seconds": 6.092591159,
+              "kernel_gen_divide_seconds": 1.084e-05,
+              "kernel_gen_domain_checks_seconds": 0.130744483,
+              "kernel_gen_domain_finalize_seconds": 0.044336288,
+              "kernel_gen_domain_setup_seconds": 0.029065656,
+              "kernel_gen_domains": 1.0,
+              "kernel_gen_front_passes": 3.0,
+              "kernel_gen_front_setup_seconds": 0.14881097000000001,
+              "kernel_gen_merge_seconds": 1.68e-06,
+              "kernel_gen_prepare_seconds": 0.006002666,
+              "kernel_gen_quality_seconds": 0.006081126,
+              "kernel_gen_recovery_combine_seconds": 0.168829341,
+              "kernel_gen_recovery_remove_seconds": 0.292625165,
+              "kernel_gen_recovery_seconds": 1.75760974,
+              "kernel_gen_recovery_smooth_seconds": 0.52428659,
+              "kernel_gen_recovery_swap2_seconds": 0.126037157,
+              "kernel_gen_recovery_swap_seconds": 0.07371838,
+              "kernel_gen_recovery_sweeps": 2.0,
+              "kernel_gen_recovery_team_sweeps": 2.0,
+              "kernel_gen_recovery_topology_seconds": 0.5204614570000001,
+              "kernel_generation_seconds": 10.681841542,
+              "kernel_group_build_seconds": 0.5923001900000003,
+              "kernel_group_calls": 3727.0,
+              "kernel_group_inner_seconds": 0.024878538999999974,
+              "kernel_group_inside_calls": 109.0,
+              "kernel_group_inside_seconds": 0.3056260760000001,
+              "kernel_group_inside_verified": 0.0,
+              "kernel_group_mismatches": 0.0,
+              "kernel_group_rejected": 445.0,
+              "kernel_group_verified": 0.0,
+              "kernel_optimization_seconds": 0.687775297,
+              "kernel_repair_seconds": 0.532077841,
+              "kernel_topology_calls": 36.0,
+              "kernel_topology_mismatches": 0.0,
+              "kernel_topology_optimized": 36.0,
+              "kernel_topology_skipped_rebuilds": 50.0,
+              "kernel_topology_verified": 0.0,
+              "volume_refine_seconds": 2.265009513999985
+            },
+            "front_decision_counts": {
+              "kernel_front_iterations": 17346,
+              "kernel_front_rotations": 51960,
+              "kernel_front_successful_iterations": 4741,
+              "kernel_front_failed_iterations": 12605,
+              "kernel_group_calls": 3727,
+              "kernel_group_rejected": 445,
+              "kernel_group_inside_calls": 109,
+              "kernel_topology_calls": 36
+            }
+          }
+        }
+      },
+      "unmatched_ranks": {
+        "440": {
+          "missing_repeats": {
+            "node_rules_recovery_front": [
+              1,
+              2,
+              3
+            ],
+            "node_rules_recovery_topology": [
+              1,
+              2
+            ]
+          }
+        }
+      },
+      "generated_work_growth_pct_vs_256": 13.862782364037818
+    }
+  },
+  "source_sha256": {
+    "levels4/kernel_node_rules_recovery_front_t4/p256/run_status.tsv": "87c5f74fc286921a0b9431028c05e72cc85b4d41f57f474df1306fd8f5c97666",
+    "levels4/kernel_node_rules_recovery_front_t4/p256/sparse_natural/repeat_0/analysis_metrics.json": "6dcd0c3d3788f7369cd4bbe16fadb23500ea735724ec609169c328794e3340be",
+    "levels4/kernel_node_rules_recovery_front_t4/p256/sparse_natural/repeat_1/analysis_metrics.json": "01bc79e1e94d0c9e26aa8bcc96d43ec7e379e2df834683f1ac7678087edca838",
+    "levels4/kernel_node_rules_recovery_front_t4/p256/sparse_natural/repeat_2/analysis_metrics.json": "6ce3cc62c32812d7fc77a4d27c08687f839fa306431f8fdcb6ad8c90170eef29",
+    "levels4/kernel_node_rules_recovery_front_t4/p256/sparse_natural/repeat_3/analysis_metrics.json": "e86393b173bc1d7428dba1756690738859dc04d4491e06bb064d5f6ff97bc312",
+    "levels4/kernel_node_rules_recovery_topology_t4/p256/run_status.tsv": "a5813a1e03a52ee2eed00c0d28601f5a3ff7ebc8c929751e94e7b29cd0903f46",
+    "levels4/kernel_node_rules_recovery_topology_t4/p256/sparse_natural/repeat_0/analysis_metrics.json": "efa0e9cafa35a423c809a4d19ec944996b7bcea2cf9ccff51ec762a783de80e9",
+    "levels4/kernel_node_rules_recovery_topology_t4/p256/sparse_natural/repeat_1/analysis_metrics.json": "62048cf5d32f3deb092191205fc1711cd12c429e2ae72757d0b66155e97b0818",
+    "levels4/kernel_node_rules_recovery_topology_t4/p256/sparse_natural/repeat_2/analysis_metrics.json": "753bcd092c98efc41c0189fa17bdfeace2f35c3332c10c8a93f3a05b02ebe065",
+    "levels4/kernel_node_rules_recovery_topology_t4/p256/sparse_natural/repeat_3/analysis_metrics.json": "cbe459ed0811972f0d370922c16d84237a07cae47a6559050d035746a76231b6",
+    "levels4/p256/ablation_summary.csv": "9b60f8ac037bea5f37f427670dc6256701340e429b4c5500f82e5d1d8a674b92",
+    "levels4/kernel_node_rules_recovery_front_t4/p512/run_status.tsv": "295b5bde5488e840342b1595c0c40a1485a0405a0df28032e6f05f9830ac272d",
+    "levels4/kernel_node_rules_recovery_front_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "ef100347d157ca0ba60420855cc4e2f63eba1aa4b0112f1d035e28bd59a05b69",
+    "levels4/kernel_node_rules_recovery_front_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "07bea013eb1a192b6bf65443cab5291a4ed99e35c82fa9ca92c750cfd8be0b4d",
+    "levels4/kernel_node_rules_recovery_front_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "3f1da166e447fc8228c33ef323e4daaefedd09b823dc5e03b854974803257be1",
+    "levels4/kernel_node_rules_recovery_front_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "ea72fa9984f93f9536882ecb61d0b37ff217b3d67cce675735458c88102e61fc",
+    "levels4/kernel_node_rules_recovery_topology_t4/p512/run_status.tsv": "cffbfc0e4c004edee48ca4d181be1a95103b12f1c0dc757eafcd0095fb686f61",
+    "levels4/kernel_node_rules_recovery_topology_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "911d455653198d4b8e556bc1dddf50762be445ccbadc4fbad4e4133b7de68a0f",
+    "levels4/kernel_node_rules_recovery_topology_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "cccef9f2b5542dc913210d39a09f2e02bf967ad5e0e39b0adae5dd7c3a63ff69",
+    "levels4/kernel_node_rules_recovery_topology_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "0c46fc88a8d3afda4ebeccb5a4c8b4561f0b25b11218bf215b3d362010518a9c",
+    "levels4/kernel_node_rules_recovery_topology_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "977c300b97b6daffb713c85e611076fd8b595725ab4438bc33f650387c16e1c2",
+    "levels4/p512/ablation_summary.csv": "087cd0eaf792cd5ca297e9bce7de6c5631e358bbabb97747a55df9dd24151716",
+    "levels4/kernel_node_rules_recovery_front_t4/p1024/run_status.tsv": "c734600710b990133852ecd7d9d1c33a2a96b67d8d5cee9d209a0c2f60222a8e",
+    "levels4/kernel_node_rules_recovery_front_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "cbd15b1f11c9afd4829ccd48f85c805e9ace83940aeb2cb99ab622d7a8d689b2",
+    "levels4/kernel_node_rules_recovery_front_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "5932dbe9c6ff6fac8dc63ce4b55d193323c1c1a5254091696c971c5d7f5d50e3",
+    "levels4/kernel_node_rules_recovery_front_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "d6d4729593076b35fe5e54367b8e749ceea0d625ed69da48f6f7b04348ec4ed8",
+    "levels4/kernel_node_rules_recovery_front_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "aa489f65b785c0cdca9c8fc4467d268b66949247e0e5486ba4da1bb5d9090439",
+    "levels4/kernel_node_rules_recovery_topology_t4/p1024/run_status.tsv": "46e24b05f6a589f4440ada5fc3ef6efed8938bb7ded2261fe4718a6d5f7a42bc",
+    "levels4/kernel_node_rules_recovery_topology_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "af2ccec40113c2396a17944316d87323ca7c29a4bc51c7c70e9a4d5f0828e1c1",
+    "levels4/kernel_node_rules_recovery_topology_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "cf1d9c3cbcf839647ab31b2c84d8cbd19bb8849ab63e38dc88c448f5f365a350",
+    "levels4/kernel_node_rules_recovery_topology_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "768467a15a4aee537c941a396fee98f40aa4b9aacdf7be064e20eb51af2f793c",
+    "levels4/kernel_node_rules_recovery_topology_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "175aef88593fb2508da14f607e72f46585942384d4467591fc75ba49a51e83f4",
+    "levels4/p1024/ablation_summary.csv": "b2cea5f1a5b7b2591c96d093fc52eddee7ac9591f4cbb7a5823fcad408bff31b"
+  },
+  "identity": {
+    "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547",
+    "MESH_BINARY_SHA256": "0641d18331003790448ac01e36b736bfd4ae55d01f20c9dd6e059760facf853d",
+    "MESH_SOURCE_REVISION": "manual",
+    "MESH_KERNEL_SHA256": "29f6204e9639412cc793c1aaa246fc2e6e393c68f339d976f75372ad4e1e7d0c",
+    "numlevels": "4",
+    "numrefine": "2",
+    "maxh": "1000.000000",
+    "minh": "0.000000",
+    "partition_seed": "-1",
+    "partition_variant": "metis_seed",
+    "rank_shift": "0",
+    "RANKS_PER_NODE": "4",
+    "CPUS_PER_TASK": "4",
+    "kernel_threads": "4"
+  },
+  "limitations": [
+    "只有预热执行完整质量审计；正式轮核查工作签名与已保存来源，不能声称正式轮逐单元审计。",
+    "节点数改变时生成网格数量与工作签名改变；耗时比不是固定离散网格的严格强扩展效率。",
+    "每组仅三次正式重复，逐轮胜出不等于统计显著性。",
+    "SOURCE_REVISION=manual；可核查二进制哈希，不能据此证明确切源码提交。",
+    "保存了完整性功能版本，未保留成功运行的每条阶段指纹日志。",
+    "关键计算进程可能随策略或重复变化；不同进程阶段时间之差不能作为同进程优化归因。",
+    "逐进程原画像已清理；独立检查覆盖总重放计数和保留的关键进程，不重建未保存的逐调用日志。"
+  ]
+}
