@@ -33,6 +33,26 @@ QUIET_COUNTS = tuple('kernel_quiet_' + k for k in
                      ('high_calls', 'eligible_calls', 'parallel_calls', 'verified', 'mismatches', 'serial_calls'))
 
 
+SENSITIVITY_PHASES = ('kernel_front_applyrules_seconds', 'kernel_gen_recovery_seconds',
+                      'volume_refine_seconds', 'kernel_front_seconds')
+
+
+def phase_sensitivity(rows, core_seconds, phase):
+    """固定其他区间，只将所有进程指定阶段减半；不是性能预测或全局加速上界。"""
+    require(phase in SENSITIVITY_PHASES and rows and math.isfinite(core_seconds) and
+            core_seconds > 0, '无效敏感性输入')
+    for row in rows:
+        values = [row[k] for k in ('vertex_arrival_elapsed', 'compute_seconds', phase)]
+        require(all(isinstance(v, (int,float)) and math.isfinite(v) and v >= 0 for v in values)
+                and row[phase] <= row['compute_seconds'] <= row['vertex_arrival_elapsed'] <= core_seconds,
+                '敏感性阶段不在计算和核心区间内')
+    before = max(rows, key=lambda row:row['vertex_arrival_elapsed'])
+    after = max(rows, key=lambda row:row['vertex_arrival_elapsed'] - .5*row[phase])
+    saved = before['vertex_arrival_elapsed'] - (after['vertex_arrival_elapsed'] - .5*after[phase])
+    return dict(before_rank=before['rank'], after_rank=after['rank'], saved_seconds=saved,
+                core_reduction_pct=100*saved/core_seconds)
+
+
 def quiet_check(r, candidate, warmup):
     values = [r[k] for k in QUIET_COUNTS]
     require(all(isinstance(v, (int, float)) and math.isfinite(v) and v >= 0 and int(v) == v
@@ -181,8 +201,15 @@ def review(batch):
             latest_vertex_arrival_seconds=max(x['vertex_arrival_elapsed'] for x in rows),
             after_latest_vertex_seconds=t-max(x['vertex_arrival_elapsed'] for x in rows))
             for t,rows in zip(scale['strategies'][m]['seconds'],retained[m])] for m in MODES}
+        scale['phase_halving_sensitivity'] = {}
+        for phase in SENSITIVITY_PHASES:
+            samples = [phase_sensitivity(rows, seconds, phase) for rows,seconds in
+                       zip(retained[MODES[1]],scale['strategies'][MODES[1]]['seconds'])]
+            scale['phase_halving_sensitivity'][phase] = dict(samples=samples,
+                median_saved_seconds=median(x['saved_seconds'] for x in samples),
+                median_core_reduction_pct=median(x['core_reduction_pct'] for x in samples))
         report['scales'][str(n)] = scale
-    report['limits'] = ['完整逐单元质量和逐调用重放只在预热执行；正式轮核查保留计数与签名。',
+    report['limits'] = ['阶段减半敏感性固定到达前其他工作和到达后区间；不模拟争用、借核或通信变化，不是预测或保证上界。','完整逐单元质量和逐调用重放只在预热执行；正式轮核查保留计数与签名。',
                         'source revision 为 manual，哈希只证明两策略二进制/输入一致，不能证明确切源码提交。',
                         '三对正式重复不足以宣称统计显著；同规模比较不能代替固定工作量强扩展。',
                         '最晚顶点到达之后的区间包含其他工作，不是纯网络传输时间。']

@@ -9,7 +9,7 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'test_code_expansion/strong_scaling'))
-from review_quiet_rules import review
+from review_quiet_rules import review, phase_sensitivity
 
 SOURCE=ROOT/'test_code_expansion/strong_scaling_results/mesh_algorithms_20261029-141532'
 
@@ -36,6 +36,24 @@ class QuietReviewTests(unittest.TestCase):
         self.assertEqual(s['wins'],3)
         self.assertAlmostEqual(s['paired_median_pct'],1.774872468525801)
         self.assertEqual(s['strategies']['node_rules_recovery_quiet']['compute_critical'],[73]*3)
+
+    def test_new_scaling_batch_retains_negative_pair_and_migrating_ranks(self):
+        source=SOURCE.with_name('mesh_algorithms_20261029-200648')
+        r=review(source)
+        self.assertEqual((r['runs'],r['warmups'],r['formal']),(16,4,12))
+        self.assertEqual([r['scales'][n]['wins'] for n in ('512','1024')],[2,3])
+        self.assertLess(r['scales']['512']['paired_reduction_pct'][2],0)
+        self.assertEqual(set(r['scales']['1024']['matched_ranks']),{'92','440'})
+        self.assertEqual(r['scales']['512']['all_rank_work_comparisons'],2560)
+        self.assertEqual(r['scales']['1024']['all_rank_work_comparisons'],5120)
+
+    def test_sensitivity_follows_new_bottleneck(self):
+        rows=[dict(rank=0,vertex_arrival_elapsed=10,compute_seconds=8,kernel_front_seconds=4),
+              dict(rank=1,vertex_arrival_elapsed=9.5,compute_seconds=8,kernel_front_seconds=1)]
+        r=phase_sensitivity(rows,12,'kernel_front_seconds')
+        self.assertEqual((r['before_rank'],r['after_rank'],r['saved_seconds']),(0,1,1))
+        rows[0]['kernel_front_seconds']=9
+        with self.assertRaisesRegex(ValueError,'阶段不在'):phase_sensitivity(rows,12,'kernel_front_seconds')
 
     def test_missing_rank_fails(self):
         self.mutate(1,lambda d:d['rank_phases']['rows'].pop())
