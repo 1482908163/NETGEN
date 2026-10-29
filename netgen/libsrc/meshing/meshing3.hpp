@@ -38,6 +38,7 @@ class Meshing3
   /// tolerance criterion
   double tolfak;
   bool shared_rule_preparation=false;
+  bool quiet_rule_parallelism=false;
   bool standard_rules=false;
   const RuleSearchTransport * search_transport=nullptr;
   std::map<int,SearchProfile> search_profiles;
@@ -75,6 +76,7 @@ public:
   
   ///
   // The caller owns a fixed-size task team; this method never changes affinity.
+  void SetQuietRuleParallelism(bool enabled) { quiet_rule_parallelism=enabled; }
   void SetSharedRulePreparation(bool enabled) { shared_rule_preparation=enabled; }
   int ApplyRulesTasks(Array<Point3d, PointIndex> & lpoints,
                       Array<int, PointIndex> & allowpoint,

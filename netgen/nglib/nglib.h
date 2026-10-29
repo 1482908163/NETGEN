@@ -517,6 +517,11 @@ NGLIB_API void Ng_GetVolumeFrontStats(double * values);
 // Separate API: existing kernel diagnostic array sizes remain unchanged.
 NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled);
 NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
+// Opt-in local high-tolerance parallelism only with a disabled no-buffer sink.
+NGLIB_API Ng_Result Ng_SetVolumeQuietRuleParallelism(int enabled);
+// high calls/seconds, eligible calls, parallel calls/seconds, verified, mismatches,
+// serial calls. Existing statistics arrays keep their lengths.
+NGLIB_API void Ng_GetVolumeQuietRuleStats(double * values); // 8 doubles
 // Per-call immutable preparation: calls, build seconds, consumers, avoided builds,
 // verified calls, mismatches. Existing statistics arrays keep their sizes.
 NGLIB_API Ng_Result Ng_SetVolumeSharedRulePreparation(int enabled);

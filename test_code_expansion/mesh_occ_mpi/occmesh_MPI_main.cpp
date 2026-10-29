@@ -321,8 +321,9 @@ int main(int argc, char **argv) {
     const bool adaptive_search=requested_scheduler=="node_search_local" || requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" ||
                                requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_search_elastic";
     const bool remote_search=requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" || requested_scheduler=="node_search_full";
+    const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet";
     const bool shared_rules=requested_scheduler=="node_rules_recovery_shared";
-    const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules;
+    const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules || quiet_rules;
     const int recovery_topology_mode=recovery_topology?(profile_repeat<=0?2:1):0;
     const bool front_group=requested_scheduler=="node_rules_recovery_front" || recovery_topology;
     const bool generation_recovery=requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online" || front_group;
@@ -478,6 +479,8 @@ int main(int argc, char **argv) {
         profiler.add_metadata("search_revision","generation_tail_v5");
         profiler.add_metadata("generation_profile","generation_v1");
         profiler.add_metadata("generation_recovery",generation_recovery?"ordered_team_v1":"off");
+        profiler.add_metadata("quiet_rule_profile","no_buffer_v1");
+        profiler.add_metadata("quiet_rule_parallelism",quiet_rules?"on":"off");
         profiler.add_metadata("shared_rule_profile","call_snapshot_v1");
         profiler.add_metadata("shared_rule_preparation",shared_rules?"on":"off");
         profiler.add_metadata("rank_phase_profile","all_ranks_v1");
@@ -885,6 +888,7 @@ int main(int argc, char **argv) {
                 MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeGenerationRecovery(generation_recovery?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeFrontGroupMode(front_group_mode)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
+            if(nglib::Ng_SetVolumeQuietRuleParallelism(quiet_rules?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeSharedRulePreparation(shared_rules?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeRecoveryTopologyMode(recovery_topology_mode)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
             double team_before[3]={},team_after[3]={};
@@ -923,6 +927,10 @@ int main(int argc, char **argv) {
                     "merge_seconds","quality_seconds","recovery_sweeps","recovery_team_sweeps","domains","front_passes"};
                 for(int k=0;k<19;++k) profiler.set_metric(std::string("kernel_gen_")+generation_names[k],generation[k]);
                 nglib::Ng_GetVolumeFrontStats(front_details);
+                double quiet[8]={};nglib::Ng_GetVolumeQuietRuleStats(quiet);
+                const char *quiet_names[]={"high_calls","high_seconds","eligible_calls","parallel_calls",
+                    "parallel_seconds","verified","mismatches","serial_calls"};
+                for(int k=0;k<8;++k) profiler.set_metric(std::string("kernel_quiet_")+quiet_names[k],quiet[k]);
                 double shared[6]={};nglib::Ng_GetVolumeSharedRuleStats(shared);
                 const char *shared_names[]={"calls","build_seconds","consumers","avoided_builds","verified","mismatches"};
                 for(int k=0;k<6;++k) profiler.set_metric(std::string("kernel_shared_")+shared_names[k],shared[k]);

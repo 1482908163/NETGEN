@@ -474,6 +474,15 @@ namespace nglib
    NGLIB_API void Ng_GetVolumeRecoveryTopologyStats(double *values) {
      if(values) std::copy_n(last_topology_stats,VolumeKernelStats::topology_count,values);
    }
+   static thread_local bool quiet_rule_parallelism = false;
+   static thread_local double last_quiet_rule_stats[VolumeKernelStats::quiet_rule_count] = {};
+   NGLIB_API Ng_Result Ng_SetVolumeQuietRuleParallelism(int enabled) {
+     if(enabled!=0 && enabled!=1) return NG_ERROR;
+     quiet_rule_parallelism=enabled!=0;return NG_OK;
+   }
+   NGLIB_API void Ng_GetVolumeQuietRuleStats(double *values) {
+     if(values) std::copy_n(last_quiet_rule_stats,VolumeKernelStats::quiet_rule_count,values);
+   }
    static thread_local bool shared_rule_preparation = false;
    static thread_local double last_shared_rule_stats[VolumeKernelStats::shared_rule_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeSharedRulePreparation(int enabled) {
@@ -510,6 +519,7 @@ namespace nglib
       std::fill_n(last_volume_front_stats,VolumeKernelStats::front_count,0.0);
       std::fill_n(last_generation_stats,VolumeKernelStats::generation_count,0.0);
       std::fill_n(last_shared_rule_stats,VolumeKernelStats::shared_rule_count,0.0);
+      std::fill_n(last_quiet_rule_stats,VolumeKernelStats::quiet_rule_count,0.0);
       std::fill_n(last_group_stats,VolumeKernelStats::group_count,0.0);
       std::fill_n(last_topology_stats,VolumeKernelStats::topology_count,0.0);
       std::fill_n(last_volume_rule_stats,VolumeKernelStats::rule_count,0.0);
@@ -535,6 +545,7 @@ namespace nglib
          local.volume_generation_recovery = generation_recovery;
          local.volume_recovery_topology_mode = recovery_topology_mode;
          local.volume_shared_rule_preparation = shared_rule_preparation;
+         local.volume_quiet_rule_parallelism = quiet_rule_parallelism;
          local.volume_front_group_mode = front_group_mode;
          local.volume_resources = resources;
          local.volume_rule_search = volume_rule_search_mode;
@@ -563,6 +574,8 @@ namespace nglib
             for(int i=0;i<VolumeKernelStats::count;++i) details[i]=stats.values[i].load();
             for(int i=0;i<VolumeKernelStats::shared_rule_count;++i)
                last_shared_rule_stats[i]=stats.shared_rule_values[i].load();
+            for(int i=0;i<VolumeKernelStats::quiet_rule_count;++i)
+               last_quiet_rule_stats[i]=stats.quiet_rule_values[i].load();
             for(int i=0;i<VolumeKernelStats::front_count;++i)
                last_volume_front_stats[i]=stats.front_values[i].load();
             for(int i=0;i<VolumeKernelStats::rule_count;++i)

@@ -44,6 +44,13 @@ int main() {
     double shared[8];std::fill_n(shared,8,-11.0);nglib::Ng_GetVolumeSharedRuleStats(shared+1);
     require(shared[0]==-11.0 && shared[7]==-11.0);
     for(int i=1;i<=6;++i) require(shared[i]==0);
+    require(nglib::Ng_SetVolumeQuietRuleParallelism(-1)==nglib::NG_ERROR);
+    require(nglib::Ng_SetVolumeQuietRuleParallelism(2)==nglib::NG_ERROR);
+    for(int enabled:{1,0}) require(nglib::Ng_SetVolumeQuietRuleParallelism(enabled)==nglib::NG_OK);
+    double quiet[10];std::fill_n(quiet,10,-13.0);nglib::Ng_GetVolumeQuietRuleStats(quiet+1);
+    require(quiet[0]==-13.0 && quiet[9]==-13.0);
+    for(int i=1;i<=8;++i) require(quiet[i]==0);
+    nglib::Ng_GetVolumeQuietRuleStats(nullptr);
     double generation[20]={};generation[19]=6789;
     nglib::Ng_GetVolumeGenerationStats(generation);require(generation[19]==6789);
     for(int i=0;i<19;++i) require(generation[i]==0);

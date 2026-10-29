@@ -322,7 +322,8 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('recovery_total','node_rules_elastic','sparse','node_rules_recovery_online','sparse'),
            ('front_group','node_rules_recovery','sparse','node_rules_recovery_front','sparse'),
            ('recovery_topology','node_rules_recovery_front','sparse','node_rules_recovery_topology','sparse'),
-           ('shared_rules','node_rules_recovery_topology','sparse','node_rules_recovery_shared','sparse'))
+           ('shared_rules','node_rules_recovery_topology','sparse','node_rules_recovery_shared','sparse'),
+           ('quiet_rules','node_rules_recovery_topology','sparse','node_rules_recovery_quiet','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -400,7 +401,7 @@ GROUP_METRICS=tuple('kernel_group_'+k for k in ('build_seconds','inner_seconds',
     'calls','rejected','verified','inside_calls','inside_verified','mismatches'))
 
 def inspect_front_group(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared')
+    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet')
     if not candidate and 'front_group_profile' not in metadata:
         return {}  # Historical data did not measure this path.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -429,7 +430,7 @@ TOPOLOGY_METRICS=tuple('kernel_topology_'+k for k in
     ('calls','optimized','verified','mismatches','skipped_rebuilds'))
 
 def inspect_recovery_topology(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared')
+    candidate=scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet')
     if not candidate and 'recovery_topology_profile' not in metadata:
         return {}  # Historical files remain readable.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -481,6 +482,37 @@ def inspect_shared_rules(rows, metadata, scheduler, repeat):
     if candidate and result['kernel_shared_calls']==0:raise ValueError('shared preparation not exercised')
     return result
 
+QUIET_RULE_METRICS=tuple('kernel_quiet_'+k for k in
+    ('high_calls','high_seconds','eligible_calls','parallel_calls','parallel_seconds','verified','mismatches','serial_calls'))
+
+def inspect_quiet_rules(rows, metadata, scheduler, repeat):
+    candidate=scheduler=='node_rules_recovery_quiet'
+    if not candidate and 'quiet_rule_profile' not in metadata:return {}
+    expected='on' if candidate else 'off'
+    if metadata.get('quiet_rule_profile')!='no_buffer_v1' or metadata.get('quiet_rule_parallelism')!=expected:
+        raise ValueError('missing or unexpected quiet-rule profile')
+    result={'quiet_rule_profile':'no_buffer_v1','quiet_rule_parallelism':expected}
+    for key in QUIET_RULE_METRICS:
+        values=[r.get('metrics',{}).get(key) for r in rows]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or
+               (not key.endswith('_seconds') and v!=int(v)) for v in values):
+            raise ValueError('invalid quiet-rule metric: '+key)
+        result[key]=max(values) if key.endswith('_seconds') else sum(values)
+    for r in rows:
+        m=r['metrics'];high=m['kernel_quiet_high_calls'];parallel=m['kernel_quiet_parallel_calls']
+        eligible=m['kernel_quiet_eligible_calls'];serial=m['kernel_quiet_serial_calls']
+        seconds=m['kernel_quiet_high_seconds'];team=m['kernel_quiet_parallel_seconds']
+        if (high!=parallel+serial or parallel>eligible or eligible>high or
+            high>m.get('kernel_rules_calls',0) or parallel>m.get('kernel_rules_parallel_calls',0) or
+            serial>m.get('kernel_rules_serial_calls',0) or team>seconds or
+            seconds>m.get('kernel_rules_wall_seconds',0) or
+            m['kernel_quiet_verified']!=(parallel if candidate and repeat<=0 else 0) or
+            m['kernel_quiet_mismatches'] or (not candidate and (eligible or parallel or team))):
+            raise ValueError('quiet-rule work/replay coverage mismatch')
+    # Retain valid no-coverage runs without calling them optimization successes.
+    result['quiet_rule_covered']=result['kernel_quiet_parallel_calls']>0
+    return result
+
 # Keep small columnar records for every rank, including migrating critical ranks.
 RANK_PHASE_FIELDS=tuple(dict.fromkeys((
     'compute_seconds','face_complete_elapsed','vertex_arrival_elapsed',
@@ -491,7 +523,7 @@ RANK_PHASE_FIELDS=tuple(dict.fromkeys((
     'kernel_front_iterations','kernel_front_rotations','kernel_rules_calls','kernel_rules_parallel_calls',
     'kernel_rules_face_trials','kernel_rules_point_trials','kernel_rules_mappings',
     'kernel_rules_copy_seconds','kernel_rules_dispatch_seconds','kernel_rules_wall_seconds')+
-    GENERATION_METRICS+GROUP_METRICS+TOPOLOGY_METRICS+SHARED_RULE_METRICS))
+    GENERATION_METRICS+GROUP_METRICS+TOPOLOGY_METRICS+SHARED_RULE_METRICS+QUIET_RULE_METRICS))
 
 def compact_rank_phases(rows, result):
     metadata=rows[0]['metadata']
@@ -513,7 +545,7 @@ def compact_rank_phases(rows, result):
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -556,8 +588,8 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
     'front_unattributed_seconds','front_profile_coverage',
     'coop_borrowed_core_seconds','first_loan_fraction') + GENERATION_METRICS + OPERATION_V5_METRICS
-CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS
-CRITICAL_SUMMARY_METRICS += GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS
+CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS
+CRITICAL_SUMMARY_METRICS += GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -747,6 +779,10 @@ def critical_overview(root,ranks,selected):
             lines.append('  恢复拓扑：'+'；'.join(name+'='+compact(r.get('kernel_topology_'+key+'_median'),0)
                 for name,key in [('准备调用','calls'),('单次重建','optimized'),('重放','verified'),
                                  ('不一致','mismatches'),('省去的重建','skipped_rebuilds')]))
+        if r.get('kernel_quiet_high_calls_median') is not None:
+            lines.append('  高容错规则：'+'；'.join(name+'='+compact(r.get('kernel_quiet_'+key+'_median'),digits)
+                for name,key,digits in [('调用','high_calls',0),('并行覆盖','parallel_calls',0),
+                    ('串行','serial_calls',0),('完整调用秒','high_seconds',6),('并行调用秒','parallel_seconds',6)]))
     lines.append('上述阶段取每次最慢计算进程本身的记录；进程可能随重复变化。生成包含前沿与域内修复，不能相加；最慢计算进程不一定最晚到达集合调用。')
     lines.append('生成内部修复总秒数包含其子项；域计时为各域累计，不能直接从并行生成墙钟时间相减。')
     lines.append('逐次记录及同节点进程见各策略 analysis/kernel_critical_ranks.csv；首借核位置不是该时刻的阶段标识，已有数据不提供完整逐次租约事件轨迹。')
@@ -932,6 +968,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_rules_recovery_front':'node_elastic',
                   'node_rules_recovery_topology':'node_elastic','node_rules_recovery_shared':'node_elastic',
+                  'node_rules_recovery_quiet':'node_elastic',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
                   'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
@@ -976,6 +1013,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
     result.update(inspect_front_group(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_recovery_topology(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_shared_rules(rows,metadata,requested_scheduler,rows[0]['repeat']))
+    result.update(inspect_quiet_rules(rows,metadata,requested_scheduler,rows[0]['repeat']))
     if metadata.get('search_revision') in ('matched_tasks_v4','generation_tail_v5'):
         result['search_revision']=metadata['search_revision']
         extra=()
@@ -1538,6 +1576,10 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
+    if (scheduler in ('node_rules_recovery_topology','node_rules_recovery_quiet') and
+        not any((int(threads),s) in available for s in ('node_fixed','node_rules_elastic','node_rules_recovery','node_rules_recovery_front')) and
+        {(int(threads),'node_rules_recovery_topology'),(int(threads),'node_rules_recovery_quiet')} <= available):
+        return 'node_rules_recovery_topology'
     if (scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared') and
         not any((int(threads),s) in available for s in ('node_fixed','node_rules_elastic','node_rules_recovery','node_rules_recovery_front')) and
         {(int(threads),'node_rules_recovery_topology'),(int(threads),'node_rules_recovery_shared')} <= available):

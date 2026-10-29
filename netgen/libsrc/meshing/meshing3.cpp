@@ -200,6 +200,7 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   std::unique_ptr<VolumeResourceScope> rule_lease;
   std::unique_ptr<ngcore::RegionTaskManager> rule_team;
   shared_rule_preparation=mp.volume_shared_rule_preparation;
+  quiet_rule_parallelism=mp.volume_quiet_rule_parallelism;
   int rule_mode=mp.volume_rule_search<0?-1:0;
   search_transport=mp.volume_rule_transport;
   if(mp.volume_rule_search>0 && mp.nthreads>1 && !ngcore::task_manager) {

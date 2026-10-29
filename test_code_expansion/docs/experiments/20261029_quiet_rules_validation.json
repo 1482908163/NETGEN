@@ -1,0 +1,142 @@
+{
+  "schema": "quiet_rules_validation_v1",
+  "base_commit": "c0616031ae0ee67dce6e931c3e7d0ac628727d45",
+  "date": "2026-10-29",
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+  "build": {
+    "configuration": "Release",
+    "gui": false,
+    "python": false,
+    "occ": false,
+    "mpi": false,
+    "native_arch": false,
+    "real_mpi_tests": "MPICH 3, four processes on one physical container; logical node identity only"
+  },
+  "checks": {
+    "python_analysis_and_batch": 48,
+    "runner": "passed: Slurm spool, failure continuation, warmup filtering, compressed resume, lossless analysis and cleanup protection",
+    "old_rule_configurations": 18,
+    "shared_rule_configurations": 18,
+    "new_quiet_configurations": 18,
+    "diagnostic_fallback_pairs": 8,
+    "diagnostic_restore_pairs": 2,
+    "front_closures": 852,
+    "inside_checks": 120,
+    "successful_front_generations": 18,
+    "topology_cases": 14,
+    "recovery_cases": 150,
+    "bounded_retry_runs": 9,
+    "bounded_retry_parallel_calls": 3186,
+    "bounded_retry_reference_fingerprint": "9fa744ea9b7d34ca",
+    "bounded_retry_expected_status": "MESHING3_NEGVOL with 4 points, 0 elements, class 50; NOT a successful generated mesh"
+  },
+  "commands": [
+    "python3 test_code_expansion/tests/run_rule_search_regression.py --build-dir BUILD --reference-sources REFERENCE --mpi-prefix MPI3",
+    "python3 -m unittest discover -s test_code_expansion/tests -p test_rule_search*.py",
+    "python3 test_code_expansion/tests/test_runner.py",
+    "python3 test_code_expansion/tests/benchmark_quiet_rules.py --binary BUILD/rule_search_tests/rule_search --cpus 0,1,2,3 --output OUTPUT.json"
+  ],
+  "source_sha256": {
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d",
+    "netgen/libsrc/meshing/meshtype.hpp": "301cd82009adfe05b8df79d0feb94b9a7d5abe837c00426f4a89ba05100ca073",
+    "netgen/nglib/nglib.cpp": "deb614456c7cc9dacdb6c618d572331eecc299908248393d2ef658cca78355a9",
+    "test_code_expansion/tests/rule_search_regression.cpp": "0d3e424694398c5752e84ad62dd0e90034893d5e137044e22160366d7df38d07",
+    "test_code_expansion/tests/quiet_front_regression.cpp": "8d66d2149758cb1b12d2f751dac331cec106fa78bcbe09d6edf76a3c7a823a63",
+    "test_code_expansion/tests/run_rule_search_regression.py": "926ade8c6ac003f68fdedbdd4b068787fc55b3b789bba2d0ae688df6f90f7e57",
+    "test_code_expansion/strong_scaling/analyze_results.py": "5d5ca2fe26ec80d42e189ac16ce940e92ae348d7675d868a04fe713a74c5b9b9"
+  },
+  "native_regression_log": "[MESH_EVIDENCE] {\"rank\":0,\"host\":\"3ebdf241fef5\",\"stage\":\"fixture_before\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\"}\n[MESH_EVIDENCE] {\"rank\":0,\"host\":\"3ebdf241fef5\",\"stage\":\"fixture_after\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\",\"unchanged\":true}\n[MESH_EVIDENCE] {\"rank\":1,\"host\":\"3ebdf241fef5\",\"stage\":\"fixture_before\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\"}\n[MESH_EVIDENCE] {\"rank\":1,\"host\":\"3ebdf241fef5\",\"stage\":\"fixture_after\",\"kind\":\"checkpoint\",\"points\":4,\"elements\":1,\"surfaces\":1,\"invalid\":0,\"unsupported\":0,\"point_hash\":\"9ffde95d7a1e1798\",\"index_hash\":\"e5ebd4e3ef44b0c1\",\"unchanged\":true}\n通过：852 组闭包差分（接受 354，拒绝 498）；120 组射线判断；18 次完整前沿生成（含拒绝回退）及重放。\nfront_fingerprint=4c9fd38560ad4752\n通过：完整前沿生成与修改前 meshing3.cpp 源码指纹一致。\n通过：18 组共享规则预处理差分，含连接点、内外面分割、三角/四边面、串行回退及原源码对照。\n通过：18 组高容错 1～45 差分、8 组诊断回退及 2 组重新启用输出配对。\nsloppy=0.2 mode=0 quiet=0 high=531 parallel=0 verified=0\nsloppy=0.2 mode=1 quiet=1 high=531 parallel=531 verified=0\nsloppy=0.2 mode=2 quiet=1 high=531 parallel=531 verified=531\nsloppy=0.1 mode=0 quiet=0 high=531 parallel=0 verified=0\nsloppy=0.1 mode=1 quiet=1 high=531 parallel=531 verified=0\nsloppy=0.1 mode=2 quiet=1 high=531 parallel=531 verified=531\nsloppy=0.05 mode=0 quiet=0 high=531 parallel=0 verified=0\nsloppy=0.05 mode=1 quiet=1 high=531 parallel=531 verified=0\nsloppy=0.05 mode=2 quiet=1 high=531 parallel=531 verified=531\n高容错有界前沿重试/退出对照通过，覆盖 3186 次并行调用。\nquiet_front_fingerprint=9fa744ea9b7d34ca\n通过：14 组准备阶段检查，含点类型、固定标记、开面、边查询和二维回退。\n通过：150 组开腔恢复与原串行坐标、单元顺序完全一致；包含线程重建及租约归还。\n通过：恢复检查点异常时先回收工作线程，再归还核。\n通过：真实内核有界连接读取及两进程坏索引/只读阶段变更拦截。\n通过：四进程 MPI 真实规则任务，正式与重放两种模式；合成节点身份，非集群性能测试。\n通过：18 组顺序/并行/重放、远程消息及资源生命周期检查；指纹 6d770e28fdeae775。\n父版本源码对照：通过。\n/workspace/scratch/54cbe57ee0b5/build-review/rule_search_tests/results.txt\n",
+  "sanitizers": {
+    "flags": [
+      "-O1",
+      "-g1",
+      "-fsanitize=address,undefined",
+      "-fno-omit-frame-pointer"
+    ],
+    "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+    "UBSAN_OPTIONS": "halt_on_error=1",
+    "instrumented": [
+      "ruler3.cpp",
+      "rule_search_regression.cpp"
+    ],
+    "other_objects": "existing release kernel objects; not fully instrumented",
+    "cases": [
+      {
+        "variant": 0,
+        "threads": 1,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=0 verified=0 serial=21604 debug_fallbacks=0 mismatches=0 mappings=131688\nhigh_calls=19200 high_seconds=1.27301 quiet_parallel=0 quiet_seconds=0 quiet_verified=0 high_serial=19200\nshared_calls=0 build_seconds=0 rule_wall_seconds=1.35054 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 0,
+        "threads": 2,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=131688\nhigh_calls=19200 high_seconds=3.28147 quiet_parallel=19200 quiet_seconds=3.28147 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=3.55644 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 0,
+        "threads": 4,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=131688\nhigh_calls=19200 high_seconds=3.62654 quiet_parallel=19200 quiet_seconds=3.62654 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=3.92907 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 1,
+        "threads": 1,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=0 verified=0 serial=21604 debug_fallbacks=0 mismatches=0 mappings=145863\nhigh_calls=19200 high_seconds=1.27843 quiet_parallel=0 quiet_seconds=0 quiet_verified=0 high_serial=19200\nshared_calls=0 build_seconds=0 rule_wall_seconds=1.36351 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 1,
+        "threads": 2,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=145863\nhigh_calls=19200 high_seconds=3.36581 quiet_parallel=19200 quiet_seconds=3.36581 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=3.63194 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 1,
+        "threads": 4,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=15746 retry=3024 impossible=2831 fingerprint=809b270364dbbc65\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=145863\nhigh_calls=19200 high_seconds=3.90639 quiet_parallel=19200 quiet_seconds=3.90639 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=4.24504 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 2,
+        "threads": 1,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=14864 retry=3880 impossible=2857 fingerprint=873cbbd222be29b2\nparallel=0 verified=0 serial=21604 debug_fallbacks=0 mismatches=0 mappings=120137\nhigh_calls=19200 high_seconds=1.1641 quiet_parallel=0 quiet_seconds=0 quiet_verified=0 high_serial=19200\nshared_calls=0 build_seconds=0 rule_wall_seconds=1.23958 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 2,
+        "threads": 2,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=14864 retry=3880 impossible=2857 fingerprint=873cbbd222be29b2\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=120137\nhigh_calls=19200 high_seconds=2.88867 quiet_parallel=19200 quiet_seconds=2.88867 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=3.13128 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      },
+      {
+        "variant": 2,
+        "threads": 4,
+        "returncode": 0,
+        "stdout": "subtree_calls=0 tasks=0\ncalls=21601 success=14864 retry=3880 impossible=2857 fingerprint=873cbbd222be29b2\nparallel=21603 verified=21603 serial=1 debug_fallbacks=0 mismatches=0 mappings=120137\nhigh_calls=19200 high_seconds=3.29561 quiet_parallel=19200 quiet_seconds=3.29561 quiet_verified=19200 high_serial=0\nshared_calls=0 build_seconds=0 rule_wall_seconds=3.57078 verified_shared=0\nremote_packets=0 adaptive_serial=0\ndiagnostic_bytes=0 diagnostic_hash=14650fb0739d0383\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "benchmarks": {
+    "final": "20261029_quiet_rules_benchmark.json",
+    "before_diagnostic_counter_fix": "20261029_quiet_rules_benchmark_before_counter.json",
+    "interrupted_old_run": "raw sequence lost after workspace rollback; not pooled or claimed independently reproducible"
+  },
+  "limitations": [
+    "No full OCC/METIS application build in this environment",
+    "No physical multi-node performance or new cluster jobs",
+    "Synthetic high-tolerance distribution does not represent production",
+    "Address/undefined-behavior checks do not establish absence of races"
+  ],
+  "default_enabled": false
+}

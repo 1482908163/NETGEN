@@ -32,7 +32,14 @@ int main(int argc,char **argv) {
   const int threads=argc>1?std::atoi(argv[1]):4;
   const int mode=argc>2?std::atoi(argv[2]):2;
   std::ostringstream diagnostics;
-  testout=&diagnostics;testmode=0;printmessage_importance=0;
+  std::ostream disabled(nullptr);
+  const int sink=argc>6?std::atoi(argv[6]):0; // capture, no buffer, bad with buffer, tied no buffer
+  const int tolerance_limit=argc>7?std::atoi(argv[7]):7;
+  const bool quiet=argc>8 && std::atoi(argv[8]);
+  const bool requested_debug=argc>9 && std::atoi(argv[9]);
+  if(sink==2) diagnostics.setstate(std::ios::badbit);
+  if(sink==3) disabled.tie(&diagnostics);
+  testout=(sink==1 || sink==3)?&disabled:&diagnostics;testmode=requested_debug;printmessage_importance=0;
 #ifdef NETGEN_SEARCH_MPI_REGRESSION
   int provided,rank;MPI_Init_thread(&argc,&argv,MPI_THREAD_FUNNELED,&provided);
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
@@ -45,6 +52,7 @@ int main(int argc,char **argv) {
   const int shared=argc>4?std::atoi(argv[4]):0;
   const int variant=argc>5?std::atoi(argv[5]):0;
   mesher.SetSharedRulePreparation(shared);
+  mesher.SetQuietRuleParallelism(quiet);
   struct Loopback {std::string output;int calls=0;void *service=nullptr;} loopback;
   RuleSearchTransport transport;
   transport.context=&loopback;
@@ -127,7 +135,9 @@ int main(int argc,char **argv) {
     INDEX_2_HASHTABLE<int> pairs(10);
     if(variant==1) {pairs.Set(INDEX_2(1,4),1);pairs.Set(INDEX_2(2,3),1);}
     const int split=variant==2?1+sample%faces.Size():faces.Size();
-    for(int tolerance=1;tolerance<=7;tolerance++) for(int rotation=1;rotation<=3;rotation++) {
+    for(int tolerance=1;tolerance<=tolerance_limit;tolerance++) for(int rotation=1;rotation<=3;rotation++) {
+      // Restore visible diagnostics after a no-buffer high-tolerance interval.
+      if(sink==4) {testout=tolerance>5?&disabled:&diagnostics;testmode=tolerance<=5;}
       Array<Point3d,PointIndex> p(input);Array<MiniElement2d> f(faces);
       NgArray<Element> elements;NgArray<INDEX> deleted;
       float error=0;minother=minwithoutother=1e10;
@@ -224,6 +234,7 @@ int main(int argc,char **argv) {
   };
   MeshingParameters mp;mp.maxh=2.;mp.uselocalh=0;mp.sloppy=5.;mp.nthreads=threads;
   mp.volume_shared_rule_preparation=shared;
+  mp.volume_quiet_rule_parallelism=quiet;
   mp.volume_rule_search=mode;mp.volume_resources=&resources;mp.volume_kernel_stats=&stats;
   int status=front.GenerateMesh(mesh,mp);
   if(status!=MESHING3_OK || mesh.GetNE()!=1 || mesh.GetNP()!=4) return 3;
@@ -239,6 +250,16 @@ int main(int argc,char **argv) {
   std::cout<<"parallel="<<stats.rule_values[1]<<" verified="<<stats.rule_values[2]
            <<" serial="<<stats.rule_values[3]<<" debug_fallbacks="<<stats.rule_values[16]
            <<" mismatches="<<stats.rule_values[17]<<" mappings="<<stats.rule_values[8]<<"\n";
+  const double high_calls=160*3*std::max(0,tolerance_limit-5);
+  const double quiet_calls=quiet && (mode==1 || mode==2) && threads>1 && (sink==1 || sink==4) && !requested_debug ? high_calls : 0;
+  if(mode>=0 && (stats.quiet_rule_values[0]!=high_calls || stats.quiet_rule_values[3]!=quiet_calls ||
+      stats.quiet_rule_values[7]!=high_calls-quiet_calls || stats.quiet_rule_values[6]!=0 ||
+      stats.quiet_rule_values[5]!=(mode==2?quiet_calls:0) ||
+      stats.quiet_rule_values[4]>stats.quiet_rule_values[1] || stats.quiet_rule_values[1]>stats.rule_values[9]))
+    throw std::runtime_error("高容错调用覆盖或计时分解错误");
+  std::cout<<"high_calls="<<stats.quiet_rule_values[0]<<" high_seconds="<<stats.quiet_rule_values[1]
+           <<" quiet_parallel="<<stats.quiet_rule_values[3]<<" quiet_seconds="<<stats.quiet_rule_values[4]
+           <<" quiet_verified="<<stats.quiet_rule_values[5]<<" high_serial="<<stats.quiet_rule_values[7]<<"\n";
   const double shared_calls=stats.shared_rule_values[0].load();
   const bool enabled=shared && (mode==1 || mode==2) && threads>1;
   if(shared_calls!=(enabled?stats.rule_values[1].load():0) ||
@@ -255,5 +276,8 @@ int main(int argc,char **argv) {
 #ifdef NETGEN_SEARCH_MPI_REGRESSION
   service.ServeUntilComplete(execute_packet);MPI_Finalize();
 #endif
+  fingerprint=1469598103934665603ULL;
+  for(char c:diagnostics.str()) Hash(c);
+  std::cout<<"diagnostic_bytes="<<diagnostics.str().size()<<" diagnostic_hash="<<std::hex<<fingerprint<<std::dec<<"\n";
   return successes==0 || retries==0;
 }

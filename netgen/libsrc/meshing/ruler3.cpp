@@ -164,6 +164,7 @@ struct RuleSearchPreparation {
 // Each rule is claimed exactly once. Its mutable free-zone and diagnostic slots
 // are exclusively owned until the team joins. Front and rotation order stay serial.
 struct RuleSearchQueue {
+  bool discard_trace=false; // Only a verified no-buffer sink may discard text.
   const RuleSearchPreparation *prepared=nullptr; // valid until the team joins
   std::atomic<int> next{0};
   std::vector<int> order;
@@ -196,6 +197,7 @@ struct RuleLegacyTimer {
   ~RuleLegacyTimer() { if(active) NgProfiler::StopTimer(index); }
 };
 using RuleClock = std::chrono::steady_clock;
+int & RuleDiagnosticCounter() { static int count=0;return count; }
 double RuleElapsed(RuleClock::time_point t) {
   return std::chrono::duration<double>(RuleClock::now()-t).count();
 }
@@ -342,20 +344,33 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   if(stats) stats->AddRule(0,1);
   struct CallTimer {
     VolumeKernelStats * stats; RuleClock::time_point begin;
+    bool high,quiet_parallel=false;
     ~CallTimer() {
       if(!stats) return;
       double t=RuleElapsed(begin); stats->AddRule(9,t); stats->MaxRule(15,t);
+      // Reuse the existing clock; no per-candidate timing or event recording.
+      if(high) {
+        stats->AddQuietRules(0,1);stats->AddQuietRules(1,t);
+        stats->AddQuietRules(quiet_parallel?3:7,1);
+        if(quiet_parallel) stats->AddQuietRules(4,t);
+      }
       const double edges[]={32e-6,128e-6,512e-6,2e-3,8e-3};
       int b=0; while(b<5 && t>edges[b]) ++b;
       stats->AddRule(18+b,1);
     }
-  } call_timer{stats,begin};
+  } call_timer{stats,begin,tol>5};
   // Verbose/test rules keep the original ordered diagnostics. Nested teams
   // also fall back: no extra workers or unaccounted resource oversubscription.
-  bool debug=testmode || tol>5;
+  // fail()/bad() alone does not establish silence: a stream with a buffer
+  // may be restored. Explicit diagnostics retain original ordering.
+  const bool quiet=quiet_rule_parallelism && (mode==1 || mode==2) && tol>5 &&
+    testout->rdbuf()==nullptr && testout->exceptions()==std::ios::goodbit && testout->tie()==nullptr;
+  bool debug=testmode || (tol>5 && !quiet);
   for(auto & rule:rules) debug=debug || rule->TestFlag('t');
   bool parallel=mode && !debug && rules.Size()>1 && ngcore::task_manager &&
                 ngcore::TaskManager::GetNumThreads()>1;
+  if(stats && quiet && !debug) stats->AddQuietRules(2,1);
+  call_timer.quiet_parallel=quiet && parallel;
   if(!parallel) {
     RuleSearchResult work;
     int found=ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,err,nullptr,stats?&work:nullptr);
@@ -365,6 +380,9 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   }
   const bool adaptive=mode>=3;
   const bool verify=mode==2 || mode==4 || mode==6;
+  // Preserve the old serial call ordinal if output is enabled again later.
+  // In verification mode the single sequential replay advances it instead.
+  if(call_timer.quiet_parallel && !verify) ++RuleDiagnosticCounter();
   int point_bin=0,face_bin=0;
   for(int size=p.Size();size>1;size>>=1) ++point_bin;
   for(int size=f.Size();size>1;size>>=1) ++face_bin;
@@ -426,6 +444,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   const double copy_seconds=RuleElapsed(stamp);
   if(stats) stats->AddRule(10,copy_seconds);
   RuleSearchQueue queue(rules.Size(),sample);
+  queue.discard_trace=call_timer.quiet_parallel;
   std::unique_ptr<RuleSearchPreparation> preparation;
   // Restrict sharing to the ordered local team; adaptive/remote paths stay unchanged.
   const bool share=shared_rule_preparation && !adaptive;
@@ -630,9 +649,11 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     unsigned long long face=0,point=0,maps=0;
     for(auto & r:results) {face+=r->face_trials;point+=r->point_trials;maps+=r->mappings;}
     same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
-    if(stats) {stats->AddRule(2,workers>1?1:0);stats->AddRule(14,RuleElapsed(verify_begin));}
+    if(stats) {stats->AddRule(2,workers>1?1:0);stats->AddRule(14,RuleElapsed(verify_begin));
+      if(call_timer.quiet_parallel) stats->AddQuietRules(5,1);}
     if(!same) {
-      if(stats) {stats->AddRule(17,1);if(share)stats->AddSharedRules(5,1);}
+      if(stats) {stats->AddRule(17,1);if(share)stats->AddSharedRules(5,1);
+        if(call_timer.quiet_parallel)stats->AddQuietRules(6,1);}
       throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+
                         " serial="+ToString(serial_found)+" parallel="+ToString(found)+
                         " split="+ToString(split_rule)+" diagnostic="+ToString(diagnostic_difference)+
@@ -703,11 +724,14 @@ int Meshing3 :: ApplyRulesImpl
   NgArray<int, PointIndex::BASE> pnearness;
   NgArray<int> fnearness;
 
-  static int cnt = 0;
+  int & cnt = RuleDiagnosticCounter();
   if (!queue) cnt++;
   std::unique_ptr<std::ostringstream> worker_trace;
-  if(queue) worker_trace.reset(new std::ostringstream);
-  std::ostream & rule_out = queue ? *worker_trace : *testout;
+  if(queue && !queue->discard_trace) worker_trace.reset(new std::ostringstream);
+  // Workers never mutate the shared disabled stream. Keep loktestmode and all
+  // diagnostic state/minimum calculations unchanged, even without output.
+  std::ostream discarded_trace(nullptr);
+  std::ostream & rule_out = queue ? (worker_trace ? static_cast<std::ostream &>(*worker_trace) : discarded_trace) : *testout;
   double local_minother = minother, local_minwithoutother = minwithoutother;
   
   delfaces.SetSize (0);

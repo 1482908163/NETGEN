@@ -103,6 +103,40 @@ def main():
                     raise SystemExit('共享规则预处理与原源码结果不一致')
                 logs.append(out)
     print('通过：18 组共享规则预处理差分，含连接点、内外面分割、三角/四边面、串行回退及原源码对照。')
+    for variant in (0,1,2):
+        expected=subprocess.check_output([str(reference if args.reference_sources else binary),
+            '1','0','0','0',str(variant),'1','45','0'],text=True,cwd=output,timeout=120)
+        expected=re.search(r'fingerprint=(\w+)',expected)[1]
+        for threads in (1,2,4):
+            for mode in (1,2):
+                out=subprocess.check_output([str(binary),str(threads),str(mode),'0','0',str(variant),'1','45','1'],
+                    text=True,cwd=output,timeout=120)
+                if re.search(r'fingerprint=(\w+)',out)[1]!=expected:
+                    raise SystemExit('高容错无输出规则并行与原源码结果不一致')
+                logs.append(out)
+    for sink,debug in ((0,0),(2,0),(3,0),(1,1),(4,0)):
+        for mode in (1,2):
+            outputs=[]
+            for enabled in (0,1):
+                out=subprocess.check_output([str(binary),'4',str(mode),'0','0','0',str(sink),'7',str(enabled),str(debug)],
+                    text=True,cwd=output,timeout=120)
+                outputs.append(tuple(re.search(key+r'=(\w+)',out)[1] for key in ('fingerprint','diagnostic_hash','diagnostic_bytes')))
+                logs.append(out)
+            if outputs[0]!=outputs[1]:raise SystemExit('高容错诊断回退改变了结果或输出')
+    print('通过：18 组高容错 1～45 差分、8 组诊断回退及 2 组重新启用输出配对。')
+    quiet_front=output/'quiet_front'
+    quiet_source=repo/'test_code_expansion/tests/quiet_front_regression.cpp'
+    invoke(flags(rule)+[str(quiet_source)]+objects+libs+['-o',str(quiet_front)])
+    out=subprocess.check_output([str(quiet_front)],text=True,cwd=output,timeout=120)
+    logs.append(out);print(out.strip())
+    if args.reference_sources:
+        quiet_reference=output/'quiet_front_reference'
+        invoke(flags(rule)+['-DRULE_SEARCH_REFERENCE',str(quiet_source)]+
+            [replacements.get(Path(o).name,o) for o in objects]+libs+['-o',str(quiet_reference)])
+        before=subprocess.check_output([str(quiet_reference)],text=True,cwd=output,timeout=120)
+        if re.search(r'quiet_front_fingerprint=(\w+)',before)[1]!=re.search(r'quiet_front_fingerprint=(\w+)',out)[1]:
+            raise SystemExit('高容错前沿退出状态与原源码不同')
+        logs.append(before)
     recovery=output/'generation_recovery'
     invoke(flags(rule)+[str(repo/'test_code_expansion/tests/generation_recovery_regression.cpp')]+
            objects+libs+['-o',str(recovery)])

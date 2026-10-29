@@ -20,6 +20,35 @@ spec.loader.exec_module(analyze)
 
 
 class RuleSearchAudit(unittest.TestCase):
+    def test_quiet_rule_coverage_and_time_boundaries(self):
+        mode='node_rules_recovery_quiet'
+        meta=dict(quiet_rule_profile='no_buffer_v1',quiet_rule_parallelism='on')
+        m=dict.fromkeys(analyze.QUIET_RULE_METRICS,0.)
+        m.update(kernel_quiet_high_calls=5,kernel_quiet_eligible_calls=4,kernel_quiet_parallel_calls=3,
+            kernel_quiet_serial_calls=2,kernel_quiet_high_seconds=2.,kernel_quiet_parallel_seconds=1.,
+            kernel_quiet_verified=3,kernel_rules_calls=10,kernel_rules_parallel_calls=5,
+            kernel_rules_serial_calls=5,kernel_rules_wall_seconds=3.)
+        self.assertTrue(analyze.inspect_quiet_rules([dict(metrics=m)],meta,mode,0)['quiet_rule_covered'])
+        for key,value in [('kernel_quiet_verified',2),('kernel_quiet_mismatches',1),
+                ('kernel_quiet_eligible_calls',2),('kernel_quiet_serial_calls',1),
+                ('kernel_quiet_high_seconds',4.),('kernel_quiet_parallel_seconds',3.),
+                ('kernel_quiet_high_calls',float('nan')),('kernel_quiet_parallel_calls',2.5)]:
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                analyze.inspect_quiet_rules([dict(metrics=dict(m,**{key:value}))],meta,mode,0)
+        with self.assertRaises(ValueError):analyze.inspect_quiet_rules([dict(metrics=m)],meta,mode,1)
+        m['kernel_quiet_verified']=0
+        analyze.inspect_quiet_rules([dict(metrics=m)],meta,mode,1)
+        m.update(kernel_quiet_eligible_calls=0,kernel_quiet_parallel_calls=0,
+                 kernel_quiet_parallel_seconds=0,kernel_quiet_serial_calls=5)
+        self.assertFalse(analyze.inspect_quiet_rules([dict(metrics=m)],meta,mode,1)['quiet_rule_covered'])
+        meta['quiet_rule_parallelism']='off'
+        analyze.inspect_quiet_rules([dict(metrics=m)],meta,'node_rules_recovery_topology',1)
+        self.assertEqual(analyze.inspect_quiet_rules([],{},'node_rules_recovery_topology',1),{})
+
+    def test_quiet_rule_control(self):
+        pair=[('4','node_rules_recovery_topology'),('4','node_rules_recovery_quiet')]
+        for _,mode in pair:self.assertEqual(analyze.node_comparison_control(4,mode,pair),'node_rules_recovery_topology')
+
     def test_shared_rule_coverage(self):
         mode='node_rules_recovery_shared'
         meta=dict(shared_rule_profile='call_snapshot_v1',shared_rule_preparation='on',kernel_threads='4')
