@@ -10,6 +10,8 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   quiet_rules_scaling: 无输出规则扩展验证，面4/体2，仅128/256节点；64节点已完成
+#   quiet_rules: 可选64节点预检，保留用于复现
 #   shared_rules: 可选共享预处理预检，面4/体2，仅64节点；本地未证明性能收益
 #   topology_recovery: 恢复拓扑去重，面4/体2，64/128/256节点，前沿优化版为对照
 #   front_recovery: 本轮前沿组优化，面4/体2，64/128/256节点，两策略
@@ -27,8 +29,13 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-topology_recovery}"
-# Optional candidate; the default and completed matrix stay unchanged.
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-quiet_rules_scaling}"
+# Next validation only; the kernel option remains off unless this strategy is selected.
+if [[ "${EXPERIMENT_PRESET}" == quiet_rules_scaling ]]; then
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_rules_recovery_topology node_rules_recovery_quiet}"
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == quiet_rules ]]; then
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
     export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_rules_recovery_topology node_rules_recovery_quiet}"

@@ -118,11 +118,11 @@ print('12345')
         calls=self.calls();self.assertEqual(len(calls),2)
         self.assertTrue(all(r['env']['LEVELS']=='2' and r['env']['REPEATS']=='2' for r in calls))
 
-    def test_topology_recovery_default_uses_same_batch_control(self):
+    def test_topology_recovery_explicit_uses_same_batch_control(self):
         self.env.pop('EXPERIMENT_PRESET',None)
         for k in ('PROCESS_COUNTS','RULE_SEARCH_LEVELS','KERNEL_SCHEDULERS','REPEATS','REFINES'):
             self.env.pop(k,None)
-        result=self.launch();self.assertEqual(result.returncode,0,result.stderr)
+        result=self.launch(EXPERIMENT_PRESET='topology_recovery');self.assertEqual(result.returncode,0,result.stderr)
         calls=self.calls();self.assertEqual(len(calls),3)
         self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
         for r in calls:
@@ -131,6 +131,23 @@ print('12345')
             self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
             self.assertFalse(any(a.startswith('--dependency') for a in r['args']))
         self.assertEqual([r['args'][r['args'].index('-N')+1] for r in calls],['64','128','256'])
+
+    def test_quiet_scaling_default_skips_completed_precheck(self):
+        self.env.pop('EXPERIMENT_PRESET',None)
+        for k in ('PROCESS_COUNTS','RULE_SEARCH_LEVELS','KERNEL_SCHEDULERS','REPEATS','REFINES'):
+            self.env.pop(k,None)
+        result=self.launch();self.assertEqual(result.returncode,0,result.stderr)
+        calls=self.calls();self.assertEqual(len(calls),2)
+        self.assertEqual(len({r['env']['START_EPOCH'] for r in calls}),1)
+        layouts=[]
+        for r in calls:
+            e,a=r['env'],r['args']
+            layouts.append((int(a[a.index('-N')+1]),int(a[a.index('-n')+1])))
+            self.assertEqual(e['KERNEL_SCHEDULERS'].split(),
+                ['node_rules_recovery_topology','node_rules_recovery_quiet'])
+            self.assertEqual((e['LEVELS'],e['REFINES'],e['REPEATS'],e['WARMUPS']),('4','2','3','1'))
+            self.assertFalse(any(x.startswith('--dependency') for x in a))
+        self.assertEqual(layouts,[(128,512),(256,1024)])
 
     def test_quiet_rules_is_optional_and_limited_to_one_scale(self):
         for k in ('PROCESS_COUNTS','KERNEL_SCHEDULERS','REPEATS','REFINES','RULE_SEARCH_LEVELS'):
