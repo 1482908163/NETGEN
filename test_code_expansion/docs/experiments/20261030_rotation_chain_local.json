@@ -1,0 +1,4234 @@
+{
+  "schema": "rotation_chain_experiment_v2",
+  "phase": "local",
+  "cpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "pairs": 10,
+  "utc_started": "2026-10-30T06:12:33Z",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+  "binary_sha256": "791733489d8b51acc3cbbb7697294c2af1f77f717efe255829ca835ccb3ab485",
+  "build": {
+    "command": [
+      "/usr/bin/c++",
+      "-DHAVE_DLFCN_H",
+      "-Dnglib_EXPORTS",
+      "-I/workspace/scratch/54cbe57ee0b5/build-review",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++17",
+      "-fPIC",
+      "-fvisibility=hidden",
+      "-march=native",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+      "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+      "-lz",
+      "-ldl",
+      "-pthread",
+      "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+      "-o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment"
+    ],
+    "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "1efdc9bea57bb5966fc4f834ddb989c066cc3553855f3a7c93c577f903cbc63f",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "720f0739886b4f2d94b388536f0d3da642014081ba98ba083c67a551fd3c866b",
+    "test_code_expansion/tests/run_rotation_chain_experiment.py": "fdf05f3f2c14bd9f3726f00fbe43f64e0fdd90ddf2149ea83cee4a9c09c228ff",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "cpu_max": "800000 100000\n",
+  "validation": [
+    {
+      "limit": 7,
+      "variant": 0,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.07563417900000009,
+            "calls": 7000,
+            "dispatches": 0,
+            "fingerprint": "32dd7d57d3eb2ba"
+          },
+          "returncode": 0,
+          "process_seconds": 0.0922490979999111,
+          "cpu_stat_before": "usage_usec 971440402\nuser_usec 805247086\nsystem_usec 166193316\nnice_usec 0\nnr_periods 4697\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 971535504\nuser_usec 805330155\nsystem_usec 166205349\nnice_usec 0\nnr_periods 4698\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.10623562099999995,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "32dd7d57d3eb2ba"
+          },
+          "returncode": 0,
+          "process_seconds": 0.12774474799994096,
+          "cpu_stat_before": "usage_usec 971535504\nuser_usec 805330155\nsystem_usec 166205349\nnice_usec 0\nnr_periods 4698\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 972028019\nuser_usec 805641379\nsystem_usec 166386639\nnice_usec 0\nnr_periods 4699\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.06569867299999997,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "32dd7d57d3eb2ba"
+          },
+          "returncode": 0,
+          "process_seconds": 0.0819267450000325,
+          "cpu_stat_before": "usage_usec 972028019\nuser_usec 805641379\nsystem_usec 166386639\nnice_usec 0\nnr_periods 4699\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 972110332\nuser_usec 805720358\nsystem_usec 166389974\nnice_usec 0\nnr_periods 4700\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.06482482299999992,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "32dd7d57d3eb2ba"
+          },
+          "returncode": 0,
+          "process_seconds": 0.08335555400003614,
+          "cpu_stat_before": "usage_usec 972110332\nuser_usec 805720358\nsystem_usec 166389974\nnice_usec 0\nnr_periods 4700\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 972265010\nuser_usec 805822232\nsystem_usec 166442777\nnice_usec 0\nnr_periods 4701\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.08548954499999999,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "32dd7d57d3eb2ba"
+          },
+          "returncode": 0,
+          "process_seconds": 0.1055400490000693,
+          "cpu_stat_before": "usage_usec 972265010\nuser_usec 805822232\nsystem_usec 166442777\nnice_usec 0\nnr_periods 4701\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 972671303\nuser_usec 806088397\nsystem_usec 166582905\nnice_usec 0\nnr_periods 4702\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "limit": 7,
+      "variant": 1,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "1",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.07892270999999998,
+            "calls": 7000,
+            "dispatches": 0,
+            "fingerprint": "b848948156088b90"
+          },
+          "returncode": 0,
+          "process_seconds": 0.09593246999997973,
+          "cpu_stat_before": "usage_usec 972671303\nuser_usec 806088397\nsystem_usec 166582905\nnice_usec 0\nnr_periods 4702\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 972768582\nuser_usec 806180510\nsystem_usec 166588072\nnice_usec 0\nnr_periods 4703\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "1",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.12869175699999993,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "b848948156088b90"
+          },
+          "returncode": 0,
+          "process_seconds": 0.1502988010000763,
+          "cpu_stat_before": "usage_usec 972768582\nuser_usec 806180510\nsystem_usec 166588072\nnice_usec 0\nnr_periods 4703\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 973382414\nuser_usec 806612631\nsystem_usec 166769782\nnice_usec 0\nnr_periods 4704\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "1",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.07298416600000017,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "b848948156088b90"
+          },
+          "returncode": 0,
+          "process_seconds": 0.08911648299999797,
+          "cpu_stat_before": "usage_usec 973382414\nuser_usec 806612631\nsystem_usec 166769782\nnice_usec 0\nnr_periods 4704\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 973559781\nuser_usec 806718021\nsystem_usec 166841760\nnice_usec 0\nnr_periods 4705\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "1",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.09303672099999978,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "b848948156088b90"
+          },
+          "returncode": 0,
+          "process_seconds": 0.11195499500001915,
+          "cpu_stat_before": "usage_usec 973559781\nuser_usec 806718021\nsystem_usec 166841760\nnice_usec 0\nnr_periods 4705\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 973889138\nuser_usec 806942202\nsystem_usec 166946936\nnice_usec 0\nnr_periods 4706\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "1",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.07788099699999997,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "b848948156088b90"
+          },
+          "returncode": 0,
+          "process_seconds": 0.09843254999998408,
+          "cpu_stat_before": "usage_usec 973889138\nuser_usec 806942202\nsystem_usec 166946936\nnice_usec 0\nnr_periods 4706\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 974342501\nuser_usec 807260167\nsystem_usec 167082333\nnice_usec 0\nnr_periods 4707\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "limit": 7,
+      "variant": 2,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "2",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.06131132499999994,
+            "calls": 7000,
+            "dispatches": 0,
+            "fingerprint": "f35411b0a0e69c5d"
+          },
+          "returncode": 0,
+          "process_seconds": 0.07707766800001536,
+          "cpu_stat_before": "usage_usec 974342501\nuser_usec 807260167\nsystem_usec 167082333\nnice_usec 0\nnr_periods 4707\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 974421968\nuser_usec 807335076\nsystem_usec 167086892\nnice_usec 0\nnr_periods 4708\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "2",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.09622780099999981,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "f35411b0a0e69c5d"
+          },
+          "returncode": 0,
+          "process_seconds": 0.11613196199994036,
+          "cpu_stat_before": "usage_usec 974421968\nuser_usec 807335076\nsystem_usec 167086892\nnice_usec 0\nnr_periods 4708\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 974868933\nuser_usec 807607944\nsystem_usec 167260988\nnice_usec 0\nnr_periods 4709\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "2",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.05932814399999989,
+            "calls": 7000,
+            "dispatches": 7000,
+            "fingerprint": "f35411b0a0e69c5d"
+          },
+          "returncode": 0,
+          "process_seconds": 0.07466747299997678,
+          "cpu_stat_before": "usage_usec 974868933\nuser_usec 807607944\nsystem_usec 167260988\nnice_usec 0\nnr_periods 4709\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 974944026\nuser_usec 807683037\nsystem_usec 167260988\nnice_usec 0\nnr_periods 4710\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "2",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.09043275499999984,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "f35411b0a0e69c5d"
+          },
+          "returncode": 0,
+          "process_seconds": 0.11132458199995199,
+          "cpu_stat_before": "usage_usec 974944026\nuser_usec 807683037\nsystem_usec 167260988\nnice_usec 0\nnr_periods 4710\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 975159280\nuser_usec 807860852\nsystem_usec 167298427\nnice_usec 0\nnr_periods 4711\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "2",
+            "7",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.08933860800000003,
+            "calls": 7000,
+            "dispatches": 2240,
+            "fingerprint": "f35411b0a0e69c5d"
+          },
+          "returncode": 0,
+          "process_seconds": 0.10969791499996973,
+          "cpu_stat_before": "usage_usec 975159280\nuser_usec 807860852\nsystem_usec 167298427\nnice_usec 0\nnr_periods 4711\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 975581273\nuser_usec 808178525\nsystem_usec 167402748\nnice_usec 0\nnr_periods 4712\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "limit": 45,
+      "variant": 0,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.9338877169999936,
+            "calls": 45000,
+            "dispatches": 0,
+            "fingerprint": "617f98a83ced2ca0"
+          },
+          "returncode": 0,
+          "process_seconds": 1.0145785610000075,
+          "cpu_stat_before": "usage_usec 975581273\nuser_usec 808178525\nsystem_usec 167402748\nnice_usec 0\nnr_periods 4712\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 976849456\nuser_usec 809225042\nsystem_usec 167624413\nnice_usec 0\nnr_periods 4722\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.8611196319999994,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "617f98a83ced2ca0"
+          },
+          "returncode": 0,
+          "process_seconds": 0.9512263080000594,
+          "cpu_stat_before": "usage_usec 976849456\nuser_usec 809225042\nsystem_usec 167624413\nnice_usec 0\nnr_periods 4722\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 980586945\nuser_usec 812016464\nsystem_usec 168570480\nnice_usec 0\nnr_periods 4732\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.9885985239999985,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "617f98a83ced2ca0"
+          },
+          "returncode": 0,
+          "process_seconds": 1.065427729000021,
+          "cpu_stat_before": "usage_usec 980586945\nuser_usec 812016464\nsystem_usec 168570480\nnice_usec 0\nnr_periods 4732\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 981945410\nuser_usec 813194753\nsystem_usec 168750657\nnice_usec 0\nnr_periods 4743\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.7825866219999968,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "617f98a83ced2ca0"
+          },
+          "returncode": 0,
+          "process_seconds": 0.8649834589999728,
+          "cpu_stat_before": "usage_usec 981945410\nuser_usec 813194753\nsystem_usec 168750657\nnice_usec 0\nnr_periods 4743\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 983659019\nuser_usec 814638178\nsystem_usec 169020840\nnice_usec 0\nnr_periods 4751\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.6087291899999991,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "617f98a83ced2ca0"
+          },
+          "returncode": 0,
+          "process_seconds": 0.6963662829999748,
+          "cpu_stat_before": "usage_usec 983659019\nuser_usec 814638178\nsystem_usec 169020840\nnice_usec 0\nnr_periods 4751\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 986737494\nuser_usec 816817828\nsystem_usec 169919666\nnice_usec 0\nnr_periods 4758\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "limit": 45,
+      "variant": 1,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "1",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 1.024944459000007,
+            "calls": 45000,
+            "dispatches": 0,
+            "fingerprint": "a68109aea955130e"
+          },
+          "returncode": 0,
+          "process_seconds": 1.1093840340000725,
+          "cpu_stat_before": "usage_usec 986737494\nuser_usec 816817828\nsystem_usec 169919666\nnice_usec 0\nnr_periods 4758\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 988087194\nuser_usec 817927740\nsystem_usec 170159453\nnice_usec 0\nnr_periods 4769\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "1",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.6250790380000022,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "a68109aea955130e"
+          },
+          "returncode": 0,
+          "process_seconds": 0.713298979000001,
+          "cpu_stat_before": "usage_usec 988087194\nuser_usec 817927740\nsystem_usec 170159453\nnice_usec 0\nnr_periods 4769\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 990881911\nuser_usec 820096354\nsystem_usec 170785556\nnice_usec 0\nnr_periods 4776\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "1",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 1.1649008960000022,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "a68109aea955130e"
+          },
+          "returncode": 0,
+          "process_seconds": 1.2514218100000107,
+          "cpu_stat_before": "usage_usec 990881911\nuser_usec 820096354\nsystem_usec 170785556\nnice_usec 0\nnr_periods 4776\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 992541077\nuser_usec 821527637\nsystem_usec 171013440\nnice_usec 0\nnr_periods 4789\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "1",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.7852292080000044,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "a68109aea955130e"
+          },
+          "returncode": 0,
+          "process_seconds": 0.8715465099999165,
+          "cpu_stat_before": "usage_usec 992541077\nuser_usec 821527637\nsystem_usec 171013440\nnice_usec 0\nnr_periods 4789\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 994265612\nuser_usec 822966682\nsystem_usec 171298930\nnice_usec 0\nnr_periods 4798\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "1",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.6029435200000016,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "a68109aea955130e"
+          },
+          "returncode": 0,
+          "process_seconds": 0.6959514549999994,
+          "cpu_stat_before": "usage_usec 994265612\nuser_usec 822966682\nsystem_usec 171298930\nnice_usec 0\nnr_periods 4798\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 997037775\nuser_usec 824999921\nsystem_usec 172037853\nnice_usec 0\nnr_periods 4805\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "limit": 45,
+      "variant": 2,
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "2",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.8729459940000018,
+            "calls": 45000,
+            "dispatches": 0,
+            "fingerprint": "b52827cddc23c104"
+          },
+          "returncode": 0,
+          "process_seconds": 0.9511336739999479,
+          "cpu_stat_before": "usage_usec 997037775\nuser_usec 824999921\nsystem_usec 172037853\nnice_usec 0\nnr_periods 4805\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 998309886\nuser_usec 826067202\nsystem_usec 172242684\nnice_usec 0\nnr_periods 4814\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "2",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.8423982569999924,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "b52827cddc23c104"
+          },
+          "returncode": 0,
+          "process_seconds": 0.9411836540000422,
+          "cpu_stat_before": "usage_usec 998309886\nuser_usec 826067202\nsystem_usec 172242684\nnice_usec 0\nnr_periods 4814\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1002228610\nuser_usec 828837581\nsystem_usec 173391028\nnice_usec 0\nnr_periods 4824\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "2",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.7371941169999999,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "b52827cddc23c104"
+          },
+          "returncode": 0,
+          "process_seconds": 0.807249871999943,
+          "cpu_stat_before": "usage_usec 1002228610\nuser_usec 828837581\nsystem_usec 173391028\nnice_usec 0\nnr_periods 4824\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1003065703\nuser_usec 829654759\nsystem_usec 173410944\nnice_usec 0\nnr_periods 4832\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "2",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.8058891659999947,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "b52827cddc23c104"
+          },
+          "returncode": 0,
+          "process_seconds": 0.8877165809999497,
+          "cpu_stat_before": "usage_usec 1003065703\nuser_usec 829654759\nsystem_usec 173410944\nnice_usec 0\nnr_periods 4832\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1005213462\nuser_usec 831409232\nsystem_usec 173804230\nnice_usec 0\nnr_periods 4841\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "2",
+            "45",
+            "1",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.6552190410000004,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "b52827cddc23c104"
+          },
+          "returncode": 0,
+          "process_seconds": 0.7424918289999596,
+          "cpu_stat_before": "usage_usec 1005213462\nuser_usec 831409232\nsystem_usec 173804230\nnice_usec 0\nnr_periods 4841\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1008128275\nuser_usec 833513259\nsystem_usec 174615016\nnice_usec 0\nnr_periods 4848\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "benchmarks": [
+    {
+      "limit": 7,
+      "variant": 0,
+      "repeats": 10,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.39365743699999906,
+            "calls": 35000,
+            "dispatches": 35000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.42512096799998744,
+          "cpu_stat_before": "usage_usec 1009140049\nuser_usec 834200407\nsystem_usec 174939642\nnice_usec 0\nnr_periods 4851\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1010824615\nuser_usec 835474548\nsystem_usec 175350066\nnice_usec 0\nnr_periods 4855\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.230425858999999,
+            "calls": 35000,
+            "dispatches": 11200,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.2540672760000007,
+          "cpu_stat_before": "usage_usec 1008128400\nuser_usec 833513362\nsystem_usec 174615038\nnice_usec 0\nnr_periods 4848\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1009140049\nuser_usec 834200407\nsystem_usec 174939642\nnice_usec 0\nnr_periods 4851\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": 41.46538656654426
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3160150529999993,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3424207900000056,
+            "cpu_stat_before": "usage_usec 1010824615\nuser_usec 835474548\nsystem_usec 175350066\nnice_usec 0\nnr_periods 4855\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1012177194\nuser_usec 836524859\nsystem_usec 175652334\nnice_usec 0\nnr_periods 4858\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.22923227899999934,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2500118719999591,
+            "cpu_stat_before": "usage_usec 1012177194\nuser_usec 836524859\nsystem_usec 175652334\nnice_usec 0\nnr_periods 4858\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1013159995\nuser_usec 837219457\nsystem_usec 175940538\nnice_usec 0\nnr_periods 4861\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 27.46159500193181
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.40455361599999873,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.43796236100001806,
+            "cpu_stat_before": "usage_usec 1014346206\nuser_usec 838049717\nsystem_usec 176296488\nnice_usec 0\nnr_periods 4864\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1016080031\nuser_usec 839384120\nsystem_usec 176695910\nnice_usec 0\nnr_periods 4868\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.27570936200000046,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.30110213500006466,
+            "cpu_stat_before": "usage_usec 1013160999\nuser_usec 837219457\nsystem_usec 175941541\nnice_usec 0\nnr_periods 4861\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1014346206\nuser_usec 838049717\nsystem_usec 176296488\nnice_usec 0\nnr_periods 4864\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 31.848498914417977
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.5051354109999987,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.536509082000066,
+            "cpu_stat_before": "usage_usec 1016080669\nuser_usec 839384758\nsystem_usec 176695910\nnice_usec 0\nnr_periods 4868\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1018449116\nuser_usec 841098524\nsystem_usec 177350592\nnice_usec 0\nnr_periods 4873\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.36016092199999833,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3910998210000116,
+            "cpu_stat_before": "usage_usec 1018449116\nuser_usec 841098524\nsystem_usec 177350592\nnice_usec 0\nnr_periods 4873\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1019995577\nuser_usec 842336039\nsystem_usec 177659538\nnice_usec 0\nnr_periods 4877\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 28.700123935678853
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.4488569070000009,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.48292003899996416,
+            "cpu_stat_before": "usage_usec 1021736314\nuser_usec 843577470\nsystem_usec 178158844\nnice_usec 0\nnr_periods 4881\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1023651412\nuser_usec 845072939\nsystem_usec 178578472\nnice_usec 0\nnr_periods 4886\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3653719359999993,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.39363011599994024,
+            "cpu_stat_before": "usage_usec 1019995577\nuser_usec 842336039\nsystem_usec 177659538\nnice_usec 0\nnr_periods 4877\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1021736314\nuser_usec 843577470\nsystem_usec 178158844\nnice_usec 0\nnr_periods 4881\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 18.59946225579669
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.36852437900000046,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4007922179999923,
+            "cpu_stat_before": "usage_usec 1023652958\nuser_usec 845072939\nsystem_usec 178580018\nnice_usec 0\nnr_periods 4886\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1025241079\nuser_usec 846240597\nsystem_usec 179000481\nnice_usec 0\nnr_periods 4890\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.20631284600000074,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2280943099999604,
+            "cpu_stat_before": "usage_usec 1025241079\nuser_usec 846240597\nsystem_usec 179000481\nnice_usec 0\nnr_periods 4890\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1026132560\nuser_usec 846820280\nsystem_usec 179312280\nnice_usec 0\nnr_periods 4892\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 44.0164999233333
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.24985337400000124,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2746487880000359,
+            "cpu_stat_before": "usage_usec 1027148370\nuser_usec 847500741\nsystem_usec 179647629\nnice_usec 0\nnr_periods 4895\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1028349893\nuser_usec 848424634\nsystem_usec 179925258\nnice_usec 0\nnr_periods 4898\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.23039145499999877,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2513316099999656,
+            "cpu_stat_before": "usage_usec 1026132560\nuser_usec 846820280\nsystem_usec 179312280\nnice_usec 0\nnr_periods 4892\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1027148370\nuser_usec 847500741\nsystem_usec 179647629\nnice_usec 0\nnr_periods 4895\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 7.789336076767316
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2416871990000009,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2652643569999782,
+            "cpu_stat_before": "usage_usec 1028349893\nuser_usec 848424634\nsystem_usec 179925258\nnice_usec 0\nnr_periods 4898\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1029538330\nuser_usec 849236785\nsystem_usec 180301545\nnice_usec 0\nnr_periods 4900\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.22412650600000034,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2458714910000026,
+            "cpu_stat_before": "usage_usec 1029538330\nuser_usec 849236785\nsystem_usec 180301545\nnice_usec 0\nnr_periods 4900\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1030504981\nuser_usec 849866471\nsystem_usec 180638509\nnice_usec 0\nnr_periods 4903\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 7.265876336297192
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.48663183400000226,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5214595820000341,
+            "cpu_stat_before": "usage_usec 1031594428\nuser_usec 850644180\nsystem_usec 180950247\nnice_usec 0\nnr_periods 4906\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1033926814\nuser_usec 852220433\nsystem_usec 181706380\nnice_usec 0\nnr_periods 4911\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.25150998400000013,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.27731366400007573,
+            "cpu_stat_before": "usage_usec 1030504981\nuser_usec 849866471\nsystem_usec 180638509\nnice_usec 0\nnr_periods 4903\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1031594428\nuser_usec 850644180\nsystem_usec 180950247\nnice_usec 0\nnr_periods 4906\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 48.31616708412895
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3623342060000006,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.39234784600000694,
+            "cpu_stat_before": "usage_usec 1033926814\nuser_usec 852220433\nsystem_usec 181706380\nnice_usec 0\nnr_periods 4911\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1035477452\nuser_usec 853461546\nsystem_usec 182015905\nnice_usec 0\nnr_periods 4915\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.27936119399999904,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3033294350000233,
+            "cpu_stat_before": "usage_usec 1035477452\nuser_usec 853461546\nsystem_usec 182015905\nnice_usec 0\nnr_periods 4915\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1036871578\nuser_usec 854332859\nsystem_usec 182538719\nnice_usec 0\nnr_periods 4918\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 22.899580173780617
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2475366960000008,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.270876438000073,
+            "cpu_stat_before": "usage_usec 1037876529\nuser_usec 855043239\nsystem_usec 182833290\nnice_usec 0\nnr_periods 4920\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1038942921\nuser_usec 855856740\nsystem_usec 183086180\nnice_usec 0\nnr_periods 4923\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2329550049999995,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2543179470000041,
+            "cpu_stat_before": "usage_usec 1036871725\nuser_usec 854332980\nsystem_usec 182538744\nnice_usec 0\nnr_periods 4918\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1037876529\nuser_usec 855043239\nsystem_usec 182833290\nnice_usec 0\nnr_periods 4920\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 5.89071892597341
+        }
+      ],
+      "paired_median_pct": 25.180587587856213,
+      "wins": 10,
+      "control_median_seconds": 0.36542929250000056,
+      "candidate_median_seconds": 0.2422324944999998
+    },
+    {
+      "limit": 7,
+      "variant": 1,
+      "repeats": 10,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "1",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.41458439500000066,
+            "calls": 35000,
+            "dispatches": 35000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.448444562000077,
+          "cpu_stat_before": "usage_usec 1040265907\nuser_usec 856778170\nsystem_usec 183487736\nnice_usec 0\nnr_periods 4926\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1042043693\nuser_usec 858235247\nsystem_usec 183808445\nnice_usec 0\nnr_periods 4931\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "1",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.30573668799999887,
+            "calls": 35000,
+            "dispatches": 11200,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.3347475770000301,
+          "cpu_stat_before": "usage_usec 1038945415\nuser_usec 855858795\nsystem_usec 183086619\nnice_usec 0\nnr_periods 4923\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1040265907\nuser_usec 856778170\nsystem_usec 183487736\nnice_usec 0\nnr_periods 4926\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": 26.254656063454007
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.45257798099999846,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4878580839999813,
+            "cpu_stat_before": "usage_usec 1042045081\nuser_usec 858235247\nsystem_usec 183809833\nnice_usec 0\nnr_periods 4931\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1044180907\nuser_usec 859874772\nsystem_usec 184306134\nnice_usec 0\nnr_periods 4936\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3203113290000025,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3521455090000245,
+            "cpu_stat_before": "usage_usec 1044180907\nuser_usec 859874772\nsystem_usec 184306134\nnice_usec 0\nnr_periods 4936\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1045839781\nuser_usec 860979246\nsystem_usec 184860535\nnice_usec 0\nnr_periods 4939\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 29.22516285651918
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.32997898100000184,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3596096239999724,
+            "cpu_stat_before": "usage_usec 1047495156\nuser_usec 862152230\nsystem_usec 185342926\nnice_usec 0\nnr_periods 4943\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1048913343\nuser_usec 863213044\nsystem_usec 185700298\nnice_usec 0\nnr_periods 4947\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3448843899999996,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3760250110000243,
+            "cpu_stat_before": "usage_usec 1045839781\nuser_usec 860979246\nsystem_usec 184860535\nnice_usec 0\nnr_periods 4939\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1047495156\nuser_usec 862152230\nsystem_usec 185342926\nnice_usec 0\nnr_periods 4943\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -4.5170783165724355
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2638653440000003,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.28863009399992734,
+            "cpu_stat_before": "usage_usec 1048913343\nuser_usec 863213044\nsystem_usec 185700298\nnice_usec 0\nnr_periods 4947\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1050241225\nuser_usec 864129087\nsystem_usec 186112137\nnice_usec 0\nnr_periods 4950\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.23395560199999976,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2645592869999973,
+            "cpu_stat_before": "usage_usec 1050241225\nuser_usec 864129087\nsystem_usec 186112137\nnice_usec 0\nnr_periods 4950\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1051322320\nuser_usec 864846207\nsystem_usec 186476112\nnice_usec 0\nnr_periods 4952\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 11.335229381240943
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.22652763499999884,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.24766267999996217,
+            "cpu_stat_before": "usage_usec 1052255364\nuser_usec 865518807\nsystem_usec 186736556\nnice_usec 0\nnr_periods 4955\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1053230592\nuser_usec 866179348\nsystem_usec 187051244\nnice_usec 0\nnr_periods 4957\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.22146152699999822,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.24320683499990992,
+            "cpu_stat_before": "usage_usec 1051322440\nuser_usec 864846306\nsystem_usec 186476134\nnice_usec 0\nnr_periods 4952\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1052255364\nuser_usec 865518807\nsystem_usec 186736556\nnice_usec 0\nnr_periods 4955\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 2.2364194108152193
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.22056207999999985,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.24095414199996412,
+            "cpu_stat_before": "usage_usec 1053230592\nuser_usec 866179348\nsystem_usec 187051244\nnice_usec 0\nnr_periods 4957\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1054177239\nuser_usec 866805902\nsystem_usec 187371336\nnice_usec 0\nnr_periods 4960\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.1836518189999998,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.20131583200009118,
+            "cpu_stat_before": "usage_usec 1054177239\nuser_usec 866805902\nsystem_usec 187371336\nnice_usec 0\nnr_periods 4960\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1054967370\nuser_usec 867339245\nsystem_usec 187628124\nnice_usec 0\nnr_periods 4962\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 16.734635890267302
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.38416700099999934,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4142554959998961,
+            "cpu_stat_before": "usage_usec 1056235586\nuser_usec 868274882\nsystem_usec 187960704\nnice_usec 0\nnr_periods 4965\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1058180565\nuser_usec 869713677\nsystem_usec 188466887\nnice_usec 0\nnr_periods 4969\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.29532073799999947,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.31991411000012704,
+            "cpu_stat_before": "usage_usec 1054967370\nuser_usec 867339245\nsystem_usec 187628124\nnice_usec 0\nnr_periods 4962\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1056235586\nuser_usec 868274882\nsystem_usec 187960704\nnice_usec 0\nnr_periods 4965\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 23.126989764537328
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.36983801099999974,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4186554350001188,
+            "cpu_stat_before": "usage_usec 1058180565\nuser_usec 869713677\nsystem_usec 188466887\nnice_usec 0\nnr_periods 4969\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1059766392\nuser_usec 871032690\nsystem_usec 188733701\nnice_usec 0\nnr_periods 4973\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3035240950000005,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.32934063400011837,
+            "cpu_stat_before": "usage_usec 1059766392\nuser_usec 871032690\nsystem_usec 188733701\nnice_usec 0\nnr_periods 4973\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1061360395\nuser_usec 872147634\nsystem_usec 189212760\nnice_usec 0\nnr_periods 4977\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 17.930530131474047
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.45388801499999987,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4893666689999918,
+            "cpu_stat_before": "usage_usec 1062854223\nuser_usec 873222468\nsystem_usec 189631755\nnice_usec 0\nnr_periods 4980\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1064952614\nuser_usec 874764397\nsystem_usec 190188217\nnice_usec 0\nnr_periods 4985\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3465662359999996,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.37752947399985715,
+            "cpu_stat_before": "usage_usec 1061362167\nuser_usec 872147634\nsystem_usec 189214533\nnice_usec 0\nnr_periods 4977\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1062854223\nuser_usec 873222468\nsystem_usec 189631755\nnice_usec 0\nnr_periods 4980\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 23.644990714284518
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.4308945609999995,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.46773128900008487,
+            "cpu_stat_before": "usage_usec 1064957533\nuser_usec 874765728\nsystem_usec 190191804\nnice_usec 0\nnr_periods 4985\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1066844858\nuser_usec 876137238\nsystem_usec 190707619\nnice_usec 0\nnr_periods 4990\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.34461730799999946,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.374370995000163,
+            "cpu_stat_before": "usage_usec 1066844858\nuser_usec 876137238\nsystem_usec 190707619\nnice_usec 0\nnr_periods 4990\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1068326406\nuser_usec 877179404\nsystem_usec 191147001\nnice_usec 0\nnr_periods 4994\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 20.022822474196918
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.24947447399999928,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2744654420000643,
+            "cpu_stat_before": "usage_usec 1069815420\nuser_usec 878077112\nsystem_usec 191738308\nnice_usec 0\nnr_periods 4997\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1070919985\nuser_usec 879027264\nsystem_usec 191892720\nnice_usec 0\nnr_periods 5000\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.29821916199999776,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3238349630000812,
+            "cpu_stat_before": "usage_usec 1068327078\nuser_usec 877180076\nsystem_usec 191147001\nnice_usec 0\nnr_periods 4994\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1069815420\nuser_usec 878077112\nsystem_usec 191738308\nnice_usec 0\nnr_periods 4997\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -19.538948100958265
+        }
+      ],
+      "paired_median_pct": 17.332583010870675,
+      "wins": 8,
+      "control_median_seconds": 0.3499084960000008,
+      "candidate_median_seconds": 0.30087162849999916
+    },
+    {
+      "limit": 7,
+      "variant": 2,
+      "repeats": 10,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "2",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.3831153150000005,
+            "calls": 35000,
+            "dispatches": 35000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.41467968899996777,
+          "cpu_stat_before": "usage_usec 1071966660\nuser_usec 879773427\nsystem_usec 192193232\nnice_usec 0\nnr_periods 5002\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1073796861\nuser_usec 880920592\nsystem_usec 192876268\nnice_usec 0\nnr_periods 5006\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "2",
+            "7",
+            "0",
+            "10"
+          ],
+          "result": {
+            "seconds": 0.20916874500000046,
+            "calls": 35000,
+            "dispatches": 11200,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.23094763899985082,
+          "cpu_stat_before": "usage_usec 1070922199\nuser_usec 879029082\nsystem_usec 191893117\nnice_usec 0\nnr_periods 5000\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1071966660\nuser_usec 879773427\nsystem_usec 192193232\nnice_usec 0\nnr_periods 5002\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": 45.40318885450973
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3658148140000008,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.39654080100012834,
+            "cpu_stat_before": "usage_usec 1073796861\nuser_usec 880920592\nsystem_usec 192876268\nnice_usec 0\nnr_periods 5006\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1075711424\nuser_usec 882304260\nsystem_usec 193407164\nnice_usec 0\nnr_periods 5010\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.24286006200000065,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2668774870001016,
+            "cpu_stat_before": "usage_usec 1075711424\nuser_usec 882304260\nsystem_usec 193407164\nnice_usec 0\nnr_periods 5010\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1076761710\nuser_usec 883064760\nsystem_usec 193696950\nnice_usec 0\nnr_periods 5013\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 33.611200884827994
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2259101990000004,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.24907064800004264,
+            "cpu_stat_before": "usage_usec 1077911820\nuser_usec 883886560\nsystem_usec 194025259\nnice_usec 0\nnr_periods 5016\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1079055026\nuser_usec 884669798\nsystem_usec 194385227\nnice_usec 0\nnr_periods 5018\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2824134980000007,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3060488040000564,
+            "cpu_stat_before": "usage_usec 1076761710\nuser_usec 883064760\nsystem_usec 193696950\nnice_usec 0\nnr_periods 5013\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1077911820\nuser_usec 883886560\nsystem_usec 194025259\nnice_usec 0\nnr_periods 5016\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -25.01139800244265
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.26612959200000064,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.290656762000026,
+            "cpu_stat_before": "usage_usec 1079060056\nuser_usec 884671717\nsystem_usec 194388338\nnice_usec 0\nnr_periods 5018\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1080287867\nuser_usec 885509893\nsystem_usec 194777973\nnice_usec 0\nnr_periods 5021\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.269562765,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.29741324099995836,
+            "cpu_stat_before": "usage_usec 1080287867\nuser_usec 885509893\nsystem_usec 194777973\nnice_usec 0\nnr_periods 5021\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1081459380\nuser_usec 886360852\nsystem_usec 195098527\nnice_usec 0\nnr_periods 5024\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -1.290038050334266
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.45065677900000023,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4906242659999407,
+            "cpu_stat_before": "usage_usec 1082641654\nuser_usec 887199024\nsystem_usec 195442629\nnice_usec 0\nnr_periods 5027\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1084563930\nuser_usec 888698184\nsystem_usec 195865745\nnice_usec 0\nnr_periods 5032\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2717569160000007,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2998014869999679,
+            "cpu_stat_before": "usage_usec 1081459380\nuser_usec 886360852\nsystem_usec 195098527\nnice_usec 0\nnr_periods 5024\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1082641654\nuser_usec 887199024\nsystem_usec 195442629\nnice_usec 0\nnr_periods 5027\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 39.69758613128494
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.445393410000001,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.48872631400013233,
+            "cpu_stat_before": "usage_usec 1084563930\nuser_usec 888698184\nsystem_usec 195865745\nnice_usec 0\nnr_periods 5032\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1086819071\nuser_usec 890422630\nsystem_usec 196396440\nnice_usec 0\nnr_periods 5037\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2580456429999998,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.28497121200007314,
+            "cpu_stat_before": "usage_usec 1086819071\nuser_usec 890422630\nsystem_usec 196396440\nnice_usec 0\nnr_periods 5037\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1087992161\nuser_usec 891219492\nsystem_usec 196772669\nnice_usec 0\nnr_periods 5040\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 42.06343488557694
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.34236883300000176,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3722194300000865,
+            "cpu_stat_before": "usage_usec 1089263793\nuser_usec 891936747\nsystem_usec 197327045\nnice_usec 0\nnr_periods 5043\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1090816273\nuser_usec 893121055\nsystem_usec 197695218\nnice_usec 0\nnr_periods 5046\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.23333890299999968,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.25784655200004636,
+            "cpu_stat_before": "usage_usec 1087997543\nuser_usec 891221018\nsystem_usec 196776524\nnice_usec 0\nnr_periods 5040\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1089263793\nuser_usec 891936747\nsystem_usec 197327045\nnice_usec 0\nnr_periods 5043\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 31.84575215116077
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.46383819000000037,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.49867099400012194,
+            "cpu_stat_before": "usage_usec 1090817035\nuser_usec 893121817\nsystem_usec 197695218\nnice_usec 0\nnr_periods 5046\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1092953998\nuser_usec 894733121\nsystem_usec 198220877\nnice_usec 0\nnr_periods 5051\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2887158210000003,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3171274119999907,
+            "cpu_stat_before": "usage_usec 1092953998\nuser_usec 894733121\nsystem_usec 198220877\nnice_usec 0\nnr_periods 5051\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1094271970\nuser_usec 895668491\nsystem_usec 198603479\nnice_usec 0\nnr_periods 5054\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 37.7550561328294
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.4285835430000002,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4606546850000086,
+            "cpu_stat_before": "usage_usec 1095369678\nuser_usec 896467348\nsystem_usec 198902329\nnice_usec 0\nnr_periods 5057\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1097195393\nuser_usec 897781881\nsystem_usec 199413512\nnice_usec 0\nnr_periods 5062\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.2512465869999991,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.27615864200015494,
+            "cpu_stat_before": "usage_usec 1094275379\nuser_usec 895668521\nsystem_usec 198606857\nnice_usec 0\nnr_periods 5055\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1095369678\nuser_usec 896467348\nsystem_usec 198902329\nnice_usec 0\nnr_periods 5057\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 41.37745345019023
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.432571778000001,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.4690176460001112,
+            "cpu_stat_before": "usage_usec 1097195393\nuser_usec 897781881\nsystem_usec 199413512\nnice_usec 0\nnr_periods 5062\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1099072744\nuser_usec 899101527\nsystem_usec 199971217\nnice_usec 0\nnr_periods 5067\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3267263710000015,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.35720727499983695,
+            "cpu_stat_before": "usage_usec 1099072744\nuser_usec 899101527\nsystem_usec 199971217\nnice_usec 0\nnr_periods 5067\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1100773615\nuser_usec 900296689\nsystem_usec 200476926\nnice_usec 0\nnr_periods 5070\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 24.46886560407999
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.4759264400000001,
+              "calls": 35000,
+              "dispatches": 35000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5077897649998704,
+            "cpu_stat_before": "usage_usec 1102125187\nuser_usec 901333255\nsystem_usec 200791932\nnice_usec 0\nnr_periods 5074\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1104479307\nuser_usec 902997715\nsystem_usec 201481591\nnice_usec 0\nnr_periods 5079\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "7",
+              "0",
+              "10"
+            ],
+            "result": {
+              "seconds": 0.3052921890000016,
+              "calls": 35000,
+              "dispatches": 11200,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3334801780001726,
+            "cpu_stat_before": "usage_usec 1100779024\nuser_usec 900301800\nsystem_usec 200477223\nnice_usec 0\nnr_periods 5070\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1102125187\nuser_usec 901333255\nsystem_usec 200791932\nnice_usec 0\nnr_periods 5074\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 35.85307237815963
+        }
+      ],
+      "paired_median_pct": 34.732136631493816,
+      "wins": 8,
+      "control_median_seconds": 0.43057766050000057,
+      "candidate_median_seconds": 0.27065984050000036
+    },
+    {
+      "limit": 45,
+      "variant": 0,
+      "repeats": 2,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.701856475000002,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.7666755019999982,
+          "cpu_stat_before": "usage_usec 1106861638\nuser_usec 904856252\nsystem_usec 202005386\nnice_usec 0\nnr_periods 5085\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1110049221\nuser_usec 907163870\nsystem_usec 202885351\nnice_usec 0\nnr_periods 5092\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.5667717799999986,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.61340082300012,
+          "cpu_stat_before": "usage_usec 1104481719\nuser_usec 902997715\nsystem_usec 201484003\nnice_usec 0\nnr_periods 5079\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1106861638\nuser_usec 904856252\nsystem_usec 202005386\nnice_usec 0\nnr_periods 5085\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": 19.24676907768116
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7442662529999954,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8059850320000805,
+            "cpu_stat_before": "usage_usec 1110051425\nuser_usec 907166073\nsystem_usec 202885351\nnice_usec 0\nnr_periods 5092\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1113224486\nuser_usec 909868366\nsystem_usec 203356120\nnice_usec 0\nnr_periods 5101\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5475662330000031,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5931196950000412,
+            "cpu_stat_before": "usage_usec 1113224486\nuser_usec 909868366\nsystem_usec 203356120\nnice_usec 0\nnr_periods 5101\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1115839742\nuser_usec 911843355\nsystem_usec 203996387\nnice_usec 0\nnr_periods 5106\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 26.42871676730364
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7010672929999981,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.750564415000099,
+            "cpu_stat_before": "usage_usec 1118622390\nuser_usec 913944761\nsystem_usec 204677628\nnice_usec 0\nnr_periods 5114\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1121785667\nuser_usec 916377144\nsystem_usec 205408522\nnice_usec 0\nnr_periods 5121\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6578888839999992,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7047095550001359,
+            "cpu_stat_before": "usage_usec 1115839742\nuser_usec 911843355\nsystem_usec 203996387\nnice_usec 0\nnr_periods 5106\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1118622390\nuser_usec 913944761\nsystem_usec 204677628\nnice_usec 0\nnr_periods 5114\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 6.158953559968605
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7076581600000043,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.762026633000005,
+            "cpu_stat_before": "usage_usec 1121785667\nuser_usec 916377144\nsystem_usec 205408522\nnice_usec 0\nnr_periods 5121\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1125009509\nuser_usec 918721829\nsystem_usec 206287680\nnice_usec 0\nnr_periods 5129\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5584287729999994,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.603291702999968,
+            "cpu_stat_before": "usage_usec 1125009509\nuser_usec 918721829\nsystem_usec 206287680\nnice_usec 0\nnr_periods 5129\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1127379032\nuser_usec 920612226\nsystem_usec 206766805\nnice_usec 0\nnr_periods 5135\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 21.087778737689394
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6731378680000004,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.721322882000095,
+            "cpu_stat_before": "usage_usec 1130097315\nuser_usec 922620174\nsystem_usec 207477141\nnice_usec 0\nnr_periods 5141\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1133042803\nuser_usec 924880561\nsystem_usec 208162242\nnice_usec 0\nnr_periods 5148\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5985911379999973,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6431829139999081,
+            "cpu_stat_before": "usage_usec 1127379332\nuser_usec 920612472\nsystem_usec 206766860\nnice_usec 0\nnr_periods 5135\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1130097315\nuser_usec 922620174\nsystem_usec 207477141\nnice_usec 0\nnr_periods 5141\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 11.074511410492073
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.8417563859999977,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.902558395999904,
+            "cpu_stat_before": "usage_usec 1133042803\nuser_usec 924880561\nsystem_usec 208162242\nnice_usec 0\nnr_periods 5148\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1136794028\nuser_usec 927753344\nsystem_usec 209040684\nnice_usec 0\nnr_periods 5157\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.680412450000002,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7299286489999304,
+            "cpu_stat_before": "usage_usec 1136794028\nuser_usec 927753344\nsystem_usec 209040684\nnice_usec 0\nnr_periods 5157\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1139747436\nuser_usec 930108667\nsystem_usec 209638769\nnice_usec 0\nnr_periods 5165\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 19.167533348537756
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.8232013629999979,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8809955179999633,
+            "cpu_stat_before": "usage_usec 1142537522\nuser_usec 932159201\nsystem_usec 210378320\nnice_usec 0\nnr_periods 5171\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1146016536\nuser_usec 934868971\nsystem_usec 211147564\nnice_usec 0\nnr_periods 5180\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6086208870000004,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6593157950001114,
+            "cpu_stat_before": "usage_usec 1139752558\nuser_usec 930113789\nsystem_usec 209638769\nnice_usec 0\nnr_periods 5165\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1142537522\nuser_usec 932159201\nsystem_usec 210378320\nnice_usec 0\nnr_periods 5171\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 26.066584148743456
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5751706979999988,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6240724730000693,
+            "cpu_stat_before": "usage_usec 1146019038\nuser_usec 934868971\nsystem_usec 211150066\nnice_usec 0\nnr_periods 5180\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1148778993\nuser_usec 936915804\nsystem_usec 211863189\nnice_usec 0\nnr_periods 5186\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.673401029000001,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7245382850001079,
+            "cpu_stat_before": "usage_usec 1148778993\nuser_usec 936915804\nsystem_usec 211863189\nnice_usec 0\nnr_periods 5186\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1151672723\nuser_usec 939240816\nsystem_usec 212431907\nnice_usec 0\nnr_periods 5194\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -17.078465808771508
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7985396989999979,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8527800530000604,
+            "cpu_stat_before": "usage_usec 1154373447\nuser_usec 941265024\nsystem_usec 213108423\nnice_usec 0\nnr_periods 5201\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1157967150\nuser_usec 944038995\nsystem_usec 213928155\nnice_usec 0\nnr_periods 5209\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.632997365999999,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6867895300001692,
+            "cpu_stat_before": "usage_usec 1151672723\nuser_usec 939240816\nsystem_usec 212431907\nnice_usec 0\nnr_periods 5194\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1154373447\nuser_usec 941265024\nsystem_usec 213108423\nnice_usec 0\nnr_periods 5201\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 20.730632829814926
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.8221473149999993,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8776219750000109,
+            "cpu_stat_before": "usage_usec 1157968351\nuser_usec 944040195\nsystem_usec 213928155\nnice_usec 0\nnr_periods 5209\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1161625696\nuser_usec 946908631\nsystem_usec 214717065\nnice_usec 0\nnr_periods 5218\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5291443580000008,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5723173169999427,
+            "cpu_stat_before": "usage_usec 1161625696\nuser_usec 946908631\nsystem_usec 214717065\nnice_usec 0\nnr_periods 5218\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1163866729\nuser_usec 948518342\nsystem_usec 215348387\nnice_usec 0\nnr_periods 5224\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 35.63874158002921
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7619381379999989,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8224633969998649,
+            "cpu_stat_before": "usage_usec 1166302012\nuser_usec 950328053\nsystem_usec 215973959\nnice_usec 0\nnr_periods 5229\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1169686462\nuser_usec 952732437\nsystem_usec 216954025\nnice_usec 0\nnr_periods 5238\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5262880600000006,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5682289720000426,
+            "cpu_stat_before": "usage_usec 1163867534\nuser_usec 948519147\nsystem_usec 215348387\nnice_usec 0\nnr_periods 5224\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1166302012\nuser_usec 950328053\nsystem_usec 215973959\nnice_usec 0\nnr_periods 5229\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 30.92771791402291
+        }
+      ],
+      "paired_median_pct": 20.90920578375216,
+      "wins": 9,
+      "control_median_seconds": 0.7531021954999971,
+      "candidate_median_seconds": 0.6036060124999989
+    },
+    {
+      "limit": 45,
+      "variant": 1,
+      "repeats": 2,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "1",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.8091703500000013,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.8728635630000099,
+          "cpu_stat_before": "usage_usec 1172257595\nuser_usec 954712088\nsystem_usec 217545507\nnice_usec 0\nnr_periods 5244\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1175987512\nuser_usec 957528752\nsystem_usec 218458759\nnice_usec 0\nnr_periods 5253\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "1",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.6041637659999992,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.656717055000172,
+          "cpu_stat_before": "usage_usec 1169689643\nuser_usec 952735617\nsystem_usec 216954025\nnice_usec 0\nnr_periods 5238\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1172257595\nuser_usec 954712088\nsystem_usec 217545507\nnice_usec 0\nnr_periods 5244\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": 25.335404837807236
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7358185580000031,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7943791919999512,
+            "cpu_stat_before": "usage_usec 1175988230\nuser_usec 957529470\nsystem_usec 218458759\nnice_usec 0\nnr_periods 5253\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1179301869\nuser_usec 960038451\nsystem_usec 219263417\nnice_usec 0\nnr_periods 5261\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5108579149999973,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.553646924000077,
+            "cpu_stat_before": "usage_usec 1179301869\nuser_usec 960038451\nsystem_usec 219263417\nnice_usec 0\nnr_periods 5261\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1181457247\nuser_usec 961576633\nsystem_usec 219880614\nnice_usec 0\nnr_periods 5266\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 30.572841708621976
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7370772679999982,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.792174149000175,
+            "cpu_stat_before": "usage_usec 1183644351\nuser_usec 963246847\nsystem_usec 220397504\nnice_usec 0\nnr_periods 5272\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1187033914\nuser_usec 965818831\nsystem_usec 221215082\nnice_usec 0\nnr_periods 5280\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.4966393250000028,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5440944210001817,
+            "cpu_stat_before": "usage_usec 1181459260\nuser_usec 961578645\nsystem_usec 219880614\nnice_usec 0\nnr_periods 5266\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1183644351\nuser_usec 963246847\nsystem_usec 220397504\nnice_usec 0\nnr_periods 5272\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 32.62045289395575
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7707468530000049,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8351983200000177,
+            "cpu_stat_before": "usage_usec 1187033914\nuser_usec 965818831\nsystem_usec 221215082\nnice_usec 0\nnr_periods 5280\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1190400198\nuser_usec 968440219\nsystem_usec 221959979\nnice_usec 0\nnr_periods 5288\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6351286280000029,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6829968089998601,
+            "cpu_stat_before": "usage_usec 1190400198\nuser_usec 968440219\nsystem_usec 221959979\nnice_usec 0\nnr_periods 5288\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1193230899\nuser_usec 970644519\nsystem_usec 222586379\nnice_usec 0\nnr_periods 5295\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 17.59568974847324
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6055511459999992,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6593732129999808,
+            "cpu_stat_before": "usage_usec 1195915262\nuser_usec 972528623\nsystem_usec 223386639\nnice_usec 0\nnr_periods 5301\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1198488762\nuser_usec 974385202\nsystem_usec 224103559\nnice_usec 0\nnr_periods 5308\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5740174289999985,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6308763889999227,
+            "cpu_stat_before": "usage_usec 1193233069\nuser_usec 970646689\nsystem_usec 222586379\nnice_usec 0\nnr_periods 5295\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1195915262\nuser_usec 972528623\nsystem_usec 223386639\nnice_usec 0\nnr_periods 5301\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 5.20744072706299
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.704727812,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.759050666000121,
+            "cpu_stat_before": "usage_usec 1198490168\nuser_usec 974386609\nsystem_usec 224103559\nnice_usec 0\nnr_periods 5308\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1201693857\nuser_usec 976954115\nsystem_usec 224739742\nnice_usec 0\nnr_periods 5316\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6359436789999979,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6907415959999526,
+            "cpu_stat_before": "usage_usec 1201693857\nuser_usec 976954115\nsystem_usec 224739742\nnice_usec 0\nnr_periods 5316\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1204477861\nuser_usec 979128264\nsystem_usec 225349597\nnice_usec 0\nnr_periods 5322\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 9.760382920718628
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6307888289999987,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6820588400000815,
+            "cpu_stat_before": "usage_usec 1207074129\nuser_usec 981137024\nsystem_usec 225937105\nnice_usec 0\nnr_periods 5329\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1209959964\nuser_usec 983466272\nsystem_usec 226493692\nnice_usec 0\nnr_periods 5336\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6043423419999968,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6558889769999041,
+            "cpu_stat_before": "usage_usec 1204477861\nuser_usec 979128264\nsystem_usec 225349597\nnice_usec 0\nnr_periods 5322\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1207074129\nuser_usec 981137024\nsystem_usec 225937105\nnice_usec 0\nnr_periods 5329\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 4.192605478116656
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7204689149999988,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7799123499999041,
+            "cpu_stat_before": "usage_usec 1209959964\nuser_usec 983466272\nsystem_usec 226493692\nnice_usec 0\nnr_periods 5336\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1213235593\nuser_usec 985797911\nsystem_usec 227437682\nnice_usec 0\nnr_periods 5344\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5028263030000012,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.548201765000158,
+            "cpu_stat_before": "usage_usec 1213235593\nuser_usec 985797911\nsystem_usec 227437682\nnice_usec 0\nnr_periods 5344\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1215371821\nuser_usec 987485550\nsystem_usec 227886271\nnice_usec 0\nnr_periods 5349\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 30.208466662298395
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7631162880000019,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8213698949998616,
+            "cpu_stat_before": "usage_usec 1217598198\nuser_usec 989117531\nsystem_usec 228480666\nnice_usec 0\nnr_periods 5355\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1221105199\nuser_usec 991993651\nsystem_usec 229111548\nnice_usec 0\nnr_periods 5363\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5165284770000013,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5649702349999188,
+            "cpu_stat_before": "usage_usec 1215375338\nuser_usec 987489067\nsystem_usec 227886271\nnice_usec 0\nnr_periods 5349\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1217598198\nuser_usec 989117531\nsystem_usec 228480666\nnice_usec 0\nnr_periods 5355\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 32.313267961592764
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.8062907800000032,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.8647153429999435,
+            "cpu_stat_before": "usage_usec 1221108096\nuser_usec 991993651\nsystem_usec 229114445\nnice_usec 0\nnr_periods 5363\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1224698066\nuser_usec 994596424\nsystem_usec 230101642\nnice_usec 0\nnr_periods 5372\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6696299660000029,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7265913210001145,
+            "cpu_stat_before": "usage_usec 1224698066\nuser_usec 994596424\nsystem_usec 230101642\nnice_usec 0\nnr_periods 5372\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1227644242\nuser_usec 996816895\nsystem_usec 230827346\nnice_usec 0\nnr_periods 5379\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 16.94932118658231
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6843908259999968,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7440321399999448,
+            "cpu_stat_before": "usage_usec 1231035096\nuser_usec 999162578\nsystem_usec 231872518\nnice_usec 0\nnr_periods 5387\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1233944552\nuser_usec 1001527496\nsystem_usec 232417056\nnice_usec 0\nnr_periods 5394\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "1",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7351759189999988,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.799210174000109,
+            "cpu_stat_before": "usage_usec 1227644751\nuser_usec 996817405\nsystem_usec 230827346\nnice_usec 0\nnr_periods 5379\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1231035096\nuser_usec 999162578\nsystem_usec 231872518\nnice_usec 0\nnr_periods 5387\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -7.420481261682231
+        }
+      ],
+      "paired_median_pct": 17.272505467527775,
+      "wins": 9,
+      "control_median_seconds": 0.728143736500001,
+      "candidate_median_seconds": 0.5891798854999977
+    },
+    {
+      "limit": 45,
+      "variant": 2,
+      "repeats": 2,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "2",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.4687911580000008,
+            "calls": 45000,
+            "dispatches": 45000,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.5063638799999808,
+          "cpu_stat_before": "usage_usec 1236807668\nuser_usec 1003633483\nsystem_usec 233174184\nnice_usec 0\nnr_periods 5401\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1238817660\nuser_usec 1005086148\nsystem_usec 233731512\nnice_usec 0\nnr_periods 5406\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "2",
+            "45",
+            "0",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.5866791949999999,
+            "calls": 45000,
+            "dispatches": 14400,
+            "fingerprint": "14650fb0739d0383"
+          },
+          "returncode": 0,
+          "process_seconds": 0.638243710000097,
+          "cpu_stat_before": "usage_usec 1233948679\nuser_usec 1001531623\nsystem_usec 232417056\nnice_usec 0\nnr_periods 5395\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1236807668\nuser_usec 1003633483\nsystem_usec 233174184\nnice_usec 0\nnr_periods 5401\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": -25.147239871789317
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6447475730000015,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.702749656999913,
+            "cpu_stat_before": "usage_usec 1238817660\nuser_usec 1005086148\nsystem_usec 233731512\nnice_usec 0\nnr_periods 5406\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1241558139\nuser_usec 1007058439\nsystem_usec 234499700\nnice_usec 0\nnr_periods 5413\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5598752650000007,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6124990289999914,
+            "cpu_stat_before": "usage_usec 1241558139\nuser_usec 1007058439\nsystem_usec 234499700\nnice_usec 0\nnr_periods 5413\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1244260177\nuser_usec 1009049814\nsystem_usec 235210362\nnice_usec 0\nnr_periods 5419\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 13.163649085965709
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6788198879999968,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7304319939999004,
+            "cpu_stat_before": "usage_usec 1247167031\nuser_usec 1011167024\nsystem_usec 236000006\nnice_usec 0\nnr_periods 5426\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1250156518\nuser_usec 1013375783\nsystem_usec 236780735\nnice_usec 0\nnr_periods 5434\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6622244789999993,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7151008569999249,
+            "cpu_stat_before": "usage_usec 1244261966\nuser_usec 1009051603\nsystem_usec 235210362\nnice_usec 0\nnr_periods 5419\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1247167031\nuser_usec 1011167024\nsystem_usec 236000006\nnice_usec 0\nnr_periods 5426\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 2.44474407620739
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5416880969999963,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5886648209998384,
+            "cpu_stat_before": "usage_usec 1250157176\nuser_usec 1013376441\nsystem_usec 236780735\nnice_usec 0\nnr_periods 5434\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1252466225\nuser_usec 1015090320\nsystem_usec 237375904\nnice_usec 0\nnr_periods 5440\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.46087910600000104,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5067734839999503,
+            "cpu_stat_before": "usage_usec 1252466225\nuser_usec 1015090320\nsystem_usec 237375904\nnice_usec 0\nnr_periods 5440\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1254652953\nuser_usec 1016617860\nsystem_usec 238035093\nnice_usec 0\nnr_periods 5445\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 14.917992742970652
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.4984252249999983,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5404929280000488,
+            "cpu_stat_before": "usage_usec 1257165485\nuser_usec 1018316780\nsystem_usec 238848704\nnice_usec 0\nnr_periods 5451\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1259460763\nuser_usec 1019794557\nsystem_usec 239666205\nnice_usec 0\nnr_periods 5456\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5821701829999975,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6281831809999403,
+            "cpu_stat_before": "usage_usec 1254659168\nuser_usec 1016624074\nsystem_usec 238035093\nnice_usec 0\nnr_periods 5445\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1257165485\nuser_usec 1018316780\nsystem_usec 238848704\nnice_usec 0\nnr_periods 5451\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -16.801910055816183
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5591881339999957,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6053320149999308,
+            "cpu_stat_before": "usage_usec 1259467118\nuser_usec 1019800912\nsystem_usec 239666205\nnice_usec 0\nnr_periods 5456\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1261880711\nuser_usec 1021685613\nsystem_usec 240195097\nnice_usec 0\nnr_periods 5462\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6363876029999963,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6952909849999287,
+            "cpu_stat_before": "usage_usec 1261880711\nuser_usec 1021685613\nsystem_usec 240195097\nnice_usec 0\nnr_periods 5462\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1264824169\nuser_usec 1023612012\nsystem_usec 241212157\nnice_usec 0\nnr_periods 5469\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -13.805634330574195
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5666042150000019,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6138395660000242,
+            "cpu_stat_before": "usage_usec 1266890795\nuser_usec 1025093083\nsystem_usec 241797711\nnice_usec 0\nnr_periods 5475\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1269286995\nuser_usec 1026870117\nsystem_usec 242416877\nnice_usec 0\nnr_periods 5481\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.48392319399999967,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5280129840000427,
+            "cpu_stat_before": "usage_usec 1264827070\nuser_usec 1023614912\nsystem_usec 241212157\nnice_usec 0\nnr_periods 5469\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1266890795\nuser_usec 1025093083\nsystem_usec 241797711\nnice_usec 0\nnr_periods 5475\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 14.592376620424886
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.4918796439999982,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5353345490000265,
+            "cpu_stat_before": "usage_usec 1269289349\nuser_usec 1026872471\nsystem_usec 242416877\nnice_usec 0\nnr_periods 5481\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1271677928\nuser_usec 1028609229\nsystem_usec 243068698\nnice_usec 0\nnr_periods 5486\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5029875480000001,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.5506745730001512,
+            "cpu_stat_before": "usage_usec 1271677928\nuser_usec 1028609229\nsystem_usec 243068698\nnice_usec 0\nnr_periods 5486\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1273980794\nuser_usec 1030154987\nsystem_usec 243825807\nnice_usec 0\nnr_periods 5492\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -2.258256493330711
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6538602600000003,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.7092722620000131,
+            "cpu_stat_before": "usage_usec 1276648026\nuser_usec 1032203278\nsystem_usec 244444748\nnice_usec 0\nnr_periods 5498\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1279661432\nuser_usec 1034500211\nsystem_usec 245161220\nnice_usec 0\nnr_periods 5505\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6027498940000003,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6507749450001938,
+            "cpu_stat_before": "usage_usec 1273980794\nuser_usec 1030154987\nsystem_usec 243825807\nnice_usec 0\nnr_periods 5492\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1276648026\nuser_usec 1032203278\nsystem_usec 244444748\nnice_usec 0\nnr_periods 5498\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 7.816710867242481
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6210057060000018,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6678727869998511,
+            "cpu_stat_before": "usage_usec 1279662057\nuser_usec 1034500836\nsystem_usec 245161220\nnice_usec 0\nnr_periods 5505\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1282289263\nuser_usec 1036436027\nsystem_usec 245853236\nnice_usec 0\nnr_periods 5512\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.6205992569999975,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6704972180000368,
+            "cpu_stat_before": "usage_usec 1282289263\nuser_usec 1036436027\nsystem_usec 245853236\nnice_usec 0\nnr_periods 5512\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1285092821\nuser_usec 1038418261\nsystem_usec 246674560\nnice_usec 0\nnr_periods 5519\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 0.06545012325608231
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.7045103040000018,
+              "calls": 45000,
+              "dispatches": 45000,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.75684580799998,
+            "cpu_stat_before": "usage_usec 1287656120\nuser_usec 1040352133\nsystem_usec 247303986\nnice_usec 0\nnr_periods 5525\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1290872583\nuser_usec 1042609654\nsystem_usec 248262928\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "2",
+              "45",
+              "0",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.5750110849999976,
+              "calls": 45000,
+              "dispatches": 14400,
+              "fingerprint": "14650fb0739d0383"
+            },
+            "returncode": 0,
+            "process_seconds": 0.6257543310000528,
+            "cpu_stat_before": "usage_usec 1285099452\nuser_usec 1038421105\nsystem_usec 246678346\nnice_usec 0\nnr_periods 5519\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1287656120\nuser_usec 1040352133\nsystem_usec 247303986\nnice_usec 0\nnr_periods 5525\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 18.381451380447633
+        }
+      ],
+      "paired_median_pct": 5.130727471724936,
+      "wins": 7,
+      "control_median_seconds": 0.5938049605000019,
+      "candidate_median_seconds": 0.5785906339999976
+    }
+  ],
+  "complete": true,
+  "utc_finished": "2026-10-30T06:13:56Z"
+}

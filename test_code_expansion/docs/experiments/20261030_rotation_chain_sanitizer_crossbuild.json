@@ -1,0 +1,572 @@
+{
+  "schema": "rotation_chain_experiment_v2",
+  "phase": "sanitize",
+  "cpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "pairs": 10,
+  "utc_started": "2026-10-30T06:15:19Z",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+  "binary_sha256": "cbf406e52a9376f5c84edb5f2e9a48d5df1fd033fe5db594d0536d6ba988fc82",
+  "build": {
+    "command": [
+      "/usr/bin/c++",
+      "-DHAVE_DLFCN_H",
+      "-Dnglib_EXPORTS",
+      "-I/workspace/scratch/54cbe57ee0b5/build-review",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++17",
+      "-fPIC",
+      "-fvisibility=hidden",
+      "-march=native",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+      "-O1",
+      "-g1",
+      "-fsanitize=address,undefined",
+      "-fno-omit-frame-pointer",
+      "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+      "-lz",
+      "-ldl",
+      "-pthread",
+      "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+      "-o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment_san"
+    ],
+    "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "1efdc9bea57bb5966fc4f834ddb989c066cc3553855f3a7c93c577f903cbc63f",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "720f0739886b4f2d94b388536f0d3da642014081ba98ba083c67a551fd3c866b",
+    "test_code_expansion/tests/run_rotation_chain_experiment.py": "fdf05f3f2c14bd9f3726f00fbe43f64e0fdd90ddf2149ea83cee4a9c09c228ff",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "cpu_max": "800000 100000\n",
+  "validation": [
+    {
+      "arguments": {
+        "threads": 1,
+        "route": -1,
+        "variant": 0,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "1",
+          "-1",
+          "0",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.3836099629999956,
+          "calls": 45000,
+          "dispatches": 0,
+          "fingerprint": "617f98a83ced2ca0"
+        },
+        "returncode": 0,
+        "process_seconds": 3.7795162770000843,
+        "cpu_stat_before": "usage_usec 1373099038\nuser_usec 1109411551\nsystem_usec 263687487\nnice_usec 0\nnr_periods 6140\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1379349658\nuser_usec 1113921014\nsystem_usec 265428644\nnice_usec 0\nnr_periods 6177\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 2,
+        "route": 1,
+        "variant": 0,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "2",
+          "1",
+          "0",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.704326785000019,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "617f98a83ced2ca0"
+        },
+        "returncode": 0,
+        "process_seconds": 4.101264689000118,
+        "cpu_stat_before": "usage_usec 1379349750\nuser_usec 1113921088\nsystem_usec 265428661\nnice_usec 0\nnr_periods 6177\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1390655544\nuser_usec 1120913065\nsystem_usec 269742478\nnice_usec 0\nnr_periods 6218\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "variant": 0,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "0",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.734609720000004,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "617f98a83ced2ca0"
+        },
+        "returncode": 0,
+        "process_seconds": 4.186996375000035,
+        "cpu_stat_before": "usage_usec 1390656547\nuser_usec 1120913065\nsystem_usec 269743481\nnice_usec 0\nnr_periods 6218\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1408683105\nuser_usec 1131636002\nsystem_usec 277047103\nnice_usec 0\nnr_periods 6260\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 1,
+        "route": -1,
+        "variant": 1,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "1",
+          "-1",
+          "1",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.291820449000017,
+          "calls": 45000,
+          "dispatches": 0,
+          "fingerprint": "a68109aea955130e"
+        },
+        "returncode": 0,
+        "process_seconds": 3.654227288000129,
+        "cpu_stat_before": "usage_usec 1408684101\nuser_usec 1131636002\nsystem_usec 277048099\nnice_usec 0\nnr_periods 6260\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1413163123\nuser_usec 1135365297\nsystem_usec 277797826\nnice_usec 0\nnr_periods 6297\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 2,
+        "route": 1,
+        "variant": 1,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "2",
+          "1",
+          "1",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.7709956290000037,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "a68109aea955130e"
+        },
+        "returncode": 0,
+        "process_seconds": 4.199274030000197,
+        "cpu_stat_before": "usage_usec 1413163123\nuser_usec 1135365297\nsystem_usec 277797826\nnice_usec 0\nnr_periods 6297\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1422146617\nuser_usec 1141264517\nsystem_usec 280882099\nnice_usec 0\nnr_periods 6339\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "variant": 1,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "1",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.68205908199999,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "a68109aea955130e"
+        },
+        "returncode": 0,
+        "process_seconds": 4.167167954999968,
+        "cpu_stat_before": "usage_usec 1422146617\nuser_usec 1141264517\nsystem_usec 280882099\nnice_usec 0\nnr_periods 6339\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1438862684\nuser_usec 1152093965\nsystem_usec 286768719\nnice_usec 0\nnr_periods 6380\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 1,
+        "route": -1,
+        "variant": 2,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "1",
+          "-1",
+          "2",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 2.8146940600000128,
+          "calls": 45000,
+          "dispatches": 0,
+          "fingerprint": "b52827cddc23c104"
+        },
+        "returncode": 0,
+        "process_seconds": 3.1549096650001047,
+        "cpu_stat_before": "usage_usec 1438862684\nuser_usec 1152093965\nsystem_usec 286768719\nnice_usec 0\nnr_periods 6381\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1442810489\nuser_usec 1155294781\nsystem_usec 287515707\nnice_usec 0\nnr_periods 6412\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 2,
+        "route": 1,
+        "variant": 2,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "2",
+          "1",
+          "2",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.3905847599999968,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "b52827cddc23c104"
+        },
+        "returncode": 0,
+        "process_seconds": 3.7974038569998356,
+        "cpu_stat_before": "usage_usec 1442810489\nuser_usec 1155294781\nsystem_usec 287515707\nnice_usec 0\nnr_periods 6412\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1451085682\nuser_usec 1160625007\nsystem_usec 290460675\nnice_usec 0\nnr_periods 6450\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "variant": 2,
+        "limit": 45
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "2",
+          "45",
+          "1",
+          "2"
+        ],
+        "result": {
+          "seconds": 3.8936317409999903,
+          "calls": 45000,
+          "dispatches": 14400,
+          "fingerprint": "b52827cddc23c104"
+        },
+        "returncode": 0,
+        "process_seconds": 4.369526419000067,
+        "cpu_stat_before": "usage_usec 1451086612\nuser_usec 1160625751\nsystem_usec 290460861\nnice_usec 0\nnr_periods 6450\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1468710311\nuser_usec 1171300888\nsystem_usec 297409422\nnice_usec 0\nnr_periods 6494\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "verify": 0,
+        "fixture": 0
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "0",
+          "7",
+          "0",
+          "2",
+          "0"
+        ],
+        "result": {
+          "seconds": 0.002342463,
+          "status": 0,
+          "elements": 1,
+          "front_batches": 1,
+          "fingerprint": "28f8e80405352c38"
+        },
+        "returncode": 0,
+        "process_seconds": 0.037884598999880836,
+        "cpu_stat_before": "usage_usec 1468710449\nuser_usec 1171300999\nsystem_usec 297409450\nnice_usec 0\nnr_periods 6494\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1468779799\nuser_usec 1171341432\nsystem_usec 297438366\nnice_usec 0\nnr_periods 6494\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "verify": 0,
+        "fixture": 1
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "0",
+          "7",
+          "0",
+          "2",
+          "1"
+        ],
+        "result": {
+          "seconds": 0.007751763,
+          "status": 0,
+          "elements": 13,
+          "front_batches": 14,
+          "fingerprint": "a471f4161e424afe"
+        },
+        "returncode": 0,
+        "process_seconds": 0.04144999100003588,
+        "cpu_stat_before": "usage_usec 1468779799\nuser_usec 1171341432\nsystem_usec 297438366\nnice_usec 0\nnr_periods 6494\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1468856770\nuser_usec 1171379881\nsystem_usec 297476889\nnice_usec 0\nnr_periods 6495\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": true
+    },
+    {
+      "arguments": {
+        "threads": 4,
+        "route": 1,
+        "verify": 0,
+        "fixture": 2
+      },
+      "actual": {
+        "arguments": [
+          "4",
+          "1",
+          "0",
+          "7",
+          "0",
+          "2",
+          "2"
+        ],
+        "result": {
+          "seconds": 0.120286984,
+          "status": 0,
+          "elements": 140,
+          "front_batches": 162,
+          "fingerprint": "1f14fd91cd491262"
+        },
+        "returncode": 0,
+        "process_seconds": 0.15506024000001162,
+        "cpu_stat_before": "usage_usec 1468857217\nuser_usec 1171380328\nsystem_usec 297476889\nnice_usec 0\nnr_periods 6495\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "cpu_stat_after": "usage_usec 1469393251\nuser_usec 1171631444\nsystem_usec 297761806\nnice_usec 0\nnr_periods 6496\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+        "stderr": ""
+      },
+      "passed": false
+    }
+  ],
+  "benchmarks": [],
+  "complete": false,
+  "reference_sha256": {
+    "local": "79900a75b3306d0aeed9abd8107abb681ab6b2ccb5ee1a9df5f77650e4278e89",
+    "front": "f819c5e557d160e342c8e845a8855322ac41fbd82ab1ea4741d6472a90a11c8f"
+  },
+  "sanitizer_options": {
+    "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+    "UBSAN_OPTIONS": "halt_on_error=1"
+  }
+}

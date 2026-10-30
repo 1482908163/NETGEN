@@ -1,0 +1,2134 @@
+{
+  "schema": "rotation_chain_experiment_v2",
+  "phase": "front",
+  "cpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "pairs": 10,
+  "utc_started": "2026-10-30T06:13:56Z",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+  "binary_sha256": "791733489d8b51acc3cbbb7697294c2af1f77f717efe255829ca835ccb3ab485",
+  "build": {
+    "command": [
+      "/usr/bin/c++",
+      "-DHAVE_DLFCN_H",
+      "-Dnglib_EXPORTS",
+      "-I/workspace/scratch/54cbe57ee0b5/build-review",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+      "-O3",
+      "-DNDEBUG",
+      "-std=gnu++17",
+      "-fPIC",
+      "-fvisibility=hidden",
+      "-march=native",
+      "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+      "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+      "-lz",
+      "-ldl",
+      "-pthread",
+      "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+      "-o",
+      "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment"
+    ],
+    "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "1efdc9bea57bb5966fc4f834ddb989c066cc3553855f3a7c93c577f903cbc63f",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "720f0739886b4f2d94b388536f0d3da642014081ba98ba083c67a551fd3c866b",
+    "test_code_expansion/tests/run_rotation_chain_experiment.py": "fdf05f3f2c14bd9f3726f00fbe43f64e0fdd90ddf2149ea83cee4a9c09c228ff",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "cpu_max": "800000 100000\n",
+  "validation": [
+    {
+      "fixture": 0,
+      "purpose": "successful_generation",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "0"
+          ],
+          "result": {
+            "seconds": 0.000102393,
+            "status": 0,
+            "elements": 1,
+            "front_batches": 0,
+            "fingerprint": "28f8e80405352c38"
+          },
+          "returncode": 0,
+          "process_seconds": 0.007812561000037022,
+          "cpu_stat_before": "usage_usec 1290929203\nuser_usec 1042654848\nsystem_usec 248274355\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1290940689\nuser_usec 1042657481\nsystem_usec 248283207\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "0"
+          ],
+          "result": {
+            "seconds": 0.000470114,
+            "status": 0,
+            "elements": 1,
+            "front_batches": 0,
+            "fingerprint": "28f8e80405352c38"
+          },
+          "returncode": 0,
+          "process_seconds": 0.009920589000103064,
+          "cpu_stat_before": "usage_usec 1290940689\nuser_usec 1042657481\nsystem_usec 248283207\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1290958175\nuser_usec 1042657481\nsystem_usec 248300693\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "0"
+          ],
+          "result": {
+            "seconds": 0.00013334,
+            "status": 0,
+            "elements": 1,
+            "front_batches": 0,
+            "fingerprint": "28f8e80405352c38"
+          },
+          "returncode": 0,
+          "process_seconds": 0.0072758969999995315,
+          "cpu_stat_before": "usage_usec 1290958175\nuser_usec 1042657481\nsystem_usec 248300693\nnice_usec 0\nnr_periods 5533\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1290965624\nuser_usec 1042663963\nsystem_usec 248301660\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "0"
+          ],
+          "result": {
+            "seconds": 0.00022709,
+            "status": 0,
+            "elements": 1,
+            "front_batches": 1,
+            "fingerprint": "28f8e80405352c38"
+          },
+          "returncode": 0,
+          "process_seconds": 0.007468065000011848,
+          "cpu_stat_before": "usage_usec 1290965624\nuser_usec 1042663963\nsystem_usec 248301660\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1290975506\nuser_usec 1042669369\nsystem_usec 248306136\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "0"
+          ],
+          "result": {
+            "seconds": 0.000378627,
+            "status": 0,
+            "elements": 1,
+            "front_batches": 1,
+            "fingerprint": "28f8e80405352c38"
+          },
+          "returncode": 0,
+          "process_seconds": 0.008981721999816727,
+          "cpu_stat_before": "usage_usec 1290975506\nuser_usec 1042669369\nsystem_usec 248306136\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1290995263\nuser_usec 1042680380\nsystem_usec 248314882\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "fixture": 1,
+      "purpose": "successful_generation",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "1"
+          ],
+          "result": {
+            "seconds": 0.000800068,
+            "status": 0,
+            "elements": 13,
+            "front_batches": 0,
+            "fingerprint": "a471f4161e424afe"
+          },
+          "returncode": 0,
+          "process_seconds": 0.008045369999990726,
+          "cpu_stat_before": "usage_usec 1290995263\nuser_usec 1042680380\nsystem_usec 248314882\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291004211\nuser_usec 1042689185\nsystem_usec 248315025\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "1"
+          ],
+          "result": {
+            "seconds": 0.001344293,
+            "status": 0,
+            "elements": 13,
+            "front_batches": 0,
+            "fingerprint": "a471f4161e424afe"
+          },
+          "returncode": 0,
+          "process_seconds": 0.008445512999969651,
+          "cpu_stat_before": "usage_usec 1291004211\nuser_usec 1042689185\nsystem_usec 248315025\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291022837\nuser_usec 1042704075\nsystem_usec 248318762\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "1"
+          ],
+          "result": {
+            "seconds": 0.000799598,
+            "status": 0,
+            "elements": 13,
+            "front_batches": 0,
+            "fingerprint": "a471f4161e424afe"
+          },
+          "returncode": 0,
+          "process_seconds": 0.007813032000058229,
+          "cpu_stat_before": "usage_usec 1291022837\nuser_usec 1042704075\nsystem_usec 248318762\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291030864\nuser_usec 1042712102\nsystem_usec 248318762\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "1"
+          ],
+          "result": {
+            "seconds": 0.001195671,
+            "status": 0,
+            "elements": 13,
+            "front_batches": 14,
+            "fingerprint": "a471f4161e424afe"
+          },
+          "returncode": 0,
+          "process_seconds": 0.008376575000056619,
+          "cpu_stat_before": "usage_usec 1291030864\nuser_usec 1042712102\nsystem_usec 248318762\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291042272\nuser_usec 1042722911\nsystem_usec 248319361\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "1"
+          ],
+          "result": {
+            "seconds": 0.001200238,
+            "status": 0,
+            "elements": 13,
+            "front_batches": 14,
+            "fingerprint": "a471f4161e424afe"
+          },
+          "returncode": 0,
+          "process_seconds": 0.008595733999982258,
+          "cpu_stat_before": "usage_usec 1291042272\nuser_usec 1042722911\nsystem_usec 248319361\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291062262\nuser_usec 1042734638\nsystem_usec 248327624\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "fixture": 2,
+      "purpose": "successful_generation",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.013448972,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 0,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.020903392000036547,
+          "cpu_stat_before": "usage_usec 1291062559\nuser_usec 1042734934\nsystem_usec 248327624\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291083693\nuser_usec 1042756068\nsystem_usec 248327624\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.01382795,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 0,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.02211996000005456,
+          "cpu_stat_before": "usage_usec 1291083693\nuser_usec 1042756068\nsystem_usec 248327624\nnice_usec 0\nnr_periods 5534\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291169583\nuser_usec 1042797000\nsystem_usec 248372583\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.012957146,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 0,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.02087267100000645,
+          "cpu_stat_before": "usage_usec 1291169583\nuser_usec 1042797000\nsystem_usec 248372583\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291215532\nuser_usec 1042822967\nsystem_usec 248392565\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.011362879,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 162,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.020055442000057155,
+          "cpu_stat_before": "usage_usec 1291215532\nuser_usec 1042822967\nsystem_usec 248392565\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291269261\nuser_usec 1042855434\nsystem_usec 248413826\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.013113039,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 162,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.02172354499998619,
+          "cpu_stat_before": "usage_usec 1291269261\nuser_usec 1042855434\nsystem_usec 248413826\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291358985\nuser_usec 1042913046\nsystem_usec 248445939\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "fixture": 3,
+      "purpose": "failure_exit_equivalence",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "3"
+          ],
+          "result": {
+            "seconds": 0.021567532,
+            "status": 2,
+            "elements": 0,
+            "front_batches": 0,
+            "fingerprint": "23eac351f18093fa"
+          },
+          "returncode": 0,
+          "process_seconds": 0.029396037000196884,
+          "cpu_stat_before": "usage_usec 1291358985\nuser_usec 1042913046\nsystem_usec 248445939\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291421564\nuser_usec 1042943049\nsystem_usec 248478514\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "3"
+          ],
+          "result": {
+            "seconds": 0.017915032,
+            "status": 2,
+            "elements": 0,
+            "front_batches": 0,
+            "fingerprint": "23eac351f18093fa"
+          },
+          "returncode": 0,
+          "process_seconds": 0.02762255099992217,
+          "cpu_stat_before": "usage_usec 1291421564\nuser_usec 1042943049\nsystem_usec 248478514\nnice_usec 0\nnr_periods 5535\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291540856\nuser_usec 1043013948\nsystem_usec 248526908\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "3"
+          ],
+          "result": {
+            "seconds": 0.020656989,
+            "status": 2,
+            "elements": 0,
+            "front_batches": 0,
+            "fingerprint": "23eac351f18093fa"
+          },
+          "returncode": 0,
+          "process_seconds": 0.028102328999921156,
+          "cpu_stat_before": "usage_usec 1291540856\nuser_usec 1043013948\nsystem_usec 248526908\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291597285\nuser_usec 1043045881\nsystem_usec 248551403\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "3"
+          ],
+          "result": {
+            "seconds": 0.013849924,
+            "status": 2,
+            "elements": 0,
+            "front_batches": 197,
+            "fingerprint": "23eac351f18093fa"
+          },
+          "returncode": 0,
+          "process_seconds": 0.022398747000124786,
+          "cpu_stat_before": "usage_usec 1291597285\nuser_usec 1043045881\nsystem_usec 248551403\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291659354\nuser_usec 1043081308\nsystem_usec 248578046\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "3"
+          ],
+          "result": {
+            "seconds": 0.010190858,
+            "status": 2,
+            "elements": 0,
+            "front_batches": 197,
+            "fingerprint": "23eac351f18093fa"
+          },
+          "returncode": 0,
+          "process_seconds": 0.018694974999789338,
+          "cpu_stat_before": "usage_usec 1291659354\nuser_usec 1043081308\nsystem_usec 248578046\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291715431\nuser_usec 1043098797\nsystem_usec 248616634\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "fixture": 4,
+      "purpose": "successful_generation",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.204784597,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 0,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.21352041099999042,
+          "cpu_stat_before": "usage_usec 1291715552\nuser_usec 1043098895\nsystem_usec 248616657\nnice_usec 0\nnr_periods 5536\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1291937524\nuser_usec 1043305960\nsystem_usec 248631563\nnice_usec 0\nnr_periods 5539\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.207311201,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 0,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.21687036299999818,
+          "cpu_stat_before": "usage_usec 1291937524\nuser_usec 1043305960\nsystem_usec 248631563\nnice_usec 0\nnr_periods 5539\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1292782329\nuser_usec 1043935348\nsystem_usec 248846980\nnice_usec 0\nnr_periods 5541\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.236819957,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 0,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.24548052800014375,
+          "cpu_stat_before": "usage_usec 1292782329\nuser_usec 1043935348\nsystem_usec 248846980\nnice_usec 0\nnr_periods 5541\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1293028614\nuser_usec 1044171954\nsystem_usec 248856659\nnice_usec 0\nnr_periods 5543\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.212715094,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 1409,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.22146839399988494,
+          "cpu_stat_before": "usage_usec 1293028614\nuser_usec 1044171954\nsystem_usec 248856659\nnice_usec 0\nnr_periods 5543\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1293463175\nuser_usec 1044524462\nsystem_usec 248938713\nnice_usec 0\nnr_periods 5545\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.208477393,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 1409,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.21849788100007572,
+          "cpu_stat_before": "usage_usec 1293463175\nuser_usec 1044524462\nsystem_usec 248938713\nnice_usec 0\nnr_periods 5545\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1294314558\nuser_usec 1045178042\nsystem_usec 249136515\nnice_usec 0\nnr_periods 5548\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    },
+    {
+      "fixture": 5,
+      "purpose": "failure_exit_equivalence",
+      "cases": [
+        {
+          "arguments": [
+            "1",
+            "-1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "5"
+          ],
+          "result": {
+            "seconds": 2.261775109,
+            "status": 2,
+            "elements": 8654,
+            "front_batches": 0,
+            "fingerprint": "7e3f4f5918ddd13b"
+          },
+          "returncode": 0,
+          "process_seconds": 2.2705072010001004,
+          "cpu_stat_before": "usage_usec 1294314558\nuser_usec 1045178042\nsystem_usec 249136515\nnice_usec 0\nnr_periods 5548\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1297344234\nuser_usec 1047726193\nsystem_usec 249618040\nnice_usec 0\nnr_periods 5570\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "5"
+          ],
+          "result": {
+            "seconds": 2.407078061,
+            "status": 2,
+            "elements": 8654,
+            "front_batches": 0,
+            "fingerprint": "7e3f4f5918ddd13b"
+          },
+          "returncode": 0,
+          "process_seconds": 2.4177250289999392,
+          "cpu_stat_before": "usage_usec 1297344234\nuser_usec 1047726193\nsystem_usec 249618040\nnice_usec 0\nnr_periods 5570\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1307259317\nuser_usec 1055464942\nsystem_usec 251794374\nnice_usec 0\nnr_periods 5595\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "1",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "5"
+          ],
+          "result": {
+            "seconds": 2.162821035,
+            "status": 2,
+            "elements": 8654,
+            "front_batches": 0,
+            "fingerprint": "7e3f4f5918ddd13b"
+          },
+          "returncode": 0,
+          "process_seconds": 2.1716457120000996,
+          "cpu_stat_before": "usage_usec 1307259317\nuser_usec 1055464942\nsystem_usec 251794374\nnice_usec 0\nnr_periods 5595\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1309435919\nuser_usec 1057623760\nsystem_usec 251812159\nnice_usec 0\nnr_periods 5616\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "2",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "5"
+          ],
+          "result": {
+            "seconds": 2.20444151,
+            "status": 2,
+            "elements": 8654,
+            "front_batches": 12575,
+            "fingerprint": "7e3f4f5918ddd13b"
+          },
+          "returncode": 0,
+          "process_seconds": 2.2139096739999786,
+          "cpu_stat_before": "usage_usec 1309435919\nuser_usec 1057623760\nsystem_usec 251812159\nnice_usec 0\nnr_periods 5616\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1313858767\nuser_usec 1061186773\nsystem_usec 252671994\nnice_usec 0\nnr_periods 5638\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "5"
+          ],
+          "result": {
+            "seconds": 2.202118067,
+            "status": 2,
+            "elements": 8654,
+            "front_batches": 12575,
+            "fingerprint": "7e3f4f5918ddd13b"
+          },
+          "returncode": 0,
+          "process_seconds": 2.2116175399999065,
+          "cpu_stat_before": "usage_usec 1313858767\nuser_usec 1061186773\nsystem_usec 252671994\nnice_usec 0\nnr_periods 5638\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1322672837\nuser_usec 1067545321\nsystem_usec 255127516\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "benchmarks": [
+    {
+      "fixture": 2,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.017858071,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 0,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.027190155999960552,
+          "cpu_stat_before": "usage_usec 1322749441\nuser_usec 1067598261\nsystem_usec 255151180\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1322841195\nuser_usec 1067661759\nsystem_usec 255179436\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "2"
+          ],
+          "result": {
+            "seconds": 0.018983945,
+            "status": 0,
+            "elements": 140,
+            "front_batches": 162,
+            "fingerprint": "4d5466100ac6acab"
+          },
+          "returncode": 0,
+          "process_seconds": 0.02840738500003681,
+          "cpu_stat_before": "usage_usec 1322673506\nuser_usec 1067545989\nsystem_usec 255127516\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1322749441\nuser_usec 1067598261\nsystem_usec 255151180\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": -6.304566713840476
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.014368793,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.024199980000048527,
+            "cpu_stat_before": "usage_usec 1322841195\nuser_usec 1067661759\nsystem_usec 255179436\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1322913009\nuser_usec 1067701256\nsystem_usec 255211752\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.011216897,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.019644045999939408,
+            "cpu_stat_before": "usage_usec 1322913009\nuser_usec 1067701256\nsystem_usec 255211752\nnice_usec 0\nnr_periods 5661\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1322974378\nuser_usec 1067751819\nsystem_usec 255222559\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 21.93570469001815
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.01234206,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.020662649999849236,
+            "cpu_stat_before": "usage_usec 1323034282\nuser_usec 1067801584\nsystem_usec 255232697\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323099989\nuser_usec 1067843344\nsystem_usec 255256645\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010460643,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.019536334999884275,
+            "cpu_stat_before": "usage_usec 1322974378\nuser_usec 1067751819\nsystem_usec 255222559\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323034282\nuser_usec 1067801584\nsystem_usec 255232697\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 15.243946310421434
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.012958225,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.02246238599991557,
+            "cpu_stat_before": "usage_usec 1323100891\nuser_usec 1067844245\nsystem_usec 255256645\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323171379\nuser_usec 1067904433\nsystem_usec 255266945\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.012517741,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.021962783999924795,
+            "cpu_stat_before": "usage_usec 1323171379\nuser_usec 1067904433\nsystem_usec 255266945\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323225230\nuser_usec 1067949277\nsystem_usec 255275953\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 3.39926185878081
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.013790002,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.02172377800002323,
+            "cpu_stat_before": "usage_usec 1323297074\nuser_usec 1068008510\nsystem_usec 255288564\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323367749\nuser_usec 1068062510\nsystem_usec 255305239\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.013690125,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.021916715000088516,
+            "cpu_stat_before": "usage_usec 1323225230\nuser_usec 1067949277\nsystem_usec 255275953\nnice_usec 0\nnr_periods 5662\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323297074\nuser_usec 1068008510\nsystem_usec 255288564\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 0.7242711059795472
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.014087895,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.02340782200008107,
+            "cpu_stat_before": "usage_usec 1323367749\nuser_usec 1068062510\nsystem_usec 255305239\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323443059\nuser_usec 1068101890\nsystem_usec 255341169\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.011631944,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.019371340999896347,
+            "cpu_stat_before": "usage_usec 1323443059\nuser_usec 1068101890\nsystem_usec 255341169\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323493455\nuser_usec 1068140485\nsystem_usec 255352970\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 17.43305866490345
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.01023663,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.01882943499981593,
+            "cpu_stat_before": "usage_usec 1323555623\nuser_usec 1068191880\nsystem_usec 255363742\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323613491\nuser_usec 1068223164\nsystem_usec 255390327\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.01057974,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.0203188800001044,
+            "cpu_stat_before": "usage_usec 1323493455\nuser_usec 1068140485\nsystem_usec 255352970\nnice_usec 0\nnr_periods 5663\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323555623\nuser_usec 1068191880\nsystem_usec 255363742\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -3.3517866719809217
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010104322,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.019832115999861344,
+            "cpu_stat_before": "usage_usec 1323614712\nuser_usec 1068223164\nsystem_usec 255391548\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323673203\nuser_usec 1068264345\nsystem_usec 255408858\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.011244288,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.02013878200000363,
+            "cpu_stat_before": "usage_usec 1323673203\nuser_usec 1068264345\nsystem_usec 255408858\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323735269\nuser_usec 1068315755\nsystem_usec 255419513\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -11.281964292111823
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010186455,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.019694530999913695,
+            "cpu_stat_before": "usage_usec 1323796915\nuser_usec 1068370820\nsystem_usec 255426095\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323855999\nuser_usec 1068394570\nsystem_usec 255461429\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010628592,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.01981617199999164,
+            "cpu_stat_before": "usage_usec 1323735269\nuser_usec 1068315755\nsystem_usec 255419513\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323796915\nuser_usec 1068370820\nsystem_usec 255426095\nnice_usec 0\nnr_periods 5664\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -4.340440320013181
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.012680332,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.021957305999876553,
+            "cpu_stat_before": "usage_usec 1323855999\nuser_usec 1068394570\nsystem_usec 255461429\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323908820\nuser_usec 1068428291\nsystem_usec 255480528\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.012368339,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.02013133100012965,
+            "cpu_stat_before": "usage_usec 1323908820\nuser_usec 1068428291\nsystem_usec 255480528\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1323954796\nuser_usec 1068461648\nsystem_usec 255493148\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 2.46044819646678
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010152634,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 0,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.01915241500000775,
+            "cpu_stat_before": "usage_usec 1324016367\nuser_usec 1068499910\nsystem_usec 255516457\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1324074118\nuser_usec 1068535120\nsystem_usec 255538997\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "2"
+            ],
+            "result": {
+              "seconds": 0.010708462,
+              "status": 0,
+              "elements": 140,
+              "front_batches": 162,
+              "fingerprint": "4d5466100ac6acab"
+            },
+            "returncode": 0,
+            "process_seconds": 0.020383575000096243,
+            "cpu_stat_before": "usage_usec 1323954796\nuser_usec 1068461648\nsystem_usec 255493148\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1324016367\nuser_usec 1068499910\nsystem_usec 255516457\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -5.474717201467121
+        }
+      ],
+      "paired_median_pct": 1.5923596512231637,
+      "wins": 6,
+      "control_median_seconds": 0.012511196,
+      "candidate_median_seconds": 0.0112305925
+    },
+    {
+      "fixture": 4,
+      "warmup": {
+        "pair": -1,
+        "order": [
+          1,
+          0
+        ],
+        "control": {
+          "arguments": [
+            "4",
+            "0",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.176133655,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 0,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.18453758600003312,
+          "cpu_stat_before": "usage_usec 1324806866\nuser_usec 1069029845\nsystem_usec 255777020\nnice_usec 0\nnr_periods 5667\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1325526062\nuser_usec 1069577314\nsystem_usec 255948747\nnice_usec 0\nnr_periods 5669\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "candidate": {
+          "arguments": [
+            "4",
+            "1",
+            "0",
+            "7",
+            "0",
+            "2",
+            "4"
+          ],
+          "result": {
+            "seconds": 0.178009966,
+            "status": 0,
+            "elements": 1197,
+            "front_batches": 1409,
+            "fingerprint": "7843128de0843700"
+          },
+          "returncode": 0,
+          "process_seconds": 0.1876119200001085,
+          "cpu_stat_before": "usage_usec 1324076133\nuser_usec 1068537135\nsystem_usec 255538997\nnice_usec 0\nnr_periods 5665\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "cpu_stat_after": "usage_usec 1324806866\nuser_usec 1069029845\nsystem_usec 255777020\nnice_usec 0\nnr_periods 5667\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+          "stderr": ""
+        },
+        "reduction_pct": -1.0652768206053476
+      },
+      "samples": [
+        {
+          "pair": 0,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.198083925,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2069221419999394,
+            "cpu_stat_before": "usage_usec 1325526062\nuser_usec 1069577314\nsystem_usec 255948747\nnice_usec 0\nnr_periods 5669\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1326333302\nuser_usec 1070156226\nsystem_usec 256177076\nnice_usec 0\nnr_periods 5671\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.186280992,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.1960371599998325,
+            "cpu_stat_before": "usage_usec 1326333302\nuser_usec 1070156226\nsystem_usec 256177076\nnice_usec 0\nnr_periods 5671\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1327096035\nuser_usec 1070694542\nsystem_usec 256401492\nnice_usec 0\nnr_periods 5673\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 5.958551659353473
+        },
+        {
+          "pair": 1,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.18024688,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.18996456400009265,
+            "cpu_stat_before": "usage_usec 1327931978\nuser_usec 1071263664\nsystem_usec 256668314\nnice_usec 0\nnr_periods 5675\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1328670674\nuser_usec 1071807493\nsystem_usec 256863180\nnice_usec 0\nnr_periods 5677\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.204001589,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2139610750000429,
+            "cpu_stat_before": "usage_usec 1327096035\nuser_usec 1070694542\nsystem_usec 256401492\nnice_usec 0\nnr_periods 5673\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1327931978\nuser_usec 1071263664\nsystem_usec 256668314\nnice_usec 0\nnr_periods 5675\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -13.178984845673895
+        },
+        {
+          "pair": 2,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.21659564,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2259805779999624,
+            "cpu_stat_before": "usage_usec 1328672573\nuser_usec 1071809393\nsystem_usec 256863180\nnice_usec 0\nnr_periods 5677\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1329547704\nuser_usec 1072417272\nsystem_usec 257130431\nnice_usec 0\nnr_periods 5680\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.190236692,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.19980065599997943,
+            "cpu_stat_before": "usage_usec 1329547704\nuser_usec 1072417272\nsystem_usec 257130431\nnice_usec 0\nnr_periods 5680\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1330339790\nuser_usec 1072958069\nsystem_usec 257381720\nnice_usec 0\nnr_periods 5682\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 12.169657708714723
+        },
+        {
+          "pair": 3,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.201469956,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.21228606099998615,
+            "cpu_stat_before": "usage_usec 1331520283\nuser_usec 1073632013\nsystem_usec 257888270\nnice_usec 0\nnr_periods 5684\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1332346095\nuser_usec 1074320622\nsystem_usec 258025473\nnice_usec 0\nnr_periods 5686\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.247620077,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2565495199999077,
+            "cpu_stat_before": "usage_usec 1330344851\nuser_usec 1072959700\nsystem_usec 257385150\nnice_usec 0\nnr_periods 5682\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1331520283\nuser_usec 1073632013\nsystem_usec 257888270\nnice_usec 0\nnr_periods 5684\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -22.90670128502931
+        },
+        {
+          "pair": 4,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.181657443,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.19248295600004894,
+            "cpu_stat_before": "usage_usec 1332346095\nuser_usec 1074320622\nsystem_usec 258025473\nnice_usec 0\nnr_periods 5686\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1333092869\nuser_usec 1074873216\nsystem_usec 258219652\nnice_usec 0\nnr_periods 5688\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.184368252,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.19420982800011188,
+            "cpu_stat_before": "usage_usec 1333093182\nuser_usec 1074873529\nsystem_usec 258219652\nnice_usec 0\nnr_periods 5688\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1333849107\nuser_usec 1075401876\nsystem_usec 258447230\nnice_usec 0\nnr_periods 5690\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -1.492264206317166
+        },
+        {
+          "pair": 5,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.210086863,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.22072881199983385,
+            "cpu_stat_before": "usage_usec 1334616424\nuser_usec 1075863670\nsystem_usec 258752754\nnice_usec 0\nnr_periods 5692\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1335614776\nuser_usec 1076579966\nsystem_usec 259034810\nnice_usec 0\nnr_periods 5694\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.18709069,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.19785571900001742,
+            "cpu_stat_before": "usage_usec 1333850953\nuser_usec 1075403722\nsystem_usec 258447230\nnice_usec 0\nnr_periods 5690\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1334616424\nuser_usec 1075863670\nsystem_usec 258752754\nnice_usec 0\nnr_periods 5692\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 10.946030928168987
+        },
+        {
+          "pair": 6,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.288667545,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.3014320280001357,
+            "cpu_stat_before": "usage_usec 1335622158\nuser_usec 1076583169\nsystem_usec 259038988\nnice_usec 0\nnr_periods 5694\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1336923240\nuser_usec 1077359777\nsystem_usec 259563463\nnice_usec 0\nnr_periods 5697\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.218759496,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2284837960000914,
+            "cpu_stat_before": "usage_usec 1336923240\nuser_usec 1077359777\nsystem_usec 259563463\nnice_usec 0\nnr_periods 5697\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1337811759\nuser_usec 1078068934\nsystem_usec 259742824\nnice_usec 0\nnr_periods 5700\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": 24.217495250461916
+        },
+        {
+          "pair": 7,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.178346564,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.1880127059998813,
+            "cpu_stat_before": "usage_usec 1338593936\nuser_usec 1078632438\nsystem_usec 259961497\nnice_usec 0\nnr_periods 5702\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1339326633\nuser_usec 1079167642\nsystem_usec 260158991\nnice_usec 0\nnr_periods 5704\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.191028068,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.2010739540000941,
+            "cpu_stat_before": "usage_usec 1337811759\nuser_usec 1078068934\nsystem_usec 259742824\nnice_usec 0\nnr_periods 5700\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1338593936\nuser_usec 1078632438\nsystem_usec 259961497\nnice_usec 0\nnr_periods 5702\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -7.110596198533986
+        },
+        {
+          "pair": 8,
+          "order": [
+            0,
+            1
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.176594961,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.18642759799990927,
+            "cpu_stat_before": "usage_usec 1339327683\nuser_usec 1079168692\nsystem_usec 260158991\nnice_usec 0\nnr_periods 5704\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1340052785\nuser_usec 1079763774\nsystem_usec 260289010\nnice_usec 0\nnr_periods 5705\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.184940911,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.1955333650000739,
+            "cpu_stat_before": "usage_usec 1340052785\nuser_usec 1079763774\nsystem_usec 260289010\nnice_usec 0\nnr_periods 5705\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1340841218\nuser_usec 1080253117\nsystem_usec 260588101\nnice_usec 0\nnr_periods 5707\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -4.7260408523208195
+        },
+        {
+          "pair": 9,
+          "order": [
+            1,
+            0
+          ],
+          "control": {
+            "arguments": [
+              "4",
+              "0",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.180519514,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 0,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.19082049200005713,
+            "cpu_stat_before": "usage_usec 1341729707\nuser_usec 1080867005\nsystem_usec 260862701\nnice_usec 0\nnr_periods 5710\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1342574216\nuser_usec 1081523467\nsystem_usec 261050749\nnice_usec 0\nnr_periods 5712\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "candidate": {
+            "arguments": [
+              "4",
+              "1",
+              "0",
+              "7",
+              "0",
+              "2",
+              "4"
+            ],
+            "result": {
+              "seconds": 0.221710061,
+              "status": 0,
+              "elements": 1197,
+              "front_batches": 1409,
+              "fingerprint": "7843128de0843700"
+            },
+            "returncode": 0,
+            "process_seconds": 0.23177813000006608,
+            "cpu_stat_before": "usage_usec 1340843321\nuser_usec 1080255220\nsystem_usec 260588101\nnice_usec 0\nnr_periods 5707\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "cpu_stat_after": "usage_usec 1341729707\nuser_usec 1080867005\nsystem_usec 260862701\nnice_usec 0\nnr_periods 5710\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0\n",
+            "stderr": ""
+          },
+          "reduction_pct": -22.81778079681736
+        }
+      ],
+      "paired_median_pct": -3.109152529318993,
+      "wins": 4,
+      "control_median_seconds": 0.189870684,
+      "candidate_median_seconds": 0.19063238
+    }
+  ],
+  "complete": true,
+  "utc_finished": "2026-10-30T06:14:14Z"
+}
