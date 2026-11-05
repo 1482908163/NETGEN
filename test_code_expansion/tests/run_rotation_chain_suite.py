@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import platform
-import re
 import shutil
 import statistics
 import subprocess
@@ -134,6 +133,36 @@ def summarize(blocks):
     return output
 
 
+def source_hashes(root):
+    sources = [Path(__file__), root/'test_code_expansion/tests/test_rotation_chain_suite.py',
+               root/'test_code_expansion/tests/run_rotation_chain_suite.sh',
+               root/'test_code_expansion/tests/build_rotation_chain_suite.sh',
+               root/'test_code_expansion/tests/build_rotation_chain_suite.py',
+               root/'test_code_expansion/tests/build_rotation_chain_experiment.py',
+               root/'test_code_expansion/tests/rotation_chain_experiment.cpp',
+               root/'test_code_expansion/tests/rotation_chain_probe.hpp',
+               root/'test_code_expansion/strong_scaling/cluster_env.sh', root/'netgen/CMakeLists.txt',
+               root/'netgen/libsrc/meshing/ruler3.cpp', root/'netgen/libsrc/meshing/meshing3.cpp']
+    return {str(s.relative_to(root)): digest(s) for s in sources}
+
+
+def load_build(root, build):
+    path=build/"rotation_chain_build.json"
+    if not path.is_file():
+        raise RuntimeError("尚未编译：请先运行 bash test_code_expansion/tests/build_rotation_chain_suite.sh")
+    manifest=json.loads(path.read_text())
+    if manifest["source_sha256"] != source_hashes(root):
+        raise RuntimeError("源码已变化，请重新运行独立编译脚本")
+    for kind,suffix in (("release",""),("profile","_profile"),("sanitize","_san")):
+        binary=build/("rotation_chain_experiment"+suffix)
+        if not binary.is_file() or digest(binary)!=manifest["builds"][kind]["binary_sha256"]:
+            raise RuntimeError("实验程序缺失或变化，请重新编译："+str(binary))
+    core=build/"libsrc/core/libngcore.so"
+    if not core.is_file() or digest(core)!=manifest["core_sha256"]:
+        raise RuntimeError("实验运行库缺失或变化，请重新编译")
+    return manifest
+
+
 def main():
     root = Path(__file__).resolve().parents[2]
     p = argparse.ArgumentParser(description=__doc__)
@@ -141,26 +170,24 @@ def main():
     p.add_argument('--output-dir', type=Path, default=root/'test_code_expansion/strong_scaling_results'/time.strftime('rotation_chain_suite_%Y%m%d-%H%M%S'))
     p.add_argument('--cpus', default='auto', help='auto 使用进程允许的前四个处理器')
     p.add_argument('--blocks', type=int, default=12, help='正式四路线计时块数，至少 4 且为 4 的倍数')
-    p.add_argument('--jobs', type=int, default=4)
-    p.add_argument('--cmake', default=os.environ.get('ROTATION_CMAKE') or 'cmake')
-    p.add_argument('--ninja', default=None, help='可选指定 Ninja 路径；默认使用 CMake 原生生成器')
+    p.add_argument('--check-build', action='store_true', help='仅检查编译产物，不运行任何实验')
     p.add_argument('--resume', action='store_true', help='仅复用源码、配置和二进制摘要一致的已保存运行')
     a = p.parse_args()
     allowed = sorted(os.sched_getaffinity(0))
     cpus = allowed[:4] if a.cpus == 'auto' else [int(v) for v in a.cpus.split(',')]
-    if len(set(cpus)) != 4 or not set(cpus) <= set(allowed) or a.blocks < 4 or a.blocks % 4 or a.jobs < 1:
-        p.error('需要四个不同的可用处理器、正编译并发数和至少四个完整计时块')
-    os.sched_setaffinity(0, cpus)
+    if not a.check_build and (len(set(cpus)) != 4 or not set(cpus) <= set(allowed) or a.blocks < 4 or a.blocks % 4):
+        p.error('需要四个不同的可用处理器和至少四个完整计时块')
     build, out = a.build_dir.resolve(), a.output_dir.resolve()
-    sources = [Path(__file__), root/'test_code_expansion/tests/test_rotation_chain_suite.py',
-               root/'test_code_expansion/tests/run_rotation_chain_suite.sh',
-               root/'test_code_expansion/tests/build_rotation_chain_experiment.py',
-               root/'test_code_expansion/tests/rotation_chain_experiment.cpp',
-               root/'test_code_expansion/tests/rotation_chain_probe.hpp',
-               root/'test_code_expansion/strong_scaling/cluster_env.sh', root/'netgen/CMakeLists.txt',
-               root/'netgen/libsrc/meshing/ruler3.cpp', root/'netgen/libsrc/meshing/meshing3.cpp']
-    hashes = {str(s.relative_to(root)): digest(s) for s in sources}
-    config = dict(build_dir=str(build), cpus=cpus, blocks=a.blocks, jobs=a.jobs, cmake=a.cmake, ninja=a.ninja)
+    hashes = source_hashes(root)
+    try:
+        manifest = load_build(root, build)
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        p.error(str(exc))
+    if a.check_build:
+        print('已编译，源码及可执行文件匹配；可提交测试。')
+        return
+    config = dict(build_dir=str(build), cpus=cpus, blocks=a.blocks)
+    os.sched_setaffinity(0, cpus)
     summary_path, raw_path = out/'summary.json', out/'runs.jsonl'
     if summary_path.exists():
         if not a.resume:
@@ -208,11 +235,9 @@ def main():
             raise RuntimeError(f'{key} 失败，查看 {logfile}')
         print('PASS', key, flush=True)
 
-    def compile_binary(kind):
-        flags = [] if kind == 'release' else ['--'+('sanitize' if kind == 'sanitize' else 'profile')]
-        command('build_'+kind, [sys.executable, root/'test_code_expansion/tests/build_rotation_chain_experiment.py', '--build-dir', build, *flags])
+    def prepared_binary(kind):
         binary = build/('rotation_chain_experiment'+dict(release='', profile='_profile', sanitize='_san')[kind])
-        value = dict(binary_sha256=digest(binary), **json.loads(binary.with_suffix('.build.json').read_text()))
+        value = manifest['builds'][kind]
         if kind in state['builds'] and state['builds'][kind]['binary_sha256'] != value['binary_sha256'] and any(c['kind'] == kind for c in cache.values()):
             raise RuntimeError('二进制变化，禁止混用已保存样本；请使用新输出目录')
         state['builds'][kind] = value
@@ -309,42 +334,17 @@ def main():
 
     state.pop('error', None); state['complete'] = False; save()
     try:
-        state['environment'] = dict(requested_cmake=a.cmake,
-            invalid_path_entries=[v for v in os.get_exec_path() if v and not Path(v).is_dir()],
-            compiler_cc=os.environ.get('CC'), compiler_cxx=os.environ.get('CXX'),
-            scheduler_job=os.environ.get('SLURM_JOB_ID'))
+        state['environment'] = dict(scheduler_job=os.environ.get('SLURM_JOB_ID'),
+                                    build_environment=manifest['environment'])
         save()
-        cmake_bin = resolve_tool(a.cmake, root, build)
-        make_bin = resolve_tool(a.ninja, root, build, 'ninja') if a.ninja else resolve_tool('make', root, build, 'make')
-        state['environment'].update(cmake=cmake_bin, make_program=make_bin)
-        save()
-        command('cmake_version', [cmake_bin, '--version'])
-        version = re.search(r'cmake version (\d+)\.(\d+)', (out/'cmake_version.txt').read_text())
-        if not version or tuple(map(int, version.groups())) < (3, 16):
-            raise RuntimeError('本项目需要 CMake 3.16 或更高版本，请通过 --cmake 指定')
-        command('make_version', [make_bin, '--version'])
-        if os.environ.get('CXX'):
-            command('compiler_version', [os.environ['CXX'], '--version'])
         command('driver_tests', [sys.executable, '-m', 'unittest', 'discover', '-s', root/'test_code_expansion/tests', '-p', 'test_rotation_chain_suite.py', '-v'])
-        cmake = [cmake_bin, '-S', root/'netgen', '-B', build, '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON']
-        cmake += ['-D'+flag+'=OFF' for flag in ('USE_SUPERBUILD','USE_GUI','USE_PYTHON','USE_MPI','USE_OCC','USE_JPEG','USE_MPEG','USE_NUMA')]
-        cmake += ['-DCMAKE_MAKE_PROGRAM='+make_bin]
-        for variable, option in (('CC', 'CMAKE_C_COMPILER'), ('CXX', 'CMAKE_CXX_COMPILER')):
-            if os.environ.get(variable):
-                cmake += ['-D'+option+'='+os.environ[variable]]
-        if a.ninja:
-            cmake += ['-G', 'Ninja']
-        else:
-            cmake += ['-G', 'Unix Makefiles']
-        command('configure', cmake)
-        command('kernel_build', [cmake_bin, '--build', build, '--target', 'nglib', '-j', a.jobs])
-        release = compile_binary('release'); validate('release', release)
+        release = prepared_binary('release'); validate('release', release)
         for limit in (7, 45):
             for variant in (0, 1, 2):
                 benchmark(release, f'local/{limit}/{variant}', variant, limit)
         for fixture in (2, 4):
             benchmark(release, f'front/{fixture}', fixture=fixture)
-        profile = compile_binary('profile'); validate('profile', profile)
+        profile = prepared_binary('profile'); validate('profile', profile)
         for fixture in (2, 4):
             for route in range(4):
                 keys = []
@@ -357,7 +357,7 @@ def main():
                 state['profile_samples'][f'{fixture}/{route}'] = keys; save()
         state['cost_breakdown'] = write_measurement_report(state, cache, out/'measurement_report.md')
         save()
-        sanitizer = compile_binary('sanitize'); validate('sanitize', sanitizer)
+        sanitizer = prepared_binary('sanitize'); validate('sanitize', sanitizer)
         assert all(digest(root/path) == value for path,value in hashes.items()), '运行期间源码发生变化'
         state['run_count'] = len(cache)
         if state['run_count'] != state['expected_run_count']:
