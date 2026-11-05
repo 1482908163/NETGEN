@@ -13,7 +13,7 @@ from run_rotation_chain_suite import digest, resolve_tool, source_hashes
 def main():
     root=Path(__file__).resolve().parents[2]
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--build-dir',type=Path,default=root/'build/rotation_chain_dynamic_v3')
+    parser.add_argument('--build-dir',type=Path,default=root/'build/rotation_chain_workspace_v4')
     parser.add_argument('--cmake',default=os.environ.get('ROTATION_CMAKE') or 'cmake')
     parser.add_argument('--ninja',default=None)
     parser.add_argument('--jobs',type=int,default=4)
@@ -61,7 +61,7 @@ def main():
             binary=build/('rotation_chain_experiment'+suffix)
             builds[kind]=dict(binary_sha256=digest(binary),**json.loads(binary.with_suffix('.build.json').read_text()))
         if hashes!=source_hashes(root):raise RuntimeError('编译期间源码发生变化，请重新编译')
-        manifest=dict(campaign="dynamic_chain_v3",source_sha256=hashes,builds=builds,core_sha256=digest(build/'libsrc/core/libngcore.so'),
+        manifest=dict(campaign="workspace_chain_v4",source_sha256=hashes,builds=builds,core_sha256=digest(build/'libsrc/core/libngcore.so'),
                       environment=dict(cmake=cmake,make_program=make,cc=os.environ.get('CC'),cxx=os.environ.get('CXX'),
                                        native_arch=False))
         temporary=manifest_path.with_suffix('.tmp')

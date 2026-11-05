@@ -57,6 +57,8 @@ inline double group_dispatch_wall=0,launch_delay_sum=0,completion_to_join_sum=0,
 inline unsigned long long groups=0;
 inline double shared_prepare_wall=0,worker_copy_sum=0,chain_claim_sum=0;
 inline unsigned long long shared_preparations=0,chain_rules=0,chain_rule_rotations=0,input_copies=0,prefix_checks=0;
+inline double worker_init_sum=0;
+inline unsigned long long workspace_builds=0,workspace_calls=0,worker_input_copies=0,prepare_dispatches=0;
 struct WallTimer {
   double &total;Clock::time_point start{};
   explicit WallTimer(double &value):total(value){if constexpr(enabled)start=Clock::now();}

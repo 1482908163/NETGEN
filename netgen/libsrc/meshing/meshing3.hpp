@@ -23,6 +23,7 @@ enum MESHING3_RESULT
 
 struct RuleSearchQueue;
 struct RuleSearchResult;
+struct RotationChainWorkspace;
 
 /// 3d volume mesh generation
 class Meshing3
@@ -50,6 +51,16 @@ class Meshing3
                     NgArray<Element> & elements, NgArray<INDEX> & delfaces,
                     int tolerance, double sloppy, int rotind1, float & retminerr,
                     RuleSearchQueue * queue, RuleSearchResult * result);
+  // Defined only by the isolated rotation-chain experiment. No production
+  // caller or object-layout change; keep the original search implementation.
+  int ApplyRulesWorkspace(Array<Point3d, PointIndex> & lpoints,
+                          Array<int, PointIndex> & allowpoint,
+                          Array<MiniElement2d> & lfaces, INDEX lfacesplit,
+                          INDEX_2_HASHTABLE<int> & connectedpairs,
+                          NgArray<Element> & elements, NgArray<INDEX> & delfaces,
+                          int tolerance, double sloppy, int rotind1, float & retminerr,
+                          RuleSearchQueue * queue, RuleSearchResult * result,
+                          RotationChainWorkspace & workspace);
 
 public:
   /// 

@@ -26,6 +26,9 @@ void PrintProfile(const VolumeKernelStats *stats=nullptr) {
     <<",\"chain_claim_sum\":"<<chain_claim_sum<<",\"shared_preparations\":"<<shared_preparations
     <<",\"chain_rules\":"<<chain_rules<<",\"chain_rule_rotations\":"<<chain_rule_rotations
     <<",\"input_copies\":"<<input_copies<<",\"prefix_checks\":"<<prefix_checks
+    <<",\"worker_init_sum\":"<<worker_init_sum<<",\"workspace_builds\":"<<workspace_builds
+    <<",\"workspace_calls\":"<<workspace_calls<<",\"worker_input_copies\":"<<worker_input_copies
+    <<",\"prepare_dispatches\":"<<prepare_dispatches
     <<",\"claim_elapsed_sum\":"<<claim_sum.load()<<",\"claim_attempts\":"<<claim_attempts.load()
     <<",\"claim_successes\":"<<claim_successes.load()
     <<",\"group_dispatch_wall\":"<<group_dispatch_wall<<",\"launch_delay_sum\":"<<launch_delay_sum
@@ -162,21 +165,33 @@ void TestRules() {
     if(route>=4) {
       const int workers=std::min(threads,int(mesher.rules.Size()));
       const int rule_count=mesher.rules.Size();
+      const bool workspace_route=route>=7;
+      const bool reuse_input=route==5 || workspace_route;
       // Every rule retains exclusive ownership for its entire ordered chain.
       // Shared geometry is scoped to this front batch, never a later front.
-      std::vector<std::unique_ptr<RuleSearchPreparation>> prepared;
+      std::vector<std::unique_ptr<RuleSearchPreparation>> prepared(rotations);
       {
         rotation_probe::WallTimer timer(rotation_probe::shared_prepare_wall);
         bool useedges=false;for(int id=0;id<rule_count;++id)if(mesher.rules[id]->GetNEd())useedges=true;
-        for(auto &input:b.frames)prepared.emplace_back(new RuleSearchPreparation(
-            input->points,input->faces,b.split,b.pairs,useedges));
+        auto prepare=[&](size_t rotation) {
+          auto &input=*b.frames[rotation];
+          prepared[rotation]=std::make_unique<RuleSearchPreparation>(
+              input.points,input.faces,b.split,b.pairs,useedges);
+        };
+        if(route==8) {
+          // Independent rotations, one writer per slot. ParallelFor joins
+          // before any search reads preparation; its extra dispatch is counted.
+          ngcore::ParallelFor(size_t(rotations),prepare,workers);
+          ++dispatches;++experiment_dispatches;++rotation_probe::prepare_dispatches;
+        } else for(int rotation=0;rotation<rotations;++rotation)prepare(rotation);
       }
       rotation_probe::shared_preparations+=rotations;
       struct ChainWorker {
         std::vector<std::unique_ptr<RuleSearchResult>> winners,scratch;
         RuleSearchQueue queue{0};
         unsigned long long chains=0,visits=0,copies=0,prefix_checks=0;
-        double copy_seconds=0,claim_seconds=0;
+        unsigned long long workspace_calls=0;
+        double copy_seconds=0,claim_seconds=0,init_seconds=0;
         rotation_probe::Clock::time_point start{},finish{};
       };
       std::vector<std::unique_ptr<ChainWorker>> slots;
@@ -207,6 +222,18 @@ void TestRules() {
       ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
         auto &slot=*slots[worker];
         if constexpr(rotation_probe::enabled)slot.start=rotation_probe::Clock::now();
+        std::unique_ptr<RotationChainWorkspace> workspace;
+        if(workspace_route) {
+          const auto init_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+          workspace=std::make_unique<RotationChainWorkspace>();
+          slot.scratch.reserve(rotations);
+          for(auto &input:b.frames) {
+            auto scratch=std::make_unique<RuleSearchResult>();
+            scratch->points=input->points;scratch->faces=input->faces;++slot.copies;
+            slot.scratch.push_back(std::move(scratch));
+          }
+          if constexpr(rotation_probe::enabled)slot.init_seconds=rotation_probe::Since(init_start);
+        }
         int static_id=int(worker);
         while(true) {
           const auto claim_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
@@ -220,11 +247,11 @@ void TestRules() {
             auto &input=*b.frames[rotation];auto &winner=*slot.winners[rotation];
             std::unique_ptr<RuleSearchResult> fresh;
             const auto copy_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
-            if(route!=5) {
+            if(!reuse_input) {
               fresh=std::make_unique<RuleSearchResult>();
               fresh->points=input.points;fresh->faces=input.faces;++slot.copies;
             }
-            auto &r=route==5?*slot.scratch[rotation]:*fresh;
+            auto &r=reuse_input?*slot.scratch[rotation]:*fresh;
             // ApplyRulesImpl only appends geometry and truncates to the original
             // prefix. Reuse that prefix; all output/scalar state is reset.
             r.points.SetSize(input.points.Size());r.faces.SetSize(input.faces.Size());
@@ -233,13 +260,17 @@ void TestRules() {
             r.replay_face_trials=r.replay_point_trials=0;r.prefix_min=1e100;
             r.found=-1;r.error=r.quality=0;r.other=minother;r.withoutother=minwithoutother;
             if constexpr(rotation_probe::enabled)slot.copy_seconds+=rotation_probe::Since(copy_start);
-            slot.queue.next.store(0,std::memory_order_relaxed);
+            if(!workspace_route)slot.queue.next.store(0,std::memory_order_relaxed);
             slot.queue.prepared=prepared[rotation].get();
-            r.found=mesher.ApplyRulesImpl(r.points,input.allow,r.faces,b.split,b.pairs,r.elements,r.deleted,
-                b.tolerance,b.sloppy,input.rotation,r.error,&slot.queue,&r);
+            if(workspace_route)
+              r.found=mesher.ApplyRulesWorkspace(r.points,input.allow,r.faces,b.split,b.pairs,r.elements,r.deleted,
+                  b.tolerance,b.sloppy,input.rotation,r.error,&slot.queue,&r,*workspace);
+            else
+              r.found=mesher.ApplyRulesImpl(r.points,input.allow,r.faces,b.split,b.pairs,r.elements,r.deleted,
+                  b.tolerance,b.sloppy,input.rotation,r.error,&slot.queue,&r);
             ++slot.visits;
             if(verify) {
-              if(route==5) {
+              if(reuse_input) {
                 bool same=r.points.Size()>=input.points.Size() && r.faces.Size()>=input.faces.Size();
                 if(same) {
                   for(auto pi:input.points.Range())for(int c=1;c<=3;++c)
@@ -269,6 +300,9 @@ void TestRules() {
             }
           }
         }
+        // Release task-owned storage on the owning worker before recording its
+        // finish. Winner geometry survives in slots until the host merges it.
+        if(workspace_route){slot.workspace_calls=workspace->calls;slot.scratch.clear();workspace.reset();}
         if constexpr(rotation_probe::enabled)slot.finish=rotation_probe::Clock::now();
       },workers);
       const auto joined=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
@@ -283,6 +317,7 @@ void TestRules() {
           rotation_probe::launch_delay_sum+=seconds(slot->start-begin);
           rotation_probe::completion_to_join_sum+=seconds(joined-slot->finish);
           rotation_probe::worker_copy_sum+=slot->copy_seconds;
+          rotation_probe::worker_init_sum+=slot->init_seconds;
           rotation_probe::chain_claim_sum+=slot->claim_seconds;
         }
         rotation_probe::dispatch_wall+=seconds(joined-begin);rotation_probe::group_dispatch_wall+=seconds(joined-begin);
@@ -293,6 +328,11 @@ void TestRules() {
       for(auto &slot:slots) {
         rotation_probe::chain_rules+=slot->chains;rotation_probe::chain_rule_rotations+=slot->visits;
         rotation_probe::input_copies+=slot->copies;rotation_probe::prefix_checks+=slot->prefix_checks;
+        if(workspace_route) {
+          ++rotation_probe::workspace_builds;
+          rotation_probe::workspace_calls+=slot->workspace_calls;
+          rotation_probe::worker_input_copies+=slot->copies;
+        }
       }
       {
         rotation_probe::WallTimer timer(rotation_probe::merge_wall);
@@ -508,7 +548,7 @@ int main(int argc,char **argv) {
   if(argc>3)fixture_variant=std::atoi(argv[3]);if(argc>4)limit=std::atoi(argv[4]);
   if(argc>5)verify=std::atoi(argv[5]);if(argc>6)repeats=std::atoi(argv[6]);
   if(argc>7)front_fixture=std::atoi(argv[7]);
-  if(threads<1 || threads>16 || route < -1 || route>6 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
+  if(threads<1 || threads>16 || route < -1 || route>8 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
     return 2;
   TestRules();
 }

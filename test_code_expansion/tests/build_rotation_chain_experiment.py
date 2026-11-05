@@ -60,6 +60,62 @@ rule_source=rule_source.replace(anchor,'  rotation_probe::PrepareTimer rotation_
 anchor='  // check each rule:'
 assert rule_source.count(anchor)==1
 rule_source=rule_source.replace(anchor,'  rotation_prepare_timer.Finish();\n'+anchor)
+# Generate the experimental member from the exact production search body.
+# The original ApplyRulesImpl remains intact for routes 0/4 and serial replay.
+# Only scratch lifetime, the disabled stream, and single-rule dispatch change.
+begin=rule_source.index('int Meshing3 :: ApplyRulesImpl\n')
+end=rule_source.rfind('\n}')  # final namespace close; this member is last
+workspace_source=rule_source[begin:end]
+assert workspace_source.rstrip().endswith('return found;\n}')
+
+def replace_once(source, old, new):
+    if source.count(old)!=1:
+        raise RuntimeError('旋转链实验源码锚点变化，停止构建：'+old[:80])
+    return source.replace(old,new,1)
+
+workspace_source=replace_once(workspace_source,'int Meshing3 :: ApplyRulesImpl\n',
+                              'int Meshing3 :: ApplyRulesWorkspace\n')
+workspace_source=replace_once(workspace_source,
+    'RuleSearchQueue * queue, RuleSearchResult * result\n',
+    'RuleSearchQueue * queue, RuleSearchResult * result, RotationChainWorkspace & workspace\n')
+workspace_source=replace_once(workspace_source,'  Vector oldu, newu, newu1, newu2, allp;',
+    '  auto &oldu=workspace.oldu; auto &newu=workspace.newu; auto &allp=workspace.allp;')
+first=workspace_source.index('  NgArray<int, PointIndex::BASE> pused;')
+last=workspace_source.index('  int & cnt = RuleDiagnosticCounter();',first)
+declarations=workspace_source[first:last]
+fields=('pused','fused','pmap','pfixed','fmapi','fmapr','transfreezone','ledges',
+        'tempnewpoints','tempnewfaces','tempdelfaces','tempelements','triboxes','pnearness','fnearness')
+aliases=''.join('  auto &'+name+'=workspace.'+name+';\n' for name in fields)
+workspace_source=workspace_source[:first]+aliases+'''
+  // A private workspace is owned by this task for one batch, never concurrently.
+  if (!queue || !queue->prepared || !queue->discard_trace || queue->order.size()!=1 ||
+      queue->face_end || queue->measure || queue->order[0]<0 || queue->order[0]>=rules.Size())
+    throw std::runtime_error("实验工作区只支持已准备的单规则完整搜索");
+  // Saved winners are call-local logically; retain capacity, never their values.
+  tempnewpoints.SetSize(0);tempnewfaces.SetSize(0);
+  tempdelfaces.SetSize(0);tempelements.SetSize(0);
+  ++workspace.calls;
+'''+workspace_source[last:]
+workspace_source=replace_once(workspace_source,'  std::ostream discarded_trace(nullptr);',
+    '  auto &discarded_trace=workspace.discarded_trace; discarded_trace.clear();')
+workspace_source=replace_once(workspace_source,'''  int serial_rule = 0;
+  for (int rim = queue ? queue->Claim(rules.Size()) : serial_rule++;
+       rim < rules.Size();
+       rim = queue ? queue->Claim(rules.Size()) : serial_rule++)''',
+    '''  for (int rim = queue->order[0]; rim < rules.Size(); rim = rules.Size())''')
+workspace_struct='''
+// Test-only storage. These arrays had been constructed once per rule/rotation.
+// Scalar decisions remain local to each call; rule-owned geometry history is
+// deliberately not cached or reset here.
+struct RotationChainWorkspace {
+  unsigned long long calls=0;
+  Vector oldu, newu, allp;
+'''+declarations.replace('ledges(100)','ledges{100}')+'''
+  std::ostream discarded_trace{nullptr};
+};
+'''
+rule_source=rule_source[:end]+workspace_struct+workspace_source+rule_source[end:]
+rule_source=replace_once(rule_source,'#include <sstream>','#include <sstream>\n#include <stdexcept>')
 (build/'rotation_chain_ruler3.inc').write_text(rule_source)
 core=build/'libsrc/core/libngcore.so';output=build/'rotation_chain_experiment'
 if sanitize:
