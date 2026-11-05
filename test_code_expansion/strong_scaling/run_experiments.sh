@@ -10,6 +10,8 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   rotation_chain_dynamic: 本轮动态整规则链消融，1节点4核，只运行预编译程序
+#   rotation_chain_memory: 仅补旧旋转链地址检查，不重跑性能
 #   quiet_rules_scaling: 无输出规则扩展验证，面4/体2，仅128/256节点；64节点已完成
 #   quiet_rules: 可选64节点预检，保留用于复现
 #   shared_rules: 可选共享预处理预检，面4/体2，仅64节点；本地未证明性能收益
@@ -29,7 +31,17 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-quiet_rules_scaling}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-rotation_chain_dynamic}"
+if [[ "${EXPERIMENT_PRESET}" == rotation_chain_dynamic || "${EXPERIMENT_PRESET}" == rotation_chain_memory ]]; then
+    export ROTATION_SUITE_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+    rotation_args=()
+    if [[ "${EXPERIMENT_PRESET}" == rotation_chain_memory ]]; then
+        rotation_args+=(--memory-only --build-dir "${ROTATION_BUILD_DIR:-${ROTATION_SUITE_ROOT}/build/rotation_chain_costs_v2}")
+    else
+        rotation_args+=(--build-dir "${ROTATION_BUILD_DIR:-${ROTATION_SUITE_ROOT}/build/rotation_chain_dynamic_v3}")
+    fi
+    exec bash "${ROTATION_SUITE_ROOT}/test_code_expansion/tests/run_rotation_chain_suite.sh" --submit "${rotation_args[@]}" "$@"
+fi
 # Next validation only; the kernel option remains off unless this strategy is selected.
 if [[ "${EXPERIMENT_PRESET}" == quiet_rules_scaling ]]; then
     export PROCESS_COUNTS="${PROCESS_COUNTS:-512 1024}"

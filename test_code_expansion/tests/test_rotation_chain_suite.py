@@ -5,14 +5,17 @@ import tempfile
 import unittest
 from unittest import mock
 from pathlib import Path
-from run_rotation_chain_suite import check_group, check_run, summarize, resolve_tool
+from run_rotation_chain_suite import check_group, check_run, summarize, resolve_tool, ROUTES, shadow_memory_failure
 
 
 def record(route, threads=4, seconds=1., status=0, batches=None):
     return dict(arguments=[threads, route, 0, 7, 0, 2, 2], returncode=0, stderr='',
                 result=dict(seconds=seconds, status=status, fingerprint='same', calls=7000,
                             front_batches=(170 if route > 0 and threads > 1 else 0) if batches is None else batches,
-                            dispatches=170*(1 if route == 1 else 3)))
+                            dispatches=170*(1 if route in (1,4,5,6) else 3),
+                            profile=dict(chain_rules=170*27,chain_rule_rotations=170*3*27,
+                                         shared_preparations=170*3,input_copies=170*3*(threads if route==5 else 27),
+                                         prefix_checks=170*3*27)))
 
 
 class GateTests(unittest.TestCase):
@@ -40,7 +43,7 @@ class GateTests(unittest.TestCase):
                 resolve_tool(str(root),root,root/'build')
 
     def test_equivalence_and_fallback(self):
-        check_group([record(-1, 1),record(0),record(1),record(2),record(3),record(2, 1)],2)
+        check_group([record(-1, 1),record(0),record(1),record(2),record(3),record(4),record(5),record(6),record(5, 1)],2)
 
     def test_reject_changed_geometry(self):
         candidate=record(1);candidate['result']['fingerprint']='changed'
@@ -65,8 +68,8 @@ class GateTests(unittest.TestCase):
     def test_pairs_use_same_block(self):
         blocks=[]
         for x,y in ((1.,.5),(10.,11.)):
-            blocks.append({str(r):record(r,seconds=x if r==0 else y) for r in range(4)})
-        s=summarize(blocks)['0->1']
+            blocks.append({str(r):record(r,seconds=x if r==0 else y) for r in ROUTES})
+        s=summarize(blocks)['0->4']
         self.assertAlmostEqual(s['median_pct'],20.)
         self.assertEqual(s['wins'],1)
         with self.assertRaises(ValueError):summarize([{'0':record(0)}])
@@ -74,6 +77,21 @@ class GateTests(unittest.TestCase):
     def test_reject_invalid_time(self):
         for value in (-1.,float('nan'),float('inf')):
             with self.assertRaises(ValueError):check_run(record(1,seconds=value))
+
+    def test_reject_missing_prefix_verification(self):
+        candidate=record(5);candidate['arguments'][4]=1
+        candidate['result']['profile']['prefix_checks']=0
+        with self.assertRaises(ValueError):check_group([record(-1,1),candidate],2)
+
+    def test_reject_repeated_copy_in_reuse_route(self):
+        candidate=record(5);candidate['result']['profile']['input_copies']=170*3*27
+        with self.assertRaises(ValueError):check_group([record(-1,1),candidate],2)
+
+    def test_shadow_failure_is_not_algorithm_error(self):
+        candidate=record(0);candidate.update(returncode=-6,result=None,stderr='ReserveShadowMemoryRange failed')
+        self.assertTrue(shadow_memory_failure(candidate))
+        candidate['stderr']='ERROR: AddressSanitizer: heap-buffer-overflow'
+        self.assertFalse(shadow_memory_failure(candidate))
 
     def test_one_submission_and_spool_root(self):
         with tempfile.TemporaryDirectory() as directory:

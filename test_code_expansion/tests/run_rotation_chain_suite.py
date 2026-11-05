@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import platform
+import resource
 import shutil
 import statistics
 import subprocess
@@ -12,8 +13,22 @@ import sys
 import time
 from pathlib import Path
 
-ROUTES = {0: '原动态队列', 1: '固定分工旋转链', 2: '固定分工逐旋转汇合', 3: '批量输入动态队列逐旋转汇合'}
-COMPARISONS = [(0, 1), (0, 2), (0, 3), (2, 1), (3, 2)]
+ROUTES = {0: '原动态队列', 4: '动态整规则链', 5: '动态整规则链与前缀缓冲复用', 6: '同布局固定整规则链对照'}
+COMPARISONS = [(0, 4), (0, 5), (6, 4), (4, 5)]
+
+
+class AddressSpaceUnavailable(RuntimeError):
+    pass
+
+
+def shadow_memory_failure(record):
+    return bool(record['returncode'] and record['result'] is None and
+                'ReserveShadowMemoryRange failed' in record['stderr'])
+
+
+def memory_limits():
+    return {name: list(resource.getrlimit(getattr(resource, name)))
+            for name in ('RLIMIT_AS', 'RLIMIT_DATA', 'RLIMIT_STACK')}
 
 
 def resolve_tool(request, root, build, tool='cmake'):
@@ -41,7 +56,8 @@ def resolve_tool(request, root, build, tool='cmake'):
 def write_measurement_report(state, records, path):
     fields = {
         'input_wall': '批量输入准备', 'copy_wall': '槽位复制', 'queue_wall': '队列构造',
-        'claim_elapsed_sum': '领任务累计', 'prepare_elapsed_sum': '规则准备累计',
+        'chain_claim_sum': '整链领取累计', 'worker_copy_sum': '工作任务重置/复制累计',
+        'shared_prepare_wall': '共享准备墙钟', 'prepare_elapsed_sum': '规则调用准备区间累计',
         'group_dispatch_wall': '派发至汇合', 'launch_delay_sum': '任务启动延迟累计',
         'completion_to_join_sum': '任务结束至汇合累计', 'join_tail_wall': '最后任务结束至汇合',
     }
@@ -54,20 +70,28 @@ def write_measurement_report(state, records, path):
         medians = {f: statistics.median(p[f] for p in profiles) for f in fields}
         table[label] = dict(median_seconds=medians,
                            claim_attempts=[p['claim_attempts'] for p in profiles],
-                           claim_successes=[p['claim_successes'] for p in profiles])
+                           claim_successes=[p['claim_successes'] for p in profiles],
+                           work_counts=[{k:p[k] for k in ('chain_rules','chain_rule_rotations','shared_preparations','input_copies','prefix_checks')} for p in profiles])
         if label.endswith('/0'):
             continue  # Original route has no candidate batch/join instrumentation.
         lines.append('| ' + ' | '.join(label.split('/')) + ' | ' +
                      ' | '.join(f'{medians[f]*1000:.4f}' for f in fields) + ' |')
     lines += ['', '单位：毫秒；各列独立取中位数。累计字段按工作任务相加，与主线程墙钟区间重叠，不能相加为总时间。',
-              '任务结束至汇合记录现有任务结束到主线程返回的间隔，不增加屏障；它不是操作系统测得的线程阻塞或 CPU 空闲时间。路线 1 只在整链结束汇合，路线 2/3 每次旋转汇合。',
-              '领任务计时包含时钟开销，空队列探测也计入次数；线程私有累加后每次规则调用发布。它不能直接当作无探针构建的真实队列成本。',
+              '任务结束至汇合记录现有任务结束到主线程返回的间隔，不增加屏障；它不是操作系统测得的线程阻塞或 CPU 空闲时间。新路线 4/5/6 都在整个批次结束汇合。',
+              '整链领取计时包含时钟开销；共享准备在每个旋转建立一次，规则调用中的准备区间另记，不将两者混为一谈。它不能直接当作无探针构建的真实队列成本。',
               '输入/复制/规则准备分开记录；规则准备不含更早的数组构造。路线 0 只有领任务和规则准备等原始字段可比，候选批量/汇合字段为零表示未覆盖，不能当作零成本。', '',
-              '| 输入 | 0→1 | 0→2 | 0→3 | 2→1 | 3→2 |', '|---|---:|---:|---:|---:|---:|']
+              '| 输入 | 0→4 | 0→5 | 6→4 | 4→5 |', '|---|---:|---:|---:|---:|']
     for label, value in state['benchmarks'].items():
         values = [value['comparisons'][f'{x}->{y}'] for x, y in COMPARISONS]
         lines.append('| '+label+' | '+' | '.join(f"{v['median_pct']:+.2f}% ({v['wins']}/{v['count']})" for v in values)+' |')
-    lines += ['', '正数为配对降时。2→1 评估合并汇合，3→2 包含固定分工及队列结构影响，0→3 包含多项布局变化；不把差值提前归因于单一因素。',
+    lines += ['', '| 样例/路线 | 整规则链数 | 规则×旋转访问数 | 共享准备数 | 输入前缀复制数 |',
+              '|---|---:|---:|---:|---:|']
+    for label, value in table.items():
+        if label.endswith('/0'):continue
+        counts=value['work_counts']
+        lines.append('| '+label+' | '+' | '.join(str(statistics.median(c[k] for c in counts))
+                     for k in ('chain_rules','chain_rule_rotations','shared_preparations','input_copies'))+' |')
+    lines += ['', '正数为配对降时。6→4 比较同布局下动态/固定链分配，4→5 比较前缀缓冲复用；0→4/5 是包含准备组织变化的总体净收益，不将其归因于单项机制。',
               '本报告是分项阶段输出，整个套件是否完成须查看 summary.json 的 complete 字段。', '']
     path.write_text('\n'.join(lines))
     return table
@@ -98,6 +122,17 @@ def check_group(cases, fixture=None):
         if c['result']['fingerprint'] != expected:
             raise ValueError('同一构建的结果/工作指纹不一致')
         t, route = c['arguments'][:2]
+        if t > 1 and route >= 4:
+            d=c['result']; probe=d.get('profile', {})
+            if probe.get('chain_rules', 0) <= 0 or probe.get('shared_preparations', 0) <= 0:
+                raise ValueError('整链任务或共享准备未实际覆盖')
+            if route == 5:
+                if probe.get('input_copies') != t * probe['shared_preparations']:
+                    raise ValueError('复用路线仍在逐规则复制输入')
+                if c['arguments'][4] and probe.get('prefix_checks', 0) != probe.get('chain_rule_rotations'):
+                    raise ValueError('缺少原始几何前缀不变性检查')
+            elif probe.get('input_copies') != probe.get('chain_rule_rotations'):
+                raise ValueError('分配对照的逐规则复制次数不符')
         if fixture is not None:
             d = c['result']
             if d['status'] != (2 if fixture in (3, 5) else 0):
@@ -105,20 +140,20 @@ def check_group(cases, fixture=None):
             covered = d['front_batches'] > 0
             if covered != (t > 1 and route > 0):
                 raise ValueError('候选实际覆盖不符')
-            if covered and d['dispatches'] != d['front_batches'] * (1 if route == 1 else 3):
+            if covered and d['dispatches'] != d['front_batches'] * (1 if route in (1, 4, 5, 6) else 3):
                 raise ValueError('完整前沿候选汇合/派发次数不符')
         else:
             d = c['result']
             if t > 1 and route > 0:
                 limit, repeats = c['arguments'][3], c['arguments'][5]
-                expected_dispatches = 160 * limit * repeats if route == 1 else d['calls']
+                expected_dispatches = 160 * limit * repeats if route in (1, 4, 5, 6) else d['calls']
                 if d['dispatches'] != expected_dispatches:
                     raise ValueError('局部候选汇合/派发次数不符')
     return expected
 
 
 def summarize(blocks):
-    if not blocks or any(set(b) != {'0', '1', '2', '3'} for b in blocks):
+    if not blocks or any(set(b) != {str(r) for r in ROUTES} for b in blocks):
         raise ValueError('计时块必须包含全部四条路线')
     output = {}
     for baseline, candidate in COMPARISONS:
@@ -136,24 +171,24 @@ def summarize(blocks):
 def source_hashes(root):
     sources = [Path(__file__), root/'test_code_expansion/tests/test_rotation_chain_suite.py',
                root/'test_code_expansion/tests/run_rotation_chain_suite.sh',
-               root/'test_code_expansion/tests/build_rotation_chain_suite.sh',
                root/'test_code_expansion/tests/build_rotation_chain_suite.py',
                root/'test_code_expansion/tests/build_rotation_chain_experiment.py',
                root/'test_code_expansion/tests/rotation_chain_experiment.cpp',
                root/'test_code_expansion/tests/rotation_chain_probe.hpp',
+               root/'test_code_expansion/build_project.sh', root/'test_code_expansion/strong_scaling/run_experiments.sh',
                root/'test_code_expansion/strong_scaling/cluster_env.sh', root/'netgen/CMakeLists.txt',
                root/'netgen/libsrc/meshing/ruler3.cpp', root/'netgen/libsrc/meshing/meshing3.cpp']
     return {str(s.relative_to(root)): digest(s) for s in sources}
 
 
-def load_build(root, build):
+def load_build(root, build, memory_only=False):
     path=build/"rotation_chain_build.json"
     if not path.is_file():
-        raise RuntimeError("尚未编译：请先运行 bash test_code_expansion/tests/build_rotation_chain_suite.sh")
+        raise RuntimeError("尚未编译：请先运行 bash test_code_expansion/build_project.sh")
     manifest=json.loads(path.read_text())
-    if manifest["source_sha256"] != source_hashes(root):
-        raise RuntimeError("源码已变化，请重新运行独立编译脚本")
-    for kind,suffix in (("release",""),("profile","_profile"),("sanitize","_san")):
+    if not memory_only and manifest["source_sha256"] != source_hashes(root):
+        raise RuntimeError("源码已变化，请重新运行 bash test_code_expansion/build_project.sh")
+    for kind,suffix in ((("sanitize","_san"),) if memory_only else (("release",""),("profile","_profile"),("sanitize","_san"),("ubsan","_ubsan"))):
         binary=build/("rotation_chain_experiment"+suffix)
         if not binary.is_file() or digest(binary)!=manifest["builds"][kind]["binary_sha256"]:
             raise RuntimeError("实验程序缺失或变化，请重新编译："+str(binary))
@@ -166,11 +201,12 @@ def load_build(root, build):
 def main():
     root = Path(__file__).resolve().parents[2]
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--build-dir', type=Path, default=root/'build/rotation_chain_costs_v2')
+    p.add_argument('--build-dir', type=Path, default=root/'build/rotation_chain_dynamic_v3')
     p.add_argument('--output-dir', type=Path, default=root/'test_code_expansion/strong_scaling_results'/time.strftime('rotation_chain_suite_%Y%m%d-%H%M%S'))
     p.add_argument('--cpus', default='auto', help='auto 使用进程允许的前四个处理器')
     p.add_argument('--blocks', type=int, default=12, help='正式四路线计时块数，至少 4 且为 4 的倍数')
     p.add_argument('--check-build', action='store_true', help='仅检查编译产物，不运行任何实验')
+    p.add_argument('--memory-only', action='store_true', help='仅补测指定构建的地址检查，不重跑性能；可指定旧构建目录')
     p.add_argument('--resume', action='store_true', help='仅复用源码、配置和二进制摘要一致的已保存运行')
     a = p.parse_args()
     allowed = sorted(os.sched_getaffinity(0))
@@ -180,13 +216,14 @@ def main():
     build, out = a.build_dir.resolve(), a.output_dir.resolve()
     hashes = source_hashes(root)
     try:
-        manifest = load_build(root, build)
+        manifest = load_build(root, build, a.memory_only)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         p.error(str(exc))
+    candidate_routes = (1, 2, 3) if a.memory_only and manifest.get('campaign') != 'dynamic_chain_v3' else (4, 5, 6)
     if a.check_build:
-        print('已编译，源码及可执行文件匹配；可提交测试。')
+        print('指定构建的程序及运行库摘要匹配；仅补内存检查。' if a.memory_only else '已编译，源码及可执行文件匹配；可提交测试。')
         return
-    config = dict(build_dir=str(build), cpus=cpus, blocks=a.blocks)
+    config = dict(build_dir=str(build), cpus=cpus, blocks=a.blocks, memory_only=a.memory_only, binary_source_sha256=manifest['source_sha256'])
     os.sched_setaffinity(0, cpus)
     summary_path, raw_path = out/'summary.json', out/'runs.jsonl'
     if summary_path.exists():
@@ -199,11 +236,11 @@ def main():
         if out.exists() and any(out.iterdir()):
             p.error('输出目录非空，禁止覆盖无清单文件')
         out.mkdir(parents=True, exist_ok=True)
-        state = dict(schema='rotation_chain_suite_v2', config=config, source_sha256=hashes,
+        state = dict(schema='rotation_chain_suite_v3', config=config, source_sha256=hashes,
                      platform=platform.platform(), cpu_max=Path('/sys/fs/cgroup/cpu.max').read_text() if Path('/sys/fs/cgroup/cpu.max').exists() else None,
                      started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), complete=False,
-                     routes=ROUTES, builds={}, validation={}, benchmarks={}, profile_samples={},
-                     expected_run_count=276+8*4*(a.blocks+1)+24)
+                     routes=({0:'原动态队列',1:'旧固定旋转链',2:'旧固定逐旋转',3:'旧批量动态'} if candidate_routes==(1,2,3) else ROUTES), builds={}, validation={}, benchmarks={}, profile_samples={},
+                     expected_run_count=72 if a.memory_only else 348+8*4*(a.blocks+1)+24)
     cache = {}
     if raw_path.exists():
         for line in raw_path.read_text().splitlines():
@@ -236,7 +273,7 @@ def main():
         print('PASS', key, flush=True)
 
     def prepared_binary(kind):
-        binary = build/('rotation_chain_experiment'+dict(release='', profile='_profile', sanitize='_san')[kind])
+        binary = build/('rotation_chain_experiment'+dict(release='', profile='_profile', sanitize='_san', ubsan='_ubsan')[kind])
         value = manifest['builds'][kind]
         if kind in state['builds'] and state['builds'][kind]['binary_sha256'] != value['binary_sha256'] and any(c['kind'] == kind for c in cache.values()):
             raise RuntimeError('二进制变化，禁止混用已保存样本；请使用新输出目录')
@@ -248,14 +285,18 @@ def main():
         args = [t, route, variant, limit, verify, repeats]
         if fixture is not None:
             args.append(fixture)
+        attempt=1
         if key in cache:
             record = cache[key]
             if record['kind'] != kind or record['arguments'] != args or record['binary_sha256'] != digest(binary):
                 raise RuntimeError('缓存输入或二进制不一致')
-            check_run(record)
-            return record
+            if shadow_memory_failure(record) and a.resume:
+                attempt=record.get('attempt', 1)+1
+            else:
+                check_run(record)
+                return record
         env = dict(os.environ)
-        if kind == 'sanitize':
+        if kind in ('sanitize', 'ubsan'):
             env.update(ASAN_OPTIONS='detect_leaks=0:halt_on_error=1', UBSAN_OPTIONS='halt_on_error=1')
         cpu_stat=Path('/sys/fs/cgroup/cpu.stat')
         cpu_before=cpu_stat.read_text() if cpu_stat.exists() else None
@@ -267,11 +308,14 @@ def main():
             stdout = exc.stdout.decode(errors='replace') if isinstance(exc.stdout, bytes) else exc.stdout or ''
             stderr = exc.stderr.decode(errors='replace') if isinstance(exc.stderr, bytes) else exc.stderr or ''
             stderr += '\nTIMEOUT after 180 seconds'; code = -124
+        except OSError as exc:
+            stdout='';stderr=str(exc);code=127
         try:
             data = json.loads(stdout.strip().splitlines()[-1])
         except (ValueError, IndexError):
             data = None
-        record = dict(key=key, kind=kind, arguments=args, result=data, returncode=code, stderr=stderr,
+        record = dict(key=key, attempt=attempt, kind=kind, arguments=args, result=data, returncode=code, stderr=stderr,
+                      memory_limits=memory_limits(),
                       process_seconds=time.monotonic()-start, binary_sha256=state['builds'][kind]['binary_sha256'],
                       cpu_stat_before=cpu_before,cpu_stat_after=cpu_stat.read_text() if cpu_stat.exists() else None)
         if code or data is None:
@@ -281,13 +325,15 @@ def main():
         cache[key] = record
         if len(cache) % 25 == 0:
             print('PROGRESS', len(cache), '/', state['expected_run_count'], key, flush=True)
+        if kind == 'sanitize' and shadow_memory_failure(record):
+            raise AddressSpaceUnavailable('地址检查器无法预留影子虚拟地址空间；限制已记录，未更改系统或作业限制')
         check_run(record)
         if data['profile']['enabled'] != (kind == 'profile'):
             raise RuntimeError('分项测量构建与正式计时混用')
         return record
 
     def validate(kind, binary):
-        routes = [(1, -1), (4, 0)] + [(t, route) for route in (1, 2, 3) for t in ((1, 2, 4) if kind == 'release' else (2, 4))]
+        routes = [(1, -1), (4, 0)] + [(t, route) for route in candidate_routes for t in ((1, 2, 4) if kind == 'release' else (2, 4))]
         for limit in ((7, 45) if kind == 'release' else (45,)):
             for variant in (0, 1, 2):
                 key = f'{kind}/local/{limit}/{variant}'
@@ -297,11 +343,11 @@ def main():
                 save()
         for fixture in range(6):
             key = f'{kind}/front/{fixture}'
-            cases = [run(f'{key}/{t}/{route}', kind, binary, t, route, verify=0, fixture=fixture) for t, route in routes]
+            cases = [run(f'{key}/{t}/{route}', kind, binary, t, route, verify=1, fixture=fixture) for t, route in routes]
             fp = check_group(cases, fixture)
             item = dict(passed=True, runs=[c['key'] for c in cases], fingerprint=fp,
                         status=cases[0]['result']['status'], elements=cases[0]['result']['elements'])
-            if kind != 'release':
+            if kind != 'release' and f'release/front/{fixture}' in state['validation']:
                 item['cross_build_equal'] = fp == state['validation'][f'release/front/{fixture}']['fingerprint']
             state['validation'][key] = item
             save()
@@ -311,7 +357,7 @@ def main():
         blocks, orders, keys = [], [], []
         for block in range(-1, a.blocks):
             # Four positions are balanced in each group of four blocks.
-            order = list(range(4))
+            order = list(ROUTES)
             if block >= 0 and (block//4) % 2:
                 order.reverse()
             shift = max(0, block) % 4
@@ -335,10 +381,36 @@ def main():
     state.pop('error', None); state['complete'] = False; save()
     try:
         state['environment'] = dict(scheduler_job=os.environ.get('SLURM_JOB_ID'),
-                                    build_environment=manifest['environment'])
+                                    build_environment=manifest['environment'], memory_limits=memory_limits())
         save()
+        sanitizer = prepared_binary('sanitize')
+        state['address_check'] = dict(status='pending')
+        try:
+            run('sanitize/local/45/0/1/-1', 'sanitize', sanitizer, 1, -1, limit=45)
+        except AddressSpaceUnavailable as exc:
+            state['address_check'] = dict(status='blocked', reason=str(exc))
+            print('ADDRESS CHECK BLOCKED:', exc, flush=True)
+        save()
+        if a.memory_only:
+            if state['address_check']['status'] != 'blocked':
+                try:
+                    validate('sanitize', sanitizer)
+                    state['address_check']['status']='passed'
+                except AddressSpaceUnavailable as exc:
+                    state['address_check']=dict(status='blocked',reason=str(exc))
+            state['run_count']=len(cache);state['raw_sha256']=digest(raw_path)
+            state['complete']=state['address_check']['status']=='passed'
+            if state['complete'] and state['run_count'] != state['expected_run_count']:
+                raise RuntimeError('内存补测运行数量与计划不一致')
+            state['attempt_count']=len(raw_path.read_text().splitlines())
+            state['finished_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            save()
+            if not state['complete']:raise SystemExit(3)
+            print('MEMORY CHECK COMPLETE', summary_path, flush=True)
+            return
         command('driver_tests', [sys.executable, '-m', 'unittest', 'discover', '-s', root/'test_code_expansion/tests', '-p', 'test_rotation_chain_suite.py', '-v'])
         release = prepared_binary('release'); validate('release', release)
+        ubsan = prepared_binary('ubsan'); validate('ubsan', ubsan)
         for limit in (7, 45):
             for variant in (0, 1, 2):
                 benchmark(release, f'local/{limit}/{variant}', variant, limit)
@@ -346,7 +418,7 @@ def main():
             benchmark(release, f'front/{fixture}', fixture=fixture)
         profile = prepared_binary('profile'); validate('profile', profile)
         for fixture in (2, 4):
-            for route in range(4):
+            for route in ROUTES:
                 keys = []
                 for repeat in range(3):
                     key = f'profile_measure/{fixture}/{route}/{repeat}'
@@ -357,15 +429,26 @@ def main():
                 state['profile_samples'][f'{fixture}/{route}'] = keys; save()
         state['cost_breakdown'] = write_measurement_report(state, cache, out/'measurement_report.md')
         save()
-        sanitizer = prepared_binary('sanitize'); validate('sanitize', sanitizer)
+        state['performance_complete']=True
+        if state['address_check']['status'] != 'blocked':
+            try:
+                validate('sanitize', sanitizer)
+                state['address_check']['status']='passed'
+            except AddressSpaceUnavailable as exc:
+                state['address_check']=dict(status='blocked',reason=str(exc))
         assert all(digest(root/path) == value for path,value in hashes.items()), '运行期间源码发生变化'
         state['run_count'] = len(cache)
-        if state['run_count'] != state['expected_run_count']:
+        if state['address_check']['status']=='passed' and state['run_count'] != state['expected_run_count']:
             raise RuntimeError('实际运行数量与计划不一致')
         state['raw_sha256'] = digest(raw_path)
-        state['complete'] = True
+        state['complete'] = state['address_check']['status']=='passed'
+        state['attempt_count']=len(raw_path.read_text().splitlines())
         state['finished_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        save(); print('ALL COMPLETE', summary_path, 'runs', len(cache), flush=True)
+        save()
+        if not state['complete']:
+            print('PARTIAL: 性能及独立未定义行为检查完成，地址检查受阻；无需重跑性能。', summary_path, flush=True)
+            raise SystemExit(3)
+        print('ALL COMPLETE', summary_path, 'runs', len(cache), flush=True)
     except Exception as exc:
         state['error'] = str(exc); state['run_count'] = len(cache); save()
         (out/'failure.txt').write_text(str(exc)+'\n')

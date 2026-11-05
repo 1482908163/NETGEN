@@ -5,11 +5,13 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--build-dir',type=Path,required=True)
 p.add_argument('--sanitize',action='store_true',help='仅实验翻译单元启用地址与未定义行为检查')
+p.add_argument('--ubsan',action='store_true',help='独立未定义行为检查，不依赖地址影子空间')
 p.add_argument('--profile',action='store_true',help='独立分项测量构建，不用于正式性能计时')
 a=p.parse_args();build=a.build_dir.resolve();repo=Path(__file__).resolve().parents[2]
 sanitize=a.sanitize
 profile=a.profile
-if sanitize and profile:raise SystemExit('插桩内存检查与分项测量必须分开构建')
+ubsan=a.ubsan
+if sum((sanitize,profile,ubsan))>1:raise SystemExit('内存检查、未定义行为检查和分项测量必须分别构建')
 entries=[e for e in json.loads((build/'compile_commands.json').read_text()) if 'CMakeFiles/nglib.dir/' in e['command']]
 rule=next(e for e in entries if e['file'].endswith('/ruler3.cpp'))
 flags=shlex.split(rule['command'])
@@ -63,6 +65,9 @@ core=build/'libsrc/core/libngcore.so';output=build/'rotation_chain_experiment'
 if sanitize:
     flags+=['-O1','-g1','-fsanitize=address,undefined','-fno-omit-frame-pointer']
     output=build/'rotation_chain_experiment_san'
+if ubsan:
+    flags+=['-O1','-g1','-fsanitize=undefined','-fno-sanitize-recover=all']
+    output=build/'rotation_chain_experiment_ubsan'
 if profile:
     flags+=['-DROTATION_CHAIN_PROFILE=1']
     output=build/'rotation_chain_experiment_profile'

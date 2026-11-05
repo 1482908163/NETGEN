@@ -5,6 +5,7 @@
 #include <random>
 #include <iomanip>
 #include <sstream>
+#include <stdexcept>
 using namespace netgen;
 namespace {
 int threads=4, fixture_variant=0, limit=7, repeats=1, route=0;
@@ -21,6 +22,10 @@ void PrintProfile(const VolumeKernelStats *stats=nullptr) {
     <<",\"prepare_calls\":"<<prepare_calls.load()<<",\"worker_elapsed_sum\":"<<worker_sum
     <<",\"group_max_sum\":"<<group_max_sum<<",\"group_idle_proxy\":"<<group_idle_proxy
     <<",\"groups\":"<<groups
+    <<",\"shared_prepare_wall\":"<<shared_prepare_wall<<",\"worker_copy_sum\":"<<worker_copy_sum
+    <<",\"chain_claim_sum\":"<<chain_claim_sum<<",\"shared_preparations\":"<<shared_preparations
+    <<",\"chain_rules\":"<<chain_rules<<",\"chain_rule_rotations\":"<<chain_rule_rotations
+    <<",\"input_copies\":"<<input_copies<<",\"prefix_checks\":"<<prefix_checks
     <<",\"claim_elapsed_sum\":"<<claim_sum.load()<<",\"claim_attempts\":"<<claim_attempts.load()
     <<",\"claim_successes\":"<<claim_successes.load()
     <<",\"group_dispatch_wall\":"<<group_dispatch_wall<<",\"launch_delay_sum\":"<<launch_delay_sum
@@ -76,8 +81,9 @@ std::unique_ptr<FrontChain> PrepareFrontChain(Meshing3 &mesher,
     for(auto i:points.Range())trans.ToPlain(points[i],f->points[i]);
     for(auto i:allow.Range())if(f->points[i].Z()>0)allow[i]=0;
     f->allow=allow;
-    auto output=std::make_unique<Frame>();output->rotation=rotation;output->points=f->points;
-    output->faces=f->faces;output->allow=f->allow;state->output.push_back(std::move(output));
+    auto output=std::make_unique<Frame>();output->rotation=rotation;
+    if(route<4){output->points=f->points;output->faces=f->faces;output->allow=f->allow;}
+    state->output.push_back(std::move(output));
     b.frames.push_back(std::move(f));
   }
   if constexpr(rotation_probe::enabled)rotation_probe::input_wall+=RuleElapsed(prepare_start);
@@ -153,6 +159,164 @@ void TestRules() {
   double measured=0;
   front_chain_runner=[&](Meshing3 &mesher,Batch &b,std::vector<std::unique_ptr<Frame>> &outputs) {
     int rotations=b.frames.size();
+    if(route>=4) {
+      const int workers=std::min(threads,int(mesher.rules.Size()));
+      const int rule_count=mesher.rules.Size();
+      // Every rule retains exclusive ownership for its entire ordered chain.
+      // Shared geometry is scoped to this front batch, never a later front.
+      std::vector<std::unique_ptr<RuleSearchPreparation>> prepared;
+      {
+        rotation_probe::WallTimer timer(rotation_probe::shared_prepare_wall);
+        bool useedges=false;for(int id=0;id<rule_count;++id)if(mesher.rules[id]->GetNEd())useedges=true;
+        for(auto &input:b.frames)prepared.emplace_back(new RuleSearchPreparation(
+            input->points,input->faces,b.split,b.pairs,useedges));
+      }
+      rotation_probe::shared_preparations+=rotations;
+      struct ChainWorker {
+        std::vector<std::unique_ptr<RuleSearchResult>> winners,scratch;
+        RuleSearchQueue queue{0};
+        unsigned long long chains=0,visits=0,copies=0,prefix_checks=0;
+        double copy_seconds=0,claim_seconds=0;
+        rotation_probe::Clock::time_point start{},finish{};
+      };
+      std::vector<std::unique_ptr<ChainWorker>> slots;
+      {
+        rotation_probe::WallTimer timer(rotation_probe::copy_wall);
+        for(int w=0;w<workers;++w) {
+          auto slot=std::make_unique<ChainWorker>();slot->queue.discard_trace=true;
+          slot->queue.order.resize(1);
+          for(auto &input:b.frames) {
+            auto result=std::make_unique<RuleSearchResult>();
+            result->other=minother;result->withoutother=minwithoutother;
+            slot->winners.push_back(std::move(result));
+            if(route==5) {
+              auto scratch=std::make_unique<RuleSearchResult>();
+              scratch->points=input->points;scratch->faces=input->faces;++slot->copies;
+              slot->scratch.push_back(std::move(scratch));
+            }
+          }
+          slots.push_back(std::move(slot));
+        }
+      }
+      std::vector<std::vector<std::string>> diagnostic;
+      if(verify)diagnostic.resize(rotations,std::vector<std::string>(rule_count));
+      std::atomic<int> next_rule{0};
+      std::atomic<bool> prefix_ok{true};
+      if(b.tolerance>5)RuleDiagnosticCounter()+=rotations;
+      const auto begin=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+      ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
+        auto &slot=*slots[worker];
+        if constexpr(rotation_probe::enabled)slot.start=rotation_probe::Clock::now();
+        int static_id=int(worker);
+        while(true) {
+          const auto claim_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+          int id;
+          if(route==6){id=static_id;static_id+=workers;}
+          else id=next_rule.fetch_add(1,std::memory_order_relaxed);
+          if constexpr(rotation_probe::enabled)slot.claim_seconds+=rotation_probe::Since(claim_start);
+          if(id>=rule_count)break;
+          ++slot.chains;slot.queue.order[0]=id;
+          for(int rotation=0;rotation<rotations;++rotation) {
+            auto &input=*b.frames[rotation];auto &winner=*slot.winners[rotation];
+            std::unique_ptr<RuleSearchResult> fresh;
+            const auto copy_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+            if(route!=5) {
+              fresh=std::make_unique<RuleSearchResult>();
+              fresh->points=input.points;fresh->faces=input.faces;++slot.copies;
+            }
+            auto &r=route==5?*slot.scratch[rotation]:*fresh;
+            // ApplyRulesImpl only appends geometry and truncates to the original
+            // prefix. Reuse that prefix; all output/scalar state is reset.
+            r.points.SetSize(input.points.Size());r.faces.SetSize(input.faces.Size());
+            r.elements.SetSize(0);r.deleted.SetSize(0);r.trace.clear();
+            r.rules=r.eligible=r.face_trials=r.point_trials=r.mappings=0;
+            r.replay_face_trials=r.replay_point_trials=0;r.prefix_min=1e100;
+            r.found=-1;r.error=r.quality=0;r.other=minother;r.withoutother=minwithoutother;
+            if constexpr(rotation_probe::enabled)slot.copy_seconds+=rotation_probe::Since(copy_start);
+            slot.queue.next.store(0,std::memory_order_relaxed);
+            slot.queue.prepared=prepared[rotation].get();
+            r.found=mesher.ApplyRulesImpl(r.points,input.allow,r.faces,b.split,b.pairs,r.elements,r.deleted,
+                b.tolerance,b.sloppy,input.rotation,r.error,&slot.queue,&r);
+            ++slot.visits;
+            if(verify) {
+              if(route==5) {
+                bool same=r.points.Size()>=input.points.Size() && r.faces.Size()>=input.faces.Size();
+                if(same) {
+                  for(auto pi:input.points.Range())for(int c=1;c<=3;++c)
+                    if(!RuleBitsEqual(r.points[pi].X(c),input.points[pi].X(c)))same=false;
+                  for(auto fi:input.faces.Range()) {
+                    if(r.faces[fi].GetNP()!=input.faces[fi].GetNP()){same=false;continue;}
+                    for(int j=1;j<=input.faces[fi].GetNP();++j)
+                      if(r.faces[fi].PNum(j)!=input.faces[fi].PNum(j))same=false;
+                  }
+                }
+                if(!same)prefix_ok.store(false,std::memory_order_relaxed);
+                ++slot.prefix_checks;
+              }
+              auto &s=diagnostic[rotation][id];auto append=[&](auto v){s.append(reinterpret_cast<char*>(&v),sizeof(v));};
+              append(mesher.foundmap[id]);append(mesher.canuse[id]);
+              auto &problem=mesher.problems[id];append(int(problem.size()));s+=problem;
+            }
+            winner.error=r.error;
+            winner.other=std::min(winner.other,r.other);winner.withoutother=std::min(winner.withoutother,r.withoutother);
+            winner.rules+=r.rules;winner.eligible+=r.eligible;winner.face_trials+=r.face_trials;
+            winner.point_trials+=r.point_trials;winner.mappings+=r.mappings;
+            if(r.found==0 && winner.found<0)winner.found=0;
+            if(r.found>0 && (winner.found<=0 || r.quality<winner.quality ||
+                (r.quality==winner.quality && r.found<winner.found))) {
+              winner.found=r.found;winner.quality=r.quality;
+              winner.points=r.points;winner.faces=r.faces;winner.elements=r.elements;winner.deleted=r.deleted;
+            }
+          }
+        }
+        if constexpr(rotation_probe::enabled)slot.finish=rotation_probe::Clock::now();
+      },workers);
+      const auto joined=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+      ++dispatches;++experiment_dispatches;
+      if(!prefix_ok.load(std::memory_order_relaxed))throw std::runtime_error("复用缓冲的原始几何前缀发生变化");
+      if constexpr(rotation_probe::enabled) {
+        const auto seconds=[](auto duration){return std::chrono::duration<double>(duration).count();};
+        auto last=slots[0]->finish;double total=0,largest=0;
+        for(auto &slot:slots) {
+          double elapsed=seconds(slot->finish-slot->start);total+=elapsed;largest=std::max(largest,elapsed);
+          last=std::max(last,slot->finish);
+          rotation_probe::launch_delay_sum+=seconds(slot->start-begin);
+          rotation_probe::completion_to_join_sum+=seconds(joined-slot->finish);
+          rotation_probe::worker_copy_sum+=slot->copy_seconds;
+          rotation_probe::chain_claim_sum+=slot->claim_seconds;
+        }
+        rotation_probe::dispatch_wall+=seconds(joined-begin);rotation_probe::group_dispatch_wall+=seconds(joined-begin);
+        rotation_probe::join_tail_wall+=seconds(joined-last);
+        rotation_probe::worker_sum+=total;rotation_probe::group_max_sum+=largest;
+        rotation_probe::group_idle_proxy+=workers*largest-total;++rotation_probe::groups;
+      }
+      for(auto &slot:slots) {
+        rotation_probe::chain_rules+=slot->chains;rotation_probe::chain_rule_rotations+=slot->visits;
+        rotation_probe::input_copies+=slot->copies;rotation_probe::prefix_checks+=slot->prefix_checks;
+      }
+      {
+        rotation_probe::WallTimer timer(rotation_probe::merge_wall);
+        for(int rotation=0;rotation<rotations;++rotation) {
+          auto &o=*outputs[rotation];RuleSearchResult *winner=nullptr;int found=-1;
+          for(auto &slot:slots) {
+            auto &r=*slot->winners[rotation];
+            minother=std::min(minother,r.other);minwithoutother=std::min(minwithoutother,r.withoutother);
+            if(r.found==0)found=0;
+            if(r.found>0 && (!winner || r.quality<winner->quality ||
+                (r.quality==winner->quality && r.found<winner->found)))winner=&r;
+            unsigned long long work[]={r.rules,r.eligible,r.face_trials,r.point_trials,r.mappings};
+            for(int k=0;k<5;++k)o.work[k]+=work[k];
+          }
+          o.found=winner?winner->found:found;
+          for(auto &slot:slots)if(slot->chains){o.error=slot->winners[rotation]->error;break;}
+          o.other=minother;o.without=minwithoutother;
+          if(winner){o.points=winner->points;o.faces=winner->faces;o.elements=winner->elements;o.deleted=winner->deleted;}
+          else if(o.points.Size()==0){o.points=b.frames[rotation]->points;o.faces=b.frames[rotation]->faces;}
+          if(verify)for(auto &d:diagnostic[rotation])o.diagnostics+=d;
+        }
+      }
+      return;
+    }
       int workers=std::min(threads,int(mesher.rules.Size()));
       struct Slot {std::vector<std::unique_ptr<RuleSearchResult>> result;};
       std::vector<Slot> slots(workers);
@@ -344,7 +508,7 @@ int main(int argc,char **argv) {
   if(argc>3)fixture_variant=std::atoi(argv[3]);if(argc>4)limit=std::atoi(argv[4]);
   if(argc>5)verify=std::atoi(argv[5]);if(argc>6)repeats=std::atoi(argv[6]);
   if(argc>7)front_fixture=std::atoi(argv[7]);
-  if(threads<1 || threads>16 || route < -1 || route>3 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
+  if(threads<1 || threads>16 || route < -1 || route>6 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
     return 2;
   TestRules();
 }
