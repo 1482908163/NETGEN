@@ -1,0 +1,60 @@
+{
+  "schema": "rotation_chain_suite_v1",
+  "config": {
+    "build_dir": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_suite",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "blocks": 12,
+    "jobs": 4,
+    "cmake": "cmake",
+    "ninja": null
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/run_rotation_chain_suite.py": "bb019dae5ef4ce6f878b50969706598b73abe866309ef03db03ee2d7744c5928",
+    "test_code_expansion/tests/test_rotation_chain_suite.py": "b6fa76d34697ff11777eeb35c22b78da363b3fb69fa53b135de38a016accb4c9",
+    "test_code_expansion/tests/run_rotation_chain_suite.sh": "c8deb366369efc80ed12a8eeb3ee17defdbcd7f98b79fec008892e818fbbb349",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "5503010d8748089baa505f7d517be798894a32037459d1d45a142a8572c07e90",
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "25772d459b6ef25a045ffcb3880b45c6378cc8c9cd8e25708e4df91f18ae220e",
+    "test_code_expansion/tests/rotation_chain_probe.hpp": "78de5f4ce2adee3f8d8b17dd889bd41a35ad28b402126ecfc0ce33196994294b",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "platform": "Linux-5.4.0-65-mt+-aarch64-with-glibc2.29",
+  "cpu_max": null,
+  "started_utc": "2026-11-05T08:48:58Z",
+  "complete": false,
+  "routes": {
+    "0": "原动态队列",
+    "1": "固定分工旋转链",
+    "2": "固定分工逐旋转汇合",
+    "3": "批量输入动态队列逐旋转汇合"
+  },
+  "builds": {},
+  "validation": {},
+  "benchmarks": {},
+  "profile_samples": {},
+  "commands": {
+    "driver_tests": {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests",
+        "-p",
+        "test_rotation_chain_suite.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "seconds": 0.5941530540003441,
+      "log": "driver_tests.log",
+      "log_sha256": "7ef1e44d2b6c447d12869bac06dc89acbc86439e9f3045804f73c3635c96373c"
+    }
+  },
+  "error": "[Errno 20] Not a directory: 'cmake'"
+}
