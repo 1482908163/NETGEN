@@ -1,0 +1,3157 @@
+{
+  "schema": "rotation_chain_suite_v2",
+  "config": {
+    "build_dir": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "blocks": 12
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/run_rotation_chain_suite.py": "58568531130278765f0708babc70252523acd32fb7ab6c234a08a7164a562aef",
+    "test_code_expansion/tests/test_rotation_chain_suite.py": "cfe749e2f0583dc1230a48f15eb3835670fa3875dcbd3a424a446ed10c795aca",
+    "test_code_expansion/tests/run_rotation_chain_suite.sh": "76fe1c97686e0fc15584006f77b5689d046ae50aa3652bb593c4981d73d6c78a",
+    "test_code_expansion/tests/build_rotation_chain_suite.sh": "f8af39835c7f41de3a00099cd0c7d0b0f873400a6cb595af794009fde735cc31",
+    "test_code_expansion/tests/build_rotation_chain_suite.py": "94666cc0443dbf8fab3a6982c684a08a90cbba328bc53f458ea432c229afdf68",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "401c12994806d97455ac1963aaac2510363eefeb7d0adef58bff0d36a25e1a96",
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "4e8fd1a48a6c54638b9da5d27c56161d6a09f5c96beb3e2deae7f2ac64afbcd0",
+    "test_code_expansion/tests/rotation_chain_probe.hpp": "fabc05e6d57e9d406ccd555b2dc6bba9c05865fb1b11c270925e059e5873ddf6",
+    "test_code_expansion/strong_scaling/cluster_env.sh": "fb82bf809df6c44cf2d8b6620df45f011aa3d9024dae347f219c503ded7d9524",
+    "netgen/CMakeLists.txt": "f9d3618073c6d03d5cd63a1a90487144e5cee53278019903697deb07ebe87955",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "platform": "Linux-5.4.0-65-mt+-aarch64-with-glibc2.29",
+  "cpu_max": null,
+  "started_utc": "2026-11-05T09:58:27Z",
+  "complete": false,
+  "routes": {
+    "0": "原动态队列",
+    "1": "固定分工旋转链",
+    "2": "固定分工逐旋转汇合",
+    "3": "批量输入动态队列逐旋转汇合"
+  },
+  "builds": {
+    "release": {
+      "binary_sha256": "2036a5fe5db591b21834aefc97c32ecbb65cd2b497af0edc2874195b015b9bac",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/rotation_chain_experiment"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2"
+    },
+    "profile": {
+      "binary_sha256": "9207292e6fd95f0b447690b5049f4bf7501c4311804f8dfd5f23a9808a12347f",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "-DROTATION_CHAIN_PROFILE=1",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/rotation_chain_experiment_profile"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2"
+    },
+    "sanitize": {
+      "binary_sha256": "65e085939a20e4164d785eba191fd5d1301f84fae765c8eba5df40e614a424d5",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "-O1",
+        "-g1",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2/rotation_chain_experiment_san"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_costs_v2"
+    }
+  },
+  "validation": {
+    "release/local/7/0": {
+      "passed": true,
+      "runs": [
+        "release/local/7/0/1/-1",
+        "release/local/7/0/4/0",
+        "release/local/7/0/1/1",
+        "release/local/7/0/2/1",
+        "release/local/7/0/4/1",
+        "release/local/7/0/1/2",
+        "release/local/7/0/2/2",
+        "release/local/7/0/4/2",
+        "release/local/7/0/1/3",
+        "release/local/7/0/2/3",
+        "release/local/7/0/4/3"
+      ],
+      "fingerprint": "32dd7d57d3eb2ba"
+    },
+    "release/local/7/1": {
+      "passed": true,
+      "runs": [
+        "release/local/7/1/1/-1",
+        "release/local/7/1/4/0",
+        "release/local/7/1/1/1",
+        "release/local/7/1/2/1",
+        "release/local/7/1/4/1",
+        "release/local/7/1/1/2",
+        "release/local/7/1/2/2",
+        "release/local/7/1/4/2",
+        "release/local/7/1/1/3",
+        "release/local/7/1/2/3",
+        "release/local/7/1/4/3"
+      ],
+      "fingerprint": "b848948156088b90"
+    },
+    "release/local/7/2": {
+      "passed": true,
+      "runs": [
+        "release/local/7/2/1/-1",
+        "release/local/7/2/4/0",
+        "release/local/7/2/1/1",
+        "release/local/7/2/2/1",
+        "release/local/7/2/4/1",
+        "release/local/7/2/1/2",
+        "release/local/7/2/2/2",
+        "release/local/7/2/4/2",
+        "release/local/7/2/1/3",
+        "release/local/7/2/2/3",
+        "release/local/7/2/4/3"
+      ],
+      "fingerprint": "f35411b0a0e69c5d"
+    },
+    "release/local/45/0": {
+      "passed": true,
+      "runs": [
+        "release/local/45/0/1/-1",
+        "release/local/45/0/4/0",
+        "release/local/45/0/1/1",
+        "release/local/45/0/2/1",
+        "release/local/45/0/4/1",
+        "release/local/45/0/1/2",
+        "release/local/45/0/2/2",
+        "release/local/45/0/4/2",
+        "release/local/45/0/1/3",
+        "release/local/45/0/2/3",
+        "release/local/45/0/4/3"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "release/local/45/1": {
+      "passed": true,
+      "runs": [
+        "release/local/45/1/1/-1",
+        "release/local/45/1/4/0",
+        "release/local/45/1/1/1",
+        "release/local/45/1/2/1",
+        "release/local/45/1/4/1",
+        "release/local/45/1/1/2",
+        "release/local/45/1/2/2",
+        "release/local/45/1/4/2",
+        "release/local/45/1/1/3",
+        "release/local/45/1/2/3",
+        "release/local/45/1/4/3"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "release/local/45/2": {
+      "passed": true,
+      "runs": [
+        "release/local/45/2/1/-1",
+        "release/local/45/2/4/0",
+        "release/local/45/2/1/1",
+        "release/local/45/2/2/1",
+        "release/local/45/2/4/1",
+        "release/local/45/2/1/2",
+        "release/local/45/2/2/2",
+        "release/local/45/2/4/2",
+        "release/local/45/2/1/3",
+        "release/local/45/2/2/3",
+        "release/local/45/2/4/3"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "release/front/0": {
+      "passed": true,
+      "runs": [
+        "release/front/0/1/-1",
+        "release/front/0/4/0",
+        "release/front/0/1/1",
+        "release/front/0/2/1",
+        "release/front/0/4/1",
+        "release/front/0/1/2",
+        "release/front/0/2/2",
+        "release/front/0/4/2",
+        "release/front/0/1/3",
+        "release/front/0/2/3",
+        "release/front/0/4/3"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1
+    },
+    "release/front/1": {
+      "passed": true,
+      "runs": [
+        "release/front/1/1/-1",
+        "release/front/1/4/0",
+        "release/front/1/1/1",
+        "release/front/1/2/1",
+        "release/front/1/4/1",
+        "release/front/1/1/2",
+        "release/front/1/2/2",
+        "release/front/1/4/2",
+        "release/front/1/1/3",
+        "release/front/1/2/3",
+        "release/front/1/4/3"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13
+    },
+    "release/front/2": {
+      "passed": true,
+      "runs": [
+        "release/front/2/1/-1",
+        "release/front/2/4/0",
+        "release/front/2/1/1",
+        "release/front/2/2/1",
+        "release/front/2/4/1",
+        "release/front/2/1/2",
+        "release/front/2/2/2",
+        "release/front/2/4/2",
+        "release/front/2/1/3",
+        "release/front/2/2/3",
+        "release/front/2/4/3"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140
+    },
+    "release/front/3": {
+      "passed": true,
+      "runs": [
+        "release/front/3/1/-1",
+        "release/front/3/4/0",
+        "release/front/3/1/1",
+        "release/front/3/2/1",
+        "release/front/3/4/1",
+        "release/front/3/1/2",
+        "release/front/3/2/2",
+        "release/front/3/4/2",
+        "release/front/3/1/3",
+        "release/front/3/2/3",
+        "release/front/3/4/3"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0
+    },
+    "release/front/4": {
+      "passed": true,
+      "runs": [
+        "release/front/4/1/-1",
+        "release/front/4/4/0",
+        "release/front/4/1/1",
+        "release/front/4/2/1",
+        "release/front/4/4/1",
+        "release/front/4/1/2",
+        "release/front/4/2/2",
+        "release/front/4/4/2",
+        "release/front/4/1/3",
+        "release/front/4/2/3",
+        "release/front/4/4/3"
+      ],
+      "fingerprint": "70b0da7e15d74a19",
+      "status": 0,
+      "elements": 1207
+    },
+    "release/front/5": {
+      "passed": true,
+      "runs": [
+        "release/front/5/1/-1",
+        "release/front/5/4/0",
+        "release/front/5/1/1",
+        "release/front/5/2/1",
+        "release/front/5/4/1",
+        "release/front/5/1/2",
+        "release/front/5/2/2",
+        "release/front/5/4/2",
+        "release/front/5/1/3",
+        "release/front/5/2/3",
+        "release/front/5/4/3"
+      ],
+      "fingerprint": "38fe4626d9daa991",
+      "status": 2,
+      "elements": 8634
+    },
+    "profile/local/45/0": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/0/1/-1",
+        "profile/local/45/0/4/0",
+        "profile/local/45/0/2/1",
+        "profile/local/45/0/4/1",
+        "profile/local/45/0/2/2",
+        "profile/local/45/0/4/2",
+        "profile/local/45/0/2/3",
+        "profile/local/45/0/4/3"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "profile/local/45/1": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/1/1/-1",
+        "profile/local/45/1/4/0",
+        "profile/local/45/1/2/1",
+        "profile/local/45/1/4/1",
+        "profile/local/45/1/2/2",
+        "profile/local/45/1/4/2",
+        "profile/local/45/1/2/3",
+        "profile/local/45/1/4/3"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "profile/local/45/2": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/2/1/-1",
+        "profile/local/45/2/4/0",
+        "profile/local/45/2/2/1",
+        "profile/local/45/2/4/1",
+        "profile/local/45/2/2/2",
+        "profile/local/45/2/4/2",
+        "profile/local/45/2/2/3",
+        "profile/local/45/2/4/3"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "profile/front/0": {
+      "passed": true,
+      "runs": [
+        "profile/front/0/1/-1",
+        "profile/front/0/4/0",
+        "profile/front/0/2/1",
+        "profile/front/0/4/1",
+        "profile/front/0/2/2",
+        "profile/front/0/4/2",
+        "profile/front/0/2/3",
+        "profile/front/0/4/3"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1,
+      "cross_build_equal": true
+    },
+    "profile/front/1": {
+      "passed": true,
+      "runs": [
+        "profile/front/1/1/-1",
+        "profile/front/1/4/0",
+        "profile/front/1/2/1",
+        "profile/front/1/4/1",
+        "profile/front/1/2/2",
+        "profile/front/1/4/2",
+        "profile/front/1/2/3",
+        "profile/front/1/4/3"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13,
+      "cross_build_equal": true
+    },
+    "profile/front/2": {
+      "passed": true,
+      "runs": [
+        "profile/front/2/1/-1",
+        "profile/front/2/4/0",
+        "profile/front/2/2/1",
+        "profile/front/2/4/1",
+        "profile/front/2/2/2",
+        "profile/front/2/4/2",
+        "profile/front/2/2/3",
+        "profile/front/2/4/3"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140,
+      "cross_build_equal": true
+    },
+    "profile/front/3": {
+      "passed": true,
+      "runs": [
+        "profile/front/3/1/-1",
+        "profile/front/3/4/0",
+        "profile/front/3/2/1",
+        "profile/front/3/4/1",
+        "profile/front/3/2/2",
+        "profile/front/3/4/2",
+        "profile/front/3/2/3",
+        "profile/front/3/4/3"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0,
+      "cross_build_equal": true
+    },
+    "profile/front/4": {
+      "passed": true,
+      "runs": [
+        "profile/front/4/1/-1",
+        "profile/front/4/4/0",
+        "profile/front/4/2/1",
+        "profile/front/4/4/1",
+        "profile/front/4/2/2",
+        "profile/front/4/4/2",
+        "profile/front/4/2/3",
+        "profile/front/4/4/3"
+      ],
+      "fingerprint": "70b0da7e15d74a19",
+      "status": 0,
+      "elements": 1207,
+      "cross_build_equal": true
+    },
+    "profile/front/5": {
+      "passed": true,
+      "runs": [
+        "profile/front/5/1/-1",
+        "profile/front/5/4/0",
+        "profile/front/5/2/1",
+        "profile/front/5/4/1",
+        "profile/front/5/2/2",
+        "profile/front/5/4/2",
+        "profile/front/5/2/3",
+        "profile/front/5/4/3"
+      ],
+      "fingerprint": "38fe4626d9daa991",
+      "status": 2,
+      "elements": 8634,
+      "cross_build_equal": true
+    }
+  },
+  "benchmarks": {
+    "local/7/0": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/0/0/0",
+          "1": "benchmark/local/7/0/0/1",
+          "2": "benchmark/local/7/0/0/2",
+          "3": "benchmark/local/7/0/0/3"
+        },
+        {
+          "1": "benchmark/local/7/0/1/1",
+          "2": "benchmark/local/7/0/1/2",
+          "3": "benchmark/local/7/0/1/3",
+          "0": "benchmark/local/7/0/1/0"
+        },
+        {
+          "2": "benchmark/local/7/0/2/2",
+          "3": "benchmark/local/7/0/2/3",
+          "0": "benchmark/local/7/0/2/0",
+          "1": "benchmark/local/7/0/2/1"
+        },
+        {
+          "3": "benchmark/local/7/0/3/3",
+          "0": "benchmark/local/7/0/3/0",
+          "1": "benchmark/local/7/0/3/1",
+          "2": "benchmark/local/7/0/3/2"
+        },
+        {
+          "3": "benchmark/local/7/0/4/3",
+          "2": "benchmark/local/7/0/4/2",
+          "1": "benchmark/local/7/0/4/1",
+          "0": "benchmark/local/7/0/4/0"
+        },
+        {
+          "2": "benchmark/local/7/0/5/2",
+          "1": "benchmark/local/7/0/5/1",
+          "0": "benchmark/local/7/0/5/0",
+          "3": "benchmark/local/7/0/5/3"
+        },
+        {
+          "1": "benchmark/local/7/0/6/1",
+          "0": "benchmark/local/7/0/6/0",
+          "3": "benchmark/local/7/0/6/3",
+          "2": "benchmark/local/7/0/6/2"
+        },
+        {
+          "0": "benchmark/local/7/0/7/0",
+          "3": "benchmark/local/7/0/7/3",
+          "2": "benchmark/local/7/0/7/2",
+          "1": "benchmark/local/7/0/7/1"
+        },
+        {
+          "0": "benchmark/local/7/0/8/0",
+          "1": "benchmark/local/7/0/8/1",
+          "2": "benchmark/local/7/0/8/2",
+          "3": "benchmark/local/7/0/8/3"
+        },
+        {
+          "1": "benchmark/local/7/0/9/1",
+          "2": "benchmark/local/7/0/9/2",
+          "3": "benchmark/local/7/0/9/3",
+          "0": "benchmark/local/7/0/9/0"
+        },
+        {
+          "2": "benchmark/local/7/0/10/2",
+          "3": "benchmark/local/7/0/10/3",
+          "0": "benchmark/local/7/0/10/0",
+          "1": "benchmark/local/7/0/10/1"
+        },
+        {
+          "3": "benchmark/local/7/0/11/3",
+          "0": "benchmark/local/7/0/11/0",
+          "1": "benchmark/local/7/0/11/1",
+          "2": "benchmark/local/7/0/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/0/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            8.457112579451731,
+            10.913625330355426,
+            11.747427258331792,
+            10.957343038113745,
+            11.357778726077301,
+            12.110762734669393,
+            11.0534401035736,
+            11.87601528821755,
+            11.470125344307696,
+            11.486626111947814,
+            11.49273636065962,
+            11.114069220187552
+          ],
+          "median_pct": 11.413952035192498,
+          "wins": 12,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            3.1958620147112624,
+            4.036768798224897,
+            2.3346059944659614,
+            4.27894802354211,
+            4.157437649955839,
+            2.797555744326513,
+            1.775285982635512,
+            4.071821782160312,
+            4.874370907719898,
+            2.5741990950478546,
+            2.9870687485155023,
+            3.9845894020513963
+          ],
+          "median_pct": 3.5902257083813294,
+          "wins": 12,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            3.204709681514012,
+            4.941138671412068,
+            3.113931423085252,
+            3.750422276613694,
+            5.154561984337777,
+            3.4004660422445343,
+            3.2679056013697894,
+            3.822498497373911,
+            4.564561296739246,
+            2.5380461390829567,
+            4.239292955291104,
+            4.229843943407634
+          ],
+          "median_pct": 3.7864603869938023,
+          "wins": 12,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            5.434943871448986,
+            7.1661369109915105,
+            9.637826540005017,
+            6.976934411684228,
+            7.5126758921822026,
+            9.58124773678136,
+            9.445844881052915,
+            8.135454723569323,
+            6.93373016244586,
+            9.147912497629711,
+            8.767560677138041,
+            7.4253495076846345
+          ],
+          "median_pct": 7.824065307875763,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -0.009140596379884349,
+            -0.9513788199724528,
+            -0.8043730539036259,
+            0.5491200682951126,
+            -1.051315018669932,
+            -0.6241337542908687,
+            -1.543044868421058,
+            0.2592324409462791,
+            0.32462742896163455,
+            0.03709442970586196,
+            -1.3076597337475395,
+            -0.2560866051124656
+          ],
+          "median_pct": -0.44011017970166716,
+          "wins": 4,
+          "count": 12
+        }
+      }
+    },
+    "local/7/1": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/1/0/0",
+          "1": "benchmark/local/7/1/0/1",
+          "2": "benchmark/local/7/1/0/2",
+          "3": "benchmark/local/7/1/0/3"
+        },
+        {
+          "1": "benchmark/local/7/1/1/1",
+          "2": "benchmark/local/7/1/1/2",
+          "3": "benchmark/local/7/1/1/3",
+          "0": "benchmark/local/7/1/1/0"
+        },
+        {
+          "2": "benchmark/local/7/1/2/2",
+          "3": "benchmark/local/7/1/2/3",
+          "0": "benchmark/local/7/1/2/0",
+          "1": "benchmark/local/7/1/2/1"
+        },
+        {
+          "3": "benchmark/local/7/1/3/3",
+          "0": "benchmark/local/7/1/3/0",
+          "1": "benchmark/local/7/1/3/1",
+          "2": "benchmark/local/7/1/3/2"
+        },
+        {
+          "3": "benchmark/local/7/1/4/3",
+          "2": "benchmark/local/7/1/4/2",
+          "1": "benchmark/local/7/1/4/1",
+          "0": "benchmark/local/7/1/4/0"
+        },
+        {
+          "2": "benchmark/local/7/1/5/2",
+          "1": "benchmark/local/7/1/5/1",
+          "0": "benchmark/local/7/1/5/0",
+          "3": "benchmark/local/7/1/5/3"
+        },
+        {
+          "1": "benchmark/local/7/1/6/1",
+          "0": "benchmark/local/7/1/6/0",
+          "3": "benchmark/local/7/1/6/3",
+          "2": "benchmark/local/7/1/6/2"
+        },
+        {
+          "0": "benchmark/local/7/1/7/0",
+          "3": "benchmark/local/7/1/7/3",
+          "2": "benchmark/local/7/1/7/2",
+          "1": "benchmark/local/7/1/7/1"
+        },
+        {
+          "0": "benchmark/local/7/1/8/0",
+          "1": "benchmark/local/7/1/8/1",
+          "2": "benchmark/local/7/1/8/2",
+          "3": "benchmark/local/7/1/8/3"
+        },
+        {
+          "1": "benchmark/local/7/1/9/1",
+          "2": "benchmark/local/7/1/9/2",
+          "3": "benchmark/local/7/1/9/3",
+          "0": "benchmark/local/7/1/9/0"
+        },
+        {
+          "2": "benchmark/local/7/1/10/2",
+          "3": "benchmark/local/7/1/10/3",
+          "0": "benchmark/local/7/1/10/0",
+          "1": "benchmark/local/7/1/10/1"
+        },
+        {
+          "3": "benchmark/local/7/1/11/3",
+          "0": "benchmark/local/7/1/11/0",
+          "1": "benchmark/local/7/1/11/1",
+          "2": "benchmark/local/7/1/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/1/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            7.473885957780948,
+            6.878655938813904,
+            7.955291038292721,
+            6.918486996164076,
+            8.779873937829477,
+            8.37098206424166,
+            7.208939388444362,
+            7.509179889649809,
+            6.029199827364902,
+            6.341386929340016,
+            8.449863915456277,
+            7.487510088229567
+          ],
+          "median_pct": 7.4806980230052575,
+          "wins": 12,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -0.5107799722233156,
+            -1.3418906332029434,
+            -1.7678052387968994,
+            -1.2144106745149057,
+            -0.081903254497111,
+            0.47312528379247115,
+            -1.7913588675142869,
+            0.6035944874646907,
+            -2.5508475806954354,
+            -0.8165823241193316,
+            -0.5603240821405003,
+            -0.33199776059030955
+          ],
+          "median_pct": -0.688453203129916,
+          "wins": 2,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            2.4890639448982563,
+            3.1442801715488824,
+            3.0420533870905335,
+            1.7686630376779617,
+            3.418993182712863,
+            2.470404625853608,
+            2.4145591499397328,
+            3.6619707554697127,
+            3.2451436054691563,
+            2.9059145123617687,
+            4.519409636219589,
+            2.588233553930886
+          ],
+          "median_pct": 2.973983949726151,
+          "wins": 12,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            7.94408911383522,
+            8.111696476800804,
+            9.554196687522635,
+            8.035315936218547,
+            8.854525048141896,
+            7.935401169753659,
+            8.841907953771315,
+            6.947520251438293,
+            8.366627493067622,
+            7.099991973985887,
+            8.959983054785107,
+            7.793633161255882
+          ],
+          "median_pct": 8.073506206509675,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -3.0764179265250946,
+            -4.631807819608011,
+            -4.960767831738532,
+            -3.0367841917259724,
+            -3.6248290969186137,
+            -2.0478700177101166,
+            -4.309985158458627,
+            -3.174630301230358,
+            -5.990387875240766,
+            -3.833906893283463,
+            -5.320174183052637,
+            -2.9978219480682013
+          ],
+          "median_pct": -3.7293679951010383,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    },
+    "local/7/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/2/0/0",
+          "1": "benchmark/local/7/2/0/1",
+          "2": "benchmark/local/7/2/0/2",
+          "3": "benchmark/local/7/2/0/3"
+        },
+        {
+          "1": "benchmark/local/7/2/1/1",
+          "2": "benchmark/local/7/2/1/2",
+          "3": "benchmark/local/7/2/1/3",
+          "0": "benchmark/local/7/2/1/0"
+        },
+        {
+          "2": "benchmark/local/7/2/2/2",
+          "3": "benchmark/local/7/2/2/3",
+          "0": "benchmark/local/7/2/2/0",
+          "1": "benchmark/local/7/2/2/1"
+        },
+        {
+          "3": "benchmark/local/7/2/3/3",
+          "0": "benchmark/local/7/2/3/0",
+          "1": "benchmark/local/7/2/3/1",
+          "2": "benchmark/local/7/2/3/2"
+        },
+        {
+          "3": "benchmark/local/7/2/4/3",
+          "2": "benchmark/local/7/2/4/2",
+          "1": "benchmark/local/7/2/4/1",
+          "0": "benchmark/local/7/2/4/0"
+        },
+        {
+          "2": "benchmark/local/7/2/5/2",
+          "1": "benchmark/local/7/2/5/1",
+          "0": "benchmark/local/7/2/5/0",
+          "3": "benchmark/local/7/2/5/3"
+        },
+        {
+          "1": "benchmark/local/7/2/6/1",
+          "0": "benchmark/local/7/2/6/0",
+          "3": "benchmark/local/7/2/6/3",
+          "2": "benchmark/local/7/2/6/2"
+        },
+        {
+          "0": "benchmark/local/7/2/7/0",
+          "3": "benchmark/local/7/2/7/3",
+          "2": "benchmark/local/7/2/7/2",
+          "1": "benchmark/local/7/2/7/1"
+        },
+        {
+          "0": "benchmark/local/7/2/8/0",
+          "1": "benchmark/local/7/2/8/1",
+          "2": "benchmark/local/7/2/8/2",
+          "3": "benchmark/local/7/2/8/3"
+        },
+        {
+          "1": "benchmark/local/7/2/9/1",
+          "2": "benchmark/local/7/2/9/2",
+          "3": "benchmark/local/7/2/9/3",
+          "0": "benchmark/local/7/2/9/0"
+        },
+        {
+          "2": "benchmark/local/7/2/10/2",
+          "3": "benchmark/local/7/2/10/3",
+          "0": "benchmark/local/7/2/10/0",
+          "1": "benchmark/local/7/2/10/1"
+        },
+        {
+          "3": "benchmark/local/7/2/11/3",
+          "0": "benchmark/local/7/2/11/0",
+          "1": "benchmark/local/7/2/11/1",
+          "2": "benchmark/local/7/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            13.901512369313927,
+            14.229174178199452,
+            14.767216785788646,
+            11.928059057328944,
+            12.993105518268736,
+            12.561259636468327,
+            13.59594282062972,
+            13.751083613850911,
+            14.3395139035693,
+            13.122532682270958,
+            13.887695291888539,
+            13.549399240415857
+          ],
+          "median_pct": 13.673513217240316,
+          "wins": 12,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            3.7341333736834,
+            4.749502927998747,
+            5.982167362196784,
+            6.078104281969184,
+            5.162432025792819,
+            5.704217734934588,
+            6.2696957323820754,
+            7.209235957134259,
+            6.228410354100664,
+            5.057934179341429,
+            5.647930437664445,
+            6.209055878021175
+          ],
+          "median_pct": 5.8431925485656855,
+          "wins": 12,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            3.464757324304883,
+            4.532065345373949,
+            2.3770020502118716,
+            4.4205066430218425,
+            3.4424824076068368,
+            3.8749894944365226,
+            4.2692407502212255,
+            4.558158799818526,
+            5.0771358482572895,
+            3.868522682462213,
+            3.835938203221614,
+            4.851743428953868
+          ],
+          "median_pct": 4.072115122328874,
+          "wins": 12,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            10.56176955752978,
+            9.95235882394911,
+            9.344024614389506,
+            6.228531409675012,
+            8.256931994086576,
+            7.271843699497181,
+            7.816305671354495,
+            7.050106467163664,
+            8.64985181556356,
+            8.494231122127891,
+            8.732998536699114,
+            7.826281557469213
+          ],
+          "median_pct": 8.375581558107234,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            0.27904425566471225,
+            0.22775980585672076,
+            3.692946731506044,
+            1.7342607506365504,
+            1.7812695076177898,
+            1.9029680526195558,
+            2.089667937283671,
+            2.7776886153687195,
+            1.2128526842626228,
+            1.2372757915187327,
+            1.8842717337294654,
+            1.4265237199105347
+          ],
+          "median_pct": 1.75776512912717,
+          "wins": 12,
+          "count": 12
+        }
+      }
+    },
+    "local/45/0": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/0/0/0",
+          "1": "benchmark/local/45/0/0/1",
+          "2": "benchmark/local/45/0/0/2",
+          "3": "benchmark/local/45/0/0/3"
+        },
+        {
+          "1": "benchmark/local/45/0/1/1",
+          "2": "benchmark/local/45/0/1/2",
+          "3": "benchmark/local/45/0/1/3",
+          "0": "benchmark/local/45/0/1/0"
+        },
+        {
+          "2": "benchmark/local/45/0/2/2",
+          "3": "benchmark/local/45/0/2/3",
+          "0": "benchmark/local/45/0/2/0",
+          "1": "benchmark/local/45/0/2/1"
+        },
+        {
+          "3": "benchmark/local/45/0/3/3",
+          "0": "benchmark/local/45/0/3/0",
+          "1": "benchmark/local/45/0/3/1",
+          "2": "benchmark/local/45/0/3/2"
+        },
+        {
+          "3": "benchmark/local/45/0/4/3",
+          "2": "benchmark/local/45/0/4/2",
+          "1": "benchmark/local/45/0/4/1",
+          "0": "benchmark/local/45/0/4/0"
+        },
+        {
+          "2": "benchmark/local/45/0/5/2",
+          "1": "benchmark/local/45/0/5/1",
+          "0": "benchmark/local/45/0/5/0",
+          "3": "benchmark/local/45/0/5/3"
+        },
+        {
+          "1": "benchmark/local/45/0/6/1",
+          "0": "benchmark/local/45/0/6/0",
+          "3": "benchmark/local/45/0/6/3",
+          "2": "benchmark/local/45/0/6/2"
+        },
+        {
+          "0": "benchmark/local/45/0/7/0",
+          "3": "benchmark/local/45/0/7/3",
+          "2": "benchmark/local/45/0/7/2",
+          "1": "benchmark/local/45/0/7/1"
+        },
+        {
+          "0": "benchmark/local/45/0/8/0",
+          "1": "benchmark/local/45/0/8/1",
+          "2": "benchmark/local/45/0/8/2",
+          "3": "benchmark/local/45/0/8/3"
+        },
+        {
+          "1": "benchmark/local/45/0/9/1",
+          "2": "benchmark/local/45/0/9/2",
+          "3": "benchmark/local/45/0/9/3",
+          "0": "benchmark/local/45/0/9/0"
+        },
+        {
+          "2": "benchmark/local/45/0/10/2",
+          "3": "benchmark/local/45/0/10/3",
+          "0": "benchmark/local/45/0/10/0",
+          "1": "benchmark/local/45/0/10/1"
+        },
+        {
+          "3": "benchmark/local/45/0/11/3",
+          "0": "benchmark/local/45/0/11/0",
+          "1": "benchmark/local/45/0/11/1",
+          "2": "benchmark/local/45/0/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/0/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            3.7073489166324176,
+            4.287123608387775,
+            3.260313870265662,
+            6.1360852629075175,
+            5.736723455210356,
+            5.0244849971267875,
+            2.3040087833843432,
+            4.431023985227756,
+            4.1435228088865435,
+            5.26604836301917,
+            3.2173989877561806,
+            2.905588710602726
+          ],
+          "median_pct": 4.215323208637159,
+          "wins": 12,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -3.1555702742372858,
+            -4.053292390225129,
+            -2.7785224965461977,
+            -1.7773430803528207,
+            -2.6463846565445266,
+            -0.8811867929737066,
+            -2.592841674681453,
+            -3.7227421086215697,
+            -5.67451262342996,
+            -1.6272409638900158,
+            -2.1216583599674297,
+            -4.315853911390158
+          ],
+          "median_pct": -2.712453576545362,
+          "wins": 0,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -0.3274584616714582,
+            0.8797887436066214,
+            1.7376668271976237,
+            1.2537616540708054,
+            -0.13096888655708022,
+            3.5120339560122553,
+            -1.2635061248877892,
+            2.41933195079521,
+            1.8309460888770421,
+            -0.2897307743566088,
+            2.9364736040135937,
+            -0.1402818119894566
+          ],
+          "median_pct": 1.0667751988387133,
+          "wins": 7,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            6.65297973984803,
+            8.01552339865837,
+            5.875581999162121,
+            7.775235729048967,
+            8.166978447224242,
+            5.854086354297152,
+            4.7730917461020805,
+            7.861116981761298,
+            9.290826319968915,
+            6.782914956196139,
+            5.228134201369929,
+            6.922670285695069
+          ],
+          "median_pct": 6.852792620945603,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -2.818881147723147,
+            -4.976867049921225,
+            -4.596053419372541,
+            -3.0695900777556893,
+            -2.512125666972498,
+            -4.553128155881266,
+            -1.3127488871995017,
+            -6.294355410971009,
+            -7.645442645400298,
+            -1.3336462060534309,
+            -5.211156189963213,
+            -4.169722736790595
+          ],
+          "median_pct": -4.3614254463359305,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    },
+    "local/45/1": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/1/0/0",
+          "1": "benchmark/local/45/1/0/1",
+          "2": "benchmark/local/45/1/0/2",
+          "3": "benchmark/local/45/1/0/3"
+        },
+        {
+          "1": "benchmark/local/45/1/1/1",
+          "2": "benchmark/local/45/1/1/2",
+          "3": "benchmark/local/45/1/1/3",
+          "0": "benchmark/local/45/1/1/0"
+        },
+        {
+          "2": "benchmark/local/45/1/2/2",
+          "3": "benchmark/local/45/1/2/3",
+          "0": "benchmark/local/45/1/2/0",
+          "1": "benchmark/local/45/1/2/1"
+        },
+        {
+          "3": "benchmark/local/45/1/3/3",
+          "0": "benchmark/local/45/1/3/0",
+          "1": "benchmark/local/45/1/3/1",
+          "2": "benchmark/local/45/1/3/2"
+        },
+        {
+          "3": "benchmark/local/45/1/4/3",
+          "2": "benchmark/local/45/1/4/2",
+          "1": "benchmark/local/45/1/4/1",
+          "0": "benchmark/local/45/1/4/0"
+        },
+        {
+          "2": "benchmark/local/45/1/5/2",
+          "1": "benchmark/local/45/1/5/1",
+          "0": "benchmark/local/45/1/5/0",
+          "3": "benchmark/local/45/1/5/3"
+        },
+        {
+          "1": "benchmark/local/45/1/6/1",
+          "0": "benchmark/local/45/1/6/0",
+          "3": "benchmark/local/45/1/6/3",
+          "2": "benchmark/local/45/1/6/2"
+        },
+        {
+          "0": "benchmark/local/45/1/7/0",
+          "3": "benchmark/local/45/1/7/3",
+          "2": "benchmark/local/45/1/7/2",
+          "1": "benchmark/local/45/1/7/1"
+        },
+        {
+          "0": "benchmark/local/45/1/8/0",
+          "1": "benchmark/local/45/1/8/1",
+          "2": "benchmark/local/45/1/8/2",
+          "3": "benchmark/local/45/1/8/3"
+        },
+        {
+          "1": "benchmark/local/45/1/9/1",
+          "2": "benchmark/local/45/1/9/2",
+          "3": "benchmark/local/45/1/9/3",
+          "0": "benchmark/local/45/1/9/0"
+        },
+        {
+          "2": "benchmark/local/45/1/10/2",
+          "3": "benchmark/local/45/1/10/3",
+          "0": "benchmark/local/45/1/10/0",
+          "1": "benchmark/local/45/1/10/1"
+        },
+        {
+          "3": "benchmark/local/45/1/11/3",
+          "0": "benchmark/local/45/1/11/0",
+          "1": "benchmark/local/45/1/11/1",
+          "2": "benchmark/local/45/1/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/1/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            3.1295243793081027,
+            0.9316613461441798,
+            4.791739309443706,
+            -0.672468414096626,
+            2.313395749208202,
+            3.798709095253821,
+            3.188355382142468,
+            4.438628347771601,
+            3.9708428247826784,
+            3.4406564569638594,
+            4.64005643067272,
+            4.301636359010892
+          ],
+          "median_pct": 3.6196827761088404,
+          "wins": 11,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -3.682267086526829,
+            -5.678017349529883,
+            -3.9489277976006116,
+            -5.662246005915024,
+            -3.517087725532196,
+            -4.878912204458764,
+            -1.6713008992451486,
+            -4.077642592335907,
+            -3.6198197312580813,
+            -2.282572767541555,
+            -2.3074937927237826,
+            -5.558994286416549
+          ],
+          "median_pct": -3.81559744206372,
+          "wins": 0,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -0.3793049593413066,
+            -1.9771177808945737,
+            0.6024883650204585,
+            -1.0423392859696463,
+            -0.19924191495374996,
+            -0.23158683127731702,
+            0.9554464059772191,
+            -0.3964333960150148,
+            0.6130096798912497,
+            2.5372410738487936,
+            1.5977175870721816,
+            2.8045604734822502
+          ],
+          "median_pct": 0.20162322503335428,
+          "wins": 6,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            6.569871258843357,
+            6.254544569863154,
+            8.408616897004753,
+            4.722384560649096,
+            5.632387466501655,
+            8.27394289025022,
+            4.779771910466129,
+            8.182613218349964,
+            7.325492917983674,
+            5.595507689772964,
+            6.790851740999856,
+            9.341345767914651
+          ],
+          "median_pct": 6.680361499921607,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -3.290481168925596,
+            -3.629147056878943,
+            -4.579004129736539,
+            -4.572248378840611,
+            -3.311248415825879,
+            -4.636587646770895,
+            -2.6520865710488586,
+            -3.666673278920493,
+            -4.258937107881123,
+            -4.945287712450644,
+            -3.9686186987090744,
+            -8.604883933486382
+          ],
+          "median_pct": -4.113777903295099,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    },
+    "local/45/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/2/0/0",
+          "1": "benchmark/local/45/2/0/1",
+          "2": "benchmark/local/45/2/0/2",
+          "3": "benchmark/local/45/2/0/3"
+        },
+        {
+          "1": "benchmark/local/45/2/1/1",
+          "2": "benchmark/local/45/2/1/2",
+          "3": "benchmark/local/45/2/1/3",
+          "0": "benchmark/local/45/2/1/0"
+        },
+        {
+          "2": "benchmark/local/45/2/2/2",
+          "3": "benchmark/local/45/2/2/3",
+          "0": "benchmark/local/45/2/2/0",
+          "1": "benchmark/local/45/2/2/1"
+        },
+        {
+          "3": "benchmark/local/45/2/3/3",
+          "0": "benchmark/local/45/2/3/0",
+          "1": "benchmark/local/45/2/3/1",
+          "2": "benchmark/local/45/2/3/2"
+        },
+        {
+          "3": "benchmark/local/45/2/4/3",
+          "2": "benchmark/local/45/2/4/2",
+          "1": "benchmark/local/45/2/4/1",
+          "0": "benchmark/local/45/2/4/0"
+        },
+        {
+          "2": "benchmark/local/45/2/5/2",
+          "1": "benchmark/local/45/2/5/1",
+          "0": "benchmark/local/45/2/5/0",
+          "3": "benchmark/local/45/2/5/3"
+        },
+        {
+          "1": "benchmark/local/45/2/6/1",
+          "0": "benchmark/local/45/2/6/0",
+          "3": "benchmark/local/45/2/6/3",
+          "2": "benchmark/local/45/2/6/2"
+        },
+        {
+          "0": "benchmark/local/45/2/7/0",
+          "3": "benchmark/local/45/2/7/3",
+          "2": "benchmark/local/45/2/7/2",
+          "1": "benchmark/local/45/2/7/1"
+        },
+        {
+          "0": "benchmark/local/45/2/8/0",
+          "1": "benchmark/local/45/2/8/1",
+          "2": "benchmark/local/45/2/8/2",
+          "3": "benchmark/local/45/2/8/3"
+        },
+        {
+          "1": "benchmark/local/45/2/9/1",
+          "2": "benchmark/local/45/2/9/2",
+          "3": "benchmark/local/45/2/9/3",
+          "0": "benchmark/local/45/2/9/0"
+        },
+        {
+          "2": "benchmark/local/45/2/10/2",
+          "3": "benchmark/local/45/2/10/3",
+          "0": "benchmark/local/45/2/10/0",
+          "1": "benchmark/local/45/2/10/1"
+        },
+        {
+          "3": "benchmark/local/45/2/11/3",
+          "0": "benchmark/local/45/2/11/0",
+          "1": "benchmark/local/45/2/11/1",
+          "2": "benchmark/local/45/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            0.6483885120828794,
+            4.38912787602501,
+            4.036294035938616,
+            3.779382136187666,
+            6.562262586051415,
+            3.1596636163680576,
+            4.627629283779283,
+            5.271224943277054,
+            3.2162072648819087,
+            3.336079214219898,
+            4.984377414123264,
+            5.784268445774135
+          ],
+          "median_pct": 4.212710955981813,
+          "wins": 12,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -5.033058991149639,
+            -0.8931602006200962,
+            -2.3872712221056926,
+            -0.5604487284152548,
+            -3.502067115874978,
+            -2.7968694880109903,
+            -2.1652177104287853,
+            -2.0470009052442695,
+            -2.2990163262110124,
+            -4.7234889924257155,
+            -3.8098787495372206,
+            -6.046750639609507
+          ],
+          "median_pct": -2.5920703550583415,
+          "wins": 0,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            0.807579265203625,
+            1.3294255303235405,
+            0.7394471185491758,
+            3.2498690762157643,
+            2.2185488578140435,
+            -2.093084119445248,
+            -1.3497287635301145,
+            -0.4570201099879372,
+            0.5526933650633303,
+            -0.4052452408956737,
+            -0.0035558074702144774,
+            0.27243765093312766
+          ],
+          "median_pct": 0.412565507998229,
+          "wins": 7,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            5.409199310962896,
+            5.235526438206107,
+            6.273792807808949,
+            4.315643893280102,
+            9.723795845216259,
+            5.7944693588881595,
+            6.648884176473174,
+            7.17142667947357,
+            5.391277246993247,
+            7.696046306505826,
+            8.471502201518263,
+            11.156418291014226
+          ],
+          "median_pct": 6.461338492141062,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -5.888190058360364,
+            -2.252531459241361,
+            -3.1500110062747493,
+            -3.938307646976344,
+            -5.850410181958293,
+            -0.6893565559664537,
+            -0.8046286426689658,
+            -1.5827473217058412,
+            -2.8675584968256076,
+            -4.30081490381261,
+            -3.806187601363946,
+            -6.336451169260693
+          ],
+          "median_pct": -3.4780993038193477,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    },
+    "front/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/2/0/0",
+          "1": "benchmark/front/2/0/1",
+          "2": "benchmark/front/2/0/2",
+          "3": "benchmark/front/2/0/3"
+        },
+        {
+          "1": "benchmark/front/2/1/1",
+          "2": "benchmark/front/2/1/2",
+          "3": "benchmark/front/2/1/3",
+          "0": "benchmark/front/2/1/0"
+        },
+        {
+          "2": "benchmark/front/2/2/2",
+          "3": "benchmark/front/2/2/3",
+          "0": "benchmark/front/2/2/0",
+          "1": "benchmark/front/2/2/1"
+        },
+        {
+          "3": "benchmark/front/2/3/3",
+          "0": "benchmark/front/2/3/0",
+          "1": "benchmark/front/2/3/1",
+          "2": "benchmark/front/2/3/2"
+        },
+        {
+          "3": "benchmark/front/2/4/3",
+          "2": "benchmark/front/2/4/2",
+          "1": "benchmark/front/2/4/1",
+          "0": "benchmark/front/2/4/0"
+        },
+        {
+          "2": "benchmark/front/2/5/2",
+          "1": "benchmark/front/2/5/1",
+          "0": "benchmark/front/2/5/0",
+          "3": "benchmark/front/2/5/3"
+        },
+        {
+          "1": "benchmark/front/2/6/1",
+          "0": "benchmark/front/2/6/0",
+          "3": "benchmark/front/2/6/3",
+          "2": "benchmark/front/2/6/2"
+        },
+        {
+          "0": "benchmark/front/2/7/0",
+          "3": "benchmark/front/2/7/3",
+          "2": "benchmark/front/2/7/2",
+          "1": "benchmark/front/2/7/1"
+        },
+        {
+          "0": "benchmark/front/2/8/0",
+          "1": "benchmark/front/2/8/1",
+          "2": "benchmark/front/2/8/2",
+          "3": "benchmark/front/2/8/3"
+        },
+        {
+          "1": "benchmark/front/2/9/1",
+          "2": "benchmark/front/2/9/2",
+          "3": "benchmark/front/2/9/3",
+          "0": "benchmark/front/2/9/0"
+        },
+        {
+          "2": "benchmark/front/2/10/2",
+          "3": "benchmark/front/2/10/3",
+          "0": "benchmark/front/2/10/0",
+          "1": "benchmark/front/2/10/1"
+        },
+        {
+          "3": "benchmark/front/2/11/3",
+          "0": "benchmark/front/2/11/0",
+          "1": "benchmark/front/2/11/1",
+          "2": "benchmark/front/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -3.4531327706627724,
+            9.220365716712033,
+            -15.768216369945801,
+            39.10226024155787,
+            8.05862313704841,
+            -4.391183066005006,
+            -4.701890013955299,
+            4.129889826216431,
+            -19.300882443734963,
+            4.777010802935894,
+            18.62541891786201,
+            -6.320732175197728
+          ],
+          "median_pct": 0.3383785277768292,
+          "wins": 6,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -9.291139799663044,
+            20.859481297257997,
+            -1.2795959841942148,
+            30.693916623000653,
+            -18.967049959940894,
+            -15.414820667610787,
+            -14.623061396656253,
+            -36.16471815531125,
+            -19.92214523629158,
+            4.77468672941481,
+            -20.672954901566264,
+            -185.41496677964832
+          ],
+          "median_pct": -15.018941032133519,
+          "wins": 3,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            7.180172839508559,
+            16.07147520175628,
+            -18.36763669887543,
+            -65.34584883655656,
+            7.530703135847229,
+            -10.146333078828066,
+            -4.952713050242367,
+            11.888849856259831,
+            -14.325148460330032,
+            12.404895318377122,
+            15.09397440343379,
+            -8.11492789286196
+          ],
+          "median_pct": 1.1137298946330962,
+          "wins": 6,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            5.341702026076107,
+            -14.706898275791438,
+            -14.305566925852165,
+            12.13218697241763,
+            22.71693977961924,
+            9.551318918870336,
+            8.655475836898534,
+            29.592546826680266,
+            0.5180551026105298,
+            0.0024406047523101077,
+            32.56601601534015,
+            62.7487186902565
+          ],
+          "median_pct": 9.103397377884434,
+          "wins": 10,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -17.74546790600207,
+            5.704861496150013,
+            14.436412850036703,
+            58.08417092738263,
+            -28.65573113929496,
+            -4.783171115657786,
+            -9.214005112744966,
+            -54.53744268821695,
+            -4.895682928331088,
+            -8.710770558121272,
+            -42.12531331397821,
+            -163.9921908494305
+          ],
+          "median_pct": -8.96238783543312,
+          "wins": 3,
+          "count": 12
+        }
+      }
+    },
+    "front/4": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/4/0/0",
+          "1": "benchmark/front/4/0/1",
+          "2": "benchmark/front/4/0/2",
+          "3": "benchmark/front/4/0/3"
+        },
+        {
+          "1": "benchmark/front/4/1/1",
+          "2": "benchmark/front/4/1/2",
+          "3": "benchmark/front/4/1/3",
+          "0": "benchmark/front/4/1/0"
+        },
+        {
+          "2": "benchmark/front/4/2/2",
+          "3": "benchmark/front/4/2/3",
+          "0": "benchmark/front/4/2/0",
+          "1": "benchmark/front/4/2/1"
+        },
+        {
+          "3": "benchmark/front/4/3/3",
+          "0": "benchmark/front/4/3/0",
+          "1": "benchmark/front/4/3/1",
+          "2": "benchmark/front/4/3/2"
+        },
+        {
+          "3": "benchmark/front/4/4/3",
+          "2": "benchmark/front/4/4/2",
+          "1": "benchmark/front/4/4/1",
+          "0": "benchmark/front/4/4/0"
+        },
+        {
+          "2": "benchmark/front/4/5/2",
+          "1": "benchmark/front/4/5/1",
+          "0": "benchmark/front/4/5/0",
+          "3": "benchmark/front/4/5/3"
+        },
+        {
+          "1": "benchmark/front/4/6/1",
+          "0": "benchmark/front/4/6/0",
+          "3": "benchmark/front/4/6/3",
+          "2": "benchmark/front/4/6/2"
+        },
+        {
+          "0": "benchmark/front/4/7/0",
+          "3": "benchmark/front/4/7/3",
+          "2": "benchmark/front/4/7/2",
+          "1": "benchmark/front/4/7/1"
+        },
+        {
+          "0": "benchmark/front/4/8/0",
+          "1": "benchmark/front/4/8/1",
+          "2": "benchmark/front/4/8/2",
+          "3": "benchmark/front/4/8/3"
+        },
+        {
+          "1": "benchmark/front/4/9/1",
+          "2": "benchmark/front/4/9/2",
+          "3": "benchmark/front/4/9/3",
+          "0": "benchmark/front/4/9/0"
+        },
+        {
+          "2": "benchmark/front/4/10/2",
+          "3": "benchmark/front/4/10/3",
+          "0": "benchmark/front/4/10/0",
+          "1": "benchmark/front/4/10/1"
+        },
+        {
+          "3": "benchmark/front/4/11/3",
+          "0": "benchmark/front/4/11/0",
+          "1": "benchmark/front/4/11/1",
+          "2": "benchmark/front/4/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/4/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -21.398828601621606,
+            -25.363743377915785,
+            -16.50703400131921,
+            -20.47800826453848,
+            -20.27683434527129,
+            -17.260220727348784,
+            -8.604991660331214,
+            -7.807750109503934,
+            -20.47838617070151,
+            -19.62032326121924,
+            -18.309922672756745,
+            -18.09356323767506
+          ],
+          "median_pct": -18.96512296698799,
+          "wins": 0,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -35.46695483418989,
+            -26.015676279949904,
+            -17.348090142552287,
+            -23.986643909908835,
+            -23.18998698446541,
+            -22.70254570951352,
+            -12.310979707567489,
+            -13.49060806802986,
+            -42.89763356124052,
+            -22.635999707920256,
+            -22.89893431890245,
+            -24.63763942169416
+          ],
+          "median_pct": -23.04446065168393,
+          "wins": 0,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -16.725368014256993,
+            -16.21642110607964,
+            -14.290311259591538,
+            -15.99273508256617,
+            -15.637264512618046,
+            -15.075423613982679,
+            -5.668480145601738,
+            -4.377801347462456,
+            -14.377260430269954,
+            -12.770579660959664,
+            -9.326839709566903,
+            -19.452034271432282
+          ],
+          "median_pct": -14.726342022126317,
+          "wins": 0,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            10.384913612170232,
+            0.5173426999556968,
+            0.7167190707674727,
+            2.829849679550809,
+            2.3647641423661137,
+            4.4353806603563966,
+            3.299755782458522,
+            5.0073376601519675,
+            15.689026355311173,
+            2.459046653416118,
+            3.7339718782572846,
+            5.250481487280197
+          ],
+          "median_pct": 3.516863830357903,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -16.056138557338947,
+            -8.431902377139746,
+            -2.6754489066142324,
+            -6.89173233276414,
+            -6.531391505740117,
+            -6.627933103349509,
+            -6.286169303100582,
+            -8.730598463395346,
+            -24.935352554940756,
+            -8.748221456891141,
+            -12.414238484703855,
+            -4.341161020731186
+          ],
+          "median_pct": -7.661817354951943,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    }
+  },
+  "profile_samples": {
+    "2/0": [
+      "profile_measure/2/0/0",
+      "profile_measure/2/0/1",
+      "profile_measure/2/0/2"
+    ],
+    "2/1": [
+      "profile_measure/2/1/0",
+      "profile_measure/2/1/1",
+      "profile_measure/2/1/2"
+    ],
+    "2/2": [
+      "profile_measure/2/2/0",
+      "profile_measure/2/2/1",
+      "profile_measure/2/2/2"
+    ],
+    "2/3": [
+      "profile_measure/2/3/0",
+      "profile_measure/2/3/1",
+      "profile_measure/2/3/2"
+    ],
+    "4/0": [
+      "profile_measure/4/0/0",
+      "profile_measure/4/0/1",
+      "profile_measure/4/0/2"
+    ],
+    "4/1": [
+      "profile_measure/4/1/0",
+      "profile_measure/4/1/1",
+      "profile_measure/4/1/2"
+    ],
+    "4/2": [
+      "profile_measure/4/2/0",
+      "profile_measure/4/2/1",
+      "profile_measure/4/2/2"
+    ],
+    "4/3": [
+      "profile_measure/4/3/0",
+      "profile_measure/4/3/1",
+      "profile_measure/4/3/2"
+    ]
+  },
+  "expected_run_count": 716,
+  "environment": {
+    "scheduler_job": "7286884",
+    "build_environment": {
+      "cmake": "/usr/bin/cmake",
+      "make_program": "/usr/bin/make",
+      "cc": "/vol8/home/hnu_lhz/cjz/gcc-12/bin/gcc",
+      "cxx": "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+      "native_arch": false
+    }
+  },
+  "commands": {
+    "driver_tests": {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests",
+        "-p",
+        "test_rotation_chain_suite.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "launch_error": null,
+      "seconds": 0.7159341919468716,
+      "log": "driver_tests.txt",
+      "log_sha256": "1fadf05555f27bc357f1d2548828661afd3ea821c361e06e05bf7bc87aee8916"
+    }
+  },
+  "cost_breakdown": {
+    "2/0": {
+      "median_seconds": {
+        "input_wall": 0,
+        "copy_wall": 0,
+        "queue_wall": 0,
+        "claim_elapsed_sum": 0.0032765279999999617,
+        "prepare_elapsed_sum": 0.01602107100000005,
+        "group_dispatch_wall": 0,
+        "launch_delay_sum": 0,
+        "completion_to_join_sum": 0,
+        "join_tail_wall": 0
+      },
+      "claim_attempts": [
+        15066,
+        15066,
+        15066
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ]
+    },
+    "2/1": {
+      "median_seconds": {
+        "input_wall": 0.0009537709999999997,
+        "copy_wall": 0.0015847579999999995,
+        "queue_wall": 0.0002653830000000001,
+        "claim_elapsed_sum": 0.001345334000000089,
+        "prepare_elapsed_sum": 0.014991053999999992,
+        "group_dispatch_wall": 0.018530697999999988,
+        "launch_delay_sum": 0.0007256330000000021,
+        "completion_to_join_sum": 0.020274678000000008,
+        "join_tail_wall": 9.620200000000003e-05
+      },
+      "claim_attempts": [
+        15066,
+        15066,
+        15066
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ]
+    },
+    "2/2": {
+      "median_seconds": {
+        "input_wall": 0.0009618549999999998,
+        "copy_wall": 0.001581161,
+        "queue_wall": 0.000261321,
+        "claim_elapsed_sum": 0.0013586580000000848,
+        "prepare_elapsed_sum": 0.015147083999999998,
+        "group_dispatch_wall": 0.020441089000000027,
+        "launch_delay_sum": 0.0021615970000000003,
+        "completion_to_join_sum": 0.02547798600000011,
+        "join_tail_wall": 0.000250422
+      },
+      "claim_attempts": [
+        15066,
+        15066,
+        15066
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ]
+    },
+    "2/3": {
+      "median_seconds": {
+        "input_wall": 0.0009546879999999998,
+        "copy_wall": 0.0015873170000000006,
+        "queue_wall": 7.635999999999991e-05,
+        "claim_elapsed_sum": 0.0032559339999999604,
+        "prepare_elapsed_sum": 0.015312389999999997,
+        "group_dispatch_wall": 0.017501408999999978,
+        "launch_delay_sum": 0.0021403809999999968,
+        "completion_to_join_sum": 0.011420704000000026,
+        "join_tail_wall": 0.00026932199999999974
+      },
+      "claim_attempts": [
+        15066,
+        15066,
+        15066
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ]
+    },
+    "4/0": {
+      "median_seconds": {
+        "input_wall": 0,
+        "copy_wall": 0,
+        "queue_wall": 0,
+        "claim_elapsed_sum": 0.025736766000006777,
+        "prepare_elapsed_sum": 0.42441929799999856,
+        "group_dispatch_wall": 0,
+        "launch_delay_sum": 0,
+        "completion_to_join_sum": 0,
+        "join_tail_wall": 0
+      },
+      "claim_attempts": [
+        134106,
+        134106,
+        134106
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ]
+    },
+    "4/1": {
+      "median_seconds": {
+        "input_wall": 0.024220731999999988,
+        "copy_wall": 0.040581263999999964,
+        "queue_wall": 0.0026352419999999977,
+        "claim_elapsed_sum": 0.011972049999995293,
+        "prepare_elapsed_sum": 0.4206571929999971,
+        "group_dispatch_wall": 0.2989897340000002,
+        "launch_delay_sum": 0.007121045999999953,
+        "completion_to_join_sum": 0.2939106580000001,
+        "join_tail_wall": 0.0008883889999999995
+      },
+      "claim_attempts": [
+        134106,
+        134106,
+        134106
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ]
+    },
+    "4/2": {
+      "median_seconds": {
+        "input_wall": 0.023807190000000013,
+        "copy_wall": 0.03994286200000001,
+        "queue_wall": 0.002612673999999999,
+        "claim_elapsed_sum": 0.012218806999994548,
+        "prepare_elapsed_sum": 0.4256181400000035,
+        "group_dispatch_wall": 0.32140261499999945,
+        "launch_delay_sum": 0.020312927000000966,
+        "completion_to_join_sum": 0.3524610049999962,
+        "join_tail_wall": 0.0023202229999999824
+      },
+      "claim_attempts": [
+        134106,
+        134106,
+        134106
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ]
+    },
+    "4/3": {
+      "median_seconds": {
+        "input_wall": 0.024774656000000003,
+        "copy_wall": 0.041259107999999926,
+        "queue_wall": 0.0009456550000000067,
+        "claim_elapsed_sum": 0.025658068000005942,
+        "prepare_elapsed_sum": 0.42777867099999783,
+        "group_dispatch_wall": 0.28007628799999984,
+        "launch_delay_sum": 0.02002715000000081,
+        "completion_to_join_sum": 0.16921598000000052,
+        "join_tail_wall": 0.0024714629999999737
+      },
+      "claim_attempts": [
+        134106,
+        134106,
+        134106
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ]
+    }
+  },
+  "error": "运行失败或缺少结果对象",
+  "run_count": 645
+}

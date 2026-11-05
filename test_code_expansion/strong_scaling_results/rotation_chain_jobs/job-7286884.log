@@ -1,0 +1,54 @@
+旋转链分项测试：1 节点、1 进程、4 核；仅运行已编译程序
+START driver_tests
+PASS driver_tests
+PROGRESS 25 / 716 release/local/7/2/1/1
+PROGRESS 50 / 716 release/local/45/1/1/2
+PROGRESS 75 / 716 release/front/0/1/3
+PROGRESS 100 / 716 release/front/3/1/-1
+PROGRESS 125 / 716 release/front/5/2/1
+PASS differential release groups 12
+PROGRESS 150 / 716 benchmark/local/7/0/3/0
+PROGRESS 175 / 716 benchmark/local/7/0/9/3
+BENCH local/7/0 {'0->1': 11.414, '0->2': 3.59, '0->3': 3.786, '2->1': 7.824, '3->2': -0.44}
+PROGRESS 200 / 716 benchmark/local/7/1/2/1
+PROGRESS 225 / 716 benchmark/local/7/1/9/1
+BENCH local/7/1 {'0->1': 7.481, '0->2': -0.688, '0->3': 2.974, '2->1': 8.074, '3->2': -3.729}
+PROGRESS 250 / 716 benchmark/local/7/2/2/3
+PROGRESS 275 / 716 benchmark/local/7/2/8/2
+BENCH local/7/2 {'0->1': 13.674, '0->2': 5.843, '0->3': 4.072, '2->1': 8.376, '3->2': 1.758}
+PROGRESS 300 / 716 benchmark/local/45/0/1/0
+PROGRESS 325 / 716 benchmark/local/45/0/8/0
+BENCH local/45/0 {'0->1': 4.215, '0->2': -2.712, '0->3': 1.067, '2->1': 6.853, '3->2': -4.361}
+PROGRESS 350 / 716 benchmark/local/45/1/1/2
+PROGRESS 375 / 716 benchmark/local/45/1/7/2
+BENCH local/45/1 {'0->1': 3.62, '0->2': -3.816, '0->3': 0.202, '2->1': 6.68, '3->2': -4.114}
+PROGRESS 400 / 716 benchmark/local/45/2/0/3
+PROGRESS 425 / 716 benchmark/local/45/2/7/0
+BENCH local/45/2 {'0->1': 4.213, '0->2': -2.592, '0->3': 0.413, '2->1': 6.461, '3->2': -3.478}
+PROGRESS 450 / 716 benchmark/front/2/0/1
+PROGRESS 475 / 716 benchmark/front/2/6/3
+BENCH front/2 {'0->1': 0.338, '0->2': -15.019, '0->3': 1.114, '2->1': 9.103, '3->2': -8.962}
+PROGRESS 500 / 716 benchmark/front/4/-1/3
+PROGRESS 525 / 716 benchmark/front/4/6/1
+BENCH front/4 {'0->1': -18.965, '0->2': -23.044, '0->3': -14.726, '2->1': 3.517, '3->2': -7.662}
+PROGRESS 550 / 716 profile/local/45/0/4/0
+PROGRESS 575 / 716 profile/front/0/2/1
+PROGRESS 600 / 716 profile/front/3/4/1
+PASS differential profile groups 9
+PROGRESS 625 / 716 profile_measure/2/1/1
+FAILED /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/rotation_chain_suite_20261105-175826/summary.json 运行失败或缺少结果对象
+Traceback (most recent call last):
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 377, in <module>
+    main()
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 360, in main
+    sanitizer = prepared_binary('sanitize'); validate('sanitize', sanitizer)
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 294, in validate
+    cases = [run(f'{key}/{t}/{route}', kind, binary, t, route, variant, limit) for t, route in routes]
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 294, in <listcomp>
+    cases = [run(f'{key}/{t}/{route}', kind, binary, t, route, variant, limit) for t, route in routes]
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 284, in run
+    check_run(record)
+  File "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/run_rotation_chain_suite.py", line 82, in check_run
+    raise ValueError('运行失败或缺少结果对象')
+ValueError: 运行失败或缺少结果对象
+yhrun: error: cn256: task 0: Exited with exit code 1
