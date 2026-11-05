@@ -5,8 +5,11 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--build-dir',type=Path,required=True)
 p.add_argument('--sanitize',action='store_true',help='仅实验翻译单元启用地址与未定义行为检查')
+p.add_argument('--profile',action='store_true',help='独立分项测量构建，不用于正式性能计时')
 a=p.parse_args();build=a.build_dir.resolve();repo=Path(__file__).resolve().parents[2]
 sanitize=a.sanitize
+profile=a.profile
+if sanitize and profile:raise SystemExit('插桩内存检查与分项测量必须分开构建')
 entries=[e for e in json.loads((build/'compile_commands.json').read_text()) if 'CMakeFiles/nglib.dir/' in e['command']]
 rule=next(e for e in entries if e['file'].endswith('/ruler3.cpp'))
 flags=shlex.split(rule['command'])
@@ -38,10 +41,21 @@ source=source.replace(anchor,"""if(chain_state) {
               if(front_stats)for(int k=0;k<5;++k)front_stats->AddRule(4+k,r.work[k]);
             } else """+anchor)
 (build/'rotation_chain_meshing3.inc').write_text(source)
+rule_source=(repo/'netgen/libsrc/meshing/ruler3.cpp').read_text()
+anchor='  // determine topological distance of faces and points to'
+assert rule_source.count(anchor)==1
+rule_source=rule_source.replace(anchor,'  rotation_probe::PrepareTimer rotation_prepare_timer;\n'+anchor)
+anchor='  // check each rule:'
+assert rule_source.count(anchor)==1
+rule_source=rule_source.replace(anchor,'  rotation_prepare_timer.Finish();\n'+anchor)
+(build/'rotation_chain_ruler3.inc').write_text(rule_source)
 core=build/'libsrc/core/libngcore.so';output=build/'rotation_chain_experiment'
 if sanitize:
     flags+=['-O1','-g1','-fsanitize=address,undefined','-fno-omit-frame-pointer']
     output=build/'rotation_chain_experiment_san'
+if profile:
+    flags+=['-DROTATION_CHAIN_PROFILE=1']
+    output=build/'rotation_chain_experiment_profile'
 command=flags+[str(repo/'test_code_expansion/tests/rotation_chain_experiment.cpp')]+objects+[
     str(core),'-lz','-ldl','-pthread','-Wl,-rpath,'+str(core.parent),'-o',str(output)]
 subprocess.run(command,check=True,cwd=build)

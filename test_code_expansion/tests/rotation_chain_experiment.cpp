@@ -1,6 +1,7 @@
 // Isolated research executable: replaces ruler3/meshing3 objects in the test link.
 // TestRules is an existing Meshing3 friend; the production code is unchanged.
-#include "../../netgen/libsrc/meshing/ruler3.cpp"
+#include "rotation_chain_probe.hpp"
+#include "rotation_chain_ruler3.inc"
 #include <random>
 #include <iomanip>
 #include <sstream>
@@ -10,6 +11,23 @@ int threads=4, fixture_variant=0, limit=7, repeats=1, route=0;
 bool verify=true;
 int front_fixture=-1;
 unsigned long long front_batches=0;
+unsigned long long experiment_dispatches=0;
+void PrintProfile(const VolumeKernelStats *stats=nullptr) {
+  using namespace rotation_probe;
+  std::cout<<",\"profile\":{\"enabled\":"<<(enabled?"true":"false")
+    <<",\"input_wall\":"<<input_wall<<",\"copy_wall\":"<<copy_wall
+    <<",\"queue_wall\":"<<queue_wall<<",\"dispatch_wall\":"<<dispatch_wall
+    <<",\"merge_wall\":"<<merge_wall<<",\"prepare_elapsed_sum\":"<<prepare_sum.load()
+    <<",\"prepare_calls\":"<<prepare_calls.load()<<",\"worker_elapsed_sum\":"<<worker_sum
+    <<",\"group_max_sum\":"<<group_max_sum<<",\"group_idle_proxy\":"<<group_idle_proxy
+    <<",\"groups\":"<<groups;
+  if(stats)std::cout<<",\"baseline_rule_wall\":"<<stats->rule_values[9].load()
+    <<",\"baseline_copy_wall\":"<<stats->rule_values[10].load()
+    <<",\"baseline_dispatch_wall\":"<<stats->rule_values[11].load()
+    <<",\"baseline_worker_elapsed_sum\":"<<stats->rule_values[12].load()
+    <<",\"baseline_group_max_sum\":"<<stats->rule_values[13].load();
+  std::cout<<"}";
+}
 struct Frame {
   Array<Point3d,PointIndex> points;
   Array<int,PointIndex> allow;
@@ -37,9 +55,10 @@ std::unique_ptr<FrontChain> PrepareFrontChain(Meshing3 &mesher,
     const Array<Point3d,PointIndex> &points, const Array<int,PointIndex> &initial_allow,
     const Array<MiniElement2d> &faces,int split,INDEX_2_HASHTABLE<int> &pairs,
     int tolerance,double sloppy,double h,int mode) {
-  if(route!=1 || mode!=1 || testmode || !ngcore::task_manager ||
+  if(route<1 || mode!=1 || testmode || !ngcore::task_manager ||
      ngcore::TaskManager::GetNumThreads()<2 || testout->rdbuf()!=nullptr ||
      testout->tie()!=nullptr || testout->exceptions()!=std::ios::goodbit)return nullptr;
+  const auto prepare_start=rotation_probe::enabled?RuleClock::now():RuleClock::time_point{};
   auto state=std::make_unique<FrontChain>();state->input=std::make_unique<Batch>();
   auto &b=*state->input;b.split=split;b.tolerance=tolerance;b.sloppy=sloppy;
   for(int i=1;i<=pairs.GetNBags();++i)for(int j=1;j<=pairs.GetBagSize(i);++j) {
@@ -57,6 +76,7 @@ std::unique_ptr<FrontChain> PrepareFrontChain(Meshing3 &mesher,
     output->faces=f->faces;output->allow=f->allow;state->output.push_back(std::move(output));
     b.frames.push_back(std::move(f));
   }
+  if constexpr(rotation_probe::enabled)rotation_probe::input_wall+=RuleElapsed(prepare_start);
   front_chain_runner(mesher,b,state->output);++front_batches;
   minother=minwithoutother=1e10;
   return state;
@@ -133,30 +153,71 @@ void TestRules() {
       struct Slot {std::vector<std::unique_ptr<RuleSearchResult>> result;};
       std::vector<Slot> slots(workers);
       std::vector<std::vector<std::string>> diagnostic;
+      std::vector<std::vector<double>> worker_times;
+      if constexpr(rotation_probe::enabled)worker_times.resize(workers,std::vector<double>(rotations,0));
+      {
+      rotation_probe::WallTimer timer(rotation_probe::copy_wall);
       if(verify)diagnostic.resize(rotations,std::vector<std::string>(mesher.rules.Size()));
       for(auto &slot:slots)for(auto &f:b.frames) {
         auto r=std::make_unique<RuleSearchResult>();r->points=f->points;r->faces=f->faces;
         slot.result.push_back(std::move(r));
       }
+      }
+      std::vector<std::unique_ptr<RuleSearchQueue>> queues;
+      {
+        rotation_probe::WallTimer timer(rotation_probe::queue_wall);
+        if(route==3) {
+          queues.emplace_back(new RuleSearchQueue(mesher.rules.Size()));
+          queues[0]->discard_trace=true;
+        } else for(int worker=0;worker<workers;++worker) {
+          queues.emplace_back(new RuleSearchQueue(0));queues.back()->discard_trace=true;
+          for(int id=worker;id<mesher.rules.Size();id+=workers)queues.back()->order.push_back(id);
+        }
+      }
       if(b.tolerance>5)RuleDiagnosticCounter()+=rotations;
-      ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
-        RuleSearchQueue queue(0);queue.discard_trace=true;
-        // A rule stays on one worker for all rotations: its mutable geometric
-        // history is consumed in original order, without a barrier per rotation.
-        for(int id=worker;id<mesher.rules.Size();id+=workers)queue.order.push_back(id);
-        for(int rotation=0;rotation<rotations;++rotation) {
-          queue.next.store(0,std::memory_order_relaxed);
+      auto record_diagnostic=[&](int rotation,int id) {
+        auto &s=diagnostic[rotation][id];auto append=[&](auto v){s.append(reinterpret_cast<char*>(&v),sizeof(v));};
+        append(mesher.foundmap[id]);append(mesher.canuse[id]);
+        auto &problem=mesher.problems[id];append(int(problem.size()));s+=problem;
+      };
+      auto search=[&](int worker,int rotation) {
+          auto &queue=*queues[route==3?0:worker];
+          if(route!=3)queue.next.store(0,std::memory_order_relaxed);
           auto &r=*slots[worker].result[rotation];auto &input=*b.frames[rotation];
+          const auto start=rotation_probe::enabled?RuleClock::now():RuleClock::time_point{};
           r.found=mesher.ApplyRulesImpl(r.points,input.allow,r.faces,b.split,b.pairs,r.elements,r.deleted,
             b.tolerance,b.sloppy,input.rotation,r.error,&queue,&r);
-          if(verify)for(int id:queue.order) {
-            auto &s=diagnostic[rotation][id];auto append=[&](auto v){s.append(reinterpret_cast<char*>(&v),sizeof(v));};
-            append(mesher.foundmap[id]);append(mesher.canuse[id]);
-            auto &problem=mesher.problems[id];append(int(problem.size()));s+=problem;
+          if constexpr(rotation_probe::enabled)worker_times[worker][rotation]=RuleElapsed(start);
+          // Static ownership permits per-worker capture. A shared dynamic queue
+          // is captured only after its rotation joins, avoiding diagnostic races.
+          if(verify && route!=3)for(int id:queue.order)record_diagnostic(rotation,id);
+      };
+      auto record_group=[&](int first,int end) {
+        if constexpr(rotation_probe::enabled) {
+          double total=0,largest=0;
+          for(int w=0;w<workers;++w) {
+            double elapsed=0;for(int r=first;r<end;++r)elapsed+=worker_times[w][r];
+            total+=elapsed;largest=std::max(largest,elapsed);
           }
+          rotation_probe::worker_sum+=total;rotation_probe::group_max_sum+=largest;
+          rotation_probe::group_idle_proxy+=workers*largest-total;++rotation_probe::groups;
         }
-      },workers);
-      ++dispatches;
+      };
+      {
+        rotation_probe::WallTimer timer(rotation_probe::dispatch_wall);
+        if(route==1) {
+          ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
+            for(int rotation=0;rotation<rotations;++rotation)search(worker,rotation);
+          },workers);
+          ++dispatches;++experiment_dispatches;record_group(0,rotations);
+        } else for(int rotation=0;rotation<rotations;++rotation) {
+          if(route==3)queues[0]->next.store(0,std::memory_order_relaxed);
+          ngcore::ParallelFor(size_t(workers),[&](size_t worker){search(worker,rotation);},workers);
+          ++dispatches;++experiment_dispatches;record_group(rotation,rotation+1);
+          if(verify && route==3)for(int id=0;id<mesher.rules.Size();++id)record_diagnostic(rotation,id);
+        }
+      }
+      rotation_probe::WallTimer merge_timer(rotation_probe::merge_wall);
       for(int rotation=0;rotation<rotations;++rotation) {
         auto &o=*outputs[rotation];RuleSearchResult *winner=nullptr;int found=-1;
         for(auto &slot:slots) {
@@ -206,7 +267,9 @@ void TestRules() {
     for(int k=8;k<20;++k)FingerprintAdd(stats.front_values[k].load());
     std::cout<<std::setprecision(17)<<"{\"seconds\":"<<seconds<<",\"status\":"<<status
       <<",\"elements\":"<<mesh.GetNE()<<",\"front_batches\":"<<front_batches
-      <<",\"fingerprint\":\""<<std::hex<<fingerprint<<std::dec<<"\"}\n";
+      <<",\"dispatches\":"<<experiment_dispatches
+      <<",\"fingerprint\":\""<<std::hex<<fingerprint<<std::dec<<"\"";
+    PrintProfile(&stats);std::cout<<"}\n";
     return;
   }
   for(int repeat=0;repeat<repeats;++repeat)for(auto &bp:corpus) {
@@ -243,7 +306,8 @@ void TestRules() {
     if(verify)for(auto &f:outputs)HashFrame(*f);
   }
   std::cout<<std::setprecision(17)<<"{\"seconds\":"<<measured<<",\"calls\":"<<calls
-    <<",\"dispatches\":"<<dispatches<<",\"fingerprint\":\""<<std::hex<<fingerprint<<std::dec<<"\"}\n";
+    <<",\"dispatches\":"<<dispatches<<",\"fingerprint\":\""<<std::hex<<fingerprint<<std::dec<<"\"";
+  PrintProfile();std::cout<<"}\n";
 }
 }
 int main(int argc,char **argv) {
@@ -251,7 +315,7 @@ int main(int argc,char **argv) {
   if(argc>3)fixture_variant=std::atoi(argv[3]);if(argc>4)limit=std::atoi(argv[4]);
   if(argc>5)verify=std::atoi(argv[5]);if(argc>6)repeats=std::atoi(argv[6]);
   if(argc>7)front_fixture=std::atoi(argv[7]);
-  if(threads<1 || threads>16 || route < -1 || route>1 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture>5)
+  if(threads<1 || threads>16 || route < -1 || route>3 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
     return 2;
   TestRules();
 }

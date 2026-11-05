@@ -1,0 +1,3184 @@
+{
+  "schema": "rotation_chain_suite_v1",
+  "config": {
+    "build_dir": "/workspace/scratch/54cbe57ee0b5/build-review",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "blocks": 12,
+    "jobs": 4,
+    "cmake": "/workspace/scratch/54cbe57ee0b5/toolchain/cmake/data/bin/cmake",
+    "ninja": "/workspace/scratch/54cbe57ee0b5/toolchain/bin/ninja"
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/run_rotation_chain_suite.py": "bb019dae5ef4ce6f878b50969706598b73abe866309ef03db03ee2d7744c5928",
+    "test_code_expansion/tests/test_rotation_chain_suite.py": "b6fa76d34697ff11777eeb35c22b78da363b3fb69fa53b135de38a016accb4c9",
+    "test_code_expansion/tests/run_rotation_chain_suite.sh": "c8deb366369efc80ed12a8eeb3ee17defdbcd7f98b79fec008892e818fbbb349",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "5503010d8748089baa505f7d517be798894a32037459d1d45a142a8572c07e90",
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "25772d459b6ef25a045ffcb3880b45c6378cc8c9cd8e25708e4df91f18ae220e",
+    "test_code_expansion/tests/rotation_chain_probe.hpp": "78de5f4ce2adee3f8d8b17dd889bd41a35ad28b402126ecfc0ce33196994294b",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d"
+  },
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.39",
+  "cpu_max": "800000 100000\n",
+  "started_utc": "2026-11-05T08:10:34Z",
+  "complete": true,
+  "routes": {
+    "0": "原动态队列",
+    "1": "固定分工旋转链",
+    "2": "固定分工逐旋转汇合",
+    "3": "批量输入动态队列逐旋转汇合"
+  },
+  "builds": {
+    "release": {
+      "binary_sha256": "01edf9b754f34b7dc48eabb41bc58d9db3ffd13109424ed8b406ddc27de7249d",
+      "command": [
+        "/usr/bin/c++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/workspace/scratch/54cbe57ee0b5/build-review",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++17",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-march=native",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+        "-o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment"
+      ],
+      "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+    },
+    "profile": {
+      "binary_sha256": "0db6fdddb41154d68b9bacea2ef04ba67a32482fe540df0d4da8e00af3ac0df7",
+      "command": [
+        "/usr/bin/c++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/workspace/scratch/54cbe57ee0b5/build-review",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++17",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-march=native",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+        "-DROTATION_CHAIN_PROFILE=1",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+        "-o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment_profile"
+      ],
+      "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+    },
+    "sanitize": {
+      "binary_sha256": "6a176117f56149a14ef6d298fe6de064f65be5e14225f4bcf89ac54c4c66c872",
+      "command": [
+        "/usr/bin/c++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/workspace/scratch/54cbe57ee0b5/build-review",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-std=gnu++17",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-march=native",
+        "-I/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen/libsrc/meshing",
+        "-O1",
+        "-g1",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/workspace/scratch/54cbe57ee0b5/build-review/libsrc/core",
+        "-o",
+        "/workspace/scratch/54cbe57ee0b5/build-review/rotation_chain_experiment_san"
+      ],
+      "cwd": "/workspace/scratch/54cbe57ee0b5/build-review"
+    }
+  },
+  "validation": {
+    "release/local/7/0": {
+      "passed": true,
+      "runs": [
+        "release/local/7/0/1/-1",
+        "release/local/7/0/4/0",
+        "release/local/7/0/1/1",
+        "release/local/7/0/2/1",
+        "release/local/7/0/4/1",
+        "release/local/7/0/1/2",
+        "release/local/7/0/2/2",
+        "release/local/7/0/4/2",
+        "release/local/7/0/1/3",
+        "release/local/7/0/2/3",
+        "release/local/7/0/4/3"
+      ],
+      "fingerprint": "32dd7d57d3eb2ba"
+    },
+    "release/local/7/1": {
+      "passed": true,
+      "runs": [
+        "release/local/7/1/1/-1",
+        "release/local/7/1/4/0",
+        "release/local/7/1/1/1",
+        "release/local/7/1/2/1",
+        "release/local/7/1/4/1",
+        "release/local/7/1/1/2",
+        "release/local/7/1/2/2",
+        "release/local/7/1/4/2",
+        "release/local/7/1/1/3",
+        "release/local/7/1/2/3",
+        "release/local/7/1/4/3"
+      ],
+      "fingerprint": "b848948156088b90"
+    },
+    "release/local/7/2": {
+      "passed": true,
+      "runs": [
+        "release/local/7/2/1/-1",
+        "release/local/7/2/4/0",
+        "release/local/7/2/1/1",
+        "release/local/7/2/2/1",
+        "release/local/7/2/4/1",
+        "release/local/7/2/1/2",
+        "release/local/7/2/2/2",
+        "release/local/7/2/4/2",
+        "release/local/7/2/1/3",
+        "release/local/7/2/2/3",
+        "release/local/7/2/4/3"
+      ],
+      "fingerprint": "f35411b0a0e69c5d"
+    },
+    "release/local/45/0": {
+      "passed": true,
+      "runs": [
+        "release/local/45/0/1/-1",
+        "release/local/45/0/4/0",
+        "release/local/45/0/1/1",
+        "release/local/45/0/2/1",
+        "release/local/45/0/4/1",
+        "release/local/45/0/1/2",
+        "release/local/45/0/2/2",
+        "release/local/45/0/4/2",
+        "release/local/45/0/1/3",
+        "release/local/45/0/2/3",
+        "release/local/45/0/4/3"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "release/local/45/1": {
+      "passed": true,
+      "runs": [
+        "release/local/45/1/1/-1",
+        "release/local/45/1/4/0",
+        "release/local/45/1/1/1",
+        "release/local/45/1/2/1",
+        "release/local/45/1/4/1",
+        "release/local/45/1/1/2",
+        "release/local/45/1/2/2",
+        "release/local/45/1/4/2",
+        "release/local/45/1/1/3",
+        "release/local/45/1/2/3",
+        "release/local/45/1/4/3"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "release/local/45/2": {
+      "passed": true,
+      "runs": [
+        "release/local/45/2/1/-1",
+        "release/local/45/2/4/0",
+        "release/local/45/2/1/1",
+        "release/local/45/2/2/1",
+        "release/local/45/2/4/1",
+        "release/local/45/2/1/2",
+        "release/local/45/2/2/2",
+        "release/local/45/2/4/2",
+        "release/local/45/2/1/3",
+        "release/local/45/2/2/3",
+        "release/local/45/2/4/3"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "release/front/0": {
+      "passed": true,
+      "runs": [
+        "release/front/0/1/-1",
+        "release/front/0/4/0",
+        "release/front/0/1/1",
+        "release/front/0/2/1",
+        "release/front/0/4/1",
+        "release/front/0/1/2",
+        "release/front/0/2/2",
+        "release/front/0/4/2",
+        "release/front/0/1/3",
+        "release/front/0/2/3",
+        "release/front/0/4/3"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1
+    },
+    "release/front/1": {
+      "passed": true,
+      "runs": [
+        "release/front/1/1/-1",
+        "release/front/1/4/0",
+        "release/front/1/1/1",
+        "release/front/1/2/1",
+        "release/front/1/4/1",
+        "release/front/1/1/2",
+        "release/front/1/2/2",
+        "release/front/1/4/2",
+        "release/front/1/1/3",
+        "release/front/1/2/3",
+        "release/front/1/4/3"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13
+    },
+    "release/front/2": {
+      "passed": true,
+      "runs": [
+        "release/front/2/1/-1",
+        "release/front/2/4/0",
+        "release/front/2/1/1",
+        "release/front/2/2/1",
+        "release/front/2/4/1",
+        "release/front/2/1/2",
+        "release/front/2/2/2",
+        "release/front/2/4/2",
+        "release/front/2/1/3",
+        "release/front/2/2/3",
+        "release/front/2/4/3"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140
+    },
+    "release/front/3": {
+      "passed": true,
+      "runs": [
+        "release/front/3/1/-1",
+        "release/front/3/4/0",
+        "release/front/3/1/1",
+        "release/front/3/2/1",
+        "release/front/3/4/1",
+        "release/front/3/1/2",
+        "release/front/3/2/2",
+        "release/front/3/4/2",
+        "release/front/3/1/3",
+        "release/front/3/2/3",
+        "release/front/3/4/3"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0
+    },
+    "release/front/4": {
+      "passed": true,
+      "runs": [
+        "release/front/4/1/-1",
+        "release/front/4/4/0",
+        "release/front/4/1/1",
+        "release/front/4/2/1",
+        "release/front/4/4/1",
+        "release/front/4/1/2",
+        "release/front/4/2/2",
+        "release/front/4/4/2",
+        "release/front/4/1/3",
+        "release/front/4/2/3",
+        "release/front/4/4/3"
+      ],
+      "fingerprint": "7843128de0843700",
+      "status": 0,
+      "elements": 1197
+    },
+    "release/front/5": {
+      "passed": true,
+      "runs": [
+        "release/front/5/1/-1",
+        "release/front/5/4/0",
+        "release/front/5/1/1",
+        "release/front/5/2/1",
+        "release/front/5/4/1",
+        "release/front/5/1/2",
+        "release/front/5/2/2",
+        "release/front/5/4/2",
+        "release/front/5/1/3",
+        "release/front/5/2/3",
+        "release/front/5/4/3"
+      ],
+      "fingerprint": "7e3f4f5918ddd13b",
+      "status": 2,
+      "elements": 8654
+    },
+    "profile/local/45/0": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/0/1/-1",
+        "profile/local/45/0/4/0",
+        "profile/local/45/0/2/1",
+        "profile/local/45/0/4/1",
+        "profile/local/45/0/2/2",
+        "profile/local/45/0/4/2",
+        "profile/local/45/0/2/3",
+        "profile/local/45/0/4/3"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "profile/local/45/1": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/1/1/-1",
+        "profile/local/45/1/4/0",
+        "profile/local/45/1/2/1",
+        "profile/local/45/1/4/1",
+        "profile/local/45/1/2/2",
+        "profile/local/45/1/4/2",
+        "profile/local/45/1/2/3",
+        "profile/local/45/1/4/3"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "profile/local/45/2": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/2/1/-1",
+        "profile/local/45/2/4/0",
+        "profile/local/45/2/2/1",
+        "profile/local/45/2/4/1",
+        "profile/local/45/2/2/2",
+        "profile/local/45/2/4/2",
+        "profile/local/45/2/2/3",
+        "profile/local/45/2/4/3"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "profile/front/0": {
+      "passed": true,
+      "runs": [
+        "profile/front/0/1/-1",
+        "profile/front/0/4/0",
+        "profile/front/0/2/1",
+        "profile/front/0/4/1",
+        "profile/front/0/2/2",
+        "profile/front/0/4/2",
+        "profile/front/0/2/3",
+        "profile/front/0/4/3"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1,
+      "cross_build_equal": true
+    },
+    "profile/front/1": {
+      "passed": true,
+      "runs": [
+        "profile/front/1/1/-1",
+        "profile/front/1/4/0",
+        "profile/front/1/2/1",
+        "profile/front/1/4/1",
+        "profile/front/1/2/2",
+        "profile/front/1/4/2",
+        "profile/front/1/2/3",
+        "profile/front/1/4/3"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13,
+      "cross_build_equal": true
+    },
+    "profile/front/2": {
+      "passed": true,
+      "runs": [
+        "profile/front/2/1/-1",
+        "profile/front/2/4/0",
+        "profile/front/2/2/1",
+        "profile/front/2/4/1",
+        "profile/front/2/2/2",
+        "profile/front/2/4/2",
+        "profile/front/2/2/3",
+        "profile/front/2/4/3"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140,
+      "cross_build_equal": true
+    },
+    "profile/front/3": {
+      "passed": true,
+      "runs": [
+        "profile/front/3/1/-1",
+        "profile/front/3/4/0",
+        "profile/front/3/2/1",
+        "profile/front/3/4/1",
+        "profile/front/3/2/2",
+        "profile/front/3/4/2",
+        "profile/front/3/2/3",
+        "profile/front/3/4/3"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0,
+      "cross_build_equal": true
+    },
+    "profile/front/4": {
+      "passed": true,
+      "runs": [
+        "profile/front/4/1/-1",
+        "profile/front/4/4/0",
+        "profile/front/4/2/1",
+        "profile/front/4/4/1",
+        "profile/front/4/2/2",
+        "profile/front/4/4/2",
+        "profile/front/4/2/3",
+        "profile/front/4/4/3"
+      ],
+      "fingerprint": "7843128de0843700",
+      "status": 0,
+      "elements": 1197,
+      "cross_build_equal": true
+    },
+    "profile/front/5": {
+      "passed": true,
+      "runs": [
+        "profile/front/5/1/-1",
+        "profile/front/5/4/0",
+        "profile/front/5/2/1",
+        "profile/front/5/4/1",
+        "profile/front/5/2/2",
+        "profile/front/5/4/2",
+        "profile/front/5/2/3",
+        "profile/front/5/4/3"
+      ],
+      "fingerprint": "7e3f4f5918ddd13b",
+      "status": 2,
+      "elements": 8654,
+      "cross_build_equal": true
+    },
+    "sanitize/local/45/0": {
+      "passed": true,
+      "runs": [
+        "sanitize/local/45/0/1/-1",
+        "sanitize/local/45/0/4/0",
+        "sanitize/local/45/0/2/1",
+        "sanitize/local/45/0/4/1",
+        "sanitize/local/45/0/2/2",
+        "sanitize/local/45/0/4/2",
+        "sanitize/local/45/0/2/3",
+        "sanitize/local/45/0/4/3"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "sanitize/local/45/1": {
+      "passed": true,
+      "runs": [
+        "sanitize/local/45/1/1/-1",
+        "sanitize/local/45/1/4/0",
+        "sanitize/local/45/1/2/1",
+        "sanitize/local/45/1/4/1",
+        "sanitize/local/45/1/2/2",
+        "sanitize/local/45/1/4/2",
+        "sanitize/local/45/1/2/3",
+        "sanitize/local/45/1/4/3"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "sanitize/local/45/2": {
+      "passed": true,
+      "runs": [
+        "sanitize/local/45/2/1/-1",
+        "sanitize/local/45/2/4/0",
+        "sanitize/local/45/2/2/1",
+        "sanitize/local/45/2/4/1",
+        "sanitize/local/45/2/2/2",
+        "sanitize/local/45/2/4/2",
+        "sanitize/local/45/2/2/3",
+        "sanitize/local/45/2/4/3"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "sanitize/front/0": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/0/1/-1",
+        "sanitize/front/0/4/0",
+        "sanitize/front/0/2/1",
+        "sanitize/front/0/4/1",
+        "sanitize/front/0/2/2",
+        "sanitize/front/0/4/2",
+        "sanitize/front/0/2/3",
+        "sanitize/front/0/4/3"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1,
+      "cross_build_equal": true
+    },
+    "sanitize/front/1": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/1/1/-1",
+        "sanitize/front/1/4/0",
+        "sanitize/front/1/2/1",
+        "sanitize/front/1/4/1",
+        "sanitize/front/1/2/2",
+        "sanitize/front/1/4/2",
+        "sanitize/front/1/2/3",
+        "sanitize/front/1/4/3"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13,
+      "cross_build_equal": true
+    },
+    "sanitize/front/2": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/2/1/-1",
+        "sanitize/front/2/4/0",
+        "sanitize/front/2/2/1",
+        "sanitize/front/2/4/1",
+        "sanitize/front/2/2/2",
+        "sanitize/front/2/4/2",
+        "sanitize/front/2/2/3",
+        "sanitize/front/2/4/3"
+      ],
+      "fingerprint": "1f14fd91cd491262",
+      "status": 0,
+      "elements": 140,
+      "cross_build_equal": false
+    },
+    "sanitize/front/3": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/3/1/-1",
+        "sanitize/front/3/4/0",
+        "sanitize/front/3/2/1",
+        "sanitize/front/3/4/1",
+        "sanitize/front/3/2/2",
+        "sanitize/front/3/4/2",
+        "sanitize/front/3/2/3",
+        "sanitize/front/3/4/3"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0,
+      "cross_build_equal": true
+    },
+    "sanitize/front/4": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/4/1/-1",
+        "sanitize/front/4/4/0",
+        "sanitize/front/4/2/1",
+        "sanitize/front/4/4/1",
+        "sanitize/front/4/2/2",
+        "sanitize/front/4/4/2",
+        "sanitize/front/4/2/3",
+        "sanitize/front/4/4/3"
+      ],
+      "fingerprint": "9e47b3f9b523493c",
+      "status": 0,
+      "elements": 1197,
+      "cross_build_equal": false
+    },
+    "sanitize/front/5": {
+      "passed": true,
+      "runs": [
+        "sanitize/front/5/1/-1",
+        "sanitize/front/5/4/0",
+        "sanitize/front/5/2/1",
+        "sanitize/front/5/4/1",
+        "sanitize/front/5/2/2",
+        "sanitize/front/5/4/2",
+        "sanitize/front/5/2/3",
+        "sanitize/front/5/4/3"
+      ],
+      "fingerprint": "d74c8b8993c04e00",
+      "status": 2,
+      "elements": 8731,
+      "cross_build_equal": false
+    }
+  },
+  "benchmarks": {
+    "local/7/0": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/0/0/0",
+          "1": "benchmark/local/7/0/0/1",
+          "2": "benchmark/local/7/0/0/2",
+          "3": "benchmark/local/7/0/0/3"
+        },
+        {
+          "1": "benchmark/local/7/0/1/1",
+          "2": "benchmark/local/7/0/1/2",
+          "3": "benchmark/local/7/0/1/3",
+          "0": "benchmark/local/7/0/1/0"
+        },
+        {
+          "2": "benchmark/local/7/0/2/2",
+          "3": "benchmark/local/7/0/2/3",
+          "0": "benchmark/local/7/0/2/0",
+          "1": "benchmark/local/7/0/2/1"
+        },
+        {
+          "3": "benchmark/local/7/0/3/3",
+          "0": "benchmark/local/7/0/3/0",
+          "1": "benchmark/local/7/0/3/1",
+          "2": "benchmark/local/7/0/3/2"
+        },
+        {
+          "3": "benchmark/local/7/0/4/3",
+          "2": "benchmark/local/7/0/4/2",
+          "1": "benchmark/local/7/0/4/1",
+          "0": "benchmark/local/7/0/4/0"
+        },
+        {
+          "2": "benchmark/local/7/0/5/2",
+          "1": "benchmark/local/7/0/5/1",
+          "0": "benchmark/local/7/0/5/0",
+          "3": "benchmark/local/7/0/5/3"
+        },
+        {
+          "1": "benchmark/local/7/0/6/1",
+          "0": "benchmark/local/7/0/6/0",
+          "3": "benchmark/local/7/0/6/3",
+          "2": "benchmark/local/7/0/6/2"
+        },
+        {
+          "0": "benchmark/local/7/0/7/0",
+          "3": "benchmark/local/7/0/7/3",
+          "2": "benchmark/local/7/0/7/2",
+          "1": "benchmark/local/7/0/7/1"
+        },
+        {
+          "0": "benchmark/local/7/0/8/0",
+          "1": "benchmark/local/7/0/8/1",
+          "2": "benchmark/local/7/0/8/2",
+          "3": "benchmark/local/7/0/8/3"
+        },
+        {
+          "1": "benchmark/local/7/0/9/1",
+          "2": "benchmark/local/7/0/9/2",
+          "3": "benchmark/local/7/0/9/3",
+          "0": "benchmark/local/7/0/9/0"
+        },
+        {
+          "2": "benchmark/local/7/0/10/2",
+          "3": "benchmark/local/7/0/10/3",
+          "0": "benchmark/local/7/0/10/0",
+          "1": "benchmark/local/7/0/10/1"
+        },
+        {
+          "3": "benchmark/local/7/0/11/3",
+          "0": "benchmark/local/7/0/11/0",
+          "1": "benchmark/local/7/0/11/1",
+          "2": "benchmark/local/7/0/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/0/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -40.705746400992325,
+            3.414666968402754,
+            -5.978240242855998,
+            1.4304977471104419,
+            22.21333717195703,
+            -14.853591295252514,
+            0.7843178813276447,
+            -18.868488620687934,
+            5.307443502820108,
+            4.033223003569722,
+            -24.960044695272423,
+            15.51717918890068
+          ],
+          "median_pct": 1.1074078142190433,
+          "wins": 7,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            37.09498594174062,
+            -30.84984014729002,
+            -47.80042083611571,
+            -82.58474693643976,
+            8.475716955233512,
+            1.6959690086283574,
+            -5.816302924354283,
+            4.8822799583982,
+            28.12911102833048,
+            -16.34776417956092,
+            -1.3153708525130265,
+            14.968327087582413
+          ],
+          "median_pct": 0.19029907805766544,
+          "wins": 6,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            44.87626054779565,
+            12.575855812609959,
+            -57.30646564168458,
+            4.583715605537156,
+            13.41147237237743,
+            1.9006999597108976,
+            8.38916570309357,
+            7.092521113220821,
+            43.502962568306465,
+            8.060868854273597,
+            24.186082130320997,
+            15.681848319109584
+          ],
+          "median_pct": 10.482510757851763,
+          "wins": 11,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            -123.67969947622603,
+            26.18612837212733,
+            28.296388032367677,
+            46.01438296091461,
+            15.009809156335212,
+            -16.835078009500407,
+            6.237810831853164,
+            -24.969867411349032,
+            -31.753701466676375,
+            17.517300247967306,
+            -23.33769658424234,
+            0.6454678386529956
+          ],
+          "median_pct": 3.44163933525308,
+          "wins": 7,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -14.116013687354945,
+            -49.67242901093637,
+            6.043009590732214,
+            -91.35595993406282,
+            -5.700241766865851,
+            -0.20869766756588262,
+            -15.506319461526346,
+            -2.3789701123158347,
+            -27.211783553364885,
+            -26.548687952190967,
+            -33.63690163944563,
+            -0.8462249436248969
+          ],
+          "median_pct": -14.811166574440644,
+          "wins": 1,
+          "count": 12
+        }
+      }
+    },
+    "local/7/1": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/1/0/0",
+          "1": "benchmark/local/7/1/0/1",
+          "2": "benchmark/local/7/1/0/2",
+          "3": "benchmark/local/7/1/0/3"
+        },
+        {
+          "1": "benchmark/local/7/1/1/1",
+          "2": "benchmark/local/7/1/1/2",
+          "3": "benchmark/local/7/1/1/3",
+          "0": "benchmark/local/7/1/1/0"
+        },
+        {
+          "2": "benchmark/local/7/1/2/2",
+          "3": "benchmark/local/7/1/2/3",
+          "0": "benchmark/local/7/1/2/0",
+          "1": "benchmark/local/7/1/2/1"
+        },
+        {
+          "3": "benchmark/local/7/1/3/3",
+          "0": "benchmark/local/7/1/3/0",
+          "1": "benchmark/local/7/1/3/1",
+          "2": "benchmark/local/7/1/3/2"
+        },
+        {
+          "3": "benchmark/local/7/1/4/3",
+          "2": "benchmark/local/7/1/4/2",
+          "1": "benchmark/local/7/1/4/1",
+          "0": "benchmark/local/7/1/4/0"
+        },
+        {
+          "2": "benchmark/local/7/1/5/2",
+          "1": "benchmark/local/7/1/5/1",
+          "0": "benchmark/local/7/1/5/0",
+          "3": "benchmark/local/7/1/5/3"
+        },
+        {
+          "1": "benchmark/local/7/1/6/1",
+          "0": "benchmark/local/7/1/6/0",
+          "3": "benchmark/local/7/1/6/3",
+          "2": "benchmark/local/7/1/6/2"
+        },
+        {
+          "0": "benchmark/local/7/1/7/0",
+          "3": "benchmark/local/7/1/7/3",
+          "2": "benchmark/local/7/1/7/2",
+          "1": "benchmark/local/7/1/7/1"
+        },
+        {
+          "0": "benchmark/local/7/1/8/0",
+          "1": "benchmark/local/7/1/8/1",
+          "2": "benchmark/local/7/1/8/2",
+          "3": "benchmark/local/7/1/8/3"
+        },
+        {
+          "1": "benchmark/local/7/1/9/1",
+          "2": "benchmark/local/7/1/9/2",
+          "3": "benchmark/local/7/1/9/3",
+          "0": "benchmark/local/7/1/9/0"
+        },
+        {
+          "2": "benchmark/local/7/1/10/2",
+          "3": "benchmark/local/7/1/10/3",
+          "0": "benchmark/local/7/1/10/0",
+          "1": "benchmark/local/7/1/10/1"
+        },
+        {
+          "3": "benchmark/local/7/1/11/3",
+          "0": "benchmark/local/7/1/11/0",
+          "1": "benchmark/local/7/1/11/1",
+          "2": "benchmark/local/7/1/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/1/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            1.4068605300739614,
+            17.217949834393355,
+            39.50037773944131,
+            -12.671607710650342,
+            -1.9047090083007936,
+            0.48697858700014107,
+            15.10625507600126,
+            -23.952956664065596,
+            21.14618176862298,
+            13.864537386985095,
+            7.953402930730673,
+            16.963884098266572
+          ],
+          "median_pct": 10.908970158857883,
+          "wins": 9,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -65.52947564401296,
+            -7.929322715664391,
+            -0.7175247093342795,
+            -52.33493926425652,
+            -52.67927240219393,
+            -9.591045858953686,
+            -10.228377199199954,
+            -71.98388580809163,
+            15.556385944299992,
+            -2.817237392620788,
+            -1.2265235139226638,
+            10.24354571310829
+          ],
+          "median_pct": -8.760184287309038,
+          "wins": 2,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -72.1145195035131,
+            26.24796916556391,
+            35.958105767266936,
+            12.301950812707682,
+            -36.35282844917237,
+            5.277927548819218,
+            6.298908329439784,
+            -25.54009639297926,
+            48.862041283279,
+            12.303862425016858,
+            0.6932040795686985,
+            18.876321928036056
+          ],
+          "median_pct": 9.300429571073733,
+          "wins": 9,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            40.437714137414375,
+            23.299759432668044,
+            39.93138489537192,
+            26.036923469540962,
+            33.255701703988166,
+            9.196029079715586,
+            22.98376599468353,
+            27.927575259941143,
+            6.61956014890113,
+            16.224686835247663,
+            9.068696746649342,
+            7.487303769462449
+          ],
+          "median_pct": 23.14176271367579,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            3.825966500964336,
+            -46.340814611535194,
+            -57.26818501545131,
+            -73.70390866839288,
+            -11.973674575520445,
+            -15.697474752187551,
+            -17.638306271550537,
+            -36.99518380942529,
+            -65.129027780471,
+            -17.24260638583837,
+            -1.9331281164579384,
+            -10.641500015901302
+          ],
+          "median_pct": -17.440456328694452,
+          "wins": 1,
+          "count": 12
+        }
+      }
+    },
+    "local/7/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/2/0/0",
+          "1": "benchmark/local/7/2/0/1",
+          "2": "benchmark/local/7/2/0/2",
+          "3": "benchmark/local/7/2/0/3"
+        },
+        {
+          "1": "benchmark/local/7/2/1/1",
+          "2": "benchmark/local/7/2/1/2",
+          "3": "benchmark/local/7/2/1/3",
+          "0": "benchmark/local/7/2/1/0"
+        },
+        {
+          "2": "benchmark/local/7/2/2/2",
+          "3": "benchmark/local/7/2/2/3",
+          "0": "benchmark/local/7/2/2/0",
+          "1": "benchmark/local/7/2/2/1"
+        },
+        {
+          "3": "benchmark/local/7/2/3/3",
+          "0": "benchmark/local/7/2/3/0",
+          "1": "benchmark/local/7/2/3/1",
+          "2": "benchmark/local/7/2/3/2"
+        },
+        {
+          "3": "benchmark/local/7/2/4/3",
+          "2": "benchmark/local/7/2/4/2",
+          "1": "benchmark/local/7/2/4/1",
+          "0": "benchmark/local/7/2/4/0"
+        },
+        {
+          "2": "benchmark/local/7/2/5/2",
+          "1": "benchmark/local/7/2/5/1",
+          "0": "benchmark/local/7/2/5/0",
+          "3": "benchmark/local/7/2/5/3"
+        },
+        {
+          "1": "benchmark/local/7/2/6/1",
+          "0": "benchmark/local/7/2/6/0",
+          "3": "benchmark/local/7/2/6/3",
+          "2": "benchmark/local/7/2/6/2"
+        },
+        {
+          "0": "benchmark/local/7/2/7/0",
+          "3": "benchmark/local/7/2/7/3",
+          "2": "benchmark/local/7/2/7/2",
+          "1": "benchmark/local/7/2/7/1"
+        },
+        {
+          "0": "benchmark/local/7/2/8/0",
+          "1": "benchmark/local/7/2/8/1",
+          "2": "benchmark/local/7/2/8/2",
+          "3": "benchmark/local/7/2/8/3"
+        },
+        {
+          "1": "benchmark/local/7/2/9/1",
+          "2": "benchmark/local/7/2/9/2",
+          "3": "benchmark/local/7/2/9/3",
+          "0": "benchmark/local/7/2/9/0"
+        },
+        {
+          "2": "benchmark/local/7/2/10/2",
+          "3": "benchmark/local/7/2/10/3",
+          "0": "benchmark/local/7/2/10/0",
+          "1": "benchmark/local/7/2/10/1"
+        },
+        {
+          "3": "benchmark/local/7/2/11/3",
+          "0": "benchmark/local/7/2/11/0",
+          "1": "benchmark/local/7/2/11/1",
+          "2": "benchmark/local/7/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            10.988910537737265,
+            6.770284459272114,
+            -0.9764972059092872,
+            2.926646768126481,
+            6.715310084796126,
+            4.558246102913088,
+            -1.2006243538961252,
+            35.49566519763524,
+            -5.319961926327278,
+            49.805928654957064,
+            14.652483142387352,
+            11.62921957219002
+          ],
+          "median_pct": 6.74279727203412,
+          "wins": 9,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -1.9435279064193174,
+            -6.599311023534642,
+            -12.857265635522404,
+            -2.296140962473807,
+            3.35960190977253,
+            -38.38604731731342,
+            -31.213115507230494,
+            -24.13039943711026,
+            -18.210924321477567,
+            42.71355194132592,
+            -2.730002265241956,
+            -3.118084911613706
+          ],
+          "median_pct": -4.858697967574174,
+          "wins": 2,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            8.66151633807569,
+            0.7582788375286116,
+            -7.125254085944064,
+            7.222532549456389,
+            15.982510386180813,
+            4.1907648445830015,
+            0.4699377322589918,
+            -18.46305954210527,
+            -17.075770200977715,
+            37.27075482997255,
+            16.31047565753192,
+            10.66422068145544
+          ],
+          "median_pct": 5.706648697019695,
+          "wins": 9,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            12.685884734171767,
+            12.541915472469668,
+            10.527251712780807,
+            5.105556946196249,
+            3.4723658442410064,
+            31.03224223303166,
+            22.873087829151142,
+            48.03502196490925,
+            10.905051685488049,
+            12.380548897650247,
+            16.920553902791614,
+            14.301375453630838
+          ],
+          "median_pct": 12.613900103320717,
+          "wins": 12,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -11.610707578360934,
+            -7.413807192055786,
+            -5.350756549879154,
+            -10.259682413732909,
+            -15.024143823421344,
+            -44.439152543938405,
+            -31.832646858253174,
+            -4.784056664508695,
+            -0.9695892826937604,
+            8.676650096140445,
+            -22.751327686913168,
+            -15.427531609620354
+          ],
+          "median_pct": -10.93519499604692,
+          "wins": 1,
+          "count": 12
+        }
+      }
+    },
+    "local/45/0": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/0/0/0",
+          "1": "benchmark/local/45/0/0/1",
+          "2": "benchmark/local/45/0/0/2",
+          "3": "benchmark/local/45/0/0/3"
+        },
+        {
+          "1": "benchmark/local/45/0/1/1",
+          "2": "benchmark/local/45/0/1/2",
+          "3": "benchmark/local/45/0/1/3",
+          "0": "benchmark/local/45/0/1/0"
+        },
+        {
+          "2": "benchmark/local/45/0/2/2",
+          "3": "benchmark/local/45/0/2/3",
+          "0": "benchmark/local/45/0/2/0",
+          "1": "benchmark/local/45/0/2/1"
+        },
+        {
+          "3": "benchmark/local/45/0/3/3",
+          "0": "benchmark/local/45/0/3/0",
+          "1": "benchmark/local/45/0/3/1",
+          "2": "benchmark/local/45/0/3/2"
+        },
+        {
+          "3": "benchmark/local/45/0/4/3",
+          "2": "benchmark/local/45/0/4/2",
+          "1": "benchmark/local/45/0/4/1",
+          "0": "benchmark/local/45/0/4/0"
+        },
+        {
+          "2": "benchmark/local/45/0/5/2",
+          "1": "benchmark/local/45/0/5/1",
+          "0": "benchmark/local/45/0/5/0",
+          "3": "benchmark/local/45/0/5/3"
+        },
+        {
+          "1": "benchmark/local/45/0/6/1",
+          "0": "benchmark/local/45/0/6/0",
+          "3": "benchmark/local/45/0/6/3",
+          "2": "benchmark/local/45/0/6/2"
+        },
+        {
+          "0": "benchmark/local/45/0/7/0",
+          "3": "benchmark/local/45/0/7/3",
+          "2": "benchmark/local/45/0/7/2",
+          "1": "benchmark/local/45/0/7/1"
+        },
+        {
+          "0": "benchmark/local/45/0/8/0",
+          "1": "benchmark/local/45/0/8/1",
+          "2": "benchmark/local/45/0/8/2",
+          "3": "benchmark/local/45/0/8/3"
+        },
+        {
+          "1": "benchmark/local/45/0/9/1",
+          "2": "benchmark/local/45/0/9/2",
+          "3": "benchmark/local/45/0/9/3",
+          "0": "benchmark/local/45/0/9/0"
+        },
+        {
+          "2": "benchmark/local/45/0/10/2",
+          "3": "benchmark/local/45/0/10/3",
+          "0": "benchmark/local/45/0/10/0",
+          "1": "benchmark/local/45/0/10/1"
+        },
+        {
+          "3": "benchmark/local/45/0/11/3",
+          "0": "benchmark/local/45/0/11/0",
+          "1": "benchmark/local/45/0/11/1",
+          "2": "benchmark/local/45/0/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/0/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            20.971294061677376,
+            1.285284291398681,
+            -5.190656167658664,
+            10.070432332374176,
+            3.02078111254463,
+            -6.521952722023746,
+            9.889734028185622,
+            12.060263780913939,
+            9.615378505692824,
+            26.578005548775042,
+            -14.856297168310237,
+            1.2635539692150757
+          ],
+          "median_pct": 6.318079809118727,
+          "wins": 9,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            13.96910354923761,
+            -28.35921334124198,
+            -2.0394314718215094,
+            -7.372337113968737,
+            -9.313380027598257,
+            -12.529254599021453,
+            26.745105739844718,
+            19.571094397365933,
+            17.76533282256617,
+            11.320182731577177,
+            -18.12489008689342,
+            0.3029392904870348
+          ],
+          "median_pct": -0.8682460906672373,
+          "wins": 6,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            18.831034550076883,
+            0.7803375617242162,
+            4.122181634374609,
+            1.4947774810509413,
+            18.197835778068466,
+            -17.235662145747582,
+            28.92965975045245,
+            12.989905017671548,
+            26.646173649880808,
+            12.264556856898832,
+            -6.280226927955822,
+            -15.49623469197985
+          ],
+          "median_pct": 8.19336924563672,
+          "wins": 9,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            8.139157908748857,
+            23.094951161652098,
+            -3.0882421142334326,
+            16.245124130835066,
+            11.28330414541101,
+            5.33843567915178,
+            -23.00920898445287,
+            -9.338471734975359,
+            -9.910606556342685,
+            17.205519008924348,
+            2.767065362921215,
+            0.9635336005812459
+          ],
+          "median_pct": 4.052750521036497,
+          "wins": 8,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -5.989889083702592,
+            -29.36872610415684,
+            -6.42652618846531,
+            -9.001669523982796,
+            -33.631403358752266,
+            4.014484552383995,
+            -3.073791405721655,
+            7.563707844510468,
+            -12.10685422860727,
+            -1.0763883916119652,
+            -11.144747712071352,
+            13.679384461841675
+          ],
+          "median_pct": -6.2082076360839515,
+          "wins": 3,
+          "count": 12
+        }
+      }
+    },
+    "local/45/1": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/1/0/0",
+          "1": "benchmark/local/45/1/0/1",
+          "2": "benchmark/local/45/1/0/2",
+          "3": "benchmark/local/45/1/0/3"
+        },
+        {
+          "1": "benchmark/local/45/1/1/1",
+          "2": "benchmark/local/45/1/1/2",
+          "3": "benchmark/local/45/1/1/3",
+          "0": "benchmark/local/45/1/1/0"
+        },
+        {
+          "2": "benchmark/local/45/1/2/2",
+          "3": "benchmark/local/45/1/2/3",
+          "0": "benchmark/local/45/1/2/0",
+          "1": "benchmark/local/45/1/2/1"
+        },
+        {
+          "3": "benchmark/local/45/1/3/3",
+          "0": "benchmark/local/45/1/3/0",
+          "1": "benchmark/local/45/1/3/1",
+          "2": "benchmark/local/45/1/3/2"
+        },
+        {
+          "3": "benchmark/local/45/1/4/3",
+          "2": "benchmark/local/45/1/4/2",
+          "1": "benchmark/local/45/1/4/1",
+          "0": "benchmark/local/45/1/4/0"
+        },
+        {
+          "2": "benchmark/local/45/1/5/2",
+          "1": "benchmark/local/45/1/5/1",
+          "0": "benchmark/local/45/1/5/0",
+          "3": "benchmark/local/45/1/5/3"
+        },
+        {
+          "1": "benchmark/local/45/1/6/1",
+          "0": "benchmark/local/45/1/6/0",
+          "3": "benchmark/local/45/1/6/3",
+          "2": "benchmark/local/45/1/6/2"
+        },
+        {
+          "0": "benchmark/local/45/1/7/0",
+          "3": "benchmark/local/45/1/7/3",
+          "2": "benchmark/local/45/1/7/2",
+          "1": "benchmark/local/45/1/7/1"
+        },
+        {
+          "0": "benchmark/local/45/1/8/0",
+          "1": "benchmark/local/45/1/8/1",
+          "2": "benchmark/local/45/1/8/2",
+          "3": "benchmark/local/45/1/8/3"
+        },
+        {
+          "1": "benchmark/local/45/1/9/1",
+          "2": "benchmark/local/45/1/9/2",
+          "3": "benchmark/local/45/1/9/3",
+          "0": "benchmark/local/45/1/9/0"
+        },
+        {
+          "2": "benchmark/local/45/1/10/2",
+          "3": "benchmark/local/45/1/10/3",
+          "0": "benchmark/local/45/1/10/0",
+          "1": "benchmark/local/45/1/10/1"
+        },
+        {
+          "3": "benchmark/local/45/1/11/3",
+          "0": "benchmark/local/45/1/11/0",
+          "1": "benchmark/local/45/1/11/1",
+          "2": "benchmark/local/45/1/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/1/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -5.138515913252733,
+            -52.48486957492994,
+            3.133013603021502,
+            30.046538575697248,
+            25.446643269932117,
+            31.925565083452263,
+            -2.6908129684599036,
+            19.90252885001497,
+            -3.606887504292273,
+            -18.03583100204036,
+            1.7760371253152456,
+            3.5428647466330023
+          ],
+          "median_pct": 2.454525364168374,
+          "wins": 7,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -35.03325090308658,
+            -6.155059929207447,
+            -9.06512695169331,
+            22.429558331647996,
+            1.7068583504826156,
+            8.233373024724605,
+            -21.147575600060424,
+            11.682407148302573,
+            -20.66414608994041,
+            -45.489763922401174,
+            -8.481524961938197,
+            -2.804811295526137
+          ],
+          "median_pct": -7.318292445572822,
+          "wins": 4,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -56.32679043807924,
+            6.500884434862191,
+            4.401671834964847,
+            30.462968470169013,
+            25.64875198642774,
+            8.458468859450743,
+            -8.326010899275962,
+            18.127357826621537,
+            -31.424618877342805,
+            -36.68022826816107,
+            -33.677864614931465,
+            0.6227870270107809
+          ],
+          "median_pct": 2.512229430987814,
+          "wins": 7,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            22.138795289235322,
+            -43.64352455419351,
+            11.184272091039295,
+            9.819436476351667,
+            24.152025788430034,
+            25.81787392611807,
+            15.234941797375365,
+            9.3074566870449,
+            14.136144943116765,
+            18.870009944482224,
+            9.45558434106859,
+            6.174493160550529
+          ],
+          "median_pct": 12.66020851707803,
+          "wins": 11,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            13.621171057962062,
+            -13.535897412048406,
+            -14.086855957784001,
+            -11.552707905103382,
+            -32.20106491228595,
+            -0.24589476702168675,
+            -11.8360905144991,
+            -7.87192217965892,
+            8.187562482068167,
+            -6.445362117010918,
+            18.84855037561612,
+            -3.4490787374652383
+          ],
+          "median_pct": -7.158642148334919,
+          "wins": 3,
+          "count": 12
+        }
+      }
+    },
+    "local/45/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/2/0/0",
+          "1": "benchmark/local/45/2/0/1",
+          "2": "benchmark/local/45/2/0/2",
+          "3": "benchmark/local/45/2/0/3"
+        },
+        {
+          "1": "benchmark/local/45/2/1/1",
+          "2": "benchmark/local/45/2/1/2",
+          "3": "benchmark/local/45/2/1/3",
+          "0": "benchmark/local/45/2/1/0"
+        },
+        {
+          "2": "benchmark/local/45/2/2/2",
+          "3": "benchmark/local/45/2/2/3",
+          "0": "benchmark/local/45/2/2/0",
+          "1": "benchmark/local/45/2/2/1"
+        },
+        {
+          "3": "benchmark/local/45/2/3/3",
+          "0": "benchmark/local/45/2/3/0",
+          "1": "benchmark/local/45/2/3/1",
+          "2": "benchmark/local/45/2/3/2"
+        },
+        {
+          "3": "benchmark/local/45/2/4/3",
+          "2": "benchmark/local/45/2/4/2",
+          "1": "benchmark/local/45/2/4/1",
+          "0": "benchmark/local/45/2/4/0"
+        },
+        {
+          "2": "benchmark/local/45/2/5/2",
+          "1": "benchmark/local/45/2/5/1",
+          "0": "benchmark/local/45/2/5/0",
+          "3": "benchmark/local/45/2/5/3"
+        },
+        {
+          "1": "benchmark/local/45/2/6/1",
+          "0": "benchmark/local/45/2/6/0",
+          "3": "benchmark/local/45/2/6/3",
+          "2": "benchmark/local/45/2/6/2"
+        },
+        {
+          "0": "benchmark/local/45/2/7/0",
+          "3": "benchmark/local/45/2/7/3",
+          "2": "benchmark/local/45/2/7/2",
+          "1": "benchmark/local/45/2/7/1"
+        },
+        {
+          "0": "benchmark/local/45/2/8/0",
+          "1": "benchmark/local/45/2/8/1",
+          "2": "benchmark/local/45/2/8/2",
+          "3": "benchmark/local/45/2/8/3"
+        },
+        {
+          "1": "benchmark/local/45/2/9/1",
+          "2": "benchmark/local/45/2/9/2",
+          "3": "benchmark/local/45/2/9/3",
+          "0": "benchmark/local/45/2/9/0"
+        },
+        {
+          "2": "benchmark/local/45/2/10/2",
+          "3": "benchmark/local/45/2/10/3",
+          "0": "benchmark/local/45/2/10/0",
+          "1": "benchmark/local/45/2/10/1"
+        },
+        {
+          "3": "benchmark/local/45/2/11/3",
+          "0": "benchmark/local/45/2/11/0",
+          "1": "benchmark/local/45/2/11/1",
+          "2": "benchmark/local/45/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            9.499804889610104,
+            -20.068245780446283,
+            4.298602384742621,
+            16.766312050225746,
+            -18.553411378045237,
+            -0.6771806467274674,
+            1.2673741819643876,
+            10.32299919137766,
+            17.05444070549744,
+            20.328459887686673,
+            14.944881456137233,
+            31.484326381029213
+          ],
+          "median_pct": 9.911402040493883,
+          "wins": 9,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            3.4137441715581134,
+            -40.39184555157029,
+            9.315955766980997,
+            15.806875788567512,
+            -21.414860971671477,
+            -3.87667706092236,
+            -19.588647947592456,
+            12.241367088676247,
+            20.16027351569298,
+            7.325069957314324,
+            -8.219458343779934,
+            30.515633274876212
+          ],
+          "median_pct": 5.369407064436219,
+          "wins": 7,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            9.17170767001528,
+            -16.521806840648665,
+            11.83999738434016,
+            7.870917068329486,
+            -11.697798087709836,
+            11.600292194777243,
+            0.8982479033569089,
+            13.319714286645906,
+            29.005187232385,
+            29.722936446908733,
+            11.838209188529985,
+            39.21379295513062
+          ],
+          "median_pct": 11.719250691653613,
+          "wins": 10,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            6.301166419435652,
+            14.47633919995625,
+            -5.532785204579027,
+            1.1395660520315458,
+            2.3567540008911023,
+            3.080091224248951,
+            17.43980092382733,
+            -2.185959185618826,
+            -3.8900844816972326,
+            14.031183972173533,
+            21.404967419381446,
+            1.3941166219231675
+          ],
+          "median_pct": 2.7184226125700266,
+          "wins": 9,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -6.3393942027866546,
+            -20.485469079247537,
+            -2.863023528212577,
+            8.613956057854063,
+            -8.699422056942778,
+            -17.507941643654622,
+            -20.67258692961426,
+            -1.2440512731299493,
+            -12.458535168821111,
+            -31.870805860682832,
+            -22.75097561845395,
+            -14.309429890622818
+          ],
+          "median_pct": -13.383982529721965,
+          "wins": 1,
+          "count": 12
+        }
+      }
+    },
+    "front/2": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/2/0/0",
+          "1": "benchmark/front/2/0/1",
+          "2": "benchmark/front/2/0/2",
+          "3": "benchmark/front/2/0/3"
+        },
+        {
+          "1": "benchmark/front/2/1/1",
+          "2": "benchmark/front/2/1/2",
+          "3": "benchmark/front/2/1/3",
+          "0": "benchmark/front/2/1/0"
+        },
+        {
+          "2": "benchmark/front/2/2/2",
+          "3": "benchmark/front/2/2/3",
+          "0": "benchmark/front/2/2/0",
+          "1": "benchmark/front/2/2/1"
+        },
+        {
+          "3": "benchmark/front/2/3/3",
+          "0": "benchmark/front/2/3/0",
+          "1": "benchmark/front/2/3/1",
+          "2": "benchmark/front/2/3/2"
+        },
+        {
+          "3": "benchmark/front/2/4/3",
+          "2": "benchmark/front/2/4/2",
+          "1": "benchmark/front/2/4/1",
+          "0": "benchmark/front/2/4/0"
+        },
+        {
+          "2": "benchmark/front/2/5/2",
+          "1": "benchmark/front/2/5/1",
+          "0": "benchmark/front/2/5/0",
+          "3": "benchmark/front/2/5/3"
+        },
+        {
+          "1": "benchmark/front/2/6/1",
+          "0": "benchmark/front/2/6/0",
+          "3": "benchmark/front/2/6/3",
+          "2": "benchmark/front/2/6/2"
+        },
+        {
+          "0": "benchmark/front/2/7/0",
+          "3": "benchmark/front/2/7/3",
+          "2": "benchmark/front/2/7/2",
+          "1": "benchmark/front/2/7/1"
+        },
+        {
+          "0": "benchmark/front/2/8/0",
+          "1": "benchmark/front/2/8/1",
+          "2": "benchmark/front/2/8/2",
+          "3": "benchmark/front/2/8/3"
+        },
+        {
+          "1": "benchmark/front/2/9/1",
+          "2": "benchmark/front/2/9/2",
+          "3": "benchmark/front/2/9/3",
+          "0": "benchmark/front/2/9/0"
+        },
+        {
+          "2": "benchmark/front/2/10/2",
+          "3": "benchmark/front/2/10/3",
+          "0": "benchmark/front/2/10/0",
+          "1": "benchmark/front/2/10/1"
+        },
+        {
+          "3": "benchmark/front/2/11/3",
+          "0": "benchmark/front/2/11/0",
+          "1": "benchmark/front/2/11/1",
+          "2": "benchmark/front/2/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/2/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -24.576949390677008,
+            0.5994118745313178,
+            -3.8948529204041153,
+            -124.77396130724019,
+            -6.855323439683017,
+            -9.53065973194594,
+            -19.15213654705187,
+            0.1325393065397638,
+            -7.925697923758459,
+            2.5345972290038112,
+            18.063274983160433,
+            -5.044626885484069
+          ],
+          "median_pct": -5.949975162583543,
+          "wins": 4,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            2.518726336876773,
+            -12.59731315760773,
+            -14.767920858163647,
+            -16.719286772812573,
+            -6.526835128928772,
+            -7.333510383903198,
+            -27.849797992138335,
+            -17.2173218671162,
+            -6.100512810809453,
+            -22.345485064238268,
+            11.544543034423652,
+            -8.135648756531687
+          ],
+          "median_pct": -10.366480957069708,
+          "wins": 2,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            23.182901175288848,
+            -78.89062127402265,
+            2.88473917288053,
+            -32.69651951659975,
+            -4.8125517575594765,
+            -24.275164392581427,
+            -18.999534627896182,
+            -5.63646861196534,
+            7.666590737820972,
+            8.796401874192906,
+            20.573767566966808,
+            6.264995911607818
+          ],
+          "median_pct": -0.9639062923394732,
+          "wins": 6,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            -27.79577523903852,
+            11.720284136502416,
+            9.473960891211973,
+            -92.57653771030135,
+            -0.3083620294892643,
+            -2.0470301774200137,
+            6.803031042427844,
+            14.801448196645113,
+            -1.720241556422578,
+            20.335921901963637,
+            7.3695079674661965,
+            2.858467033389775
+          ],
+          "median_pct": 4.830749037908809,
+          "wins": 7,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -26.900488503953568,
+            37.05801212175767,
+            -18.17701963697416,
+            12.040430903531345,
+            -1.6355706855936307,
+            13.632373042098797,
+            -7.437225189086955,
+            -10.962931085561783,
+            -14.910208188608076,
+            -34.145458708190176,
+            -11.36806349231784,
+            -15.363145079248822
+          ],
+          "median_pct": -11.165497288939811,
+          "wins": 3,
+          "count": 12
+        }
+      }
+    },
+    "front/4": {
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          2,
+          1,
+          0,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          0,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/4/0/0",
+          "1": "benchmark/front/4/0/1",
+          "2": "benchmark/front/4/0/2",
+          "3": "benchmark/front/4/0/3"
+        },
+        {
+          "1": "benchmark/front/4/1/1",
+          "2": "benchmark/front/4/1/2",
+          "3": "benchmark/front/4/1/3",
+          "0": "benchmark/front/4/1/0"
+        },
+        {
+          "2": "benchmark/front/4/2/2",
+          "3": "benchmark/front/4/2/3",
+          "0": "benchmark/front/4/2/0",
+          "1": "benchmark/front/4/2/1"
+        },
+        {
+          "3": "benchmark/front/4/3/3",
+          "0": "benchmark/front/4/3/0",
+          "1": "benchmark/front/4/3/1",
+          "2": "benchmark/front/4/3/2"
+        },
+        {
+          "3": "benchmark/front/4/4/3",
+          "2": "benchmark/front/4/4/2",
+          "1": "benchmark/front/4/4/1",
+          "0": "benchmark/front/4/4/0"
+        },
+        {
+          "2": "benchmark/front/4/5/2",
+          "1": "benchmark/front/4/5/1",
+          "0": "benchmark/front/4/5/0",
+          "3": "benchmark/front/4/5/3"
+        },
+        {
+          "1": "benchmark/front/4/6/1",
+          "0": "benchmark/front/4/6/0",
+          "3": "benchmark/front/4/6/3",
+          "2": "benchmark/front/4/6/2"
+        },
+        {
+          "0": "benchmark/front/4/7/0",
+          "3": "benchmark/front/4/7/3",
+          "2": "benchmark/front/4/7/2",
+          "1": "benchmark/front/4/7/1"
+        },
+        {
+          "0": "benchmark/front/4/8/0",
+          "1": "benchmark/front/4/8/1",
+          "2": "benchmark/front/4/8/2",
+          "3": "benchmark/front/4/8/3"
+        },
+        {
+          "1": "benchmark/front/4/9/1",
+          "2": "benchmark/front/4/9/2",
+          "3": "benchmark/front/4/9/3",
+          "0": "benchmark/front/4/9/0"
+        },
+        {
+          "2": "benchmark/front/4/10/2",
+          "3": "benchmark/front/4/10/3",
+          "0": "benchmark/front/4/10/0",
+          "1": "benchmark/front/4/10/1"
+        },
+        {
+          "3": "benchmark/front/4/11/3",
+          "0": "benchmark/front/4/11/0",
+          "1": "benchmark/front/4/11/1",
+          "2": "benchmark/front/4/11/2"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/4/-1",
+      "comparisons": {
+        "0->1": {
+          "paired_reduction_pct": [
+            -19.69226114959829,
+            -32.423918224126076,
+            1.5297318972977885,
+            -0.5367451562479287,
+            -12.120039537011293,
+            7.707350673621329,
+            -2.574356767425698,
+            -16.630548625567265,
+            4.252500588403027,
+            21.925234478176005,
+            3.438561753493794,
+            -3.914050281101544
+          ],
+          "median_pct": -1.5555509618368133,
+          "wins": 5,
+          "count": 12
+        },
+        "0->2": {
+          "paired_reduction_pct": [
+            -47.45584714374536,
+            -23.49504551808754,
+            6.654556180907721,
+            -29.687728696455796,
+            -51.63997828179577,
+            -3.252003697228014,
+            -11.232923628326693,
+            -36.04839208394419,
+            -9.298666623607765,
+            21.127688699634284,
+            0.5725280047097699,
+            -2.0332709687473747
+          ],
+          "median_pct": -10.26579512596723,
+          "wins": 3,
+          "count": 12
+        },
+        "0->3": {
+          "paired_reduction_pct": [
+            -34.45823731619984,
+            2.729954702223418,
+            0.6381771760206778,
+            10.73222772931869,
+            -20.130144600600534,
+            -9.334562539838853,
+            -2.130178173269425,
+            -17.95549148413343,
+            7.640438950044173,
+            0.47812979197642197,
+            6.653388203955125,
+            -8.692670375010065
+          ],
+          "median_pct": -0.8260241906465015,
+          "wins": 6,
+          "count": 12
+        },
+        "2->1": {
+          "paired_reduction_pct": [
+            18.828406286989832,
+            -7.230146495820985,
+            -5.490170782777653,
+            22.47782718782747,
+            26.06168847593986,
+            10.614180818210665,
+            7.784176283842634,
+            14.272747484142098,
+            12.398291425344645,
+            1.0111860111522044,
+            2.88253708081785,
+            -1.8433000280175755
+          ],
+          "median_pct": 9.19917855102665,
+          "wins": 9,
+          "count": 12
+        },
+        "3->2": {
+          "paired_reduction_pct": [
+            -9.666651956011869,
+            -26.96102396172156,
+            6.055020765415235,
+            -45.27945012810612,
+            -26.229747567487504,
+            5.563253468357274,
+            -8.91288512158861,
+            -15.33875224643059,
+            -18.34039202989482,
+            20.748764934275794,
+            -6.514280574566074,
+            6.1268155279344185
+          ],
+          "median_pct": -9.289768538800239,
+          "wins": 4,
+          "count": 12
+        }
+      }
+    }
+  },
+  "profile_samples": {
+    "2/0": [
+      "profile_measure/2/0/0",
+      "profile_measure/2/0/1",
+      "profile_measure/2/0/2"
+    ],
+    "2/1": [
+      "profile_measure/2/1/0",
+      "profile_measure/2/1/1",
+      "profile_measure/2/1/2"
+    ],
+    "2/2": [
+      "profile_measure/2/2/0",
+      "profile_measure/2/2/1",
+      "profile_measure/2/2/2"
+    ],
+    "2/3": [
+      "profile_measure/2/3/0",
+      "profile_measure/2/3/1",
+      "profile_measure/2/3/2"
+    ],
+    "4/0": [
+      "profile_measure/4/0/0",
+      "profile_measure/4/0/1",
+      "profile_measure/4/0/2"
+    ],
+    "4/1": [
+      "profile_measure/4/1/0",
+      "profile_measure/4/1/1",
+      "profile_measure/4/1/2"
+    ],
+    "4/2": [
+      "profile_measure/4/2/0",
+      "profile_measure/4/2/1",
+      "profile_measure/4/2/2"
+    ],
+    "4/3": [
+      "profile_measure/4/3/0",
+      "profile_measure/4/3/1",
+      "profile_measure/4/3/2"
+    ]
+  },
+  "commands": {
+    "driver_tests": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests",
+        "-p",
+        "test_rotation_chain_suite.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "seconds": 0.15537905099995442,
+      "log": "driver_tests.log",
+      "log_sha256": "52d1588eabb365170ceaca263055cfda17567a137c2f4066731c3620eaf21481"
+    },
+    "configure": {
+      "argv": [
+        "/workspace/scratch/54cbe57ee0b5/toolchain/cmake/data/bin/cmake",
+        "-S",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/netgen",
+        "-B",
+        "/workspace/scratch/54cbe57ee0b5/build-review",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DUSE_SUPERBUILD=OFF",
+        "-DUSE_GUI=OFF",
+        "-DUSE_PYTHON=OFF",
+        "-DUSE_MPI=OFF",
+        "-DUSE_OCC=OFF",
+        "-DUSE_JPEG=OFF",
+        "-DUSE_FFMPEG=OFF",
+        "-G",
+        "Ninja",
+        "-DCMAKE_MAKE_PROGRAM=/workspace/scratch/54cbe57ee0b5/toolchain/bin/ninja"
+      ],
+      "returncode": 0,
+      "seconds": 0.8929939529999729,
+      "log": "configure.log",
+      "log_sha256": "d6dc9d2614392e3041a00c957c60cb6f42a0435f8d2c2f95bfdcf546865cb9f3"
+    },
+    "kernel_build": {
+      "argv": [
+        "/workspace/scratch/54cbe57ee0b5/toolchain/cmake/data/bin/cmake",
+        "--build",
+        "/workspace/scratch/54cbe57ee0b5/build-review",
+        "--target",
+        "nglib",
+        "-j",
+        "4"
+      ],
+      "returncode": 0,
+      "seconds": 145.24346075799997,
+      "log": "kernel_build.log",
+      "log_sha256": "b07f761523f5c17eda0e8095c9895f7fdf10ec5456cb9f30978edc9af60762ee"
+    },
+    "build_release": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/build_rotation_chain_experiment.py",
+        "--build-dir",
+        "/workspace/scratch/54cbe57ee0b5/build-review"
+      ],
+      "returncode": 0,
+      "seconds": 13.875709677999964,
+      "log": "build_release.log",
+      "log_sha256": "dd6b9835c7ea89fd2bcb758b9eaf4627669ef7d715510b0e1e1f996c29400cb2"
+    },
+    "build_profile": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/build_rotation_chain_experiment.py",
+        "--build-dir",
+        "/workspace/scratch/54cbe57ee0b5/build-review",
+        "--profile"
+      ],
+      "returncode": 0,
+      "seconds": 13.27906395499997,
+      "log": "build_profile.log",
+      "log_sha256": "17af16b275180d8c835fde1019bf20c4a665b12cd2ad0b7a263d571f5ee0fe4a"
+    },
+    "build_sanitize": {
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/scratch/54cbe57ee0b5/NETGEN-review/test_code_expansion/tests/build_rotation_chain_experiment.py",
+        "--build-dir",
+        "/workspace/scratch/54cbe57ee0b5/build-review",
+        "--sanitize"
+      ],
+      "returncode": 0,
+      "seconds": 27.595581485000025,
+      "log": "build_sanitize.log",
+      "log_sha256": "402b626981aa512ea5d3bbd7dc1c90c8778e09e0f0f2f6d654d1e4cd49f07298"
+    }
+  },
+  "run_count": 716,
+  "raw_sha256": "6f25bff4431642319ce565aa64945bdf32abe0f9e677234ec0f313f71685e5a4",
+  "finished_utc": "2026-11-05T08:22:01Z"
+}
