@@ -3,8 +3,9 @@ import os
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
-from run_rotation_chain_suite import check_group, check_run, summarize
+from run_rotation_chain_suite import check_group, check_run, summarize, resolve_tool
 
 
 def record(route, threads=4, seconds=1., status=0, batches=None):
@@ -15,6 +16,29 @@ def record(route, threads=4, seconds=1., status=0, batches=None):
 
 
 class GateTests(unittest.TestCase):
+    def test_tool_resolution_skips_non_directory_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); bad=root/'not_a_directory';bad.write_text('bad path entry')
+            binary=root/'cmake';binary.write_text('#!/bin/sh\n');binary.chmod(0o755)
+            with mock.patch.dict(os.environ, PATH=str(bad)+os.pathsep+str(root)):
+                self.assertEqual(resolve_tool('cmake',root,root/'build'),str(binary))
+
+    def test_tool_resolution_recovers_project_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);build=root/'build-netgen';build.mkdir()
+            binary=root/'custom-cmake';binary.write_text('#!/bin/sh\n');binary.chmod(0o755)
+            (build/'CMakeCache.txt').write_text('CMAKE_COMMAND:INTERNAL='+str(binary)+'\n')
+            with mock.patch.dict(os.environ, PATH=str(root/'missing')):
+                self.assertEqual(resolve_tool('cmake',root,root/'independent'),str(binary))
+
+    def test_explicit_tool_path_does_not_silently_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            with self.assertRaisesRegex(RuntimeError,'ROTATION_CMAKE'):
+                resolve_tool(str(root/'missing'),root,root/'build')
+            with self.assertRaises(RuntimeError):
+                resolve_tool(str(root),root,root/'build')
+
     def test_equivalence_and_fallback(self):
         check_group([record(-1, 1),record(0),record(1),record(2),record(3),record(2, 1)],2)
 
@@ -57,10 +81,14 @@ class GateTests(unittest.TestCase):
             (tests/'run_rotation_chain_suite.py').write_text('# fixture\n')
             wrapper=tests/'run_rotation_chain_suite.sh'
             wrapper.write_text(Path(__file__).with_name('run_rotation_chain_suite.sh').read_text())
+            cluster=root/'test_code_expansion/strong_scaling';cluster.mkdir()
+            (cluster/'cluster_env.sh').write_text('export GCCHOME="'+str(root)+'"\n')
             mock=root/'yhbatch'
             mock.write_text('#!/usr/bin/env python3\nimport json,sys\nprint(json.dumps(sys.argv[1:]))\n')
             mock.chmod(0o755)
-            env=dict(os.environ,PATH=str(root)+os.pathsep+os.environ['PATH'],ROTATION_SUITE_ROOT=str(root))
+            env=dict(os.environ,PATH=str(root)+os.pathsep+os.environ['PATH'],ROTATION_SUITE_ROOT=str(root),
+                     ROTATION_CC=str(mock),ROTATION_CXX=str(mock),
+                     ROTATION_CLUSTER_ENV=str(cluster/'cluster_env.sh'))
             result=subprocess.run(['bash',str(wrapper),'--submit','--blocks','4'],env=env,capture_output=True,text=True,check=True)
             args=json.loads(result.stdout)
             self.assertEqual(args.count('--job'),1)
@@ -68,10 +96,11 @@ class GateTests(unittest.TestCase):
             self.assertEqual(args[args.index('-N')+1],'1')
             self.assertEqual(args[-3:],['--job','--blocks','4'])
             mock.rename(root/'yhrun')
+            env.update(ROTATION_CC=str(root/'yhrun'),ROTATION_CXX=str(root/'yhrun'))
             # A spool path has no project beside it; the exported root must win.
             spool=root/'spool_script';spool.write_text(wrapper.read_text())
             result=subprocess.run(['bash',str(spool),'--job','--blocks','4'],env=dict(env,SLURM_JOB_ID='mock'),capture_output=True,text=True,check=True)
-            args=json.loads(result.stdout)
+            args=json.loads(result.stdout.strip().splitlines()[-1])
             self.assertIn('--cpu-bind=cores',args)
             self.assertIn(str(tests/'run_rotation_chain_suite.py'),args)
 

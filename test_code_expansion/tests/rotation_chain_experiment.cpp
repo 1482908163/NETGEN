@@ -20,7 +20,11 @@ void PrintProfile(const VolumeKernelStats *stats=nullptr) {
     <<",\"merge_wall\":"<<merge_wall<<",\"prepare_elapsed_sum\":"<<prepare_sum.load()
     <<",\"prepare_calls\":"<<prepare_calls.load()<<",\"worker_elapsed_sum\":"<<worker_sum
     <<",\"group_max_sum\":"<<group_max_sum<<",\"group_idle_proxy\":"<<group_idle_proxy
-    <<",\"groups\":"<<groups;
+    <<",\"groups\":"<<groups
+    <<",\"claim_elapsed_sum\":"<<claim_sum.load()<<",\"claim_attempts\":"<<claim_attempts.load()
+    <<",\"claim_successes\":"<<claim_successes.load()
+    <<",\"group_dispatch_wall\":"<<group_dispatch_wall<<",\"launch_delay_sum\":"<<launch_delay_sum
+    <<",\"completion_to_join_sum\":"<<completion_to_join_sum<<",\"join_tail_wall\":"<<join_tail_wall;
   if(stats)std::cout<<",\"baseline_rule_wall\":"<<stats->rule_values[9].load()
     <<",\"baseline_copy_wall\":"<<stats->rule_values[10].load()
     <<",\"baseline_dispatch_wall\":"<<stats->rule_values[11].load()
@@ -154,7 +158,11 @@ void TestRules() {
       std::vector<Slot> slots(workers);
       std::vector<std::vector<std::string>> diagnostic;
       std::vector<std::vector<double>> worker_times;
-      if constexpr(rotation_probe::enabled)worker_times.resize(workers,std::vector<double>(rotations,0));
+      std::vector<rotation_probe::Clock::time_point> group_starts,group_finishes;
+      if constexpr(rotation_probe::enabled) {
+        worker_times.resize(workers,std::vector<double>(rotations,0));
+        group_starts.resize(workers);group_finishes.resize(workers);
+      }
       {
       rotation_probe::WallTimer timer(rotation_probe::copy_wall);
       if(verify)diagnostic.resize(rotations,std::vector<std::string>(mesher.rules.Size()));
@@ -203,16 +211,37 @@ void TestRules() {
           rotation_probe::group_idle_proxy+=workers*largest-total;++rotation_probe::groups;
         }
       };
+      // Observe existing joins without adding a new barrier. The interval from
+      // task completion to host return is elapsed time, not CPU idle time.
+      auto dispatch_group=[&](int first,int end) {
+        rotation_probe::Clock::time_point begin{},joined{};
+        if constexpr(rotation_probe::enabled)begin=rotation_probe::Clock::now();
+        ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
+          if constexpr(rotation_probe::enabled)group_starts[worker]=rotation_probe::Clock::now();
+          for(int rotation=first;rotation<end;++rotation)search(worker,rotation);
+          if constexpr(rotation_probe::enabled)group_finishes[worker]=rotation_probe::Clock::now();
+        },workers);
+        if constexpr(rotation_probe::enabled) {
+          joined=rotation_probe::Clock::now();
+          const auto seconds=[](auto duration){return std::chrono::duration<double>(duration).count();};
+          auto last=group_finishes[0];
+          for(int w=0;w<workers;++w) {
+            rotation_probe::launch_delay_sum+=seconds(group_starts[w]-begin);
+            rotation_probe::completion_to_join_sum+=seconds(joined-group_finishes[w]);
+            last=std::max(last,group_finishes[w]);
+          }
+          rotation_probe::group_dispatch_wall+=seconds(joined-begin);
+          rotation_probe::join_tail_wall+=seconds(joined-last);
+        }
+      };
       {
         rotation_probe::WallTimer timer(rotation_probe::dispatch_wall);
         if(route==1) {
-          ngcore::ParallelFor(size_t(workers),[&](size_t worker) {
-            for(int rotation=0;rotation<rotations;++rotation)search(worker,rotation);
-          },workers);
+          dispatch_group(0,rotations);
           ++dispatches;++experiment_dispatches;record_group(0,rotations);
         } else for(int rotation=0;rotation<rotations;++rotation) {
           if(route==3)queues[0]->next.store(0,std::memory_order_relaxed);
-          ngcore::ParallelFor(size_t(workers),[&](size_t worker){search(worker,rotation);},workers);
+          dispatch_group(rotation,rotation+1);
           ++dispatches;++experiment_dispatches;record_group(rotation,rotation+1);
           if(verify && route==3)for(int id=0;id<mesher.rules.Size();++id)record_diagnostic(rotation,id);
         }

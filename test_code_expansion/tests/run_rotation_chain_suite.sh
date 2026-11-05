@@ -11,15 +11,25 @@ suite="${ROTATION_SUITE_ROOT}/test_code_expansion/tests/run_rotation_chain_suite
 if [[ "${1:-}" == --submit ]]; then
     shift
     command -v yhbatch >/dev/null || { echo '未找到 yhbatch；本地执行请去掉 --submit' >&2; exit 2; }
-    mkdir -p "${ROTATION_SUITE_ROOT}/build/rotation_chain_logs"
+    logdir="${ROTATION_SUITE_ROOT}/test_code_expansion/strong_scaling_results/rotation_chain_jobs"
+    mkdir -p "${logdir}"
     exec yhbatch -p "${ROTATION_PARTITION:-mt_module}" -N 1 -n 1 -c 4 \
-        --export=ALL --job-name=rotation-suite \
-        --output="${ROTATION_SUITE_ROOT}/build/rotation_chain_logs/suite-%j.log" \
+        --export=ALL --job-name=rotation-suite --chdir="${ROTATION_SUITE_ROOT}" \
+        --output="${logdir}/job-%j.log" \
         "${ROTATION_SUITE_ROOT}/test_code_expansion/tests/run_rotation_chain_suite.sh" --job "$@"
 fi
 if [[ "${1:-}" == --job ]]; then
     shift
     [[ -n "${SLURM_JOB_ID:-}" ]] || { echo '--job 只能在已分配作业内使用' >&2; exit 2; }
+    envfile="${ROTATION_CLUSTER_ENV:-${ROTATION_SUITE_ROOT}/test_code_expansion/strong_scaling/cluster_env.sh}"
+    [[ -r "${envfile}" ]] || { echo "找不到集群环境脚本：${envfile}" >&2; exit 2; }
+    # Reuse the established GCC/runtime setup, without requiring a production
+    # Netgen installation for this independent kernel build.
+    LOAD_MODULES="${ROTATION_LOAD_MODULES:-1}" CLUSTER_ENV_STRICT=0 source "${envfile}"
+    export CC="${ROTATION_CC:-${GCCHOME}/bin/gcc}"
+    export CXX="${ROTATION_CXX:-${GCCHOME}/bin/g++}"
+    [[ -x "${CC}" && -x "${CXX}" ]] || { echo "编译器不可执行：${CC} / ${CXX}" >&2; exit 2; }
+    echo "旋转链分项测试：1 节点、1 进程、4 核；CC=${CC}；CXX=${CXX}"
     exec yhrun -N 1 -n 1 -c 4 --cpu-bind=cores python3 "${suite}" "$@"
 fi
 exec python3 "${suite}" "$@"

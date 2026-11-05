@@ -42,6 +42,16 @@ source=source.replace(anchor,"""if(chain_state) {
             } else """+anchor)
 (build/'rotation_chain_meshing3.inc').write_text(source)
 rule_source=(repo/'netgen/libsrc/meshing/ruler3.cpp').read_text()
+anchor='  int Claim(int count) { int i=next.fetch_add(1,std::memory_order_relaxed);'
+assert rule_source.count(anchor)==1
+rule_source=rule_source.replace(anchor,'''  int Claim(int count) {
+    rotation_probe::ClaimTimer claim_timer;
+    int i=next.fetch_add(1,std::memory_order_relaxed);
+    if constexpr(rotation_probe::enabled)
+      if(i<int(order.size()))++rotation_probe::local_claim_successes;''')
+anchor='  // static Timer t("ruler3 - all"); RegionTimer reg(t);'
+assert rule_source.count(anchor)==1
+rule_source=rule_source.replace(anchor,'  rotation_probe::ClaimScope claim_scope;\n'+anchor)
 anchor='  // determine topological distance of faces and points to'
 assert rule_source.count(anchor)==1
 rule_source=rule_source.replace(anchor,'  rotation_probe::PrepareTimer rotation_prepare_timer;\n'+anchor)
