@@ -1,0 +1,2749 @@
+{
+  "schema": "rotation_chain_suite_v4",
+  "config": {
+    "build_dir": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "blocks": 12,
+    "memory_only": false,
+    "binary_source_sha256": {
+      "test_code_expansion/tests/run_rotation_chain_suite.py": "c03d1d06541361885758e0432826de1dab68b207f10cd0e9121d775f6e53493a",
+      "test_code_expansion/tests/test_rotation_chain_suite.py": "b383fbaf4a1b23ff743484c663825200ab0651a753b53deea48caae36d633a00",
+      "test_code_expansion/tests/run_rotation_chain_suite.sh": "76fe1c97686e0fc15584006f77b5689d046ae50aa3652bb593c4981d73d6c78a",
+      "test_code_expansion/tests/build_rotation_chain_suite.py": "4e4fd4a6265415237ccdce9959fe21202fe2cee347e0d818894842477a9dd9ae",
+      "test_code_expansion/tests/build_rotation_chain_experiment.py": "59acee2803a80ad1ca20ae175825683fde513bcf7e8db0f55c0b790ad7ac8775",
+      "test_code_expansion/tests/rotation_chain_experiment.cpp": "de0ac32661e5143c6d0f81d1d32f8a7c90bbc215d7964bf022d507c06727505b",
+      "test_code_expansion/tests/rotation_chain_probe.hpp": "4369c86b23ed27bb5284a1efab46865f2d5ec91d12ba5e25e2ff7a04cc2eb314",
+      "test_code_expansion/build_project.sh": "513ec171684230c79a0f04d3ff41883fab9f0a88805ede82e6508a665a04fcc4",
+      "test_code_expansion/strong_scaling/run_experiments.sh": "2131663ffa503be90a3bc299edc56f859de171256306b6ad471d8c1fd6c8aa29",
+      "test_code_expansion/strong_scaling/cluster_env.sh": "fb82bf809df6c44cf2d8b6620df45f011aa3d9024dae347f219c503ded7d9524",
+      "netgen/CMakeLists.txt": "f9d3618073c6d03d5cd63a1a90487144e5cee53278019903697deb07ebe87955",
+      "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+      "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d",
+      "netgen/libsrc/meshing/meshing3.hpp": "b80c27b5763ce4975595a7a433268a9ab9e2cd23c950f211f4c972753b9af9a2"
+    }
+  },
+  "source_sha256": {
+    "test_code_expansion/tests/run_rotation_chain_suite.py": "c03d1d06541361885758e0432826de1dab68b207f10cd0e9121d775f6e53493a",
+    "test_code_expansion/tests/test_rotation_chain_suite.py": "b383fbaf4a1b23ff743484c663825200ab0651a753b53deea48caae36d633a00",
+    "test_code_expansion/tests/run_rotation_chain_suite.sh": "76fe1c97686e0fc15584006f77b5689d046ae50aa3652bb593c4981d73d6c78a",
+    "test_code_expansion/tests/build_rotation_chain_suite.py": "4e4fd4a6265415237ccdce9959fe21202fe2cee347e0d818894842477a9dd9ae",
+    "test_code_expansion/tests/build_rotation_chain_experiment.py": "59acee2803a80ad1ca20ae175825683fde513bcf7e8db0f55c0b790ad7ac8775",
+    "test_code_expansion/tests/rotation_chain_experiment.cpp": "de0ac32661e5143c6d0f81d1d32f8a7c90bbc215d7964bf022d507c06727505b",
+    "test_code_expansion/tests/rotation_chain_probe.hpp": "4369c86b23ed27bb5284a1efab46865f2d5ec91d12ba5e25e2ff7a04cc2eb314",
+    "test_code_expansion/build_project.sh": "513ec171684230c79a0f04d3ff41883fab9f0a88805ede82e6508a665a04fcc4",
+    "test_code_expansion/strong_scaling/run_experiments.sh": "2131663ffa503be90a3bc299edc56f859de171256306b6ad471d8c1fd6c8aa29",
+    "test_code_expansion/strong_scaling/cluster_env.sh": "fb82bf809df6c44cf2d8b6620df45f011aa3d9024dae347f219c503ded7d9524",
+    "netgen/CMakeLists.txt": "f9d3618073c6d03d5cd63a1a90487144e5cee53278019903697deb07ebe87955",
+    "netgen/libsrc/meshing/ruler3.cpp": "52fa6419ffedc50129c49fba0879b19154e51bc0f7f2bf02ef9fbcee65f815c4",
+    "netgen/libsrc/meshing/meshing3.cpp": "ced46c5289153533623361fb041581fe1ab76084c4a0b531202447791794023d",
+    "netgen/libsrc/meshing/meshing3.hpp": "b80c27b5763ce4975595a7a433268a9ab9e2cd23c950f211f4c972753b9af9a2"
+  },
+  "platform": "Linux-5.4.0-65-mt+-aarch64-with-glibc2.29",
+  "cpu_max": null,
+  "started_utc": "2026-11-06T07:17:49Z",
+  "complete": false,
+  "routes": {
+    "0": "原动态队列",
+    "4": "上一轮动态整规则链",
+    "7": "任务内工作区及输入缓冲复用",
+    "8": "工作区复用与并行共享准备"
+  },
+  "builds": {
+    "sanitize": {
+      "binary_sha256": "84c8424bbb1340bf10cfb76bb7c354da480674c3f8f1bba128eb1e5f29e04f80",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "-O1",
+        "-g1",
+        "-fsanitize=address,undefined",
+        "-fno-omit-frame-pointer",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/rotation_chain_experiment_san"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4"
+    },
+    "release": {
+      "binary_sha256": "7669476b86dbc56faaf1b76cfbdecce2f56d271a1b59affe9809204ab0ace14c",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/rotation_chain_experiment"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4"
+    },
+    "ubsan": {
+      "binary_sha256": "97dffc52060d1b4faaf764a2c97a0213a516eb182617fb263e617c4d1859d417",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "-O1",
+        "-g1",
+        "-fsanitize=undefined",
+        "-fno-sanitize-recover=all",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/rotation_chain_experiment_ubsan"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4"
+    },
+    "profile": {
+      "binary_sha256": "b26bd24707a28c40ff0c71511281df611f08c28ad9811de2d6d7e80140407267",
+      "command": [
+        "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+        "-DHAVE_DLFCN_H",
+        "-Dnglib_EXPORTS",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/../install/include/opencascade",
+        "-O3",
+        "-DNDEBUG",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=gnu++17",
+        "-I/vol8/home/hnu_lhz/cjz/NETGEN/netgen/libsrc/meshing",
+        "-DROTATION_CHAIN_PROFILE=1",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests/rotation_chain_experiment.cpp",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_hexrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_prismrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_pyramidrules2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_quadrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_tetrules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/rules/rule_triarules.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/gzstream.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/hashtabl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/mystring.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/ngbitarray.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/optmem.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/parthreads.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/seti.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/sort.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/spbita2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/general/table.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/adtree.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geom3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomfuncs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/geomtest3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/spline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/splinegeometry.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/gprim/transform3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/bfgs.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/densemat.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linopt.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/linsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/linalg/polynomial.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/adfront3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bisect.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/clusters.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/curvedelems.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/delaunay2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/geomsearch.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/global.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/hprefinement.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve2gen.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/improve3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/localh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshclass.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshfunc2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/meshtype.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/msghandler.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/netrule3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parser3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/refine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/ruler2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/secondorder.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.5.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/smoothing3.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/specials.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/topology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/validate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/bcfunctions.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/parallelmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/paralleltop.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/basegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/python_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/surfacegeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/debugging.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/fieldlines.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/visual_interface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/meshing/boundarylayer_interpolate.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/meshstlsurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeomchart.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlgeommesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stlline.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltool.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/stltopology.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/stlgeom/python_stl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/nginterface_v2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/read_fnf_mesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readtetmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/readuser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeabaqus.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writediffpack.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writedolfin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeelmer.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefeap.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writefluent.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writejcm.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writepermas.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetecplot.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetet.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writetochnog.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/wuchemnitz.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writegmsh2.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/writeOpenFOAM15x.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_cgns.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/interface/rw_medit.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/algprim.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/brick.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/bspline2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgeom.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/csgparser.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/curve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/edgeflw.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/explicitcurve2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/extrusion.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/gencyl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/genmesh.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/identify.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/manifold.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/meshsurf.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/polyhedra.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/revolution.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/singularref.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/solid.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/specpoin.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/spline3d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/surface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/triapprox.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/zrefine.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/python_csg.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/csg/splinesurface.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/csg2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/genmesh2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/geometry2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/libsrc/geom2d/python_geom2d.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/ng/onetcl.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/CMakeFiles/nglib.dir/nglib/nglib.cpp.o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core/libngcore.so",
+        "-lz",
+        "-ldl",
+        "-pthread",
+        "-Wl,-rpath,/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/libsrc/core",
+        "-o",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4/rotation_chain_experiment_profile"
+      ],
+      "cwd": "/vol8/home/hnu_lhz/cjz/NETGEN/build/rotation_chain_workspace_v4"
+    }
+  },
+  "validation": {
+    "release/local/7/0": {
+      "passed": true,
+      "runs": [
+        "release/local/7/0/1/-1",
+        "release/local/7/0/4/0",
+        "release/local/7/0/1/4",
+        "release/local/7/0/2/4",
+        "release/local/7/0/4/4",
+        "release/local/7/0/1/7",
+        "release/local/7/0/2/7",
+        "release/local/7/0/4/7",
+        "release/local/7/0/1/8",
+        "release/local/7/0/2/8",
+        "release/local/7/0/4/8"
+      ],
+      "fingerprint": "32dd7d57d3eb2ba"
+    },
+    "release/local/7/1": {
+      "passed": true,
+      "runs": [
+        "release/local/7/1/1/-1",
+        "release/local/7/1/4/0",
+        "release/local/7/1/1/4",
+        "release/local/7/1/2/4",
+        "release/local/7/1/4/4",
+        "release/local/7/1/1/7",
+        "release/local/7/1/2/7",
+        "release/local/7/1/4/7",
+        "release/local/7/1/1/8",
+        "release/local/7/1/2/8",
+        "release/local/7/1/4/8"
+      ],
+      "fingerprint": "b848948156088b90"
+    },
+    "release/local/7/2": {
+      "passed": true,
+      "runs": [
+        "release/local/7/2/1/-1",
+        "release/local/7/2/4/0",
+        "release/local/7/2/1/4",
+        "release/local/7/2/2/4",
+        "release/local/7/2/4/4",
+        "release/local/7/2/1/7",
+        "release/local/7/2/2/7",
+        "release/local/7/2/4/7",
+        "release/local/7/2/1/8",
+        "release/local/7/2/2/8",
+        "release/local/7/2/4/8"
+      ],
+      "fingerprint": "f35411b0a0e69c5d"
+    },
+    "release/local/45/0": {
+      "passed": true,
+      "runs": [
+        "release/local/45/0/1/-1",
+        "release/local/45/0/4/0",
+        "release/local/45/0/1/4",
+        "release/local/45/0/2/4",
+        "release/local/45/0/4/4",
+        "release/local/45/0/1/7",
+        "release/local/45/0/2/7",
+        "release/local/45/0/4/7",
+        "release/local/45/0/1/8",
+        "release/local/45/0/2/8",
+        "release/local/45/0/4/8"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "release/local/45/1": {
+      "passed": true,
+      "runs": [
+        "release/local/45/1/1/-1",
+        "release/local/45/1/4/0",
+        "release/local/45/1/1/4",
+        "release/local/45/1/2/4",
+        "release/local/45/1/4/4",
+        "release/local/45/1/1/7",
+        "release/local/45/1/2/7",
+        "release/local/45/1/4/7",
+        "release/local/45/1/1/8",
+        "release/local/45/1/2/8",
+        "release/local/45/1/4/8"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "release/local/45/2": {
+      "passed": true,
+      "runs": [
+        "release/local/45/2/1/-1",
+        "release/local/45/2/4/0",
+        "release/local/45/2/1/4",
+        "release/local/45/2/2/4",
+        "release/local/45/2/4/4",
+        "release/local/45/2/1/7",
+        "release/local/45/2/2/7",
+        "release/local/45/2/4/7",
+        "release/local/45/2/1/8",
+        "release/local/45/2/2/8",
+        "release/local/45/2/4/8"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "release/front/0": {
+      "passed": true,
+      "runs": [
+        "release/front/0/1/-1",
+        "release/front/0/4/0",
+        "release/front/0/1/4",
+        "release/front/0/2/4",
+        "release/front/0/4/4",
+        "release/front/0/1/7",
+        "release/front/0/2/7",
+        "release/front/0/4/7",
+        "release/front/0/1/8",
+        "release/front/0/2/8",
+        "release/front/0/4/8"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1
+    },
+    "release/front/1": {
+      "passed": true,
+      "runs": [
+        "release/front/1/1/-1",
+        "release/front/1/4/0",
+        "release/front/1/1/4",
+        "release/front/1/2/4",
+        "release/front/1/4/4",
+        "release/front/1/1/7",
+        "release/front/1/2/7",
+        "release/front/1/4/7",
+        "release/front/1/1/8",
+        "release/front/1/2/8",
+        "release/front/1/4/8"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13
+    },
+    "release/front/2": {
+      "passed": true,
+      "runs": [
+        "release/front/2/1/-1",
+        "release/front/2/4/0",
+        "release/front/2/1/4",
+        "release/front/2/2/4",
+        "release/front/2/4/4",
+        "release/front/2/1/7",
+        "release/front/2/2/7",
+        "release/front/2/4/7",
+        "release/front/2/1/8",
+        "release/front/2/2/8",
+        "release/front/2/4/8"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140
+    },
+    "release/front/3": {
+      "passed": true,
+      "runs": [
+        "release/front/3/1/-1",
+        "release/front/3/4/0",
+        "release/front/3/1/4",
+        "release/front/3/2/4",
+        "release/front/3/4/4",
+        "release/front/3/1/7",
+        "release/front/3/2/7",
+        "release/front/3/4/7",
+        "release/front/3/1/8",
+        "release/front/3/2/8",
+        "release/front/3/4/8"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0
+    },
+    "release/front/4": {
+      "passed": true,
+      "runs": [
+        "release/front/4/1/-1",
+        "release/front/4/4/0",
+        "release/front/4/1/4",
+        "release/front/4/2/4",
+        "release/front/4/4/4",
+        "release/front/4/1/7",
+        "release/front/4/2/7",
+        "release/front/4/4/7",
+        "release/front/4/1/8",
+        "release/front/4/2/8",
+        "release/front/4/4/8"
+      ],
+      "fingerprint": "70b0da7e15d74a19",
+      "status": 0,
+      "elements": 1207
+    },
+    "release/front/5": {
+      "passed": true,
+      "runs": [
+        "release/front/5/1/-1",
+        "release/front/5/4/0",
+        "release/front/5/1/4",
+        "release/front/5/2/4",
+        "release/front/5/4/4",
+        "release/front/5/1/7",
+        "release/front/5/2/7",
+        "release/front/5/4/7",
+        "release/front/5/1/8",
+        "release/front/5/2/8",
+        "release/front/5/4/8"
+      ],
+      "fingerprint": "38fe4626d9daa991",
+      "status": 2,
+      "elements": 8634
+    },
+    "ubsan/local/45/0": {
+      "passed": true,
+      "runs": [
+        "ubsan/local/45/0/1/-1",
+        "ubsan/local/45/0/4/0",
+        "ubsan/local/45/0/2/4",
+        "ubsan/local/45/0/4/4",
+        "ubsan/local/45/0/2/7",
+        "ubsan/local/45/0/4/7",
+        "ubsan/local/45/0/2/8",
+        "ubsan/local/45/0/4/8"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "ubsan/local/45/1": {
+      "passed": true,
+      "runs": [
+        "ubsan/local/45/1/1/-1",
+        "ubsan/local/45/1/4/0",
+        "ubsan/local/45/1/2/4",
+        "ubsan/local/45/1/4/4",
+        "ubsan/local/45/1/2/7",
+        "ubsan/local/45/1/4/7",
+        "ubsan/local/45/1/2/8",
+        "ubsan/local/45/1/4/8"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "ubsan/local/45/2": {
+      "passed": true,
+      "runs": [
+        "ubsan/local/45/2/1/-1",
+        "ubsan/local/45/2/4/0",
+        "ubsan/local/45/2/2/4",
+        "ubsan/local/45/2/4/4",
+        "ubsan/local/45/2/2/7",
+        "ubsan/local/45/2/4/7",
+        "ubsan/local/45/2/2/8",
+        "ubsan/local/45/2/4/8"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "ubsan/front/0": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/0/1/-1",
+        "ubsan/front/0/4/0",
+        "ubsan/front/0/2/4",
+        "ubsan/front/0/4/4",
+        "ubsan/front/0/2/7",
+        "ubsan/front/0/4/7",
+        "ubsan/front/0/2/8",
+        "ubsan/front/0/4/8"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1,
+      "cross_build_equal": true
+    },
+    "ubsan/front/1": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/1/1/-1",
+        "ubsan/front/1/4/0",
+        "ubsan/front/1/2/4",
+        "ubsan/front/1/4/4",
+        "ubsan/front/1/2/7",
+        "ubsan/front/1/4/7",
+        "ubsan/front/1/2/8",
+        "ubsan/front/1/4/8"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13,
+      "cross_build_equal": true
+    },
+    "ubsan/front/2": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/2/1/-1",
+        "ubsan/front/2/4/0",
+        "ubsan/front/2/2/4",
+        "ubsan/front/2/4/4",
+        "ubsan/front/2/2/7",
+        "ubsan/front/2/4/7",
+        "ubsan/front/2/2/8",
+        "ubsan/front/2/4/8"
+      ],
+      "fingerprint": "1f14fd91cd491262",
+      "status": 0,
+      "elements": 140,
+      "cross_build_equal": false
+    },
+    "ubsan/front/3": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/3/1/-1",
+        "ubsan/front/3/4/0",
+        "ubsan/front/3/2/4",
+        "ubsan/front/3/4/4",
+        "ubsan/front/3/2/7",
+        "ubsan/front/3/4/7",
+        "ubsan/front/3/2/8",
+        "ubsan/front/3/4/8"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0,
+      "cross_build_equal": true
+    },
+    "ubsan/front/4": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/4/1/-1",
+        "ubsan/front/4/4/0",
+        "ubsan/front/4/2/4",
+        "ubsan/front/4/4/4",
+        "ubsan/front/4/2/7",
+        "ubsan/front/4/4/7",
+        "ubsan/front/4/2/8",
+        "ubsan/front/4/4/8"
+      ],
+      "fingerprint": "9e47b3f9b523493c",
+      "status": 0,
+      "elements": 1197,
+      "cross_build_equal": false
+    },
+    "ubsan/front/5": {
+      "passed": true,
+      "runs": [
+        "ubsan/front/5/1/-1",
+        "ubsan/front/5/4/0",
+        "ubsan/front/5/2/4",
+        "ubsan/front/5/4/4",
+        "ubsan/front/5/2/7",
+        "ubsan/front/5/4/7",
+        "ubsan/front/5/2/8",
+        "ubsan/front/5/4/8"
+      ],
+      "fingerprint": "d74c8b8993c04e00",
+      "status": 2,
+      "elements": 8731,
+      "cross_build_equal": false
+    },
+    "profile/local/45/0": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/0/1/-1",
+        "profile/local/45/0/4/0",
+        "profile/local/45/0/2/4",
+        "profile/local/45/0/4/4",
+        "profile/local/45/0/2/7",
+        "profile/local/45/0/4/7",
+        "profile/local/45/0/2/8",
+        "profile/local/45/0/4/8"
+      ],
+      "fingerprint": "617f98a83ced2ca0"
+    },
+    "profile/local/45/1": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/1/1/-1",
+        "profile/local/45/1/4/0",
+        "profile/local/45/1/2/4",
+        "profile/local/45/1/4/4",
+        "profile/local/45/1/2/7",
+        "profile/local/45/1/4/7",
+        "profile/local/45/1/2/8",
+        "profile/local/45/1/4/8"
+      ],
+      "fingerprint": "a68109aea955130e"
+    },
+    "profile/local/45/2": {
+      "passed": true,
+      "runs": [
+        "profile/local/45/2/1/-1",
+        "profile/local/45/2/4/0",
+        "profile/local/45/2/2/4",
+        "profile/local/45/2/4/4",
+        "profile/local/45/2/2/7",
+        "profile/local/45/2/4/7",
+        "profile/local/45/2/2/8",
+        "profile/local/45/2/4/8"
+      ],
+      "fingerprint": "b52827cddc23c104"
+    },
+    "profile/front/0": {
+      "passed": true,
+      "runs": [
+        "profile/front/0/1/-1",
+        "profile/front/0/4/0",
+        "profile/front/0/2/4",
+        "profile/front/0/4/4",
+        "profile/front/0/2/7",
+        "profile/front/0/4/7",
+        "profile/front/0/2/8",
+        "profile/front/0/4/8"
+      ],
+      "fingerprint": "28f8e80405352c38",
+      "status": 0,
+      "elements": 1,
+      "cross_build_equal": true
+    },
+    "profile/front/1": {
+      "passed": true,
+      "runs": [
+        "profile/front/1/1/-1",
+        "profile/front/1/4/0",
+        "profile/front/1/2/4",
+        "profile/front/1/4/4",
+        "profile/front/1/2/7",
+        "profile/front/1/4/7",
+        "profile/front/1/2/8",
+        "profile/front/1/4/8"
+      ],
+      "fingerprint": "a471f4161e424afe",
+      "status": 0,
+      "elements": 13,
+      "cross_build_equal": true
+    },
+    "profile/front/2": {
+      "passed": true,
+      "runs": [
+        "profile/front/2/1/-1",
+        "profile/front/2/4/0",
+        "profile/front/2/2/4",
+        "profile/front/2/4/4",
+        "profile/front/2/2/7",
+        "profile/front/2/4/7",
+        "profile/front/2/2/8",
+        "profile/front/2/4/8"
+      ],
+      "fingerprint": "4d5466100ac6acab",
+      "status": 0,
+      "elements": 140,
+      "cross_build_equal": true
+    },
+    "profile/front/3": {
+      "passed": true,
+      "runs": [
+        "profile/front/3/1/-1",
+        "profile/front/3/4/0",
+        "profile/front/3/2/4",
+        "profile/front/3/4/4",
+        "profile/front/3/2/7",
+        "profile/front/3/4/7",
+        "profile/front/3/2/8",
+        "profile/front/3/4/8"
+      ],
+      "fingerprint": "23eac351f18093fa",
+      "status": 2,
+      "elements": 0,
+      "cross_build_equal": true
+    },
+    "profile/front/4": {
+      "passed": true,
+      "runs": [
+        "profile/front/4/1/-1",
+        "profile/front/4/4/0",
+        "profile/front/4/2/4",
+        "profile/front/4/4/4",
+        "profile/front/4/2/7",
+        "profile/front/4/4/7",
+        "profile/front/4/2/8",
+        "profile/front/4/4/8"
+      ],
+      "fingerprint": "70b0da7e15d74a19",
+      "status": 0,
+      "elements": 1207,
+      "cross_build_equal": true
+    },
+    "profile/front/5": {
+      "passed": true,
+      "runs": [
+        "profile/front/5/1/-1",
+        "profile/front/5/4/0",
+        "profile/front/5/2/4",
+        "profile/front/5/4/4",
+        "profile/front/5/2/7",
+        "profile/front/5/4/7",
+        "profile/front/5/2/8",
+        "profile/front/5/4/8"
+      ],
+      "fingerprint": "38fe4626d9daa991",
+      "status": 2,
+      "elements": 8634,
+      "cross_build_equal": true
+    }
+  },
+  "benchmarks": {
+    "local/7/0": {
+      "orders": [
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ],
+        [
+          8,
+          7,
+          4,
+          0
+        ],
+        [
+          7,
+          4,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          8,
+          7
+        ],
+        [
+          0,
+          8,
+          7,
+          4
+        ],
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/7/0/0/0",
+          "4": "benchmark/local/7/0/0/4",
+          "7": "benchmark/local/7/0/0/7",
+          "8": "benchmark/local/7/0/0/8"
+        },
+        {
+          "4": "benchmark/local/7/0/1/4",
+          "7": "benchmark/local/7/0/1/7",
+          "8": "benchmark/local/7/0/1/8",
+          "0": "benchmark/local/7/0/1/0"
+        },
+        {
+          "7": "benchmark/local/7/0/2/7",
+          "8": "benchmark/local/7/0/2/8",
+          "0": "benchmark/local/7/0/2/0",
+          "4": "benchmark/local/7/0/2/4"
+        },
+        {
+          "8": "benchmark/local/7/0/3/8",
+          "0": "benchmark/local/7/0/3/0",
+          "4": "benchmark/local/7/0/3/4",
+          "7": "benchmark/local/7/0/3/7"
+        },
+        {
+          "8": "benchmark/local/7/0/4/8",
+          "7": "benchmark/local/7/0/4/7",
+          "4": "benchmark/local/7/0/4/4",
+          "0": "benchmark/local/7/0/4/0"
+        },
+        {
+          "7": "benchmark/local/7/0/5/7",
+          "4": "benchmark/local/7/0/5/4",
+          "0": "benchmark/local/7/0/5/0",
+          "8": "benchmark/local/7/0/5/8"
+        },
+        {
+          "4": "benchmark/local/7/0/6/4",
+          "0": "benchmark/local/7/0/6/0",
+          "8": "benchmark/local/7/0/6/8",
+          "7": "benchmark/local/7/0/6/7"
+        },
+        {
+          "0": "benchmark/local/7/0/7/0",
+          "8": "benchmark/local/7/0/7/8",
+          "7": "benchmark/local/7/0/7/7",
+          "4": "benchmark/local/7/0/7/4"
+        },
+        {
+          "0": "benchmark/local/7/0/8/0",
+          "4": "benchmark/local/7/0/8/4",
+          "7": "benchmark/local/7/0/8/7",
+          "8": "benchmark/local/7/0/8/8"
+        },
+        {
+          "4": "benchmark/local/7/0/9/4",
+          "7": "benchmark/local/7/0/9/7",
+          "8": "benchmark/local/7/0/9/8",
+          "0": "benchmark/local/7/0/9/0"
+        },
+        {
+          "7": "benchmark/local/7/0/10/7",
+          "8": "benchmark/local/7/0/10/8",
+          "0": "benchmark/local/7/0/10/0",
+          "4": "benchmark/local/7/0/10/4"
+        },
+        {
+          "8": "benchmark/local/7/0/11/8",
+          "0": "benchmark/local/7/0/11/0",
+          "4": "benchmark/local/7/0/11/4",
+          "7": "benchmark/local/7/0/11/7"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/7/0/-1",
+      "comparisons": {
+        "0->7": {
+          "paired_reduction_pct": [
+            17.18574040124489,
+            16.680893503030646,
+            17.65347765747184,
+            17.18161269338264,
+            16.003253803207695,
+            18.022157084478515,
+            18.11482535174801,
+            17.45604772577368,
+            16.687904024898124,
+            16.88641260587065,
+            17.644009602867403,
+            17.699628952218916
+          ],
+          "median_pct": 17.320894063509286,
+          "wins": 12,
+          "count": 12
+        },
+        "0->8": {
+          "paired_reduction_pct": [
+            13.709405186092512,
+            13.919451766640904,
+            13.200171009643217,
+            13.810755791028791,
+            14.18340614175838,
+            15.736803027428543,
+            13.372198303704529,
+            14.482727311196715,
+            13.305177335336152,
+            15.852649532315379,
+            15.595094058153478,
+            14.064590676845235
+          ],
+          "median_pct": 13.99202122174307,
+          "wins": 12,
+          "count": 12
+        },
+        "4->7": {
+          "paired_reduction_pct": [
+            28.494684704681056,
+            28.34793187563757,
+            31.075442874299142,
+            28.66506256878318,
+            27.194638149671917,
+            30.753654684203322,
+            29.472423362435613,
+            30.192319354081818,
+            28.642715129179027,
+            28.592804707024452,
+            29.548945086292054,
+            30.23805001776289
+          ],
+          "median_pct": 29.068742965609395,
+          "wins": 12,
+          "count": 12
+        },
+        "7->8": {
+          "paired_reduction_pct": [
+            -4.197749556653202,
+            -3.3142959070140576,
+            -5.408008160083159,
+            -4.070179355067582,
+            -2.1665692349387844,
+            -2.7877704215821346,
+            -5.791801835211352,
+            -3.6021057056960926,
+            -4.060306789752251,
+            -1.2437955164335652,
+            -2.4878767589749735,
+            -4.416794516349497
+          ],
+          "median_pct": -3.8312062477241717,
+          "wins": 0,
+          "count": 12
+        }
+      }
+    },
+    "local/45/0": {
+      "orders": [
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ],
+        [
+          8,
+          7,
+          4,
+          0
+        ],
+        [
+          7,
+          4,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          8,
+          7
+        ],
+        [
+          0,
+          8,
+          7,
+          4
+        ],
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/local/45/0/0/0",
+          "4": "benchmark/local/45/0/0/4",
+          "7": "benchmark/local/45/0/0/7",
+          "8": "benchmark/local/45/0/0/8"
+        },
+        {
+          "4": "benchmark/local/45/0/1/4",
+          "7": "benchmark/local/45/0/1/7",
+          "8": "benchmark/local/45/0/1/8",
+          "0": "benchmark/local/45/0/1/0"
+        },
+        {
+          "7": "benchmark/local/45/0/2/7",
+          "8": "benchmark/local/45/0/2/8",
+          "0": "benchmark/local/45/0/2/0",
+          "4": "benchmark/local/45/0/2/4"
+        },
+        {
+          "8": "benchmark/local/45/0/3/8",
+          "0": "benchmark/local/45/0/3/0",
+          "4": "benchmark/local/45/0/3/4",
+          "7": "benchmark/local/45/0/3/7"
+        },
+        {
+          "8": "benchmark/local/45/0/4/8",
+          "7": "benchmark/local/45/0/4/7",
+          "4": "benchmark/local/45/0/4/4",
+          "0": "benchmark/local/45/0/4/0"
+        },
+        {
+          "7": "benchmark/local/45/0/5/7",
+          "4": "benchmark/local/45/0/5/4",
+          "0": "benchmark/local/45/0/5/0",
+          "8": "benchmark/local/45/0/5/8"
+        },
+        {
+          "4": "benchmark/local/45/0/6/4",
+          "0": "benchmark/local/45/0/6/0",
+          "8": "benchmark/local/45/0/6/8",
+          "7": "benchmark/local/45/0/6/7"
+        },
+        {
+          "0": "benchmark/local/45/0/7/0",
+          "8": "benchmark/local/45/0/7/8",
+          "7": "benchmark/local/45/0/7/7",
+          "4": "benchmark/local/45/0/7/4"
+        },
+        {
+          "0": "benchmark/local/45/0/8/0",
+          "4": "benchmark/local/45/0/8/4",
+          "7": "benchmark/local/45/0/8/7",
+          "8": "benchmark/local/45/0/8/8"
+        },
+        {
+          "4": "benchmark/local/45/0/9/4",
+          "7": "benchmark/local/45/0/9/7",
+          "8": "benchmark/local/45/0/9/8",
+          "0": "benchmark/local/45/0/9/0"
+        },
+        {
+          "7": "benchmark/local/45/0/10/7",
+          "8": "benchmark/local/45/0/10/8",
+          "0": "benchmark/local/45/0/10/0",
+          "4": "benchmark/local/45/0/10/4"
+        },
+        {
+          "8": "benchmark/local/45/0/11/8",
+          "0": "benchmark/local/45/0/11/0",
+          "4": "benchmark/local/45/0/11/4",
+          "7": "benchmark/local/45/0/11/7"
+        }
+      ],
+      "warmup_prefix": "benchmark/local/45/0/-1",
+      "comparisons": {
+        "0->7": {
+          "paired_reduction_pct": [
+            3.5780496485978754,
+            4.361809213835055,
+            5.885366341721691,
+            6.319959639461149,
+            7.229603524633927,
+            4.7838831725856705,
+            5.330148899120399,
+            4.855816565299538,
+            5.326450721043361,
+            5.743053149267714,
+            3.7031665652785772,
+            4.836444572160946
+          ],
+          "median_pct": 5.09113364317145,
+          "wins": 12,
+          "count": 12
+        },
+        "0->8": {
+          "paired_reduction_pct": [
+            3.4409734435192667,
+            4.790372257902479,
+            1.7727601032970703,
+            5.9675969245225415,
+            3.111820106776149,
+            5.255929467469181,
+            3.9342156849314955,
+            4.934310204778454,
+            2.231513211181296,
+            3.6313607802474865,
+            3.488389770263258,
+            3.9856477260161545
+          ],
+          "median_pct": 3.782788232589491,
+          "wins": 12,
+          "count": 12
+        },
+        "4->7": {
+          "paired_reduction_pct": [
+            13.979442269518398,
+            13.043376690860535,
+            14.734360282056377,
+            13.867718011744252,
+            14.355945826659342,
+            10.335096081891534,
+            12.982875577861773,
+            12.012974182399859,
+            12.869510136838558,
+            13.195933068675886,
+            12.66595840197767,
+            12.76557551756126
+          ],
+          "median_pct": 13.013126134361155,
+          "wins": 12,
+          "count": 12
+        },
+        "7->8": {
+          "paired_reduction_pct": [
+            -0.14216286289485486,
+            0.4481086902047706,
+            -4.369784037365667,
+            -0.3761342475755753,
+            -4.438682569337946,
+            0.4957630185015066,
+            -1.4745277381934467,
+            0.08249967222934639,
+            -3.2690625136940814,
+            -2.240357278243223,
+            -0.22303619688690407,
+            -0.8940364221573635
+          ],
+          "median_pct": -0.6350853348664693,
+          "wins": 3,
+          "count": 12
+        }
+      }
+    },
+    "front/2": {
+      "orders": [
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ],
+        [
+          8,
+          7,
+          4,
+          0
+        ],
+        [
+          7,
+          4,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          8,
+          7
+        ],
+        [
+          0,
+          8,
+          7,
+          4
+        ],
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/2/0/0",
+          "4": "benchmark/front/2/0/4",
+          "7": "benchmark/front/2/0/7",
+          "8": "benchmark/front/2/0/8"
+        },
+        {
+          "4": "benchmark/front/2/1/4",
+          "7": "benchmark/front/2/1/7",
+          "8": "benchmark/front/2/1/8",
+          "0": "benchmark/front/2/1/0"
+        },
+        {
+          "7": "benchmark/front/2/2/7",
+          "8": "benchmark/front/2/2/8",
+          "0": "benchmark/front/2/2/0",
+          "4": "benchmark/front/2/2/4"
+        },
+        {
+          "8": "benchmark/front/2/3/8",
+          "0": "benchmark/front/2/3/0",
+          "4": "benchmark/front/2/3/4",
+          "7": "benchmark/front/2/3/7"
+        },
+        {
+          "8": "benchmark/front/2/4/8",
+          "7": "benchmark/front/2/4/7",
+          "4": "benchmark/front/2/4/4",
+          "0": "benchmark/front/2/4/0"
+        },
+        {
+          "7": "benchmark/front/2/5/7",
+          "4": "benchmark/front/2/5/4",
+          "0": "benchmark/front/2/5/0",
+          "8": "benchmark/front/2/5/8"
+        },
+        {
+          "4": "benchmark/front/2/6/4",
+          "0": "benchmark/front/2/6/0",
+          "8": "benchmark/front/2/6/8",
+          "7": "benchmark/front/2/6/7"
+        },
+        {
+          "0": "benchmark/front/2/7/0",
+          "8": "benchmark/front/2/7/8",
+          "7": "benchmark/front/2/7/7",
+          "4": "benchmark/front/2/7/4"
+        },
+        {
+          "0": "benchmark/front/2/8/0",
+          "4": "benchmark/front/2/8/4",
+          "7": "benchmark/front/2/8/7",
+          "8": "benchmark/front/2/8/8"
+        },
+        {
+          "4": "benchmark/front/2/9/4",
+          "7": "benchmark/front/2/9/7",
+          "8": "benchmark/front/2/9/8",
+          "0": "benchmark/front/2/9/0"
+        },
+        {
+          "7": "benchmark/front/2/10/7",
+          "8": "benchmark/front/2/10/8",
+          "0": "benchmark/front/2/10/0",
+          "4": "benchmark/front/2/10/4"
+        },
+        {
+          "8": "benchmark/front/2/11/8",
+          "0": "benchmark/front/2/11/0",
+          "4": "benchmark/front/2/11/4",
+          "7": "benchmark/front/2/11/7"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/2/-1",
+      "comparisons": {
+        "0->7": {
+          "paired_reduction_pct": [
+            24.82503489977267,
+            -7.018649408705601,
+            -12.873003333117609,
+            16.539019493541836,
+            -1.8914265534004704,
+            10.665795390198117,
+            49.09000054544879,
+            10.827417949720594,
+            -29.3891581771608,
+            -3.9677709725265533,
+            23.016945874542596,
+            -10.22675219452687
+          ],
+          "median_pct": 4.387184418398823,
+          "wins": 6,
+          "count": 12
+        },
+        "0->8": {
+          "paired_reduction_pct": [
+            41.3987400392516,
+            4.709008026120705,
+            -12.02279060515385,
+            7.583398386521423,
+            -3.535840168090556,
+            -59.85486796764273,
+            24.42706907698504,
+            14.510999711723164,
+            12.883284457209466,
+            15.410851513334986,
+            32.74871882186752,
+            13.966314136341909
+          ],
+          "median_pct": 13.424799296775689,
+          "wins": 9,
+          "count": 12
+        },
+        "4->7": {
+          "paired_reduction_pct": [
+            3.399746523578985,
+            13.43208570761173,
+            8.30356403442669,
+            17.541204969111792,
+            -17.672691560536876,
+            24.09942835268021,
+            33.84116320287347,
+            3.72173917331011,
+            -26.66926137263404,
+            6.395701385936248,
+            39.26134998170363,
+            24.79900872436053
+          ],
+          "median_pct": 10.86782487101921,
+          "wins": 10,
+          "count": 12
+        },
+        "7->8": {
+          "paired_reduction_pct": [
+            22.04684114902078,
+            10.958517510381045,
+            0.7532471918502592,
+            -10.730309005089433,
+            -1.6138881065015431,
+            -78.94027116026196,
+            -48.44417940031807,
+            4.130845689682516,
+            32.67077646219048,
+            18.639066996042775,
+            12.641448248422689,
+            21.94845248472271
+          ],
+          "median_pct": 7.5446816000317805,
+          "wins": 8,
+          "count": 12
+        }
+      }
+    },
+    "front/4": {
+      "orders": [
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ],
+        [
+          8,
+          7,
+          4,
+          0
+        ],
+        [
+          7,
+          4,
+          0,
+          8
+        ],
+        [
+          4,
+          0,
+          8,
+          7
+        ],
+        [
+          0,
+          8,
+          7,
+          4
+        ],
+        [
+          0,
+          4,
+          7,
+          8
+        ],
+        [
+          4,
+          7,
+          8,
+          0
+        ],
+        [
+          7,
+          8,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          4,
+          7
+        ]
+      ],
+      "blocks": [
+        {
+          "0": "benchmark/front/4/0/0",
+          "4": "benchmark/front/4/0/4",
+          "7": "benchmark/front/4/0/7",
+          "8": "benchmark/front/4/0/8"
+        },
+        {
+          "4": "benchmark/front/4/1/4",
+          "7": "benchmark/front/4/1/7",
+          "8": "benchmark/front/4/1/8",
+          "0": "benchmark/front/4/1/0"
+        },
+        {
+          "7": "benchmark/front/4/2/7",
+          "8": "benchmark/front/4/2/8",
+          "0": "benchmark/front/4/2/0",
+          "4": "benchmark/front/4/2/4"
+        },
+        {
+          "8": "benchmark/front/4/3/8",
+          "0": "benchmark/front/4/3/0",
+          "4": "benchmark/front/4/3/4",
+          "7": "benchmark/front/4/3/7"
+        },
+        {
+          "8": "benchmark/front/4/4/8",
+          "7": "benchmark/front/4/4/7",
+          "4": "benchmark/front/4/4/4",
+          "0": "benchmark/front/4/4/0"
+        },
+        {
+          "7": "benchmark/front/4/5/7",
+          "4": "benchmark/front/4/5/4",
+          "0": "benchmark/front/4/5/0",
+          "8": "benchmark/front/4/5/8"
+        },
+        {
+          "4": "benchmark/front/4/6/4",
+          "0": "benchmark/front/4/6/0",
+          "8": "benchmark/front/4/6/8",
+          "7": "benchmark/front/4/6/7"
+        },
+        {
+          "0": "benchmark/front/4/7/0",
+          "8": "benchmark/front/4/7/8",
+          "7": "benchmark/front/4/7/7",
+          "4": "benchmark/front/4/7/4"
+        },
+        {
+          "0": "benchmark/front/4/8/0",
+          "4": "benchmark/front/4/8/4",
+          "7": "benchmark/front/4/8/7",
+          "8": "benchmark/front/4/8/8"
+        },
+        {
+          "4": "benchmark/front/4/9/4",
+          "7": "benchmark/front/4/9/7",
+          "8": "benchmark/front/4/9/8",
+          "0": "benchmark/front/4/9/0"
+        },
+        {
+          "7": "benchmark/front/4/10/7",
+          "8": "benchmark/front/4/10/8",
+          "0": "benchmark/front/4/10/0",
+          "4": "benchmark/front/4/10/4"
+        },
+        {
+          "8": "benchmark/front/4/11/8",
+          "0": "benchmark/front/4/11/0",
+          "4": "benchmark/front/4/11/4",
+          "7": "benchmark/front/4/11/7"
+        }
+      ],
+      "warmup_prefix": "benchmark/front/4/-1",
+      "comparisons": {
+        "0->7": {
+          "paired_reduction_pct": [
+            -0.3543766263741827,
+            0.2579464255789734,
+            0.16821465495164237,
+            -4.750161473522844,
+            4.94023337986545,
+            2.357018410183164,
+            -0.4709296339050449,
+            4.366754375581792,
+            -1.4031528999282887,
+            -0.09388151781659557,
+            -0.6678631712222144,
+            0.513401643548891
+          ],
+          "median_pct": 0.0371665685675234,
+          "wins": 6,
+          "count": 12
+        },
+        "0->8": {
+          "paired_reduction_pct": [
+            15.75068946783918,
+            14.904563427217363,
+            9.350808674367812,
+            13.458833637879685,
+            20.253603653316134,
+            18.557042325409167,
+            16.909078952394275,
+            22.570235957672196,
+            16.880844271193677,
+            15.516036802890545,
+            16.598502142298972,
+            18.55172983406155
+          ],
+          "median_pct": 16.739673206746325,
+          "wins": 12,
+          "count": 12
+        },
+        "4->7": {
+          "paired_reduction_pct": [
+            9.058031057363449,
+            8.919941362543812,
+            10.022798618579634,
+            6.8337729056990195,
+            16.596044218247034,
+            11.088868600311367,
+            8.22795061756759,
+            11.15022591218908,
+            10.287373358685869,
+            9.243336475159026,
+            10.6727473586334,
+            11.588891594151344
+          ],
+          "median_pct": 10.155085988632752,
+          "wins": 12,
+          "count": 12
+        },
+        "7->8": {
+          "paired_reduction_pct": [
+            16.04819504202947,
+            14.684495131945562,
+            9.19806651526705,
+            17.383262092636606,
+            16.109202471161094,
+            16.591078694503427,
+            17.298544613480157,
+            19.034679272082005,
+            18.030994745465055,
+            15.595277237728654,
+            17.151814660209357,
+            18.131415174014723
+          ],
+          "median_pct": 16.871446677356392,
+          "wins": 12,
+          "count": 12
+        }
+      }
+    }
+  },
+  "profile_samples": {
+    "2/0": [
+      "profile_measure/2/0/0",
+      "profile_measure/2/0/1",
+      "profile_measure/2/0/2"
+    ],
+    "2/4": [
+      "profile_measure/2/4/0",
+      "profile_measure/2/4/1",
+      "profile_measure/2/4/2"
+    ],
+    "2/7": [
+      "profile_measure/2/7/0",
+      "profile_measure/2/7/1",
+      "profile_measure/2/7/2"
+    ],
+    "2/8": [
+      "profile_measure/2/8/0",
+      "profile_measure/2/8/1",
+      "profile_measure/2/8/2"
+    ],
+    "4/0": [
+      "profile_measure/4/0/0",
+      "profile_measure/4/0/1",
+      "profile_measure/4/0/2"
+    ],
+    "4/4": [
+      "profile_measure/4/4/0",
+      "profile_measure/4/4/1",
+      "profile_measure/4/4/2"
+    ],
+    "4/7": [
+      "profile_measure/4/7/0",
+      "profile_measure/4/7/1",
+      "profile_measure/4/7/2"
+    ],
+    "4/8": [
+      "profile_measure/4/8/0",
+      "profile_measure/4/8/1",
+      "profile_measure/4/8/2"
+    ]
+  },
+  "expected_run_count": 580,
+  "environment": {
+    "scheduler_job": "7288137",
+    "build_environment": {
+      "cmake": "/usr/bin/cmake",
+      "make_program": "/usr/bin/make",
+      "cc": "/vol8/home/hnu_lhz/cjz/gcc-12/bin/gcc",
+      "cxx": "/vol8/home/hnu_lhz/cjz/gcc-12/bin/g++",
+      "native_arch": false
+    },
+    "memory_limits": {
+      "RLIMIT_AS": [
+        -1,
+        -1
+      ],
+      "RLIMIT_DATA": [
+        -1,
+        -1
+      ],
+      "RLIMIT_STACK": [
+        -1,
+        -1
+      ]
+    }
+  },
+  "address_check": {
+    "status": "blocked",
+    "reason": "地址检查器无法预留影子虚拟地址空间；限制已记录，未更改系统或作业限制"
+  },
+  "commands": {
+    "driver_tests": {
+      "argv": [
+        "/usr/bin/python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/tests",
+        "-p",
+        "test_rotation_chain_suite.py",
+        "-v"
+      ],
+      "returncode": 0,
+      "launch_error": null,
+      "seconds": 0.6835423400625587,
+      "log": "driver_tests.txt",
+      "log_sha256": "bb5c4adf51aa6528961c88746565684e877f726c7dd3a8f3b49c039c29cd6a89"
+    }
+  },
+  "cost_breakdown": {
+    "2/0": {
+      "median_seconds": {
+        "input_wall": 0,
+        "copy_wall": 0,
+        "queue_wall": 0,
+        "chain_claim_sum": 0,
+        "worker_copy_sum": 0,
+        "worker_init_sum": 0,
+        "shared_prepare_wall": 0,
+        "prepare_elapsed_sum": 0.016335125000000054,
+        "group_dispatch_wall": 0,
+        "launch_delay_sum": 0,
+        "completion_to_join_sum": 0,
+        "join_tail_wall": 0
+      },
+      "claim_attempts": [
+        15066,
+        15066,
+        15066
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "2/4": {
+      "median_seconds": {
+        "input_wall": 0.0007096269999999996,
+        "copy_wall": 0.00043086799999999994,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.0009478329999999987,
+        "worker_copy_sum": 0.007243116999999995,
+        "worker_init_sum": 0,
+        "shared_prepare_wall": 0.0037531820000000007,
+        "prepare_elapsed_sum": 0.0015044830000000059,
+        "group_dispatch_wall": 0.018823996,
+        "launch_delay_sum": 0.0008503740000000001,
+        "completion_to_join_sum": 0.0030142629999999936,
+        "join_tail_wall": 0.000101961
+      },
+      "claim_attempts": [
+        26244,
+        26244,
+        26244
+      ],
+      "claim_successes": [
+        13122,
+        13122,
+        13122
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 13122,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 13122,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 13122,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "2/7": {
+      "median_seconds": {
+        "input_wall": 0.0007070259999999999,
+        "copy_wall": 0.0004420210000000001,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.0008505849999999986,
+        "worker_copy_sum": 0.0010817530000000017,
+        "worker_init_sum": 0.003985692999999999,
+        "shared_prepare_wall": 0.003740166000000001,
+        "prepare_elapsed_sum": 0.0010265719999998529,
+        "group_dispatch_wall": 0.013862845000000006,
+        "launch_delay_sum": 0.0008590850000000003,
+        "completion_to_join_sum": 0.005412683000000007,
+        "join_tail_wall": 9.4801e-05
+      },
+      "claim_attempts": [
+        0,
+        0,
+        0
+      ],
+      "claim_successes": [
+        0,
+        0,
+        0
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "2/8": {
+      "median_seconds": {
+        "input_wall": 0.0007063890000000003,
+        "copy_wall": 0.00044118600000000004,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.0008618309999999993,
+        "worker_copy_sum": 0.0010865740000000007,
+        "worker_init_sum": 0.003760391000000003,
+        "shared_prepare_wall": 0.002091121999999999,
+        "prepare_elapsed_sum": 0.0010543919999998538,
+        "group_dispatch_wall": 0.013952531000000002,
+        "launch_delay_sum": 0.0008099309999999995,
+        "completion_to_join_sum": 0.005431115999999999,
+        "join_tail_wall": 0.00010056099999999997
+      },
+      "claim_attempts": [
+        0,
+        0,
+        0
+      ],
+      "claim_successes": [
+        0,
+        0,
+        0
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 162
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 162
+        },
+        {
+          "chain_rules": 4374,
+          "chain_rule_rotations": 13122,
+          "shared_preparations": 486,
+          "input_copies": 1944,
+          "prefix_checks": 0,
+          "workspace_builds": 648,
+          "workspace_calls": 13122,
+          "worker_input_copies": 1944,
+          "prepare_dispatches": 162
+        }
+      ]
+    },
+    "4/0": {
+      "median_seconds": {
+        "input_wall": 0,
+        "copy_wall": 0,
+        "queue_wall": 0,
+        "chain_claim_sum": 0,
+        "worker_copy_sum": 0,
+        "worker_init_sum": 0,
+        "shared_prepare_wall": 0,
+        "prepare_elapsed_sum": 0.4201830259999994,
+        "group_dispatch_wall": 0,
+        "launch_delay_sum": 0,
+        "completion_to_join_sum": 0,
+        "join_tail_wall": 0
+      },
+      "claim_attempts": [
+        134106,
+        134106,
+        134106
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 0,
+          "chain_rule_rotations": 0,
+          "shared_preparations": 0,
+          "input_copies": 0,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "4/4": {
+      "median_seconds": {
+        "input_wall": 0.016175235000000086,
+        "copy_wall": 0.005037284999999997,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.008166434999999972,
+        "worker_copy_sum": 0.18224916499999985,
+        "worker_init_sum": 0,
+        "shared_prepare_wall": 0.10460253799999988,
+        "prepare_elapsed_sum": 0.01586995899996586,
+        "group_dispatch_wall": 0.23874401600000017,
+        "launch_delay_sum": 0.007877763000000036,
+        "completion_to_join_sum": 0.04190266300000019,
+        "join_tail_wall": 0.0009292149999999996
+      },
+      "claim_attempts": [
+        233604,
+        233604,
+        233604
+      ],
+      "claim_successes": [
+        116802,
+        116802,
+        116802
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 116802,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 116802,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 116802,
+          "prefix_checks": 0,
+          "workspace_builds": 0,
+          "workspace_calls": 0,
+          "worker_input_copies": 0,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "4/7": {
+      "median_seconds": {
+        "input_wall": 0.016751253000000042,
+        "copy_wall": 0.004971667000000004,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.007467532,
+        "worker_copy_sum": 0.009775059000000008,
+        "worker_init_sum": 0.06432442300000021,
+        "shared_prepare_wall": 0.1058123480000001,
+        "prepare_elapsed_sum": 0.009790460999989776,
+        "group_dispatch_wall": 0.1769938730000001,
+        "launch_delay_sum": 0.008289799000000035,
+        "completion_to_join_sum": 0.09890003900000048,
+        "join_tail_wall": 0.0009301120000000054
+      },
+      "claim_attempts": [
+        0,
+        0,
+        0
+      ],
+      "claim_successes": [
+        0,
+        0,
+        0
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 0
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 0
+        }
+      ]
+    },
+    "4/8": {
+      "median_seconds": {
+        "input_wall": 0.016287516000000026,
+        "copy_wall": 0.004179084000000002,
+        "queue_wall": 0,
+        "chain_claim_sum": 0.007144158000000004,
+        "worker_copy_sum": 0.009834359000000032,
+        "worker_init_sum": 0.0559120449999999,
+        "shared_prepare_wall": 0.04183450699999995,
+        "prepare_elapsed_sum": 0.01038187599998811,
+        "group_dispatch_wall": 0.1747885559999999,
+        "launch_delay_sum": 0.006880042999999958,
+        "completion_to_join_sum": 0.09993506700000078,
+        "join_tail_wall": 0.0009262930000000037
+      },
+      "claim_attempts": [
+        0,
+        0,
+        0
+      ],
+      "claim_successes": [
+        0,
+        0,
+        0
+      ],
+      "work_counts": [
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 1442
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 1442
+        },
+        {
+          "chain_rules": 38934,
+          "chain_rule_rotations": 116802,
+          "shared_preparations": 4326,
+          "input_copies": 17304,
+          "prefix_checks": 0,
+          "workspace_builds": 5768,
+          "workspace_calls": 116802,
+          "worker_input_copies": 17304,
+          "prepare_dispatches": 1442
+        }
+      ]
+    }
+  },
+  "performance_complete": true,
+  "run_count": 509,
+  "raw_sha256": "64faa22e256a380977eae71210dc254cad3ad9ff5a09b8a508fdeddffbb833f7",
+  "attempt_count": 509,
+  "finished_utc": "2026-11-06T07:29:00Z"
+}
