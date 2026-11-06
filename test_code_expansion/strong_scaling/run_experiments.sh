@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   recovery_dag: 恢复平滑依赖队列，工程基准＋高容错对照，64/128/256节点，共48次
 #   engineering_baseline: 工程基准与历代主线，同批64/128/256节点，面4/体2
 #   rotation_chain_dynamic: 独立准备/规则链同次派发消融，1节点4核，只运行预编译程序
 #   rotation_chain_memory: 仅补旧旋转链地址检查，不重跑性能
@@ -33,6 +34,11 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == recovery_dag ]]; then
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_quiet node_rules_recovery_dag}"
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == engineering_baseline ]]; then
     export ENGINEERING_BASELINE_REQUIRED=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
@@ -310,7 +316,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -546,6 +552,21 @@ if [[ -f "${pdir}/configuration.txt" && "$(cat "${pdir}/configuration.txt")" != 
     exit 2
 fi
 printf '%s\n' "${config_text}" > "${pdir}/configuration.txt"
+
+# Execute dependency/exception probes once in each candidate quality warmup.
+# The program is already built by build_project.sh; compute jobs never compile.
+if [[ "${KERNEL_SCHEDULER}" == node_rules_recovery_dag && "${KERNEL_REPEAT:-0}" == 0 ]]; then
+    dag_probe="${REPOSITORY_ROOT}/build/recovery_dag_probe"
+    [[ -x "${dag_probe}" ]] || { echo "缺少恢复依赖检查程序，请先运行原 build_project.sh。" >&2; exit 2; }
+    probe_launch=("${MPI_LAUNCHER}" "${mpi_extra[@]}" -n 1)
+    case "$(basename "${MPI_LAUNCHER}")" in yhrun|srun)
+        probe_launch+=(-N 1 --cpus-per-task 4 --cpu-bind cores);;
+    esac
+    sha256sum "${dag_probe}" > "${pdir}/smoothing_dependency_probe.sha256"
+    if ! timeout --kill-after=5s 30s "${probe_launch[@]}" "${dag_probe}" > "${pdir}/smoothing_dependency_probe.txt" 2>&1; then
+        echo "恢复依赖调度检查失败或超时；保留日志并跳过此候选。" >&2; exit 2
+    fi
+fi
 
 # 每个并行作业先用一个进程检查其正式分区规模，不生成细网格。
 # 只保留三份粗单元归属与一个摘要；失败立即停止本规模的昂贵采样。

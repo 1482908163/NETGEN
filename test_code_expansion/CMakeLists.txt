@@ -71,3 +71,9 @@ INCLUDE_DIRECTORIES(${NG_INCLUDE_DIR}  ${OpenCASCADE_INCLUDE_DIR} ${METIS_INCLUD
 
 ADD_SUBDIRECTORY(mesh_occ_mpi )
 ADD_SUBDIRECTORY(merge_mesh )
+
+# Built through the existing entry; executed only by the recovery_dag cluster job.
+find_package(Threads REQUIRED)
+add_executable(recovery_dag_probe tests/recovery_dag_probe.cpp)
+target_include_directories(recovery_dag_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../netgen/libsrc/meshing)
+target_link_libraries(recovery_dag_probe PRIVATE Threads::Threads)

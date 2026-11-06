@@ -472,9 +472,18 @@ namespace netgen
             for(const auto &p:mesh.Points()) smooth_types.push_back(p.Type());
           }
         }
-        // Retain operation order, sorted candidate commits, and smoothing color order.
+        // Retain operation order and sorted commits. Optional smoothing keeps
+        // the original color order for every pair sharing a tetrahedron.
         switch(optstr[j]) {
-          case 'm': {VolumeGenerationTimer t(stats,7);optmesh.ImproveMesh();break;}
+          case 'm': {
+            VolumeGenerationTimer t(stats,7);
+            if(mp.volume_recovery_smoothing_mode) {
+              MeshingParameters smooth_mp=mp;
+              smooth_mp.volume_smoothing_dag_mode=mp.volume_recovery_smoothing_mode;
+              mesh.ImproveMesh(smooth_mp,OPT_REST);
+            } else optmesh.ImproveMesh();
+            break;
+          }
           case 'c': {VolumeGenerationTimer t(stats,8);optmesh.CombineImprove();break;}
           case 's': {VolumeGenerationTimer t(stats,9);optmesh.SwapImprove();break;}
           case 't': {VolumeGenerationTimer t(stats,10);optmesh.SwapImprove2();break;}

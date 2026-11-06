@@ -27,6 +27,7 @@ INCREMENTS = (
     ('前沿组工程优化', ('node_rules_recovery', 'sparse'), ('node_rules_recovery_front', 'sparse')),
     ('恢复拓扑工程优化', ('node_rules_recovery_front', 'sparse'), ('node_rules_recovery_topology', 'sparse')),
     ('高容错规则并行', ('node_rules_recovery_topology', 'sparse'), ('node_rules_recovery_quiet', 'sparse')),
+    ('恢复平滑依赖调度', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag', 'sparse')),
     ('共享规则准备', ('node_rules_recovery_topology', 'sparse'), ('node_rules_recovery_shared', 'sparse')),
     ('自适应搜索', ('node_rules_elastic', 'sparse'), ('node_search_elastic', 'sparse')),
     ('搜索基础上的在线借核', ('node_search_elastic', 'sparse'), ('node_search_online', 'sparse')),
@@ -62,8 +63,16 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                 '核数或每节点进程数不符')
         require(all(isinstance(r.get(k), str) and len(r[k]) == 64 for k in WORK), '工作量指纹缺失')
         for name in ('kernel_rules_mismatches', 'kernel_group_mismatches',
-                     'kernel_topology_mismatches', 'kernel_shared_mismatches', 'kernel_quiet_mismatches'):
+                     'kernel_topology_mismatches', 'kernel_shared_mismatches', 'kernel_quiet_mismatches', 'kernel_smoothing_mismatches'):
             require(r.get(name, 0) == 0, name + '非零')
+        if scheduler == 'node_rules_recovery_dag':
+            expected='2' if repeat==0 else '1'
+            require(r.get('recovery_smoothing_profile')=='color_dependency_v1' and
+                    r.get('recovery_smoothing_mode')==expected, '缺少恢复平滑候选身份')
+            require(r.get('kernel_smoothing_dag_calls',0)>0 and r.get('kernel_smoothing_tasks',0)>0 and
+                    r.get('kernel_smoothing_completed')==r['kernel_smoothing_tasks'] and
+                    r.get('kernel_smoothing_verified')==(r['kernel_smoothing_dag_calls'] if repeat==0 else 0),
+                    '恢复平滑覆盖或重放不完整')
         if scheduler == 'node_engineered':
             require(r.get('engineering_baseline_contract') == CONTRACT and
                     r.get('generation_recovery') == 'ordered_team_v1' and
@@ -75,7 +84,8 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
             require(str(r.get('front_group_mode')) == '0' and
                     str(r.get('recovery_topology_mode')) == '0' and
                     r.get('quiet_rule_parallelism') == 'off' and
-                    r.get('shared_rule_preparation') == 'off', '工程基准混入其他候选')
+                    r.get('shared_rule_preparation') == 'off' and
+                    r.get('recovery_smoothing_mode','0') == '0', '工程基准混入其他候选')
         require(isinstance(r.get('core_seconds'), (int, float)) and
                 math.isfinite(r['core_seconds']) and r['core_seconds'] > 0, '核心耗时无效')
         if repeat == 0:

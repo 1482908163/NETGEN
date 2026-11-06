@@ -531,6 +531,10 @@ NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
 NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles
 // 0 original, 1 deduplicate/reuse, 2 exact type/flag/open-face replay (3D only).
 NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode);
+// Recovery-only dependency smoothing: 0 off, 1 enabled, 2 exact warmup replay.
+NGLIB_API Ng_Result Ng_SetVolumeRecoverySmoothingMode(int mode);
+// 15 fields, in the order emitted by the MPI profiler.
+NGLIB_API void Ng_GetVolumeRecoverySmoothingStats(double *values);
 // calls, optimized, verified, mismatches, skipped_rebuilds; 5 doubles.
 NGLIB_API void Ng_GetVolumeRecoveryTopologyStats(double * values);
 // Host-thread setting, applied only to the instrumented volume kernel.

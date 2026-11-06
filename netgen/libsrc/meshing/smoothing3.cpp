@@ -7,6 +7,8 @@
 #include <opti.hpp>
 #include <core/array.hpp>
 #include <core/taskmanager.hpp>
+#include "smoothing_dependency.hpp"
+#include <cstring>
 
 
 namespace netgen
@@ -1413,28 +1415,9 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
   const char * savetask = multithread.task;
   multithread.task = "Optimize Volume: Smooth Mesh";
 
-  topt.Start();
-  for (auto icolor : Range(ncolors))
+  auto smooth_point = [&](PointIndex pi, PointFunction &pf, Opti3FreeMinFunction &freeminf,
+                          OptiParameters &par, Vector &x)
   {
-      if (multithread.terminate)
-          throw NgException ("Meshing stopped");
-
-      ParallelForRange( color_table[icolor].Range(), [&](auto myrange)
-      {
-        RegionTracer reg(ngcore::TaskManager::GetThreadId(), trange, myrange.Size());
-        Vector x(3);
-
-        PointFunction pf{pf_glob};
-
-        Opti3FreeMinFunction freeminf(pf);
-
-        OptiParameters par;
-        par.maxit_linsearch = 20;
-        par.maxit_bfgs = 20;
-
-        for (auto i : myrange)
-        {
-          PointIndex pi = color_table[icolor][i];
           if ( (*this)[pi].Type() == INNERPOINT )
           {
             double lh = pointh[pi];
@@ -1466,8 +1449,109 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
                 points[pi](2) += x(2);
               }
           }
+  };
+  auto run_colors = [&]()
+  {
+  for (auto icolor : Range(ncolors))
+  {
+      if (multithread.terminate)
+          throw NgException ("Meshing stopped");
+
+      ParallelForRange( color_table[icolor].Range(), [&](auto myrange)
+      {
+        RegionTracer reg(ngcore::TaskManager::GetThreadId(), trange, myrange.Size());
+        Vector x(3);
+
+        PointFunction pf{pf_glob};
+
+        Opti3FreeMinFunction freeminf(pf);
+
+        OptiParameters par;
+        par.maxit_linsearch = 20;
+        par.maxit_bfgs = 20;
+
+        for (auto i : myrange)
+        {
+          PointIndex pi = color_table[icolor][i];
+          smooth_point(pi,pf,freeminf,par,x);
         }
       }, 4*ngcore::TaskManager::GetNumThreads());
+  }
+  };
+
+  auto *stats=mp.volume_kernel_stats;
+  const int dag_mode=mp.volume_smoothing_dag_mode;
+  auto add=[&](int i,double value) { if(stats) stats->AddSmoothing(i,value); };
+  auto elapsed=[](auto start) { return std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count(); };
+  bool supported=dag_mode && ngcore::TaskManager::GetNumThreads()>1 && !mp.only3D_domain_nr;
+  // Restricted to pure tetrahedra and the existing silent diagnostic setup.
+  // Mixed-element point exclusions need their own dependency proof.
+  if(supported) {
+    supported=testout && !testout->rdbuf() && testout->exceptions()==std::ios::goodbit && !testout->tie();
+    for(const auto &el:VolumeElements()) if(el.GetType()!=TET) supported=false;
+  }
+  topt.Start();
+  if(!dag_mode) run_colors();
+  else {
+    add(0,1);
+    if(!supported) { add(2,1); run_colors(); }
+    else {
+      auto build_start=std::chrono::steady_clock::now();
+      std::vector<PointIndex> active;
+      std::vector<int> ids(points.Size(),-1),task_colors;
+      for(auto pi:points.Range()) if(points[pi].Type()==INNERPOINT) {
+        ids[int(pi)-PointIndex::BASE]=int(active.size());
+        active.push_back(pi); task_colors.push_back(colors[int(pi)-PointIndex::BASE]);
+      }
+      std::vector<std::pair<int,int>> edges;
+      for(const auto &el:VolumeElements()) {
+        int tasks[4],count=0;
+        for(auto pi:el.PNums()) {
+          int id=ids[int(pi)-PointIndex::BASE];
+          if(id>=0) tasks[count++]=id;
+        }
+        std::sort(tasks,tasks+count,[&](int a,int b){return task_colors[a]<task_colors[b];});
+        // A chain is sufficient to retain all pairwise orders in this tet.
+        for(int k=1;k<count;++k) edges.emplace_back(tasks[k-1],tasks[k]);
+      }
+      SmoothingDependencyQueue queue(std::move(task_colors),edges);
+      add(6,elapsed(build_start)); add(1,1); add(3,active.size()); add(4,edges.size()); add(5,ncolors);
+      std::vector<MeshPoint> reference;
+      if(dag_mode==2) {
+        std::vector<MeshPoint> before;
+        before.reserve(points.Size()); for(const auto &p:points) before.push_back(p);
+        auto stamp=std::chrono::steady_clock::now(); run_colors(); add(11,elapsed(stamp));
+        reference.reserve(points.Size()); for(const auto &p:points) reference.push_back(p);
+        size_t i=0; for(auto &p:points) p=before[i++];
+      }
+      auto stamp=std::chrono::steady_clock::now();
+      int workers=ngcore::TaskManager::GetNumThreads();
+      ParallelForRange(Range(workers),[&](auto) {
+        try {
+          Vector x(3); PointFunction pf{pf_glob}; Opti3FreeMinFunction freeminf(pf);
+          OptiParameters par; par.maxit_linsearch=20; par.maxit_bfgs=20;
+          queue.RunWorker([&](int task) {
+            if(multithread.terminate) throw NgException("Meshing stopped");
+            smooth_point(active[task],pf,freeminf,par,x);
+          });
+        } catch(...) { queue.Fail(std::current_exception()); }
+      },workers);
+      queue.Finish();
+      add(7,elapsed(stamp)); add(8,queue.WaitSeconds()); add(12,queue.Completed());
+      add(13,queue.EarlyTasks()); add(14,1);
+      if(dag_mode==2) {
+        auto same_double=[](double a,double b){return std::memcmp(&a,&b,sizeof(double))==0;};
+        if(reference.size()!=points.Size()) throw NgException("Smoothing changed point count");
+        bool same=true; size_t i=0;
+        for(const auto &p:points) {
+          const auto &q=reference[i++];
+          for(int k=0;k<3;++k) same=bool(same & same_double(p(k),q(k)));
+          same=bool(same & (p.Type()==q.Type()) & (p.GetLayer()==q.GetLayer()) & same_double(p.Singularity(),q.Singularity()));
+        }
+        add(9,1);
+        if(!same) { add(10,1); throw NgException("Recovery smoothing dependency replay mismatch"); }
+      }
+    }
   }
   topt.Stop();
 
