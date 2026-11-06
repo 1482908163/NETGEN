@@ -10,7 +10,8 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
-#   rotation_chain_dynamic: 本轮工作区/准备组织消融，1节点4核，只运行预编译程序
+#   engineering_baseline: 工程基准与历代主线，同批64/128/256节点，面4/体2
+#   rotation_chain_dynamic: 独立工作区/准备组织消融，1节点4核，只运行预编译程序
 #   rotation_chain_memory: 仅补旧旋转链地址检查，不重跑性能
 #   quiet_rules_scaling: 无输出规则扩展验证，面4/体2，仅128/256节点；64节点已完成
 #   quiet_rules: 可选64节点预检，保留用于复现
@@ -31,7 +32,14 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-rotation_chain_dynamic}"
+EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == engineering_baseline ]]; then
+    export ENGINEERING_BASELINE_REQUIRED=1
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_original node_engineered node_fixed node_elastic node_rules_fixed node_rules_elastic node_recovery_fixed node_rules_recovery_fixed node_rules_recovery node_rules_recovery_online node_rules_recovery_front node_rules_recovery_topology node_rules_recovery_quiet node_rules_recovery_shared node_search_elastic node_search_online node_search_full}"
+    [[ " ${KERNEL_SCHEDULERS} " == *" node_engineered "* ]] || { echo "工程对照必须包含 node_engineered；不能静默换用较弱基准。" >&2; exit 2; }
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == rotation_chain_dynamic || "${EXPERIMENT_PRESET}" == rotation_chain_memory ]]; then
     export ROTATION_SUITE_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
     rotation_args=()
@@ -71,6 +79,14 @@ if [[ "${EXPERIMENT_PRESET}" == recovery_scaling ]]; then
     export RULE_SEARCH_LEVELS="${RULE_SEARCH_LEVELS:-4}"
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
     export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_rules_elastic node_rules_recovery node_rules_recovery_online}"
+    # New comparisons always retain the engineering reference. The opt-out is
+    # solely for exact reproduction of archived experiment matrices.
+    if [[ "${HISTORICAL_CONTROLS_ONLY:-0}" != 1 ]]; then
+        export ENGINEERING_BASELINE_REQUIRED=1
+        if [[ " ${KERNEL_SCHEDULERS} " != *" node_engineered "* ]]; then
+            export KERNEL_SCHEDULERS="node_engineered ${KERNEL_SCHEDULERS}"
+        fi
+    fi
     export REPEATS="${REPEATS:-3}" REFINES="${REFINES:-2}"
     EXPERIMENT_PRESET=rule_search
 fi
@@ -288,7 +304,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -370,7 +386,10 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
           fi
           variant="${kernel_root}/kernel_${scheduler}_t${threads}"
           variant_algorithms="${ALGORITHMS}"
-          if [[ "${OVERALL_COMPARISON:-0}" == 1 && "$scheduler" == node_original ]]; then
+          if [[ "$scheduler" == node_engineered ]]; then
+              # Same fixed-core kernel in both arms isolates communication cost.
+              variant_algorithms="baseline sparse"
+          elif [[ "${OVERALL_COMPARISON:-0}" == 1 && "$scheduler" == node_original ]]; then
               variant_algorithms="baseline"
           elif [[ "${COMMUNICATION_ABLATION}" == 1 && "$scheduler" == node_original &&
                 " ${ALGORITHMS//,/ } " != *" baseline "* ]]; then
@@ -687,5 +706,6 @@ fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1
+
 
 

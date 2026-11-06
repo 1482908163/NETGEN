@@ -15,6 +15,32 @@ REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 export MESH_SOURCE_REVISION="${MESH_SOURCE_REVISION:-manual}"
 export RUN_ROOT="${RUN_ROOT:-${REPOSITORY_ROOT}/strong_scaling_results/mesh_algorithms_$(date +%Y%m%d-%H%M%S)}"
 export START_EPOCH="${START_EPOCH:-$(( $(date +%s)+START_DELAY_SECONDS ))}"
+if [[ "${ENGINEERING_BASELINE_REQUIRED:-0}" == 1 && -z "${ENGINEERING_BATCH_ROOT:-}" ]]; then
+    export ENGINEERING_BATCH_ROOT="${RUN_ROOT}"
+    python3 - "${RUN_ROOT}" <<'ENGINEERING_PLAN'
+import json, os, pathlib, sys
+root=pathlib.Path(sys.argv[1]);root.mkdir(parents=True,exist_ok=True)
+schedulers=os.environ['KERNEL_SCHEDULERS'].split()
+arms=[dict(scheduler=s,algorithm=a) for s in schedulers
+      for a in (('baseline','sparse') if s=='node_engineered' else ('baseline',) if s=='node_original' else os.environ['ALGORITHMS'].replace(',',' ').split())]
+counts=list(map(int,os.environ['PROCESS_COUNTS'].replace(',',' ').split()))
+levels=list(map(int,os.environ.get('RULE_SEARCH_LEVELS',os.environ['LEVELS']).replace(',',' ').split()))
+repeats=int(os.environ['REPEATS']);seeds=os.environ['PARTITION_SEEDS'].split()
+total=len(arms)*len(counts)*len(levels)*len(seeds)*(1+repeats)
+plan=dict(schema='engineering_baseline_v1',baseline='node_engineered/baseline',
+          baseline_contract='fixed_recovery_v1',arms=arms,process_counts=counts,levels=levels,
+          refines=int(os.environ['REFINES']),threads=int(os.environ['CPUS_PER_TASK']),
+          ranks_per_node=int(os.environ['RANKS_PER_NODE']),seeds=list(map(int,seeds)),
+          warmups=1,repeats=repeats,total_runs=total,start_epoch=int(os.environ['START_EPOCH']))
+path=root/'engineering_baseline_plan.json'
+if path.exists():
+    old=json.loads(path.read_text())
+    if {k:v for k,v in old.items() if k!='start_epoch'}!={k:v for k,v in plan.items() if k!='start_epoch'}:
+        raise SystemExit('同一目录已有不同工程对照计划，请使用新结果目录。')
+path.write_text(json.dumps(plan,ensure_ascii=False,indent=2)+'\n')
+print(f'工程基准对照：{len(arms)}条路线，{len(counts)*len(levels)}个独立作业，计划{total}次真实网格运行；预热与正式分开。')
+ENGINEERING_PLAN
+fi
 # 一次提交全部计划；每个作业独立预热验证，不建立作业间串行依赖。
 if [[ "${RULE_SEARCH_ALL:-0}" == 1 ]]; then
     export RULE_SEARCH_BATCH_ROOT="${RUN_ROOT}"
@@ -140,4 +166,5 @@ for p in "${counts[@]}"; do
 done
 printf 'Results: %s\n' "${RUN_ROOT}"
 ((failures==0)) || exit 1
+
 

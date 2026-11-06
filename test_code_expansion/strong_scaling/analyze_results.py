@@ -545,7 +545,7 @@ def compact_rank_phases(rows, result):
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_engineered','node_recovery_fixed','node_rules_recovery_fixed','node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -964,7 +964,8 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
         if not math.isfinite(r["metrics"]["core_seconds"]) or r["metrics"]["core_seconds"] <= 0:
             raise ValueError("invalid core time")
     metadata=dict(metadata)
-    rule_aliases={'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
+    rule_aliases={'node_engineered':'node_native','node_recovery_fixed':'node_fixed','node_rules_recovery_fixed':'node_fixed',
+                  'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_rules_recovery_front':'node_elastic',
                   'node_rules_recovery_topology':'node_elastic','node_rules_recovery_shared':'node_elastic',
@@ -974,6 +975,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
     requested_scheduler=metadata.get('kernel_scheduler')
     if requested_scheduler in rule_aliases:
         expected_mode=('4' if rows[0]['repeat']<=0 else '3') if requested_scheduler.startswith('node_search_') else ('2' if rows[0]['repeat']<=0 else '1')
+        if requested_scheduler in ('node_engineered','node_recovery_fixed'):expected_mode='0'
         if metadata.get('rule_search_mode')!=expected_mode or metadata.get('rule_search_profile')!='rule_search_v1':
             raise ValueError('规则搜索模式或诊断缺失')
         metadata['kernel_scheduler']=rule_aliases[requested_scheduler]
@@ -1010,6 +1012,16 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
                   partition_moves=max(r["metrics"].get("partition_moves", 0) for r in rows))
     # 新计数全部位于生成后体细化之前；旧批次允许缺省，不反推实际内核规模。
     result.update(volume_workload_metrics(rows))
+    # Retain the common comparison contract before compact cleanup. Never infer
+    # it for old archives or substitute across-batch timing for a missing control.
+    result['comparison_identity']={k:metadata.get(k,'unset') for k in (
+        'MESH_INPUT_SHA256','MESH_BINARY_SHA256','MESH_KERNEL_SHA256',
+        'kernel_threads','RANKS_PER_NODE','CPUS_PER_TASK','numlevels','numrefine','maxh','minh',
+        'timing_boundary','core_only','partition_seed','partition_variant','rank_shift')}
+    result['comparison_scheduler']=requested_scheduler
+    result['engineering_baseline_contract']=metadata.get('engineering_baseline_contract','off')
+    if requested_scheduler=='node_engineered' and result['engineering_baseline_contract']!='fixed_recovery_v1':
+        raise ValueError('工程基准契约缺失或版本不符')
     result.update(inspect_front_group(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_recovery_topology(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_shared_rules(rows,metadata,requested_scheduler,rows[0]['repeat']))
@@ -1576,6 +1588,8 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
+    if scheduler in ('node_engineered','node_recovery_fixed','node_rules_recovery_fixed'):
+        return 'node_engineered'
     if (scheduler in ('node_rules_recovery_topology','node_rules_recovery_quiet') and
         not any((int(threads),s) in available for s in ('node_fixed','node_rules_elastic','node_rules_recovery','node_rules_recovery_front')) and
         {(int(threads),'node_rules_recovery_topology'),(int(threads),'node_rules_recovery_quiet')} <= available):
@@ -1599,7 +1613,7 @@ def node_comparison_control(threads, scheduler, selected):
             scheduler.startswith(('node_rules_','node_search_')) and
             (int(threads),'node_rules_elastic') in available):
         return 'node_rules_elastic'
-    return 'node_fixed'
+    return 'node_engineered' if (int(threads),'node_engineered') in available else 'node_fixed'
 
 def kernel_overview(root, ranks):
     """Variant runs stay isolated; this summary never adds stage maxima."""
@@ -1693,6 +1707,11 @@ def kernel_overview(root, ranks):
     issues.extend(audit_issues)
     critical_lines,critical_issues=critical_overview(root,ranks,selected)
     issues.extend(critical_issues)
+    engineering_lines=[]
+    if any(s=='node_engineered' for t,s in selected) or os.environ.get('ENGINEERING_BASELINE_REQUIRED')=='1':
+        from engineering_baseline import engineering_report
+        engineering_lines,engineering_issues=engineering_report(root,ranks,selected)
+        issues.extend(engineering_issues)
     write_csv(out/'kernel_summary.csv',report)
     phase_names=('rule_search','delaunay_opt','mark','split','swap','swap2','final_opt','repair_group')
     phase_report=[]
@@ -1706,7 +1725,7 @@ def kernel_overview(root, ranks):
                 item[field+'_median']=row.get(prefix+field)
             phase_report.append(item)
     write_csv(out/'kernel_phase_summary.csv',phase_report)
-    lines=["内核协作与贡献消融汇总",*audit_lines,*critical_lines,f"进程数: {ranks}; 异常项: {len(issues)}",
+    lines=["内核协作与贡献消融汇总",*engineering_lines,*audit_lines,*critical_lines,f"进程数: {ranks}; 异常项: {len(issues)}",
            "scheduler algorithm threads timing core/s repair/s compute_max/s vertex_wait/s illegal speedup_vs_static"]
     for row in report:
         lines.append(f"{row['scheduler']} {row['algorithm']} {row['threads']} {row['timing']} {row['core_seconds']:.6f} "
@@ -2008,6 +2027,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

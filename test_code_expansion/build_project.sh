@@ -26,7 +26,7 @@ export LIBRARY_PATH=$LOCAL_LIB:/usr/lib/aarch64-linux-gnu:$LIBRARY_PATH
 export LD_LIBRARY_PATH=$LOCAL_LIB:/usr/lib/aarch64-linux-gnu:${NETGEN_INSTALL_DIR}/lib:/vol8/home/hnu_lhz/cjz/install_libs/lib:$LD_LIBRARY_PATH
 
 # 本轮仍使用原编译入口；实验构建留在独立目录，不改生产安装。
-if [[ "${EXPERIMENT_PRESET:-rotation_chain_dynamic}" == rotation_chain_dynamic ]]; then
+if [[ "${EXPERIMENT_PRESET:-engineering_baseline}" == rotation_chain_dynamic ]]; then
     export CC="${GCCHOME}/bin/gcc" CXX="${GCCHOME}/bin/g++"
     exec python3 "${PROJ_DIR}/tests/build_rotation_chain_suite.py" \
         --build-dir "${ROTATION_BUILD_DIR:-${NETGEN_ROOT}/build/rotation_chain_workspace_v4}" \
@@ -89,3 +89,4 @@ make install || {
 echo "✅ 编译完成"
 echo "安装路径: ${NETGEN_INSTALL_DIR}"
 echo "可执行文件: $BUILD_DIR/mesh_occ_mpi/mesh_occ_mpi"
+

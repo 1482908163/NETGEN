@@ -45,6 +45,7 @@ void print_help() {
          "--algorithm <baseline|balance|sparse|combined> : 原算法/均衡/稀疏/组合" << endl <<
          "--kernel-threads / --kernel-scheduler : 内核线程数 / static/cavity/repair/frontier/node_original/node_native/node_scoped/node_fixed/node_lend/node_guarded/node_model/node_tail/node_budget/node_priority/node_reserved/node_elastic/node_stage/node_reclaim/node_selective/node_once/node_phaseaware/node_rules_fixed/node_rules_elastic内核策略" << endl <<
          "--communication-only : 仅通信对照，不创建任务、不计算均衡模型" << endl <<
+         "工程基准及固定核对照：node_engineered / node_recovery_fixed / node_rules_recovery_fixed" << endl <<
          "生成内部修复策略：node_rules_recovery / node_rules_recovery_online / node_rules_recovery_front / node_rules_recovery_topology / node_rules_recovery_shared" << endl <<
          "联合搜索策略：node_search_local / node_search_idle / node_search_remote / node_search_online / node_search_full / node_search_elastic" << endl <<
          "--balance-sweeps <整数> : 分区修正轮数，默认4" << endl <<
@@ -326,15 +327,23 @@ int main(int argc, char **argv) {
     const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules || quiet_rules;
     const int recovery_topology_mode=recovery_topology?(profile_repeat<=0?2:1):0;
     const bool front_group=requested_scheduler=="node_rules_recovery_front" || recovery_topology;
-    const bool generation_recovery=requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online" || front_group;
+    // Frozen engineering reference: native fixed-core repair plus recovery teams.
+    // It retains original communication/search and never acquires borrowed cores.
+    const bool engineered=requested_scheduler=="node_engineered";
+    const bool recovery_fixed=requested_scheduler=="node_recovery_fixed";
+    const bool rules_recovery_fixed=requested_scheduler=="node_rules_recovery_fixed";
+    const bool generation_recovery=engineered || recovery_fixed || rules_recovery_fixed || requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online" || front_group;
     const int front_group_mode=front_group?(profile_repeat<=0?2:1):0;
     const bool online_borrow=requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_rules_recovery_online";
     if(adaptive_search) {
         research.kernel_scheduler=online_borrow?"node_online":requested_scheduler=="node_search_elastic"?"node_elastic":"node_fixed";
         rule_search_mode=profile_repeat<=0?4:3;
     }
-    if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic" || generation_recovery) {
-        research.kernel_scheduler=online_borrow?"node_online":requested_scheduler=="node_rules_fixed"?"node_fixed":"node_elastic";
+    if(engineered || recovery_fixed) {
+        research.kernel_scheduler=engineered?"node_native":"node_fixed";
+        rule_search_mode=0;
+    } else if(requested_scheduler=="node_rules_fixed" || requested_scheduler=="node_rules_elastic" || generation_recovery) {
+        research.kernel_scheduler=online_borrow?"node_online":(requested_scheduler=="node_rules_fixed" || rules_recovery_fixed)?"node_fixed":"node_elastic";
         // Verify every eligible rule call during quality warmup only. Formal
         // timing executes the same task path without the sequential replay.
         rule_search_mode=profile_repeat<=0?2:1;
@@ -469,6 +478,7 @@ int main(int argc, char **argv) {
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
+    profiler.add_metadata("engineering_baseline_contract",engineered?"fixed_recovery_v1":"off");
     if(research.kernel_threads>0 && rule_search_mode>=0) {
         profiler.add_metadata("rule_search_profile","rule_search_v1");
         profiler.add_metadata("post_work_profile","rank_counts_v1");
@@ -1393,5 +1403,6 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
 
 
