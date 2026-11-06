@@ -29,7 +29,7 @@ export LD_LIBRARY_PATH=$LOCAL_LIB:/usr/lib/aarch64-linux-gnu:${NETGEN_INSTALL_DI
 if [[ "${EXPERIMENT_PRESET:-engineering_baseline}" == rotation_chain_dynamic ]]; then
     export CC="${GCCHOME}/bin/gcc" CXX="${GCCHOME}/bin/g++"
     exec python3 "${PROJ_DIR}/tests/build_rotation_chain_suite.py" \
-        --build-dir "${ROTATION_BUILD_DIR:-${NETGEN_ROOT}/build/rotation_chain_workspace_v4}" \
+        --build-dir "${ROTATION_BUILD_DIR:-${NETGEN_ROOT}/build/rotation_chain_pipeline_v5}" \
         --jobs "${BUILD_JOBS}" "$@"
 fi
 

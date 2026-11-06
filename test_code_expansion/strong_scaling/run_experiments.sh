@@ -11,7 +11,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
 #   engineering_baseline: 工程基准与历代主线，同批64/128/256节点，面4/体2
-#   rotation_chain_dynamic: 独立工作区/准备组织消融，1节点4核，只运行预编译程序
+#   rotation_chain_dynamic: 独立准备/规则链同次派发消融，1节点4核，只运行预编译程序
 #   rotation_chain_memory: 仅补旧旋转链地址检查，不重跑性能
 #   quiet_rules_scaling: 无输出规则扩展验证，面4/体2，仅128/256节点；64节点已完成
 #   quiet_rules: 可选64节点预检，保留用于复现
@@ -46,7 +46,7 @@ if [[ "${EXPERIMENT_PRESET}" == rotation_chain_dynamic || "${EXPERIMENT_PRESET}"
     if [[ "${EXPERIMENT_PRESET}" == rotation_chain_memory ]]; then
         rotation_args+=(--memory-only --build-dir "${ROTATION_BUILD_DIR:-${ROTATION_SUITE_ROOT}/build/rotation_chain_costs_v2}")
     else
-        rotation_args+=(--build-dir "${ROTATION_BUILD_DIR:-${ROTATION_SUITE_ROOT}/build/rotation_chain_workspace_v4}")
+        rotation_args+=(--build-dir "${ROTATION_BUILD_DIR:-${ROTATION_SUITE_ROOT}/build/rotation_chain_pipeline_v5}")
     fi
     exec bash "${ROTATION_SUITE_ROOT}/test_code_expansion/tests/run_rotation_chain_suite.sh" --submit "${rotation_args[@]}" "$@"
 fi

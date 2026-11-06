@@ -6,11 +6,13 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <thread>
+#include <exception>
 using namespace netgen;
 namespace {
 int threads=4, fixture_variant=0, limit=7, repeats=1, route=0;
 bool verify=true;
-int front_fixture=-1;
+int front_fixture=-1, prepare_fault=-1;
 unsigned long long front_batches=0;
 unsigned long long experiment_dispatches=0;
 void PrintProfile(const VolumeKernelStats *stats=nullptr) {
@@ -29,6 +31,9 @@ void PrintProfile(const VolumeKernelStats *stats=nullptr) {
     <<",\"worker_init_sum\":"<<worker_init_sum<<",\"workspace_builds\":"<<workspace_builds
     <<",\"workspace_calls\":"<<workspace_calls<<",\"worker_input_copies\":"<<worker_input_copies
     <<",\"prepare_dispatches\":"<<prepare_dispatches
+    <<",\"worker_preparations\":"<<worker_preparations<<",\"prepare_wait_events\":"<<prepare_wait_events
+    <<",\"worker_prepare_sum\":"<<worker_prepare_sum<<",\"prepare_wait_sum\":"<<prepare_wait_sum
+    <<",\"prepare_span_wall\":"<<prepare_span_wall
     <<",\"claim_elapsed_sum\":"<<claim_sum.load()<<",\"claim_attempts\":"<<claim_attempts.load()
     <<",\"claim_successes\":"<<claim_successes.load()
     <<",\"group_dispatch_wall\":"<<group_dispatch_wall<<",\"launch_delay_sum\":"<<launch_delay_sum
@@ -167,17 +172,26 @@ void TestRules() {
       const int rule_count=mesher.rules.Size();
       const bool workspace_route=route>=7;
       const bool reuse_input=route==5 || workspace_route;
+      const bool fused_prepare=route==9;
       // Every rule retains exclusive ownership for its entire ordered chain.
       // Shared geometry is scoped to this front batch, never a later front.
       std::vector<std::unique_ptr<RuleSearchPreparation>> prepared(rotations);
-      {
+      std::unique_ptr<std::atomic<bool>[]> ready;
+      std::atomic<int> next_prepare{0};
+      std::atomic<bool> preparation_failed{false};
+      if(fused_prepare) {
+        ready.reset(new std::atomic<bool>[rotations]);
+        for(int rotation=0;rotation<rotations;++rotation)ready[rotation].store(false,std::memory_order_relaxed);
+      }
+      bool useedges=false;for(int id=0;id<rule_count;++id)if(mesher.rules[id]->GetNEd())useedges=true;
+      auto prepare=[&](size_t rotation) {
+        if(fused_prepare && int(rotation)==prepare_fault)throw std::runtime_error("ROTATION_PREPARATION_FAULT");
+        auto &input=*b.frames[rotation];
+        prepared[rotation]=std::make_unique<RuleSearchPreparation>(
+            input.points,input.faces,b.split,b.pairs,useedges);
+      };
+      if(!fused_prepare) {
         rotation_probe::WallTimer timer(rotation_probe::shared_prepare_wall);
-        bool useedges=false;for(int id=0;id<rule_count;++id)if(mesher.rules[id]->GetNEd())useedges=true;
-        auto prepare=[&](size_t rotation) {
-          auto &input=*b.frames[rotation];
-          prepared[rotation]=std::make_unique<RuleSearchPreparation>(
-              input.points,input.faces,b.split,b.pairs,useedges);
-        };
         if(route==8) {
           // Independent rotations, one writer per slot. ParallelFor joins
           // before any search reads preparation; its extra dispatch is counted.
@@ -190,9 +204,10 @@ void TestRules() {
         std::vector<std::unique_ptr<RuleSearchResult>> winners,scratch;
         RuleSearchQueue queue{0};
         unsigned long long chains=0,visits=0,copies=0,prefix_checks=0;
-        unsigned long long workspace_calls=0;
-        double copy_seconds=0,claim_seconds=0,init_seconds=0;
-        rotation_probe::Clock::time_point start{},finish{};
+        unsigned long long workspace_calls=0,preparations=0,prepare_waits=0;
+        double copy_seconds=0,claim_seconds=0,init_seconds=0,prepare_seconds=0,wait_seconds=0;
+        rotation_probe::Clock::time_point start{},finish{},prepare_start{},prepare_finish{};
+        std::exception_ptr preparation_error;
       };
       std::vector<std::unique_ptr<ChainWorker>> slots;
       {
@@ -234,8 +249,33 @@ void TestRules() {
           }
           if constexpr(rotation_probe::enabled)slot.init_seconds=rotation_probe::Since(init_start);
         }
+        if(fused_prepare) {
+          // Preparation is claimed only by running tasks. A producer never
+          // waits on another producer; no queued task owns an awaited slot.
+          for(int rotation=next_prepare.fetch_add(1,std::memory_order_relaxed);
+              rotation<rotations && !preparation_failed.load(std::memory_order_acquire);
+              rotation=next_prepare.fetch_add(1,std::memory_order_relaxed)) {
+            const auto prep_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+            try {
+              prepare(rotation);
+              ready[rotation].store(true,std::memory_order_release);
+              if constexpr(rotation_probe::enabled) {
+                const auto end=rotation_probe::Clock::now();
+                if(slot.preparations==0)slot.prepare_start=prep_start;
+                slot.prepare_finish=end;
+                slot.prepare_seconds+=std::chrono::duration<double>(end-prep_start).count();
+              }
+              ++slot.preparations;
+            } catch(...) {
+              slot.preparation_error=std::current_exception();
+              preparation_failed.store(true,std::memory_order_release);
+              break;
+            }
+          }
+        }
+        bool all_prepared=!fused_prepare;
         int static_id=int(worker);
-        while(true) {
+        while(!fused_prepare || !preparation_failed.load(std::memory_order_acquire)) {
           const auto claim_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
           int id;
           if(route==6){id=static_id;static_id+=workers;}
@@ -244,6 +284,19 @@ void TestRules() {
           if(id>=rule_count)break;
           ++slot.chains;slot.queue.order[0]=id;
           for(int rotation=0;rotation<rotations;++rotation) {
+            if(!all_prepared) {
+              if(!ready[rotation].load(std::memory_order_acquire)) {
+                ++slot.prepare_waits;
+                const auto wait_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
+                while(!ready[rotation].load(std::memory_order_acquire) &&
+                      !preparation_failed.load(std::memory_order_acquire))std::this_thread::yield();
+                if constexpr(rotation_probe::enabled)slot.wait_seconds+=rotation_probe::Since(wait_start);
+              }
+              if(preparation_failed.load(std::memory_order_acquire))break;
+              // After the first chain all input slots are published. Avoid
+              // readiness loads on every subsequent rule/rotation.
+              if(rotation+1==rotations)all_prepared=true;
+            }
             auto &input=*b.frames[rotation];auto &winner=*slot.winners[rotation];
             std::unique_ptr<RuleSearchResult> fresh;
             const auto copy_start=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
@@ -307,6 +360,7 @@ void TestRules() {
       },workers);
       const auto joined=rotation_probe::enabled?rotation_probe::Clock::now():rotation_probe::Clock::time_point{};
       ++dispatches;++experiment_dispatches;
+      for(auto &slot:slots)if(slot->preparation_error)std::rethrow_exception(slot->preparation_error);
       if(!prefix_ok.load(std::memory_order_relaxed))throw std::runtime_error("复用缓冲的原始几何前缀发生变化");
       if constexpr(rotation_probe::enabled) {
         const auto seconds=[](auto duration){return std::chrono::duration<double>(duration).count();};
@@ -318,14 +372,26 @@ void TestRules() {
           rotation_probe::completion_to_join_sum+=seconds(joined-slot->finish);
           rotation_probe::worker_copy_sum+=slot->copy_seconds;
           rotation_probe::worker_init_sum+=slot->init_seconds;
+          rotation_probe::worker_prepare_sum+=slot->prepare_seconds;
+          rotation_probe::prepare_wait_sum+=slot->wait_seconds;
           rotation_probe::chain_claim_sum+=slot->claim_seconds;
         }
         rotation_probe::dispatch_wall+=seconds(joined-begin);rotation_probe::group_dispatch_wall+=seconds(joined-begin);
         rotation_probe::join_tail_wall+=seconds(joined-last);
         rotation_probe::worker_sum+=total;rotation_probe::group_max_sum+=largest;
         rotation_probe::group_idle_proxy+=workers*largest-total;++rotation_probe::groups;
+        if(fused_prepare) {
+          auto first=joined,last_prepared=begin;
+          for(auto &slot:slots)if(slot->preparations) {
+            first=std::min(first,slot->prepare_start);
+            last_prepared=std::max(last_prepared,slot->prepare_finish);
+          }
+          rotation_probe::prepare_span_wall+=seconds(last_prepared-first);
+        }
       }
       for(auto &slot:slots) {
+        rotation_probe::worker_preparations+=slot->preparations;
+        rotation_probe::prepare_wait_events+=slot->prepare_waits;
         rotation_probe::chain_rules+=slot->chains;rotation_probe::chain_rule_rotations+=slot->visits;
         rotation_probe::input_copies+=slot->copies;rotation_probe::prefix_checks+=slot->prefix_checks;
         if(workspace_route) {
@@ -548,7 +614,10 @@ int main(int argc,char **argv) {
   if(argc>3)fixture_variant=std::atoi(argv[3]);if(argc>4)limit=std::atoi(argv[4]);
   if(argc>5)verify=std::atoi(argv[5]);if(argc>6)repeats=std::atoi(argv[6]);
   if(argc>7)front_fixture=std::atoi(argv[7]);
-  if(threads<1 || threads>16 || route < -1 || route>8 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
+  if(argc>8)prepare_fault=std::atoi(argv[8]);
+  if(threads<1 || threads>16 || route < -1 || route>9 || fixture_variant<0 || fixture_variant>2 || limit<1 || limit>45 || repeats<1 || front_fixture < -1 || front_fixture>5)
     return 2;
-  TestRules();
+  if(prepare_fault < -1 || prepare_fault>3 || (prepare_fault>=0 && (route!=9 || !verify)))return 2;
+  try {TestRules();}
+  catch(const std::exception &error){std::cerr<<error.what()<<"\n";return 1;}
 }
