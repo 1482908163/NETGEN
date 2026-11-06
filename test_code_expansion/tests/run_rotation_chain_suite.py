@@ -13,15 +13,19 @@ import sys
 import time
 from pathlib import Path
 
-ROUTES = {0: '原动态队列', 4: '上一轮动态整规则链',
-          7: '任务内工作区及输入缓冲复用', 8: '工作区复用与并行共享准备'}
-COMPARISONS = [(0, 7), (0, 8), (4, 7), (7, 8)]
+ROUTES = {0: '原逐旋转动态队列（局部机制对照）', 7: '工作区复用与串行准备',
+          8: '工作区复用与两阶段并行准备', 9: '准备与规则链同次派发'}
+COMPARISONS = [(0, 8), (0, 9), (7, 9), (8, 9)]
+REFERENCE_SCOPE = dict(scope='isolated_rotation_kernel', full_pipeline=False,
+                       full_pipeline_reference='node_engineered/baseline',
+                       full_pipeline_contract='fixed_recovery_v1',
+                       warning='本套件不执行全流程恢复与通信，不能报告相对工程基准的总体核心收益')
 BENCHMARK_LOCALS = ((7, 0), (45, 0))
 BENCHMARK_FRONTS = (2, 4)
 
 
 def dispatches_per_batch(route):
-    return 2 if route == 8 else 1 if route in (1, 4, 5, 6, 7) else 3
+    return 2 if route == 8 else 1 if route in (1, 4, 5, 6, 7, 9) else 3
 
 
 class AddressSpaceUnavailable(RuntimeError):
@@ -31,6 +35,13 @@ class AddressSpaceUnavailable(RuntimeError):
 def shadow_memory_failure(record):
     return bool(record['returncode'] and record['result'] is None and
                 'ReserveShadowMemoryRange failed' in record['stderr'])
+
+
+def check_prepare_fault(record):
+    if (record.get('timed_out') or record.get('returncode') != 1 or
+            record.get('stderr', '').strip() != 'ROTATION_PREPARATION_FAULT' or
+            record.get('stdout', '').strip()):
+        raise ValueError('准备异常未按预期退出，或等待超时')
 
 
 def memory_limits():
@@ -65,12 +76,15 @@ def write_measurement_report(state, records, path):
         'input_wall': '批量输入准备', 'copy_wall': '槽位复制', 'queue_wall': '队列构造',
         'chain_claim_sum': '整链领取累计', 'worker_copy_sum': '工作任务重置/复制累计',
         'worker_init_sum': '任务内工作区与输入初始化累计',
+        'worker_prepare_sum': '任务内准备累计', 'prepare_wait_sum': '等待准备累计',
+        'prepare_span_wall': '首个准备开始至最后准备完成',
         'shared_prepare_wall': '共享准备墙钟', 'prepare_elapsed_sum': '规则调用准备区间累计',
         'group_dispatch_wall': '派发至汇合', 'launch_delay_sum': '任务启动延迟累计',
         'completion_to_join_sum': '任务结束至汇合累计', 'join_tail_wall': '最后任务结束至汇合',
     }
     table = {}
-    lines = ['# 旋转链成本分解', '', '正式耗时仅取普通构建；下列成本来自独立插桩构建。', '',
+    lines = ['# 旋转链成本分解', '', REFERENCE_SCOPE['warning'], '',
+             '正式耗时仅取普通构建；下列成本来自独立插桩构建。', '',
              '| 完整前沿样例 | 路线 | ' + ' | '.join(fields.values()) + ' |',
              '|---|---|' + '---:|' * len(fields)]
     for label, keys in state['profile_samples'].items():
@@ -80,29 +94,31 @@ def write_measurement_report(state, records, path):
                            claim_attempts=[p['claim_attempts'] for p in profiles],
                            claim_successes=[p['claim_successes'] for p in profiles],
                            work_counts=[{k:p[k] for k in ('chain_rules','chain_rule_rotations','shared_preparations','input_copies','prefix_checks',
-                                                         'workspace_builds','workspace_calls','worker_input_copies','prepare_dispatches')} for p in profiles])
+                                                         'workspace_builds','workspace_calls','worker_input_copies','prepare_dispatches',
+                                                         'worker_preparations','prepare_wait_events')} for p in profiles])
         if label.endswith('/0'):
             continue  # Original route has no candidate batch/join instrumentation.
         lines.append('| ' + ' | '.join(label.split('/')) + ' | ' +
                      ' | '.join(f'{medians[f]*1000:.4f}' for f in fields) + ' |')
     lines += ['', '单位：毫秒；各列独立取中位数。累计字段按工作任务相加，与主线程墙钟区间重叠，不能相加为总时间。',
-              '任务结束至汇合不是操作系统测得的线程阻塞或 CPU 空闲时间。路线 4/7 一次派发；路线 8 先并行准备并汇合，再派发规则链，每批共两次派发。',
+              '任务结束至汇合不是实际线程阻塞或 CPU 空闲时间。路线 7/9 一次派发；路线 8 先并行准备并汇合，再派发规则链，每批共两次派发。',
               '整链领取计时包含时钟开销；共享准备在每个旋转建立一次，规则调用中的准备区间另记，不将两者混为一谈。它不能直接当作无探针构建的真实队列成本。',
               '输入/复制/规则准备分开记录；规则准备不含更早的数组构造。路线 0 只有领任务和规则准备等原始字段可比，候选批量/汇合字段为零表示未覆盖，不能当作零成本。', '',
-              '| 输入 | 0→7 | 0→8 | 4→7 | 7→8 |', '|---|---:|---:|---:|---:|']
+              '| 输入 | 0→8 | 0→9 | 7→9 | 8→9 |', '|---|---:|---:|---:|---:|']
     for label, value in state['benchmarks'].items():
         values = [value['comparisons'][f'{x}->{y}'] for x, y in COMPARISONS]
         lines.append('| '+label+' | '+' | '.join(f"{v['median_pct']:+.2f}% ({v['wins']}/{v['count']})" for v in values)+' |')
-    lines += ['', '| 样例/路线 | 整规则链数 | 规则×旋转访问数 | 共享准备数 | 输入前缀复制数 | 工作区构造数 | 工作区调用数 | 工作线程输入复制数 | 准备派发数 |',
-              '|---|---:|---:|---:|---:|---:|---:|---:|---:|']
+    lines += ['', '| 样例/路线 | 整规则链数 | 规则×旋转访问数 | 共享准备数 | 输入前缀复制数 | 工作区构造数 | 工作区调用数 | 工作线程输入复制数 | 准备派发数 | 任务内准备数 | 等待准备次数 |',
+              '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
     for label, value in table.items():
         if label.endswith('/0'):continue
         counts=value['work_counts']
         lines.append('| '+label+' | '+' | '.join(str(statistics.median(c[k] for c in counts))
                      for k in ('chain_rules','chain_rule_rotations','shared_preparations','input_copies',
-                               'workspace_builds','workspace_calls','worker_input_copies','prepare_dispatches'))+' |')
-    lines += ['', '正数为配对降时。4→7 是工作区复用、工作线程输入初始化及单规则直接调用的组合改动；7→8 单独比较共享准备并行化及其额外汇合成本。0→7/8 才是相对原实现的净收益。',
-              '路线 8 的共享准备墙钟包含准备派发/汇合；规则链派发区间不含这段。工作区复用没有消除单规则函数调用，只减少对象反复构造；内部容量增长仍可能分配。',
+                               'workspace_builds','workspace_calls','worker_input_copies','prepare_dispatches',
+                               'worker_preparations','prepare_wait_events'))+' |')
+    lines += ['', '正数为配对降时。8→9 比较准备与搜索合并派发、就绪发布及依赖等待的净效果；7→9 包含准备并行化。0→8/9 仅是相对原规则并行内核的局部收益，不是相对工程基准的全流程收益。',
+              '路线 8 的共享准备墙钟含准备派发/汇合；路线 9 的准备、就绪等待和搜索位于同一派发区间并相互重叠。路线 9 的主线程准备为零不能当作准备免费；任务累计与准备跨度不能相加。',
               '本报告是分项阶段输出，整个套件是否完成须查看 summary.json 的 complete 字段。', '']
     path.write_text('\n'.join(lines))
     return table
@@ -137,7 +153,7 @@ def check_group(cases, fixture=None):
             d=c['result']; probe=d.get('profile', {})
             if probe.get('chain_rules', 0) <= 0 or probe.get('shared_preparations', 0) <= 0:
                 raise ValueError('整链任务或共享准备未实际覆盖')
-            if route in (5, 7, 8):
+            if route in (5, 7, 8, 9):
                 if probe.get('input_copies') != t * probe['shared_preparations']:
                     raise ValueError('复用路线仍在逐规则复制输入')
                 if c['arguments'][4] and probe.get('prefix_checks', 0) != probe.get('chain_rule_rotations'):
@@ -154,6 +170,8 @@ def check_group(cases, fixture=None):
                     raise ValueError('输入缓冲未在工作任务内初始化')
                 if probe.get('prepare_dispatches') != (batches if route==8 else 0):
                     raise ValueError('准备派发次数不符')
+                if route==9 and probe.get('worker_preparations') != probe.get('shared_preparations'):
+                    raise ValueError('同次派发未在工作任务内完成全部准备')
                 if fixture is None and probe.get('enabled') and probe.get('claim_attempts') != 0:
                     raise ValueError('工作区入口仍通过单规则原子队列领取')
         if fixture is not None:
@@ -226,7 +244,7 @@ def load_build(root, build, memory_only=False):
 def main():
     root = Path(__file__).resolve().parents[2]
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--build-dir', type=Path, default=root/'build/rotation_chain_workspace_v4')
+    p.add_argument('--build-dir', type=Path, default=root/'build/rotation_chain_pipeline_v5')
     p.add_argument('--output-dir', type=Path, default=root/'test_code_expansion/strong_scaling_results'/time.strftime('rotation_chain_suite_%Y%m%d-%H%M%S'))
     p.add_argument('--cpus', default='auto', help='auto 使用进程允许的前四个处理器')
     p.add_argument('--blocks', type=int, default=12, help='正式四路线计时块数，至少 4 且为 4 的倍数')
@@ -244,9 +262,10 @@ def main():
         manifest = load_build(root, build, a.memory_only)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         p.error(str(exc))
-    candidate_routes = ({'dynamic_chain_v3': (4, 5, 6), 'workspace_chain_v4': (4, 7, 8)}
-                        .get(manifest.get('campaign'), (1, 2, 3)) if a.memory_only else (4, 7, 8))
-    route_labels = {**ROUTES, 1:'旧固定旋转链', 2:'旧固定逐旋转', 3:'旧批量动态',
+    candidate_routes = ({'dynamic_chain_v3': (4, 5, 6), 'workspace_chain_v4': (4, 7, 8),
+                         'pipeline_chain_v5': (7, 8, 9)}
+                        .get(manifest.get('campaign'), (1, 2, 3)) if a.memory_only else (7, 8, 9))
+    route_labels = {**ROUTES, 1:'旧固定旋转链', 2:'旧固定逐旋转', 3:'旧批量动态', 4:'旧动态整链',
                     5:'旧前缀复用', 6:'旧同布局固定链'}
     if a.check_build:
         print('指定构建的程序及运行库摘要匹配；仅补内存检查。' if a.memory_only else '已编译，源码及可执行文件匹配；可提交测试。')
@@ -264,7 +283,7 @@ def main():
         if out.exists() and any(out.iterdir()):
             p.error('输出目录非空，禁止覆盖无清单文件')
         out.mkdir(parents=True, exist_ok=True)
-        state = dict(schema='rotation_chain_suite_v4', config=config, source_sha256=hashes,
+        state = dict(schema='rotation_chain_suite_v5', config=config, source_sha256=hashes, reference_scope=REFERENCE_SCOPE,
                      platform=platform.platform(), cpu_max=Path('/sys/fs/cgroup/cpu.max').read_text() if Path('/sys/fs/cgroup/cpu.max').exists() else None,
                      started_utc=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), complete=False,
                      routes={r:route_labels[r] for r in (0,*candidate_routes)}, builds={}, validation={}, benchmarks={}, profile_samples={},
@@ -360,6 +379,35 @@ def main():
             raise RuntimeError('分项测量构建与正式计时混用')
         return record
 
+    def prepare_fault_probes(binary):
+        # Real fault injection is run only on the cluster, with a short timeout.
+        probes=state.setdefault('prepare_fault_probes', {})
+        for threads, fault in ((2, 0), (4, 2)):
+            key=f'{threads}/{fault}'
+            args=[threads, 9, 0, 1, 1, 1, -1, fault]
+            binary_hash=state['builds']['release']['binary_sha256']
+            if key in probes:
+                cached=probes[key]
+                if cached['arguments']!=args or cached['binary_sha256']!=binary_hash:
+                    raise RuntimeError('准备异常检查的缓存身份不一致')
+                check_prepare_fault(cached)
+                continue
+            start=time.monotonic()
+            try:
+                proc=subprocess.run([str(binary), *map(str,args)], cwd=build, capture_output=True,
+                                    text=True, timeout=15)
+                item=dict(returncode=proc.returncode,stdout=proc.stdout,stderr=proc.stderr,timed_out=False)
+            except subprocess.TimeoutExpired as exc:
+                stdout=exc.stdout.decode(errors='replace') if isinstance(exc.stdout,bytes) else exc.stdout or ''
+                stderr=exc.stderr.decode(errors='replace') if isinstance(exc.stderr,bytes) else exc.stderr or ''
+                item=dict(returncode=None,stdout=stdout,stderr=stderr+'\n准备失败后未及时退出',timed_out=True)
+            except OSError as exc:
+                item=dict(returncode=None,stdout='',stderr=str(exc),timed_out=False,launch_error=str(exc))
+            item.update(arguments=args,binary_sha256=binary_hash,seconds=time.monotonic()-start)
+            probes[key]=item;save()
+            check_prepare_fault(item)
+        print('PASS preparation failure probes', len(probes), flush=True)
+
     def validate(kind, binary):
         routes = [(1, -1), (4, 0)] + [(t, route) for route in candidate_routes for t in ((1, 2, 4) if kind == 'release' else (2, 4))]
         for limit in ((7, 45) if kind == 'release' else (45,)):
@@ -437,7 +485,7 @@ def main():
             print('MEMORY CHECK COMPLETE', summary_path, flush=True)
             return
         command('driver_tests', [sys.executable, '-m', 'unittest', 'discover', '-s', root/'test_code_expansion/tests', '-p', 'test_rotation_chain_suite.py', '-v'])
-        release = prepared_binary('release'); validate('release', release)
+        release = prepared_binary('release'); prepare_fault_probes(release); validate('release', release)
         ubsan = prepared_binary('ubsan'); validate('ubsan', ubsan)
         for limit, variant in BENCHMARK_LOCALS:
             benchmark(release, f'local/{limit}/{variant}', variant, limit)
