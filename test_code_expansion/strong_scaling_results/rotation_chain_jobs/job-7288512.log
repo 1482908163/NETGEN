@@ -1,0 +1,34 @@
+旋转链分项测试：1 节点、1 进程、4 核；仅运行已编译程序
+ADDRESS CHECK BLOCKED: 地址检查器无法预留影子虚拟地址空间；限制已记录，未更改系统或作业限制
+START driver_tests
+PASS driver_tests
+PASS preparation failure probes 2
+PROGRESS 25 / 580 release/local/7/2/4/0
+PROGRESS 50 / 580 release/local/45/1/4/7
+PROGRESS 75 / 580 release/front/0/4/8
+PROGRESS 100 / 580 release/front/2/4/9
+PROGRESS 125 / 580 release/front/5/1/7
+PASS differential release groups 12
+PROGRESS 150 / 580 ubsan/local/45/2/1/-1
+PROGRESS 175 / 580 ubsan/front/2/4/0
+PROGRESS 200 / 580 ubsan/front/5/2/7
+PASS differential ubsan groups 9
+PROGRESS 225 / 580 benchmark/local/7/0/3/8
+PROGRESS 250 / 580 benchmark/local/7/0/10/8
+BENCH local/7/0 {'0->8': 13.282, '0->9': 15.639, '7->9': -0.967, '8->9': 2.505}
+PROGRESS 275 / 580 benchmark/local/45/0/3/0
+PROGRESS 300 / 580 benchmark/local/45/0/9/9
+BENCH local/45/0 {'0->8': 4.239, '0->9': 6.193, '7->9': -1.302, '8->9': 1.691}
+PROGRESS 325 / 580 benchmark/front/2/2/7
+PROGRESS 350 / 580 benchmark/front/2/9/7
+BENCH front/2 {'0->8': 3.474, '0->9': 5.915, '7->9': 7.781, '8->9': 5.196}
+PROGRESS 375 / 580 benchmark/front/4/2/9
+PROGRESS 400 / 580 benchmark/front/4/8/8
+BENCH front/4 {'0->8': 15.505, '0->9': 15.759, '7->9': 16.533, '8->9': 0.123}
+PROGRESS 425 / 580 profile/local/45/1/4/7
+PROGRESS 450 / 580 profile/front/1/2/8
+PROGRESS 475 / 580 profile/front/4/4/8
+PASS differential profile groups 9
+PROGRESS 500 / 580 profile_measure/4/0/2
+PARTIAL: 性能及独立未定义行为检查完成，地址检查受阻；无需重跑性能。 /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/rotation_chain_suite_20261106-212855/summary.json
+yhrun: error: cn271: task 0: Exited with exit code 3

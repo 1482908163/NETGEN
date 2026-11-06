@@ -1,0 +1,28 @@
+test_equivalence_and_fallback (test_rotation_chain_suite.GateTests) ... ok
+test_explicit_tool_path_does_not_silently_fallback (test_rotation_chain_suite.GateTests) ... ok
+test_failure_exit_is_not_success (test_rotation_chain_suite.GateTests) ... ok
+test_job_requires_allocation (test_rotation_chain_suite.GateTests) ... ok
+test_one_submission_and_spool_root (test_rotation_chain_suite.GateTests) ... ok
+test_pairs_use_same_block (test_rotation_chain_suite.GateTests) ... ok
+test_preparation_failure_must_terminate (test_rotation_chain_suite.GateTests) ... ok
+test_reject_changed_geometry (test_rotation_chain_suite.GateTests) ... ok
+test_reject_hidden_pipeline_dispatch (test_rotation_chain_suite.GateTests) ... ok
+test_reject_host_input_initialization (test_rotation_chain_suite.GateTests) ... ok
+test_reject_invalid_time (test_rotation_chain_suite.GateTests) ... ok
+test_reject_missing_prefix_verification (test_rotation_chain_suite.GateTests) ... ok
+test_reject_missing_task_preparation (test_rotation_chain_suite.GateTests) ... ok
+test_reject_per_rule_workspace_construction (test_rotation_chain_suite.GateTests) ... ok
+test_reject_process_and_sanitizer_errors (test_rotation_chain_suite.GateTests) ... ok
+test_reject_repeated_copy_in_reuse_route (test_rotation_chain_suite.GateTests) ... ok
+test_reject_unaccounted_preparation_dispatch (test_rotation_chain_suite.GateTests) ... ok
+test_reject_workspace_path_bypass (test_rotation_chain_suite.GateTests) ... ok
+test_reject_wrong_barrier_count (test_rotation_chain_suite.GateTests) ... ok
+test_reject_zero_coverage (test_rotation_chain_suite.GateTests) ... ok
+test_shadow_failure_is_not_algorithm_error (test_rotation_chain_suite.GateTests) ... ok
+test_tool_resolution_recovers_project_cache (test_rotation_chain_suite.GateTests) ... ok
+test_tool_resolution_skips_non_directory_path (test_rotation_chain_suite.GateTests) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.268s
+
+OK
