@@ -1,0 +1,97 @@
+{
+  "schema": "engineering_baseline_v1",
+  "baseline": "node_engineered/baseline",
+  "baseline_contract": "fixed_recovery_v1",
+  "arms": [
+    {
+      "scheduler": "node_original",
+      "algorithm": "baseline"
+    },
+    {
+      "scheduler": "node_engineered",
+      "algorithm": "baseline"
+    },
+    {
+      "scheduler": "node_engineered",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_fixed",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_elastic",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_fixed",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_elastic",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_recovery_fixed",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_fixed",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_online",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_front",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_topology",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_quiet",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_shared",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_search_elastic",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_search_online",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_search_full",
+      "algorithm": "sparse"
+    }
+  ],
+  "process_counts": [
+    256,
+    512,
+    1024
+  ],
+  "levels": [
+    4
+  ],
+  "refines": 2,
+  "threads": 4,
+  "ranks_per_node": 4,
+  "seeds": [
+    -1
+  ],
+  "warmups": 1,
+  "repeats": 3,
+  "total_runs": 216,
+  "start_epoch": 1793954766
+}

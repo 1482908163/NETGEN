@@ -1,0 +1,37 @@
+p256/node_elastic/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_elastic_t4/p256/sparse_natural/repeat_3
+p256/node_engineered/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [2]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_engineered_t4/p256/sparse_natural/repeat_2
+p256/node_rules_fixed/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_fixed_t4/p256/sparse_natural/repeat_3
+p256/node_rules_recovery_quiet/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_recovery_quiet_t4/p256/sparse_natural/repeat_3
+p256/node_rules_recovery_shared/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_recovery_shared_t4/p256/sparse_natural/repeat_3
+node_engineered/t4: 关键进程明细 5/6 次
+node_engineered/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [2]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_engineered_t4/p256/sparse_natural/repeat_2
+node_elastic/t4: 关键进程明细 2/3 次
+node_elastic/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_elastic_t4/p256/sparse_natural/repeat_3
+node_rules_fixed/t4: 关键进程明细 2/3 次
+node_rules_fixed/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_fixed_t4/p256/sparse_natural/repeat_3
+node_rules_recovery_quiet/t4: 关键进程明细 2/3 次
+node_rules_recovery_quiet/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_recovery_quiet_t4/p256/sparse_natural/repeat_3
+node_rules_recovery_shared/t4: 关键进程明细 2/3 次
+node_rules_recovery_shared/t4: Missing measured repeats: p256 seed=-1 sparse/natural: [3]
+Failed run (exit 1): /vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261106-164406/levels4/kernel_node_rules_recovery_shared_t4/p256/sparse_natural/repeat_3
+相对工程基准/node_elastic+sparse/t4/seed-1: 第3轮未成功完成
+相对工程基准/node_engineered+sparse/t4/seed-1: 第2轮未成功完成
+相对工程基准/node_rules_fixed+sparse/t4/seed-1: 第3轮未成功完成
+相对工程基准/node_rules_recovery_quiet+sparse/t4/seed-1: 第3轮未成功完成
+相对工程基准/node_rules_recovery_shared+sparse/t4/seed-1: 第3轮未成功完成
+稀疏通信/node_engineered+sparse/t4/seed-1: 第2轮未成功完成
+固定资源接口/node_recovery_fixed+sparse/t4/seed-1: 第2轮未成功完成
+旧固定核基础上的借核/node_elastic+sparse/t4/seed-1: 第3轮未成功完成
+旧固定核基础上的规则并行/node_rules_fixed+sparse/t4/seed-1: 第3轮未成功完成
+旧借核基础上的规则并行/node_rules_elastic+sparse/t4/seed-1: 第3轮未成功完成
+高容错规则并行/node_rules_recovery_quiet+sparse/t4/seed-1: 第3轮未成功完成
+共享规则准备/node_rules_recovery_shared+sparse/t4/seed-1: 第3轮未成功完成
