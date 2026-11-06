@@ -10,6 +10,34 @@ import shutil
 import subprocess
 
 
+def allocation_timeout_before_start(directory, exit_code, launcher, job_id):
+    """仅接受当前作业 yhrun 在确认资源前失败的完整两行诊断。"""
+    if exit_code != 1 or Path(launcher).name != 'yhrun' or not re.fullmatch(r'[0-9]+', job_id):
+        return False
+    try:
+        log = directory / 'run.log'
+        if not log.is_file() or log.stat().st_size > 4096:
+            return False
+        lines = [line.strip() for line in log.read_text().splitlines() if line.strip()]
+        expected = [
+            f'yhrun: error: Unable to confirm allocation for job {job_id}: Socket timed out on send/recv operation',
+            f'yhrun: Check SLURM_JOB_ID environment variable. Expired or invalid job {job_id}',
+        ]
+        if lines != expected:
+            return False
+        # 不把已有程序输出、部分网格、进程崩溃或分析失败当作启动瞬断重跑。
+        if any((directory / name).exists() for name in (
+                'rank_profiles.jsonl', 'rank_profiles.jsonl.gz', 'analysis_metrics.json',
+                'quality_summary.json', 'node_coop_diagnostics.txt', 'node_coop_stderr.txt')):
+            return False
+        mesh = directory / 'mesh'
+        if mesh.exists() and (not mesh.is_dir() or any(mesh.iterdir())):
+            return False
+        return True
+    except (OSError, UnicodeError):
+        return False
+
+
 def quality_details(q):
     failed=[]
     for row in q.get('per_rank',[]):
@@ -144,7 +172,13 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root',type=Path)
     parser.add_argument('--exit-code',type=int,help='运行器专用：为一个刚结束的失败轮生成摘要')
+    parser.add_argument('--check-launch-retry',action='store_true',help='只判定明确的启动前资源确认超时；不运行程序或修改记录')
+    parser.add_argument('--launcher',default='')
+    parser.add_argument('--job-id',default='')
     args=parser.parse_args();cache={}
+    if args.check_launch_retry:
+        raise SystemExit(0 if allocation_timeout_before_start(
+            args.root, args.exit_code, args.launcher, args.job_id) else 1)
     if args.exit_code is not None:
         collect(args.root,cache,args.exit_code);return
     directories=sorted({p.parent for p in args.root.rglob('failure_summary.txt')})

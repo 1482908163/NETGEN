@@ -102,4 +102,5 @@ EXPERIMENT_PRESET=engineering_baseline bash test_code_expansion/strong_scaling/r
 ## 本次状态
 
 只完成实现和源码阅读复核，没有在助手环境编译、运行测试或基准，也未提交超算作业。
-当前没有任何方案相对这个新基准的实测加速结论；等待本次集群数据。
+初版提交时尚无实测加速结论。后续用户已提交 `3630786`，首次工程基准实验的结果、失败轮及分支归属见
+[工程基准首批实测](20261106_engineering_baseline_results.md)。旧的待运行状态不再代表当前进度。

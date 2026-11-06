@@ -280,6 +280,12 @@ BALANCE_SWEEPS="${BALANCE_SWEEPS:-4}"
 CUT_GROWTH="${CUT_GROWTH:-0.05}"
 COST_WEIGHTS="${COST_WEIGHTS:-1,1,1,1}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-7200}"
+LAUNCH_START_RETRIES="${LAUNCH_START_RETRIES:-2}"
+LAUNCH_RETRY_DELAY_SECONDS="${LAUNCH_RETRY_DELAY_SECONDS:-5}"
+[[ "${LAUNCH_START_RETRIES}" =~ ^[012]$ && "${LAUNCH_RETRY_DELAY_SECONDS}" =~ ^([0-9]|[12][0-9]|30)$ ]] || {
+    echo '启动重试次数只能为 0/1/2，间隔只能为 0～30 秒。' >&2; exit 2;
+}
+export LAUNCH_START_RETRIES LAUNCH_RETRY_DELAY_SECONDS
 START_DELAY_SECONDS="${START_DELAY_SECONDS:-120}"
 PARTITION="${PARTITION:-mt_module}"
 SBATCH_COMMAND="${SBATCH_COMMAND:-yhbatch}"
@@ -677,8 +683,28 @@ SIGNATURE
                 args+=(--validate-volume)
                 [[ "$a" != sparse ]] || args+=(--verify-faces)
             fi
-            rc=0
-            timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
+            launch_attempt=0
+            while :; do
+                rc=0
+                timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
+                ((rc!=0)) || break
+                if ! python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" \
+                    --check-launch-retry --exit-code "$rc" --launcher "${MPI_LAUNCHER}" \
+                    --job-id "${SLURM_JOB_ID:-}"; then
+                    break
+                fi
+                # 每次明确的启动失败均独立保留，成功轮清理也不删除这些记录。
+                mkdir -p "${out}/launch_attempts"
+                attempt_dir="$(mktemp -d "${out}/launch_attempts/attempt-XXXXXX")"
+                cp "${out}/run.log" "${attempt_dir}/diagnostic.txt"
+                printf 'job_id=%s\nattempt=%s\nexit_code=%s\nrepeat=%s\nretry_limit=%s\n' \
+                    "${SLURM_JOB_ID}" "$((launch_attempt+1))" "$rc" "$rep" "${LAUNCH_START_RETRIES}" \
+                    > "${attempt_dir}/metadata.txt"
+                ((launch_attempt<LAUNCH_START_RETRIES)) || break
+                launch_attempt=$((launch_attempt+1))
+                echo "资源确认超时，程序尚未启动；保持本轮参数重试 ${launch_attempt}/${LAUNCH_START_RETRIES}：${out}" >&2
+                sleep "$((LAUNCH_RETRY_DELAY_SECONDS*launch_attempt))"
+            done
             rm -f "${out}/RUNNING"
             exec 9>&-
             if ((rc==0)); then
