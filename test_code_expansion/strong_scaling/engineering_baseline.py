@@ -30,6 +30,8 @@ INCREMENTS = (
     ('恢复平滑依赖调度', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag', 'sparse')),
     ('紧凑依赖图增量', ('node_rules_recovery_dag', 'sparse'), ('node_rules_recovery_dag_compact', 'sparse')),
     ('紧凑依赖调度整体增量', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag_compact', 'sparse')),
+    ('连续边去重增量', ('node_rules_recovery_dag', 'sparse'), ('node_rules_recovery_dag_stream', 'sparse')),
+    ('连续边依赖调度整体增量', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag_stream', 'sparse')),
     ('共享规则准备', ('node_rules_recovery_topology', 'sparse'), ('node_rules_recovery_shared', 'sparse')),
     ('自适应搜索', ('node_rules_elastic', 'sparse'), ('node_search_elastic', 'sparse')),
     ('搜索基础上的在线借核', ('node_search_elastic', 'sparse'), ('node_search_online', 'sparse')),
@@ -67,9 +69,10 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
         for name in ('kernel_rules_mismatches', 'kernel_group_mismatches',
                      'kernel_topology_mismatches', 'kernel_shared_mismatches', 'kernel_quiet_mismatches', 'kernel_smoothing_mismatches'):
             require(r.get(name, 0) == 0, name + '非零')
-        if scheduler in ('node_rules_recovery_dag','node_rules_recovery_dag_compact'):
-            compact=scheduler=='node_rules_recovery_dag_compact'
-            expected=('4' if repeat==0 else '3') if compact else ('2' if repeat==0 else '1')
+        if scheduler in ('node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream'):
+            stream=scheduler=='node_rules_recovery_dag_stream'
+            compact=stream or scheduler=='node_rules_recovery_dag_compact'
+            expected=('6' if repeat==0 else '5') if stream else ('4' if repeat==0 else '3') if compact else ('2' if repeat==0 else '1')
             require(r.get('recovery_smoothing_profile')=='color_dependency_v1' and
                     r.get('recovery_smoothing_mode')==expected, '缺少恢复平滑候选身份')
             require(r.get('kernel_smoothing_dag_calls',0)>0 and r.get('kernel_smoothing_tasks',0)>0 and
@@ -77,7 +80,7 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('kernel_smoothing_verified')==(r['kernel_smoothing_dag_calls'] if repeat==0 else 0),
                     '恢复平滑覆盖或重放不完整')
             if compact:
-                require(r.get('recovery_smoothing_graph_profile')=='unique_incident_v2' and
+                require(r.get('recovery_smoothing_graph_profile')==('edge_stream_v3' if stream else 'unique_incident_v2') and
                         r.get('kernel_smoothing_graph_verified')==(r['kernel_smoothing_dag_calls'] if repeat==0 else 0),
                         '紧凑依赖图身份或核验覆盖不完整')
                 raw=r.get('kernel_smoothing_raw_edges');removed=r.get('kernel_smoothing_deduplicated_edges')

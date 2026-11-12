@@ -531,7 +531,7 @@ NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
 NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles
 // 0 original, 1 deduplicate/reuse, 2 exact type/flag/open-face replay (3D only).
 NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode);
-// Recovery-only smoothing: 0 off, 1/2 tet-chain queue/replay, 3/4 compact queue/replay.
+// Recovery-only smoothing: 0 off, 1/2 tet-chain queue/replay, 3/4 incident compact, 5/6 edge-stream compact (formal/replay).
 NGLIB_API Ng_Result Ng_SetVolumeRecoverySmoothingMode(int mode);
 // 15 fields, in the order emitted by the MPI profiler.
 NGLIB_API void Ng_GetVolumeRecoverySmoothingStats(double *values);

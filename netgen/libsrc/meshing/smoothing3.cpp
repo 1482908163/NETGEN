@@ -1517,11 +1517,13 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
         }
         return edges;
       };
-      const bool compact=dag_mode>=3, verify=dag_mode==2 || dag_mode==4;
+      const bool compact=dag_mode>=3, stream=dag_mode>=5;
+      const bool verify=dag_mode==2 || dag_mode==4 || dag_mode==6;
       std::unique_ptr<SmoothingDependencyQueue> queue_owner;
       size_t raw_edges=0,edge_count=0;
       if(compact) {
-        auto graph=BuildUniqueSmoothingGraph(task_colors,[&](int source,auto emit) {
+        auto graph=stream ? BuildEdgeStreamSmoothingGraph(task_colors,original_edges())
+                          : BuildUniqueSmoothingGraph(task_colors,[&](int source,auto emit) {
           // The point function already built this adjacency. In a tet's sorted
           // chain the next task is exactly its least strictly higher color.
           for(auto ei:elementsonpoint[active[source]]) {

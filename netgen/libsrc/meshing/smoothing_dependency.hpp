@@ -46,6 +46,46 @@ namespace netgen
     return graph;
   }
 
+  // Keep the old element-major edge stream. Deduplicate only after grouping
+  // successors by source: no repeated indirect walk through point/tet stars.
+  inline SmoothingDependencyGraph BuildEdgeStreamSmoothingGraph(
+      const std::vector<int> &colors, const std::vector<std::pair<int,int>> &edges)
+  {
+    SmoothingDependencyGraph graph;
+    graph.raw_edges=edges.size();
+    graph.offsets.assign(colors.size()+1,0);
+    for(int color:colors) if(color<0) throw std::runtime_error("Invalid smoothing color");
+    for(auto edge:edges) {
+      int source=edge.first,next=edge.second;
+      if(source<0 || next<0 || size_t(source)>=colors.size() || size_t(next)>=colors.size() ||
+         colors[source]>=colors[next]) throw std::runtime_error("Non-increasing smoothing dependency");
+      ++graph.offsets[size_t(source)+1];
+    }
+    for(size_t i=1;i<graph.offsets.size();++i) graph.offsets[i]+=graph.offsets[i-1];
+    graph.successors.resize(edges.size());
+    {
+      auto cursor=graph.offsets;
+      for(auto edge:edges) graph.successors[cursor[edge.first]++]=edge.second;
+    }
+    std::vector<int> seen(colors.size(),-1);
+    size_t start=0,write=0;
+    for(size_t source=0;source<colors.size();++source) {
+      const size_t end=graph.offsets[source+1]; // still the original row end
+      graph.offsets[source]=write;
+      for(size_t read=start;read<end;++read) {
+        int next=graph.successors[read];
+        if(seen[next]!=int(source)) {
+          seen[next]=int(source); graph.successors[write++]=next;
+        }
+      }
+      start=end;
+    }
+    graph.offsets.back()=write;
+    // Retain capacity: an extra allocation/copy just to shrink is not free.
+    graph.successors.resize(write);
+    return graph;
+  }
+
   // Warmup only: compare exact edge sets against the independent per-tet builder.
   inline bool SameSmoothingDependencies(std::vector<std::pair<int,int>> reference,
                                         const SmoothingDependencyGraph &graph)

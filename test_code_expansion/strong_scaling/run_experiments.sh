@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   recovery_dag_stream: 连续边去重，工程基准＋高容错＋旧依赖图，64/128/256节点，共60次
 #   recovery_dag_compact: 紧凑依赖图，工程基准＋高容错＋旧依赖图，64/128/256节点，共60次
 #   recovery_dag: 恢复平滑依赖队列，工程基准＋高容错对照，64/128/256节点，共48次
 #   engineering_baseline: 工程基准与历代主线，同批64/128/256节点，面4/体2
@@ -35,6 +36,13 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == recovery_dag_stream ]]; then
+    export ENGINEERING_BASELINE_REQUIRED=1
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_quiet node_rules_recovery_dag node_rules_recovery_dag_stream}"
+    [[ " ${KERNEL_SCHEDULERS} " == *" node_engineered "* ]] || { echo "连续边去重对照必须包含工程基准。" >&2; exit 2; }
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == recovery_dag_compact ]]; then
     export ENGINEERING_BASELINE_REQUIRED=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
@@ -324,7 +332,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_rules_recovery_dag_stream || "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -563,7 +571,7 @@ printf '%s\n' "${config_text}" > "${pdir}/configuration.txt"
 
 # Execute dependency/exception probes once in each candidate quality warmup.
 # The program is already built by build_project.sh; compute jobs never compile.
-if [[ ( "${KERNEL_SCHEDULER}" == node_rules_recovery_dag || "${KERNEL_SCHEDULER}" == node_rules_recovery_dag_compact ) && "${KERNEL_REPEAT:-0}" == 0 ]]; then
+if [[ ( "${KERNEL_SCHEDULER}" == node_rules_recovery_dag || "${KERNEL_SCHEDULER}" == node_rules_recovery_dag_compact || "${KERNEL_SCHEDULER}" == node_rules_recovery_dag_stream ) && "${KERNEL_REPEAT:-0}" == 0 ]]; then
     dag_probe="${REPOSITORY_ROOT}/build/recovery_dag_probe"
     [[ -x "${dag_probe}" ]] || { echo "缺少恢复依赖检查程序，请先运行原 build_project.sh。" >&2; exit 2; }
     probe_launch=("${MPI_LAUNCHER}" "${mpi_extra[@]}" -n 1)
@@ -574,7 +582,7 @@ if [[ ( "${KERNEL_SCHEDULER}" == node_rules_recovery_dag || "${KERNEL_SCHEDULER}
     if ! timeout --kill-after=5s 30s "${probe_launch[@]}" "${dag_probe}" > "${pdir}/smoothing_dependency_probe.txt" 2>&1; then
         echo "恢复依赖调度检查失败或超时；保留日志并跳过此候选。" >&2; exit 2
     fi
-    grep -Fxq "RECOVERY_DAG_PROBE_PASS 14" "${pdir}/smoothing_dependency_probe.txt" || {
+    grep -Fxq "RECOVERY_DAG_PROBE_PASS 20" "${pdir}/smoothing_dependency_probe.txt" || {
         echo "恢复依赖检查版本不符，请用原 build_project.sh 重新编译。" >&2; exit 2;
     }
 fi

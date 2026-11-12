@@ -469,7 +469,7 @@ namespace nglib
    static thread_local int recovery_smoothing_mode = 0;
    static thread_local double last_smoothing_stats[VolumeKernelStats::smoothing_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeRecoverySmoothingMode(int mode) {
-     if(mode<0 || mode>4) return NG_ERROR;
+     if(mode<0 || mode>6) return NG_ERROR;
      recovery_smoothing_mode=mode;return NG_OK;
    }
    NGLIB_API void Ng_GetVolumeRecoverySmoothingStats(double *values) {

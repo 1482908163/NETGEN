@@ -12,7 +12,7 @@ static void require(bool value,const char *message)
   if(!value) throw std::runtime_error(message);
 }
 
-static void ordered_updates(int workers,bool compact=false)
+static void ordered_updates(int workers,int compact=0)
 {
   const int n=67;
   std::vector<int> colors(n);
@@ -36,7 +36,8 @@ static void ordered_updates(int workers,bool compact=false)
   for(int c=0;c<4;++c) for(int i=0;i<n;++i) if(colors[i]==c) update(reference,i);
   std::unique_ptr<SmoothingDependencyQueue> owner;
   if(compact) {
-    auto graph=netgen::BuildUniqueSmoothingGraph(colors,[&](int source,auto emit) {
+    auto graph=compact==2 ? netgen::BuildEdgeStreamSmoothingGraph(colors,edges)
+                         : netgen::BuildUniqueSmoothingGraph(colors,[&](int source,auto emit) {
       for(int ei:incident[source]) {
         int next=-1;
         for(int id:elements[ei]) if(colors[id]>colors[source] && (next<0 || colors[id]<colors[next])) next=id;
@@ -96,6 +97,18 @@ int main()
     netgen::SmoothingDependencyGraph missing;
     missing.offsets={0,0,0};
     require(!netgen::SameSmoothingDependencies({{0,1}},missing),"missing dependency accepted");
-    std::cout<<"RECOVERY_DAG_PROBE_PASS 14\n";
+    for(int workers:{1,2,4}) ordered_updates(workers,2);
+    auto stream_empty=netgen::BuildEdgeStreamSmoothingGraph({},{});
+    require(stream_empty.offsets==std::vector<std::size_t>{0} && stream_empty.successors.empty(),"empty stream graph changed");
+    SmoothingDependencyQueue empty_stream({},std::move(stream_empty.offsets),std::move(stream_empty.successors));
+    empty_stream.RunWorker([](int){throw std::runtime_error("empty stream task");});empty_stream.Finish();
+    auto stream_isolated=netgen::BuildEdgeStreamSmoothingGraph({0,2,1},{});
+    require(stream_isolated.offsets==std::vector<std::size_t>({0,0,0,0}),"isolated stream offsets changed");
+    SmoothingDependencyQueue isolated_stream({0,2,1},std::move(stream_isolated.offsets),std::move(stream_isolated.successors));
+    isolated_stream.RunWorker([](int){});isolated_stream.Finish();
+    rejected=false;
+    try {netgen::BuildEdgeStreamSmoothingGraph({0,1},{{-1,1}});} catch(const std::runtime_error&){rejected=true;}
+    require(rejected,"invalid stream edge accepted");
+    std::cout<<"RECOVERY_DAG_PROBE_PASS 20\n";
   } catch(const std::exception &error) {std::cerr<<error.what()<<'\n';return 1;}
 }
