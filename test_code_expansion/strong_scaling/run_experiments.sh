@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   recovery_surface: 换边后表面分类复用，工程基准＋高容错对照，64/128/256节点，共48次
 #   recovery_dag_stream: 连续边去重，工程基准＋高容错＋旧依赖图，64/128/256节点，共60次
 #   recovery_dag_compact: 紧凑依赖图，工程基准＋高容错＋旧依赖图，64/128/256节点，共60次
 #   recovery_dag: 恢复平滑依赖队列，工程基准＋高容错对照，64/128/256节点，共48次
@@ -36,6 +37,13 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == recovery_surface ]]; then
+    export ENGINEERING_BASELINE_REQUIRED=1
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_quiet node_rules_recovery_surface}"
+    [[ " ${KERNEL_SCHEDULERS} " == *" node_engineered "* ]] || { echo "表面复用对照必须包含工程基准。" >&2; exit 2; }
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == recovery_dag_stream ]]; then
     export ENGINEERING_BASELINE_REQUIRED=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
@@ -332,7 +340,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_rules_recovery_dag_stream || "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_rules_recovery_surface || "$scheduler" == node_rules_recovery_dag_stream || "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {

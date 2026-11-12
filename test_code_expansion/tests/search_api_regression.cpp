@@ -32,12 +32,16 @@ int main() {
     nglib::Ng_GetVolumeFrontGroupStats(group_stats+1);
     require(group_stats[0]==-7.0 && group_stats[10]==-7.0);
     require(nglib::Ng_SetVolumeRecoveryTopologyMode(-1)==nglib::NG_ERROR);
-    require(nglib::Ng_SetVolumeRecoveryTopologyMode(3)==nglib::NG_ERROR);
-    for(int mode:{2,1,0}) require(nglib::Ng_SetVolumeRecoveryTopologyMode(mode)==nglib::NG_OK);
+    require(nglib::Ng_SetVolumeRecoveryTopologyMode(5)==nglib::NG_ERROR);
+    for(int mode:{4,3,2,1,0}) require(nglib::Ng_SetVolumeRecoveryTopologyMode(mode)==nglib::NG_OK);
     double topology_stats[7];std::fill_n(topology_stats,7,-9.0);
     nglib::Ng_GetVolumeRecoveryTopologyStats(topology_stats+1);
     require(topology_stats[0]==-9.0 && topology_stats[6]==-9.0);
     for(int i=1;i<=5;++i) require(topology_stats[i]==0);
+    double topology_detail[9];std::fill_n(topology_detail,9,-9.0);
+    nglib::Ng_GetVolumeRecoveryTopologyDetailStats(topology_detail+1);
+    require(topology_detail[0]==-9.0 && topology_detail[8]==-9.0);
+    for(int i=1;i<=7;++i) require(topology_detail[i]==0);
     require(nglib::Ng_SetVolumeSharedRulePreparation(-1)==nglib::NG_ERROR);
     require(nglib::Ng_SetVolumeSharedRulePreparation(2)==nglib::NG_ERROR);
     for(int enabled:{1,0}) require(nglib::Ng_SetVolumeSharedRulePreparation(enabled)==nglib::NG_OK);

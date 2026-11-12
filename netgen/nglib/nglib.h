@@ -529,7 +529,7 @@ NGLIB_API void Ng_GetVolumeSharedRuleStats(double * values); // 6 doubles
 // 0=original, 1=bounded closure/cached ray matrices, 2=exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeFrontGroupMode(int mode);
 NGLIB_API void Ng_GetVolumeFrontGroupStats(double * values); // 9 doubles
-// 0 original, 1 deduplicate/reuse, 2 exact type/flag/open-face replay (3D only).
+// 0 original; 1/2 smoothing reuse; 3/4 also post-swap surface reuse (formal/replay).
 NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode);
 // Recovery-only smoothing: 0 off, 1/2 tet-chain queue/replay, 3/4 incident compact, 5/6 edge-stream compact (formal/replay).
 NGLIB_API Ng_Result Ng_SetVolumeRecoverySmoothingMode(int mode);
@@ -539,6 +539,8 @@ NGLIB_API void Ng_GetVolumeRecoverySmoothingStats(double *values);
 NGLIB_API void Ng_GetVolumeRecoverySmoothingGraphStats(double *values);
 // calls, optimized, verified, mismatches, skipped_rebuilds; 5 doubles.
 NGLIB_API void Ng_GetVolumeRecoveryTopologyStats(double * values);
+// Post-swap reuse count, snapshot/find/free/rebuild/restore seconds, verified count.
+NGLIB_API void Ng_GetVolumeRecoveryTopologyDetailStats(double * values); // 7 doubles
 // Host-thread setting, applied only to the instrumented volume kernel.
 // -1=off (default); 0=serial profile; 1=rule tasks; 2=tasks plus exact replay.
 NGLIB_API Ng_Result Ng_SetVolumeRuleSearchMode(int mode);

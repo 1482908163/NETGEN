@@ -388,6 +388,15 @@ namespace netgen
   }
 
 
+  template<class Function>
+  static void TimeRecoveryTopology(VolumeKernelStats *stats,int slot,Function work)
+  {
+    if(!stats) { work(); return; }
+    auto start=std::chrono::steady_clock::now();
+    work();
+    stats->AddTopology(slot,std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count());
+  }
+
   static void VerifyRecoveryTopology(Mesh &mesh,VolumeKernelStats *stats)
   {
     std::vector<int> types,faces;
@@ -421,17 +430,18 @@ namespace netgen
   {
     auto *stats=mp.volume_kernel_stats;
     if(stats) stats->AddTopology(0,1);
-    mesh.FindOpenElements();
+    TimeRecoveryTopology(stats,7,[&]{mesh.FindOpenElements();});
     const bool optimized=mp.volume_recovery_topology_mode>0 && mesh.GetDimension()==3;
     // FreeOpenElementsEnvironment reads connectivity/open faces only. Its writes
     // are element fixed flags and point types. In 3D CalcSurfacesOfNode resets
     // EVERY point type before classifying it, and rebuilds both lookup tables.
     // The first of the original two surface rebuilds has no surviving effect.
-    if(!optimized) mesh.CalcSurfacesOfNode();
-    mesh.FreeOpenElementsEnvironment(2);mesh.CalcSurfacesOfNode();
+    if(!optimized) TimeRecoveryTopology(stats,9,[&]{mesh.CalcSurfacesOfNode();});
+    TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment(2);});
+    TimeRecoveryTopology(stats,9,[&]{mesh.CalcSurfacesOfNode();});
     if(!optimized) return;
     if(stats) {stats->AddTopology(1,1);stats->AddTopology(4,1);}
-    if(mp.volume_recovery_topology_mode==2) VerifyRecoveryTopology(mesh,stats);
+    if(mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4) VerifyRecoveryTopology(mesh,stats);
   }
 
   void RecoverOpenElements(Mesh & mesh,const MeshingParameters & mp,int domain)
@@ -451,6 +461,22 @@ namespace netgen
 #endif
       const char *optstr="mcmstmcmstmcmstmcm";
       std::vector<POINTTYPE> smooth_types;
+      const bool surface_reuse=mp.volume_recovery_topology_mode>=3 && mesh.GetDimension()==3;
+      const bool verify=mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4;
+      bool surface_ready=false;
+      auto save_types=[&] {
+        TimeRecoveryTopology(stats,6,[&] {
+          smooth_types.clear();smooth_types.reserve(mesh.GetNP());
+          for(const auto &p:mesh.Points()) smooth_types.push_back(p.Type());
+        });
+      };
+      auto restore_types=[&] {
+        TimeRecoveryTopology(stats,10,[&] {
+          if(smooth_types.size()!=mesh.GetNP()) throw NgException("Recovery point snapshot size changed");
+          size_t k=0;for(auto &p:mesh.Points()) p.SetType(smooth_types[k++]);
+          mesh.DeleteBoundaryEdges();
+        });
+      };
       const bool reuse=mp.volume_recovery_topology_mode>0 && mesh.GetDimension()==3;
       for(size_t j=0;j<strlen(optstr);++j) {
         if(team) team->Checkpoint(mesh.GetNE());
@@ -461,16 +487,22 @@ namespace netgen
             // assign MeshPoint from Point. Restore classification saved BEFORE
             // smoothing; keep the new coordinates/layer/singularity unchanged.
             // Connectivity, open-face order and element fixed flags did not change.
-            if(smooth_types.size()!=mesh.GetNP()) throw NgException("Smoothing changed point count");
-            size_t k=0;for(auto &p:mesh.Points()) p.SetType(smooth_types[k++]);
-            mesh.DeleteBoundaryEdges(); // original final CalcSurfacesOfNode clears it
+            restore_types(); // original final CalcSurfacesOfNode clears the edge cache
             if(stats) {stats->AddTopology(0,1);stats->AddTopology(1,1);stats->AddTopology(4,2);}
-            if(mp.volume_recovery_topology_mode==2) VerifyRecoveryTopology(mesh,stats);
+            if(verify) VerifyRecoveryTopology(mesh,stats);
+          } else if(surface_reuse && surface_ready) {
+            // Swap/Swap2 end in Compress(), which renumbers and rebuilds surface
+            // lookup tables and point classification. Read this fresh snapshot;
+            // never reuse volume connectivity/open faces across those changes.
+            TimeRecoveryTopology(stats,7,[&]{mesh.FindOpenElements();});
+            TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment(2);});
+            restore_types();
+            if(stats) {stats->AddTopology(0,1);stats->AddTopology(1,1);
+                       stats->AddTopology(4,2);stats->AddTopology(5,1);}
+            if(verify) {VerifyRecoveryTopology(mesh,stats);if(stats) stats->AddTopology(11,1);}
           } else PrepareRecoveryTopology(mesh,mp);
-          if(reuse && optstr[j]=='m' && j+1<strlen(optstr)) {
-            smooth_types.clear();smooth_types.reserve(mesh.GetNP());
-            for(const auto &p:mesh.Points()) smooth_types.push_back(p.Type());
-          }
+          surface_ready=false;
+          if(reuse && optstr[j]=='m' && j+1<strlen(optstr)) save_types();
         }
         // Retain operation order and sorted commits. Optional smoothing keeps
         // the original color order for every pair sharing a tetrahedron.
@@ -487,6 +519,12 @@ namespace netgen
           case 'c': {VolumeGenerationTimer t(stats,8);optmesh.CombineImprove();break;}
           case 's': {VolumeGenerationTimer t(stats,9);optmesh.SwapImprove();break;}
           case 't': {VolumeGenerationTimer t(stats,10);optmesh.SwapImprove2();break;}
+        }
+        if(surface_reuse && (optstr[j]=='s' || optstr[j]=='t') && j+1<strlen(optstr)) {
+          // CombineImprove is deliberately excluded: MarkIllegalElements after
+          // Compress rebuilds boundary edges and changes open-face point types.
+          VolumeGenerationTimer topology(stats,6);
+          save_types(); surface_ready=true;
         }
       }
     } // Join workers and return the lease before serial cavity removal.
