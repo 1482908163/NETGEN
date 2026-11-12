@@ -469,11 +469,14 @@ namespace nglib
    static thread_local int recovery_smoothing_mode = 0;
    static thread_local double last_smoothing_stats[VolumeKernelStats::smoothing_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeRecoverySmoothingMode(int mode) {
-     if(mode<0 || mode>2) return NG_ERROR;
+     if(mode<0 || mode>4) return NG_ERROR;
      recovery_smoothing_mode=mode;return NG_OK;
    }
    NGLIB_API void Ng_GetVolumeRecoverySmoothingStats(double *values) {
-     if(values) std::copy_n(last_smoothing_stats,VolumeKernelStats::smoothing_count,values);
+     if(values) std::copy_n(last_smoothing_stats,15,values);
+   }
+   NGLIB_API void Ng_GetVolumeRecoverySmoothingGraphStats(double *values) {
+     if(values) std::copy_n(last_smoothing_stats+15,3,values);
    }
    static thread_local double last_topology_stats[VolumeKernelStats::topology_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode) {

@@ -322,8 +322,9 @@ int main(int argc, char **argv) {
     const bool adaptive_search=requested_scheduler=="node_search_local" || requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" ||
                                requested_scheduler=="node_search_online" || requested_scheduler=="node_search_full" || requested_scheduler=="node_search_elastic";
     const bool remote_search=requested_scheduler=="node_search_idle" || requested_scheduler=="node_search_remote" || requested_scheduler=="node_search_full";
-    const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag";
-    const int smoothing_mode=smoothing_dag?(profile_repeat<=0?2:1):0;
+    const bool smoothing_compact=requested_scheduler=="node_rules_recovery_dag_compact";
+    const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag" || smoothing_compact;
+    const int smoothing_mode=smoothing_compact?(profile_repeat<=0?4:3):smoothing_dag?(profile_repeat<=0?2:1):0;
     const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet" || smoothing_dag;
     const bool shared_rules=requested_scheduler=="node_rules_recovery_shared";
     const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules || quiet_rules;
@@ -493,6 +494,7 @@ int main(int argc, char **argv) {
         profiler.add_metadata("generation_recovery",generation_recovery?"ordered_team_v1":"off");
         profiler.add_metadata("recovery_smoothing_profile","color_dependency_v1");
         profiler.add_metadata("recovery_smoothing_mode",std::to_string(smoothing_mode));
+        profiler.add_metadata("recovery_smoothing_graph_profile",smoothing_compact?"unique_incident_v2":smoothing_dag?"tet_chain_v1":"off");
         profiler.add_metadata("quiet_rule_profile","no_buffer_v1");
         profiler.add_metadata("quiet_rule_parallelism",quiet_rules?"on":"off");
         profiler.add_metadata("shared_rule_profile","call_snapshot_v1");
@@ -939,6 +941,9 @@ int main(int argc, char **argv) {
                     "build_seconds","execute_seconds","wait_seconds","verified","mismatches","reference_seconds",
                     "completed","early_tasks","dispatches"};
                 for(int k=0;k<15;++k) profiler.set_metric(std::string("kernel_smoothing_")+smoothing_names[k],smoothing[k]);
+                double graph[3]={};nglib::Ng_GetVolumeRecoverySmoothingGraphStats(graph);
+                const char *graph_names[]={"raw_edges","deduplicated_edges","graph_verified"};
+                for(int k=0;k<3;++k) profiler.set_metric(std::string("kernel_smoothing_")+graph_names[k],graph[k]);
                 double generation[19]={};nglib::Ng_GetVolumeGenerationStats(generation);
                 const char *generation_names[]={"prepare_seconds","divide_seconds","domain_checks_seconds",
                     "domain_setup_seconds","front_setup_seconds","recovery_seconds","recovery_topology_seconds",

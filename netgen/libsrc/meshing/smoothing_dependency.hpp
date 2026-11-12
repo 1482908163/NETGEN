@@ -14,6 +14,57 @@
 namespace netgen
 {
   using std::size_t;
+  struct SmoothingDependencyGraph
+  {
+    std::vector<size_t> offsets;
+    std::vector<int> successors;
+    size_t raw_edges=0;
+  };
+
+  // Enumerate the old chain's immediate successor in each incident tet. A
+  // point-sized stamp array removes repeated source/target pairs without sorting
+  // all tet edges or storing an intermediate pair list.
+  template<class Enumerate>
+  SmoothingDependencyGraph BuildUniqueSmoothingGraph(const std::vector<int> &colors,
+                                                      Enumerate enumerate)
+  {
+    SmoothingDependencyGraph graph;
+    graph.offsets.reserve(colors.size()+1); graph.offsets.push_back(0);
+    std::vector<int> seen(colors.size(),-1);
+    for(size_t source=0;source<colors.size();++source) {
+      if(colors[source]<0) throw std::runtime_error("Invalid smoothing color");
+      enumerate(int(source),[&](int next) {
+        if(next<0 || size_t(next)>=colors.size() || colors[source]>=colors[next])
+          throw std::runtime_error("Non-increasing smoothing dependency");
+        ++graph.raw_edges;
+        if(seen[next]!=int(source)) {
+          seen[next]=int(source); graph.successors.push_back(next);
+        }
+      });
+      graph.offsets.push_back(graph.successors.size());
+    }
+    return graph;
+  }
+
+  // Warmup only: compare exact edge sets against the independent per-tet builder.
+  inline bool SameSmoothingDependencies(std::vector<std::pair<int,int>> reference,
+                                        const SmoothingDependencyGraph &graph)
+  {
+    if(graph.offsets.empty() || graph.offsets.front()!=0 || graph.offsets.back()!=graph.successors.size()) return false;
+    for(size_t offset:graph.offsets) if(offset>graph.successors.size()) return false;
+    std::vector<std::pair<int,int>> actual;
+    actual.reserve(graph.successors.size());
+    for(size_t source=0;source+1<graph.offsets.size();++source) {
+      if(graph.offsets[source]>graph.offsets[source+1]) return false;
+      for(size_t j=graph.offsets[source];j<graph.offsets[source+1];++j)
+        actual.emplace_back(int(source),graph.successors[j]);
+    }
+    std::sort(reference.begin(),reference.end());
+    reference.erase(std::unique(reference.begin(),reference.end()),reference.end());
+    std::sort(actual.begin(),actual.end());
+    return reference==actual; // also rejects duplicates in the compact graph
+  }
+
   // Edges retain the old color order only where point updates share an element.
   // Repeated edges are intentional: every indegree increment has one release.
   // The queue mutex publishes point writes before a successor becomes runnable.
@@ -29,6 +80,36 @@ namespace netgen
     double wait_seconds=0;
 
   public:
+    SmoothingDependencyQueue(std::vector<int> task_colors, std::vector<size_t> row_offsets,
+                             std::vector<int> next_tasks)
+      : colors(std::move(task_colors)), successors(std::move(next_tasks)),
+        offsets(std::move(row_offsets)), pending(colors.size(),0), remaining(colors.size())
+    {
+      if(offsets.size()!=colors.size()+1 || offsets.front()!=0 || offsets.back()!=successors.size())
+        throw std::runtime_error("Invalid smoothing CSR offsets");
+      for(size_t offset:offsets) if(offset>successors.size())
+        throw std::runtime_error("Invalid smoothing CSR bounds");
+      int maxcolor=-1;
+      for(int color:colors) {
+        if(color<0) throw std::runtime_error("Invalid smoothing color");
+        maxcolor=std::max(maxcolor,color);
+      }
+      color_remaining.resize(size_t(maxcolor+1),0);
+      for(int color:colors) ++color_remaining[color];
+      for(size_t source=0;source<colors.size();++source) {
+        if(offsets[source]>offsets[source+1]) throw std::runtime_error("Invalid smoothing CSR order");
+        for(size_t j=offsets[source];j<offsets[source+1];++j) {
+          int next=successors[j];
+          if(next<0 || size_t(next)>=colors.size() || colors[source]>=colors[next])
+            throw std::runtime_error("Non-increasing smoothing dependency");
+          ++pending[next];
+        }
+      }
+      ready.reserve(colors.size());
+      for(size_t i=0;i<colors.size();++i) if(!pending[i]) ready.push_back(int(i));
+      while(first_color<color_remaining.size() && !color_remaining[first_color]) ++first_color;
+    }
+
     SmoothingDependencyQueue(std::vector<int> task_colors,
                              const std::vector<std::pair<int,int>> &edges)
       : colors(std::move(task_colors)), offsets(colors.size()+1,0),

@@ -2,6 +2,7 @@
 #include <array>
 #include <atomic>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 using netgen::SmoothingDependencyQueue;
@@ -11,15 +12,18 @@ static void require(bool value,const char *message)
   if(!value) throw std::runtime_error(message);
 }
 
-static void ordered_updates(int workers)
+static void ordered_updates(int workers,bool compact=false)
 {
   const int n=67;
   std::vector<int> colors(n);
   for(int i=0;i<n;++i) colors[i]=i%4;
   std::vector<std::pair<int,int>> edges;
-  std::vector<std::vector<int>> reads(n);
+  std::vector<std::vector<int>> reads(n),incident(n);
+  std::vector<std::array<int,4>> elements;
   for(int i=0;i+3<n;++i) {
     std::array<int,4> tet{{i,i+1,i+2,i+3}};
+    for(int a:tet) incident[a].push_back(int(elements.size()));
+    elements.push_back(tet);
     for(int a:tet) for(int b:tet) if(a!=b) reads[a].push_back(b);
     std::sort(tet.begin(),tet.end(),[&](int a,int b){return colors[a]<colors[b];});
     for(int j=1;j<4;++j) edges.emplace_back(tet[j-1],tet[j]);
@@ -30,7 +34,21 @@ static void ordered_updates(int workers)
     double x=values[i];for(int j:reads[i]) x+=0.01*values[j];values[i]=x;
   };
   for(int c=0;c<4;++c) for(int i=0;i<n;++i) if(colors[i]==c) update(reference,i);
-  SmoothingDependencyQueue queue(colors,edges);
+  std::unique_ptr<SmoothingDependencyQueue> owner;
+  if(compact) {
+    auto graph=netgen::BuildUniqueSmoothingGraph(colors,[&](int source,auto emit) {
+      for(int ei:incident[source]) {
+        int next=-1;
+        for(int id:elements[ei]) if(colors[id]>colors[source] && (next<0 || colors[id]<colors[next])) next=id;
+        if(next>=0) emit(next);
+      }
+    });
+    require(graph.raw_edges==edges.size(),"raw dependency coverage changed");
+    require(graph.successors.size()<graph.raw_edges,"duplicate-edge fixture was not exercised");
+    require(netgen::SameSmoothingDependencies(edges,graph),"compact dependency edge set changed");
+    owner.reset(new SmoothingDependencyQueue(colors,std::move(graph.offsets),std::move(graph.successors)));
+  } else owner.reset(new SmoothingDependencyQueue(colors,edges));
+  auto &queue=*owner;
   std::vector<std::atomic<int>> seen(n);for(auto &v:seen) v.store(0);
   std::vector<std::thread> threads;
   for(int w=0;w<workers;++w) threads.emplace_back([&]{
@@ -70,6 +88,14 @@ int main()
     rejected=false;
     try {SmoothingDependencyQueue invalid({0,0},{{0,1}});} catch(const std::runtime_error&){rejected=true;}
     require(rejected,"same-color dependency accepted");
-    std::cout<<"RECOVERY_DAG_PROBE_PASS 9\n";
+    for(int workers:{1,2,4}) ordered_updates(workers,true);
+    rejected=false;
+    // Interior offset exceeds storage even though the final offset is correct.
+    try {SmoothingDependencyQueue invalid({0,1},{0,2,1},{1});} catch(const std::runtime_error&){rejected=true;}
+    require(rejected,"out-of-bounds CSR offset accepted");
+    netgen::SmoothingDependencyGraph missing;
+    missing.offsets={0,0,0};
+    require(!netgen::SameSmoothingDependencies({{0,1}},missing),"missing dependency accepted");
+    std::cout<<"RECOVERY_DAG_PROBE_PASS 14\n";
   } catch(const std::exception &error) {std::cerr<<error.what()<<'\n';return 1;}
 }

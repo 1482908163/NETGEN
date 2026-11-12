@@ -125,7 +125,7 @@ namespace netgen
     static constexpr int topology_count = 5;
     static constexpr int shared_rule_count = 6;
     static constexpr int quiet_rule_count = 8;
-    static constexpr int smoothing_count = 15;
+    static constexpr int smoothing_count = 18;
     std::atomic<double> values[count];
     std::atomic<double> front_values[front_count];
     std::atomic<double> rule_values[rule_count];
@@ -1815,7 +1815,7 @@ namespace netgen
     bool volume_generation_recovery = false;
     // 0: original, 1: deduplicate/reuse recovery topology, 2: exact replay.
     int volume_recovery_topology_mode = 0;
-    int volume_recovery_smoothing_mode = 0; // 0 original, 1 dependency queue, 2 replay
+    int volume_recovery_smoothing_mode = 0; // 0 original, 1/2 tet-chain queue/replay, 3/4 compact queue/replay
     int volume_smoothing_dag_mode = 0; // activated only inside recovery smoothing
     int volume_front_group_mode = 0; // 0=original, 1=bounded/cached, 2=exact replay
     const VolumeResources * volume_resources = nullptr;

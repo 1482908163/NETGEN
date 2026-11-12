@@ -9,6 +9,7 @@
 #include <core/taskmanager.hpp>
 #include "smoothing_dependency.hpp"
 #include <cstring>
+#include <memory>
 
 
 namespace netgen
@@ -1503,21 +1504,59 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
         ids[int(pi)-PointIndex::BASE]=int(active.size());
         active.push_back(pi); task_colors.push_back(colors[int(pi)-PointIndex::BASE]);
       }
-      std::vector<std::pair<int,int>> edges;
-      for(const auto &el:VolumeElements()) {
-        int tasks[4],count=0;
-        for(auto pi:el.PNums()) {
-          int id=ids[int(pi)-PointIndex::BASE];
-          if(id>=0) tasks[count++]=id;
+      auto original_edges=[&]() {
+        std::vector<std::pair<int,int>> edges;
+        for(const auto &el:VolumeElements()) {
+          int tasks[4],count=0;
+          for(auto pi:el.PNums()) {
+            int id=ids[int(pi)-PointIndex::BASE];
+            if(id>=0) tasks[count++]=id;
+          }
+          std::sort(tasks,tasks+count,[&](int a,int b){return task_colors[a]<task_colors[b];});
+          for(int k=1;k<count;++k) edges.emplace_back(tasks[k-1],tasks[k]);
         }
-        std::sort(tasks,tasks+count,[&](int a,int b){return task_colors[a]<task_colors[b];});
-        // A chain is sufficient to retain all pairwise orders in this tet.
-        for(int k=1;k<count;++k) edges.emplace_back(tasks[k-1],tasks[k]);
+        return edges;
+      };
+      const bool compact=dag_mode>=3, verify=dag_mode==2 || dag_mode==4;
+      std::unique_ptr<SmoothingDependencyQueue> queue_owner;
+      size_t raw_edges=0,edge_count=0;
+      if(compact) {
+        auto graph=BuildUniqueSmoothingGraph(task_colors,[&](int source,auto emit) {
+          // The point function already built this adjacency. In a tet's sorted
+          // chain the next task is exactly its least strictly higher color.
+          for(auto ei:elementsonpoint[active[source]]) {
+            int next=-1;
+            for(auto pi:VolumeElements()[ei].PNums()) {
+              int id=ids[int(pi)-PointIndex::BASE];
+              if(id>=0 && task_colors[id]>task_colors[source] &&
+                 (next<0 || task_colors[id]<task_colors[next])) next=id;
+            }
+            if(next>=0) emit(next);
+          }
+        });
+        raw_edges=graph.raw_edges; edge_count=graph.successors.size();
+        // Graph replay is outside construction timing and never runs formally.
+        add(6,elapsed(build_start));
+        if(verify) {
+          auto reference_start=std::chrono::steady_clock::now();
+          auto reference_edges=original_edges();
+          bool same=reference_edges.size()==raw_edges && SameSmoothingDependencies(std::move(reference_edges),graph);
+          add(11,elapsed(reference_start));
+          if(!same) { add(10,1); throw NgException("Recovery smoothing dependency graph mismatch"); }
+          add(17,1);
+        }
+        build_start=std::chrono::steady_clock::now();
+        queue_owner.reset(new SmoothingDependencyQueue(std::move(task_colors),
+                            std::move(graph.offsets),std::move(graph.successors)));
+      } else {
+        auto edges=original_edges(); raw_edges=edge_count=edges.size();
+        queue_owner.reset(new SmoothingDependencyQueue(std::move(task_colors),edges));
       }
-      SmoothingDependencyQueue queue(std::move(task_colors),edges);
-      add(6,elapsed(build_start)); add(1,1); add(3,active.size()); add(4,edges.size()); add(5,ncolors);
+      auto &queue=*queue_owner;
+      add(6,elapsed(build_start)); add(1,1); add(3,active.size()); add(4,edge_count); add(5,ncolors);
+      add(15,raw_edges); add(16,raw_edges-edge_count);
       std::vector<MeshPoint> reference;
-      if(dag_mode==2) {
+      if(verify) {
         std::vector<MeshPoint> before;
         before.reserve(points.Size()); for(const auto &p:points) before.push_back(p);
         auto stamp=std::chrono::steady_clock::now(); run_colors(); add(11,elapsed(stamp));
@@ -1539,7 +1578,7 @@ void Mesh :: ImproveMesh (const MeshingParameters & mp, OPTIMIZEGOAL goal)
       queue.Finish();
       add(7,elapsed(stamp)); add(8,queue.WaitSeconds()); add(12,queue.Completed());
       add(13,queue.EarlyTasks()); add(14,1);
-      if(dag_mode==2) {
+      if(verify) {
         auto same_double=[](double a,double b){return std::memcmp(&a,&b,sizeof(double))==0;};
         if(reference.size()!=points.Size()) throw NgException("Smoothing changed point count");
         bool same=true; size_t i=0;

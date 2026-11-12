@@ -324,7 +324,9 @@ def ablation_reports(root, ranks, selected, indexed, paired_times):
            ('recovery_topology','node_rules_recovery_front','sparse','node_rules_recovery_topology','sparse'),
            ('shared_rules','node_rules_recovery_topology','sparse','node_rules_recovery_shared','sparse'),
            ('quiet_rules','node_rules_recovery_topology','sparse','node_rules_recovery_quiet','sparse'),
-           ('smoothing_dependency','node_rules_recovery_quiet','sparse','node_rules_recovery_dag','sparse'))
+           ('smoothing_dependency','node_rules_recovery_quiet','sparse','node_rules_recovery_dag','sparse'),
+           ('smoothing_compact','node_rules_recovery_dag','sparse','node_rules_recovery_dag_compact','sparse'),
+           ('smoothing_compact_total','node_rules_recovery_quiet','sparse','node_rules_recovery_dag_compact','sparse'))
     comparisons=[]
     requested=set((int(t),s) for t,s in selected)
     for threads in sorted({int(t) for t,s in selected}):
@@ -402,7 +404,7 @@ GROUP_METRICS=tuple('kernel_group_'+k for k in ('build_seconds','inner_seconds',
     'calls','rejected','verified','inside_calls','inside_verified','mismatches'))
 
 def inspect_front_group(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag')
+    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact')
     if not candidate and 'front_group_profile' not in metadata:
         return {}  # Historical data did not measure this path.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -431,7 +433,7 @@ TOPOLOGY_METRICS=tuple('kernel_topology_'+k for k in
     ('calls','optimized','verified','mismatches','skipped_rebuilds'))
 
 def inspect_recovery_topology(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag')
+    candidate=scheduler in ('node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact')
     if not candidate and 'recovery_topology_profile' not in metadata:
         return {}  # Historical files remain readable.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -487,7 +489,7 @@ QUIET_RULE_METRICS=tuple('kernel_quiet_'+k for k in
     ('high_calls','high_seconds','eligible_calls','parallel_calls','parallel_seconds','verified','mismatches','serial_calls'))
 
 def inspect_quiet_rules(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag')
+    candidate=scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact')
     if not candidate and 'quiet_rule_profile' not in metadata:return {}
     expected='on' if candidate else 'off'
     if metadata.get('quiet_rule_profile')!='no_buffer_v1' or metadata.get('quiet_rule_parallelism')!=expected:
@@ -514,18 +516,27 @@ def inspect_quiet_rules(rows, metadata, scheduler, repeat):
     result['quiet_rule_covered']=result['kernel_quiet_parallel_calls']>0
     return result
 
-SMOOTHING_METRICS=tuple('kernel_smoothing_'+k for k in
+SMOOTHING_BASE_METRICS=tuple('kernel_smoothing_'+k for k in
     ('calls','dag_calls','fallback_calls','tasks','edges','colors','build_seconds','execute_seconds',
      'wait_seconds','verified','mismatches','reference_seconds','completed','early_tasks','dispatches'))
+SMOOTHING_GRAPH_METRICS=tuple('kernel_smoothing_'+k for k in ('raw_edges','deduplicated_edges','graph_verified'))
+SMOOTHING_METRICS=SMOOTHING_BASE_METRICS+SMOOTHING_GRAPH_METRICS
 
 def inspect_recovery_smoothing(rows, metadata, scheduler, repeat):
-    candidate=scheduler=='node_rules_recovery_dag'
+    compact=scheduler=='node_rules_recovery_dag_compact'
+    candidate=compact or scheduler=='node_rules_recovery_dag'
     if not candidate and 'recovery_smoothing_profile' not in metadata:return {}
-    expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
+    expected=('4' if repeat<=0 else '3') if compact else ('2' if repeat<=0 else '1') if candidate else '0'
     if metadata.get('recovery_smoothing_profile')!='color_dependency_v1' or metadata.get('recovery_smoothing_mode')!=expected:
         raise ValueError('missing or unexpected recovery smoothing mode')
     result={'recovery_smoothing_profile':'color_dependency_v1','recovery_smoothing_mode':expected}
-    for key in SMOOTHING_METRICS:
+    graph_profile=metadata.get('recovery_smoothing_graph_profile')
+    if compact or graph_profile is not None:
+        expected_graph='unique_incident_v2' if compact else 'tet_chain_v1' if candidate else 'off'
+        if graph_profile!=expected_graph:raise ValueError('unexpected smoothing graph profile')
+        result['recovery_smoothing_graph_profile']=graph_profile
+    metrics=SMOOTHING_METRICS if graph_profile is not None else SMOOTHING_BASE_METRICS
+    for key in metrics:
         values=[r.get('metrics',{}).get(key) for r in rows]
         if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or
                (not key.endswith('_seconds') and v!=int(v)) for v in values):
@@ -537,10 +548,15 @@ def inspect_recovery_smoothing(rows, metadata, scheduler, repeat):
             v('calls')!=(8*m['kernel_gen_recovery_sweeps'] if candidate else 0) or
             v('completed')!=v('tasks') or v('early_tasks')>v('tasks') or
             v('dispatches')!=v('dag_calls') or
-            v('verified')!=(v('dag_calls') if expected=='2' else 0) or v('mismatches') or
-            (expected!='2' and v('reference_seconds')!=0) or
-            (not candidate and any(m[k] for k in SMOOTHING_METRICS))):
+            v('verified')!=(v('dag_calls') if expected in ('2','4') else 0) or v('mismatches') or
+            (expected not in ('2','4') and v('reference_seconds')!=0) or
+            (not candidate and any(m[k] for k in metrics))):
             raise ValueError('recovery smoothing work/replay coverage mismatch')
+        if graph_profile is not None and (
+            v('raw_edges')-v('deduplicated_edges')!=v('edges') or
+            (not compact and v('deduplicated_edges')!=0) or
+            v('graph_verified')!=(v('dag_calls') if expected=='4' else 0)):
+            raise ValueError('smoothing graph edge/replay coverage mismatch')
     if candidate and (result['kernel_smoothing_dag_calls']==0 or result['kernel_smoothing_tasks']==0):
         raise ValueError('recovery smoothing dependency path was not exercised')
     result['smoothing_overlap_covered']=result['kernel_smoothing_early_tasks']>0
@@ -578,7 +594,7 @@ def compact_rank_phases(rows, result):
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_engineered','node_recovery_fixed','node_rules_recovery_fixed','node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_engineered','node_recovery_fixed','node_rules_recovery_fixed','node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -791,6 +807,7 @@ def critical_overview(root,ranks,selected):
             lines.append('  恢复平滑依赖调度：'+ '；'.join(name+'='+compact(r.get('kernel_smoothing_'+key+'_median'))
                 for name,key in [('调用','dag_calls'),('任务','tasks'),('依赖边','edges'),('提前跨色任务','early_tasks'),
                     ('建图秒数','build_seconds'),('执行墙钟秒数','execute_seconds'),('线程等待累计秒数','wait_seconds'),
+                    ('原始边','raw_edges'),('去除重复边','deduplicated_edges'),('图核验','graph_verified'),
                     ('重放','verified'),('差异','mismatches'),('回退','fallback_calls')]))
         if r.get('kernel_front_applyrules_seconds_median') is not None:
             lines.append(f"  front细分: ApplyRules={compact(r.get('kernel_front_applyrules_seconds_median'))}s "
@@ -1007,7 +1024,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_rules_recovery_front':'node_elastic',
                   'node_rules_recovery_topology':'node_elastic','node_rules_recovery_shared':'node_elastic',
-                  'node_rules_recovery_quiet':'node_elastic','node_rules_recovery_dag':'node_elastic',
+                  'node_rules_recovery_quiet':'node_elastic','node_rules_recovery_dag':'node_elastic','node_rules_recovery_dag_compact':'node_elastic',
                   'node_search_local':'node_fixed','node_search_idle':'node_fixed','node_search_remote':'node_fixed',
                   'node_search_online':'node_online','node_search_full':'node_online','node_search_elastic':'node_elastic'}
     requested_scheduler=metadata.get('kernel_scheduler')
@@ -1627,7 +1644,11 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
-    if scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag') and (int(threads),'node_rules_recovery_dag') in available and (int(threads),'node_rules_recovery_quiet') in available:
+    if scheduler=='node_rules_recovery_dag_compact' and (int(threads),'node_rules_recovery_dag') in available:
+        return 'node_rules_recovery_dag'
+    if (scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact') and
+        any((int(threads),s) in available for s in ('node_rules_recovery_dag','node_rules_recovery_dag_compact')) and
+        (int(threads),'node_rules_recovery_quiet') in available):
         return 'node_rules_recovery_quiet'
     if scheduler in ('node_engineered','node_recovery_fixed','node_rules_recovery_fixed'):
         return 'node_engineered'
