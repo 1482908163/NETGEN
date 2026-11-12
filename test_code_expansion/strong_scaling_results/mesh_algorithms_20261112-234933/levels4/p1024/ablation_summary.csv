@@ -1,0 +1,4 @@
+contribution,threads,timing,seed,control,candidate,control_seconds,candidate_seconds,speedup,reduction_pct,paired_count,paired_wins,paired_reduction_pct,quality_pass,quality_issues,same_volume_fingerprint
+smoothing_dependency,4,natural,-1,sparse+node_rules_recovery_quiet,sparse+node_rules_recovery_dag,18.56366221099995,18.54073436799996,1.0012366200035507,0.12350926632571646,3,2,1.7796635343008016,True,,True
+smoothing_stream,4,natural,-1,sparse+node_rules_recovery_dag,sparse+node_rules_recovery_dag_stream,18.54073436799996,18.515165002000003,1.0013809958483866,0.13790913289868367,3,1,-0.9568880372099242,True,,True
+smoothing_stream_total,4,natural,-1,sparse+node_rules_recovery_quiet,sparse+node_rules_recovery_dag_stream,18.56366221099995,18.515165002000003,1.0026193236190284,0.26124806866616446,3,2,0.5316010514960334,True,,True
