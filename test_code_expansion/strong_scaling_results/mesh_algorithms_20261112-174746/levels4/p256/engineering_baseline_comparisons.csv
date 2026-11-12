@@ -1,0 +1,9 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_engineered+sparse,valid,,63.253334327000175,62.263451610000175,0.6212365279998266,0.9878979229992035,1.0099775472116623,2,3
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_dag+sparse,valid,,63.253334327000175,52.390886630000296,10.778963892999855,17.14084018250277,1.2068671734091512,3,3
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_dag_compact+sparse,valid,,63.253334327000175,52.19360847300004,10.776779363999594,17.137366317775204,1.2068165777049327,3,3
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_quiet+sparse,valid,,63.253334327000175,52.389142469000035,11.025767478000034,17.43112453329373,1.2111101118280625,3,3
+increment,稀疏通信,256,4,-1,node_engineered+baseline,node_engineered+sparse,valid,,63.253334327000175,62.263451610000175,0.6212365279998266,0.9878979229992035,1.0099775472116623,2,3
+increment,恢复平滑依赖调度,256,4,-1,node_rules_recovery_quiet+sparse,node_rules_recovery_dag+sparse,valid,,52.389142469000035,52.390886630000296,0.28341822399988814,0.5409865682905468,1.0054392915194357,2,3
+increment,紧凑依赖图增量,256,4,-1,node_rules_recovery_dag+sparse,node_rules_recovery_dag_compact+sparse,valid,,52.390886630000296,52.19360847300004,-0.002184529000260227,-0.00419249330454452,0.9999580768245808,1,3
+increment,紧凑依赖调度整体增量,256,4,-1,node_rules_recovery_quiet+sparse,node_rules_recovery_dag_compact+sparse,valid,,52.389142469000035,52.19360847300004,0.03395837600010054,0.06502002304316079,1.000650623265829,2,3
