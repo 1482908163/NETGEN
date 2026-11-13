@@ -1,0 +1,6 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_engineered+sparse,valid,,41.62537256099995,41.49641084599989,0.203988481000124,0.4908907721694722,1.0049331239720531,3,3
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_rules_recovery_open+sparse,valid,,41.62537256099995,31.945641328999955,9.8334180679999,23.663758682838232,1.309993762785884,3,3
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_rules_recovery_quiet+sparse,valid,,41.62537256099995,31.788769196999965,9.836603363999984,23.63126804351101,1.309436433447329,3,3
+increment,稀疏通信,512,4,-1,node_engineered+baseline,node_engineered+sparse,valid,,41.62537256099995,41.49641084599989,0.203988481000124,0.4908907721694722,1.0049331239720531,3,3
+increment,省去无效边界边构建,512,4,-1,node_rules_recovery_quiet+sparse,node_rules_recovery_open+sparse,valid,,31.788769196999965,31.945641328999955,-0.1910213319997638,-0.6015544573287679,0.9940204258217112,1,3
