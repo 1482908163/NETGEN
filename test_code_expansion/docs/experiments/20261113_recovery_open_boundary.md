@@ -1,6 +1,6 @@
 # 恢复准备：省去无效边界边后处理
 
-状态：2026-11-13 已编写，尚未编译或运行。依据[表面复用结果](20261113_recovery_surface_results.md)，从已有高容错组合独立派生 `node_rules_recovery_open`（开面边界省略候选），不叠加表面复用。
+状态：2026-11-13 集群结果已完成，跨规模核心增量不稳定，未推广默认。见[实测结果](20261113_recovery_open_results.md)。以下保留原设计。依据[表面复用结果](20261113_recovery_surface_results.md)，从已有高容错组合独立派生 `node_rules_recovery_open`（开面边界省略候选），不叠加表面复用。
 
 ## 与旧方法的区别
 

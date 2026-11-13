@@ -637,6 +637,8 @@ namespace netgen
        for optimiztion
     */
     void FreeOpenElementsEnvironment (int layers);
+    // Exact two-layer classification, without computing unused far distances.
+    void FreeOpenElementsEnvironment2 ();
 
 
     DLL_HEADER double CalcTotalBad (const MeshingParameters & mp);

@@ -426,6 +426,44 @@ namespace netgen
     }
   }
 
+  static void PrepareRecoveryEnvironment(Mesh &mesh,const MeshingParameters &mp)
+  {
+    auto *stats=mp.volume_kernel_stats;
+    const bool band=(mp.volume_recovery_topology_mode==7 || mp.volume_recovery_topology_mode==8)
+                    && mesh.GetDimension()==3;
+    if(!band) {
+      TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment(2);});
+      return;
+    }
+    const bool verify=mp.volume_recovery_topology_mode==8;
+    if(!verify) {
+      TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment2();});
+      if(stats) stats->AddTopology(14,1);
+      return;
+    }
+    std::vector<POINTTYPE> input_types,output_types;
+    std::vector<bool> input_fixed,output_fixed;
+    for(const auto &p:mesh.Points()) input_types.push_back(p.Type());
+    for(const auto &e:mesh.VolumeElements()) input_fixed.push_back(e.Flags().fixed);
+    TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment2();});
+    if(stats) stats->AddTopology(14,1);
+    // Replay from the SAME input, before surface classification overwrites
+    // point types. Otherwise an over-fixed candidate could mask its error.
+    for(const auto &p:mesh.Points()) output_types.push_back(p.Type());
+    for(const auto &e:mesh.VolumeElements()) output_fixed.push_back(e.Flags().fixed);
+    size_t i=0;for(auto &p:mesh.Points()) p.SetType(input_types[i++]);
+    i=0;for(auto &e:mesh.VolumeElements()) e.Flags().fixed=input_fixed[i++];
+    mesh.FreeOpenElementsEnvironment(2);
+    bool same=true;i=0;
+    for(const auto &p:mesh.Points()) same=bool(same & (p.Type()==output_types[i++]));
+    i=0;for(const auto &e:mesh.VolumeElements()) same=bool(same & (e.Flags().fixed==output_fixed[i++]));
+    if(!same) {
+      if(stats) stats->AddTopology(3,1);
+      throw NgException("Recovery two-layer environment replay mismatch");
+    }
+    if(stats) stats->AddTopology(15,1);
+  }
+
   void PrepareRecoveryTopology(Mesh & mesh,const MeshingParameters & mp)
   {
     auto *stats=mp.volume_kernel_stats;
@@ -443,12 +481,12 @@ namespace netgen
     // EVERY point type before classifying it, and rebuilds both lookup tables.
     // The first of the original two surface rebuilds has no surviving effect.
     if(!optimized) TimeRecoveryTopology(stats,9,[&]{mesh.CalcSurfacesOfNode();});
-    TimeRecoveryTopology(stats,8,[&]{mesh.FreeOpenElementsEnvironment(2);});
+    PrepareRecoveryEnvironment(mesh,mp);
     TimeRecoveryTopology(stats,9,[&]{mesh.CalcSurfacesOfNode();});
     if(!optimized) return;
     if(stats) {stats->AddTopology(1,1);stats->AddTopology(4,1);}
     if(mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4 ||
-       mp.volume_recovery_topology_mode==6) {
+       mp.volume_recovery_topology_mode==6 || mp.volume_recovery_topology_mode==8) {
       VerifyRecoveryTopology(mesh,stats);
       if(defer_boundary && stats) stats->AddTopology(13,1);
     }
@@ -472,7 +510,7 @@ namespace netgen
       const char *optstr="mcmstmcmstmcmstmcm";
       std::vector<POINTTYPE> smooth_types;
       const bool surface_reuse=(mp.volume_recovery_topology_mode==3 || mp.volume_recovery_topology_mode==4) && mesh.GetDimension()==3;
-      const bool verify=mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4 || mp.volume_recovery_topology_mode==6;
+      const bool verify=mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4 || mp.volume_recovery_topology_mode==6 || mp.volume_recovery_topology_mode==8;
       bool surface_ready=false;
       auto save_types=[&] {
         TimeRecoveryTopology(stats,6,[&] {

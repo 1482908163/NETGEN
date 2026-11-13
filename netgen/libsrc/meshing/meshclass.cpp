@@ -3306,6 +3306,51 @@ namespace netgen
 
 
 
+  void Mesh :: FreeOpenElementsEnvironment2 ()
+  {
+    static Timer timer("FreeOpenElementsEnvironment2"); RegionTimer rt(timer);
+    // 1: open-face seed; 2: shares an element with a seed;
+    // 3: shares an element with band 1/2; 0: outside the two-hop band.
+    // Keep each pass's read set immutable: pass one reads only 1, pass two
+    // reads only 1/2. Neither pass propagates a state it just created.
+    Array<unsigned char,PointIndex> band(GetNP());
+    band = 0;
+    for (int i = 1; i <= GetNOpenElements(); i++)
+      for (PointIndex pi : OpenElement(i).PNums()) band[pi] = 1;
+
+    for (const auto & el : VolumeElements())
+      {
+        if (!el[0].IsValid() || el.IsDeleted()) continue;
+        bool touches_seed = false;
+        for (PointIndex pi : el.PNums())
+          if (band[pi] == 1) { touches_seed = true; break; }
+        if (touches_seed)
+          for (PointIndex pi : el.PNums())
+            if (band[pi] == 0) band[pi] = 2;
+      }
+
+    int cntfree = 0;
+    for (auto & el : VolumeElements())
+      {
+        if (!el[0].IsValid() || el.IsDeleted()) continue;
+        bool touches_inner_band = false;
+        for (PointIndex pi : el.PNums())
+          if (band[pi] == 1 || band[pi] == 2) { touches_inner_band = true; break; }
+        el.Flags().fixed = !touches_inner_band;
+        if (touches_inner_band)
+          {
+            ++cntfree;
+            for (PointIndex pi : el.PNums())
+              if (band[pi] == 0) band[pi] = 3;
+          }
+      }
+    PrintMessage (5, "free: ", cntfree, ", fixed: ", GetNE()-cntfree);
+    (*testout) << "free: " << cntfree << ", fixed: " << GetNE()-cntfree << endl;
+    for (PointIndex pi : points.Range())
+      if (band[pi] == 0) points[pi].SetType(FIXEDPOINT);
+  }
+
+
   void Mesh :: FreeOpenElementsEnvironment (int layers)
   {
     static Timer timer("FreeOpenElementsEnvironment"); RegionTimer rt(timer);
