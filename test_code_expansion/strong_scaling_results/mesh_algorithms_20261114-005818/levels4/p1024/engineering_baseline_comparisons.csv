@@ -1,0 +1,7 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,1024,4,-1,node_engineered+baseline,node_engineered_refine+baseline,valid,,24.857444163000082,24.355674014999977,0.29811047400005464,1.2091874743736186,1.0122398778131312,3,3
+total,相对工程基准,1024,4,-1,node_engineered+baseline,node_rules_recovery_quiet+sparse,valid,,24.857444163000082,18.487496631,6.369947532000083,25.603989143687343,1.344158091932355,3,3
+total,相对工程基准,1024,4,-1,node_engineered+baseline,node_rules_recovery_refine+sparse,valid,,24.857444163000082,18.05458710100004,6.757886591999977,27.156242191247436,1.3728012256389177,3,3
+matched_total,相对统一细化工程基准,1024,4,-1,node_engineered_refine+baseline,node_rules_recovery_refine+sparse,valid,,24.355674014999977,18.05458710100004,6.301086913999939,25.871125184707576,1.3490019948255103,3,3
+increment,工程源代码细化缓存,1024,4,-1,node_engineered+baseline,node_engineered_refine+baseline,valid,,24.857444163000082,24.355674014999977,0.29811047400005464,1.2091874743736186,1.0122398778131312,3,3
+increment,高容错基础上的细化缓存,1024,4,-1,node_rules_recovery_quiet+sparse,node_rules_recovery_refine+sparse,valid,,18.487496631,18.05458710100004,0.38628135599992675,2.086473494604568,1.0213093488619225,3,3
