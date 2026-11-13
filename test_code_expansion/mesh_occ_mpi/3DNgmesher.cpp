@@ -6,6 +6,7 @@
 #include <limits>
 #include "3DNgmesher.h"
 #include "refine_edge_cache.h"
+#include "refine_edge_index.h"
 #include "scaling_profiler.h"
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
@@ -917,9 +918,14 @@ void BarycMidPoint(Barycentric p1, Barycentric p2, Barycentric &res)
 }
 
 
-void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap, std::map<IntPair, int, IntPairCompare> &edgemap, int edge_cache_mode)
+void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap, std::map<IntPair, int, IntPairCompare> &edgemap, int edge_cache_mode, mesh_refine::EdgeIndex *edge_index)
 {
 	const double surface_start = MPI_Wtime();
+	if(edge_index) {
+		const double begin = MPI_Wtime();
+		if(edge_index->activate(edgemap,edge_cache_mode==2))
+			scaling::Profiler::instance().add_metric("refine_index_migration_seconds",MPI_Wtime()-begin);
+	}
 	int v[3];
 	int u[3];
 	std::list<xdFace>::iterator li;
@@ -971,22 +977,25 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 			}
 			BarycMidPoint(vbarycv[k], vbarycv[(k + 1) % 3], midvrtxbaryc);
 			bi = baryc2locvrtxmap.find(midvrtxbaryc);
-			ei = edgemap.find(pr);
-			// if (bi = baryc2locvrtxmap. end() {
-			if (ei == edgemap.end())
+			int mapped_midpoint=0;
+			bool found=false;
+			if(edge_index) found=edge_index->find(pr,mapped_midpoint);
+			else { ei=edgemap.find(pr); found=ei!=edgemap.end(); }
+			if (!found)
 			{
 				uxyz[k][0] = 0.5 * (vxyz[k][0] + vxyz[(k + 1) % 3][0]);
 				uxyz[k][1] = 0.5 * (vxyz[k][1] + vxyz[(k + 1) % 3][1]);
 				uxyz[k][2] = 0.5 * (vxyz[k][2] + vxyz[(k + 1) % 3][2]);
 				nglib::Ng_AddPoint((nglib::Ng_Mesh *)submesh, uxyz[k], index);
 				u[k] = index;
-				edgemap[pr] = index;
+				if(edge_index) edge_index->insert(pr,index);
+				else edgemap[pr] = index;
 				ubarycv[k] = midvrtxbaryc;
 				baryc2locvrtxmap[midvrtxbaryc] = index;
 			}
 			else
 			{
-				u[k] = edgemap[pr];
+				u[k] = edge_index ? mapped_midpoint : edgemap[pr];
 				ubarycv[k] = midvrtxbaryc;
 			}
 		}
@@ -1068,8 +1077,15 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 				if (cached->key == edge_key) {
 					++hits;
 					if (edge_cache_mode == 2) {
-						const auto reference = edgemap.find(pr);
-						if (reference == edgemap.end() || reference->second != cached->midpoint) {
+						int reference_midpoint=0;
+						bool reference_found=false;
+						if(edge_index) reference_found=edge_index->find(pr,reference_midpoint);
+						else {
+							const auto reference=edgemap.find(pr);
+							reference_found=reference!=edgemap.end();
+							if(reference_found) reference_midpoint=reference->second;
+						}
+						if (!reference_found || reference_midpoint != cached->midpoint) {
 							scaling::Profiler::instance().add_metric("refine_cache_mismatches", 1);
 							const int edge[2] = {pr.x, pr.y};
 							mesh_audit::reject(MPI_COMM_WORLD,"refine_edge_cache",i+1,edge,2,
@@ -1082,20 +1098,24 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 				}
 				++misses;
 			}
-			ei = edgemap.find(pr);
-			if (ei == edgemap.end())
+			int mapped_midpoint=0;
+			bool found=false;
+			if(edge_index) found=edge_index->find(pr,mapped_midpoint);
+			else { ei=edgemap.find(pr); found=ei!=edgemap.end(); }
+			if (!found)
 			{
 				Euxyz[k][0] = 0.5 * (Evxyz[betw[k][0]][0] + Evxyz[betw[k][1]][0]);
 				Euxyz[k][1] = 0.5 * (Evxyz[betw[k][0]][1] + Evxyz[betw[k][1]][1]);
 				Euxyz[k][2] = 0.5 * (Evxyz[betw[k][0]][2] + Evxyz[betw[k][1]][2]);
 				nglib::Ng_AddPoint((nglib::Ng_Mesh *)submesh, Euxyz[k], index);
 				Ev[k + 4] = index;
-				edgemap[pr] = index;
+				if(edge_index) edge_index->insert(pr,index);
+				else edgemap[pr] = index;
 				if (cached) ++inserts;
 			}
 			else
 			{
-				Ev[k + 4] = cached ? ei->second : edgemap[pr];
+				Ev[k + 4] = edge_index ? mapped_midpoint : cached ? ei->second : edgemap[pr];
 				if (cached) ++map_hits;
 			}
 			if (cached) {
@@ -1130,6 +1150,7 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 	auto &profile = scaling::Profiler::instance();
 	profile.add_metric("refine_calls", 1);
 	profile.add_metric("refine_parent_elements", oldne);
+	profile.add_metric("refine_surface_edge_queries", 3.0*oldnse);
 	profile.add_metric("refine_surface_seconds", volume_start-surface_start);
 	profile.add_metric("refine_volume_seconds", volume_end-volume_start);
 	profile.add_metric("refine_cache_queries", queries);

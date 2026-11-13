@@ -17,7 +17,8 @@ void PartFaceCreate(void *mesh, int belongNumberPartition, std::map< int, xdMesh
 void Refine(void *submesh, int numlevels, int belongNumberPartition, std::list<xdFace> &newfaces, std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap, std::map<IntPair, int, IntPairCompare> &edgemap);
 void BarycMidPoint(Barycentric p1, Barycentric p2, Barycentric &res);
 Barycentric InitBarycv(int v, int maxbarycoord);
-void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map< Barycentric, int, CompBarycentric > &baryc2locvrtxmap, std::map < IntPair, int, IntPairCompare> &edgemap, int edge_cache_mode = 0);
+namespace mesh_refine { class EdgeIndex; }
+void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map< Barycentric, int, CompBarycentric > &baryc2locvrtxmap, std::map < IntPair, int, IntPairCompare> &edgemap, int edge_cache_mode = 0, mesh_refine::EdgeIndex *edge_index = nullptr);
 void computeadj(int mypid, std::map< int, xdMeshFaceInfo > &facemap, std::map<int, int > &g2lvrtxmap, std::map< Barycvrtx, std::list<int>, CompBarycvrtx > &barycvrtx2adjprocsmap);
 GlobalId* com_barycoords(void *submesh,MPI_Comm comm,std::map< Barycvrtx, std::list<int>, CompBarycvrtx > &barycvrtx2adjprocsmap,std::map< Barycentric, int, CompBarycentric > &baryc2locvrtxmap,std::map< int, std::list<int>> &adjbarycs,	int numprocs, GlobalId *newgVEid,int mypid);
 GlobalId* com_baryVolumeElements(void *submesh, MPI_Comm comm, std::map< Barycvrtx, std::list<int>, CompBarycvrtx > &barycvrtx2adjprocsmap, std::map< Barycentric, int, CompBarycentric > &baryc2locvrtxmap, std::map< int, std::list<int>> &adjbarycs, GlobalId *oldgid, GlobalId *VEgid, std::list<VEindex> &VEindexs, int numprocs, int mypid);

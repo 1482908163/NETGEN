@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 namespace mesh_refine {
-// Bounded per-call cache; the ordered map remains authoritative.
+// Bounded per-call cache; the backing edge dictionary remains authoritative.
 // Full positive endpoint IDs identify edges; zero is an empty key.
 class EdgeCache {
 public:

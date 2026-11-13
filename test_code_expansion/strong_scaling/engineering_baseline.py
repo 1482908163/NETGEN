@@ -34,6 +34,8 @@ INCREMENTS = (
     ('连续边依赖调度整体增量', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag_stream', 'sparse')),
     ('换边后表面分类复用', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_surface', 'sparse')),
     ('省去无效边界边构建', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_open', 'sparse')),
+    ('工程完整边索引增量', ('node_engineered_refine','baseline'), ('node_engineered_refine_hash','baseline')),
+    ('高容错完整边索引增量', ('node_rules_recovery_refine','sparse'), ('node_rules_recovery_refine_hash','sparse')),
     ('工程源代码细化缓存', REFERENCE, ('node_engineered_refine','baseline')),
     ('高容错基础上的细化缓存', ('node_rules_recovery_quiet','sparse'), ('node_rules_recovery_refine','sparse')),
     ('精确两层邻域分类', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_band', 'sparse')),
@@ -133,8 +135,8 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('kernel_topology_boundary_skipped')==0 and
                     r.get('kernel_topology_boundary_verified')==0 and
                     r.get('recovery_smoothing_mode')=='0', '两层邻域分类身份、覆盖或重放不完整')
-        if scheduler in ('node_engineered','node_engineered_refine'):
-            contract='fixed_recovery_refine_v1' if scheduler=='node_engineered_refine' else CONTRACT
+        if scheduler in ('node_engineered','node_engineered_refine','node_engineered_refine_hash'):
+            contract='fixed_recovery_refine_hash_v1' if scheduler=='node_engineered_refine_hash' else 'fixed_recovery_refine_v1' if scheduler=='node_engineered_refine' else CONTRACT
             require(r.get('engineering_baseline_contract') == contract and
                     r.get('generation_recovery') == 'ordered_team_v1' and
                     r.get('rule_search_mode') == 0, '工程基准配置不符')
@@ -147,7 +149,7 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('quiet_rule_parallelism') == 'off' and
                     r.get('shared_rule_preparation') == 'off' and
                     r.get('recovery_smoothing_mode','0') == '0', '工程基准混入其他候选')
-        if scheduler in ('node_engineered_refine','node_rules_recovery_refine'):
+        if scheduler in ('node_engineered_refine','node_rules_recovery_refine','node_engineered_refine_hash','node_rules_recovery_refine_hash'):
             require(r.get('volume_refine_profile')=='bounded_edge_cache_v1' and
                     r.get('volume_refine_cache_mode')==('2' if repeat==0 else '1') and
                     r.get('refine_cache_capacity')==65536 and
@@ -160,6 +162,18 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('refine_cache_mismatches')==0 and
                     r.get('refine_cache_verified')==(r['refine_cache_hits'] if repeat==0 else 0),
                     '细化缓存身份、工作量或逐命中重放不完整')
+        if scheduler in ('node_engineered_refine_hash','node_rules_recovery_refine_hash'):
+            queries=r.get('refine_index_queries',0)
+            require(r.get('volume_refine_index_profile')=='persistent_hash_v1' and
+                    r.get('volume_refine_index_mode')==('2' if repeat==0 else '1') and
+                    r.get('refine_index_migrations')==ranks and queries>0 and
+                    queries==r['refine_surface_edge_queries']+r['refine_cache_misses']+r['refine_cache_verified'] and
+                    r['refine_index_hits']+r['refine_index_misses']==queries and
+                    r['refine_index_inserts']==r['refine_index_misses'] and
+                    r['refine_index_entries']==r['refine_index_seed_entries']+r['refine_index_inserts'] and
+                    r.get('refine_index_mismatches')==0 and
+                    r.get('refine_index_verified')==(queries if repeat==0 else 0),
+                    '完整细化索引覆盖或参考核对不完整')
         require(isinstance(r.get('core_seconds'), (int, float)) and
                 math.isfinite(r['core_seconds']) and r['core_seconds'] > 0, '核心耗时无效')
         if repeat == 0:
@@ -270,6 +284,15 @@ def engineering_report(root, ranks, selected):
                                   '相对统一细化工程基准', 'matched_total', threads, seed, arms, failures, ranks)
             rows.append(row)
             pairs.extend(detail)
+        hash_reference=('node_engineered_refine_hash','baseline')
+        hash_candidate=('node_rules_recovery_refine_hash','sparse')
+        if hash_candidate in available:
+            if hash_reference not in available:
+                failures[(threads,seed,*hash_reference)]='缺少同批完整索引工程基准'
+            row, detail = compare(hash_reference, hash_candidate,
+                                  '相对统一完整索引工程基准', 'matched_hash_total', threads, seed, arms, failures, ranks)
+            rows.append(row)
+            pairs.extend(detail)
         for name, old, new in INCREMENTS:
             if old in available and new in available:
                 row, detail = compare(old, new, name, 'increment', threads, seed, arms, failures, ranks)
@@ -294,7 +317,7 @@ def engineering_report(root, ranks, selected):
                          f"{row['candidate_median_seconds']:.4f}秒；配对减少{row['paired_saved_seconds']:.4f}秒，"
                          f"降幅{row['paired_reduction_pct']:.2f}%，加速比{row['paired_speedup']:.4f}，"
                          f"胜出{row['paired_wins']}/{row['paired_count']}（t{row['threads']}/seed{row['seed']}）。")
-    lines += ['细化缓存属于共享工程改进；新候选的公平总收益以同样启用缓存的工程基准为对照，旧固定基准仅保留连续历史口径。',
+    lines += ['细化缓存及完整边索引属于共享工程改进；新候选的公平总收益以启用相同工程能力的基准为对照，旧固定基准仅保留连续历史口径。',
               '嵌套阶段不能相加；不将局部四核旋转链计时与此处真实网格核心时间混排。',
               '相邻工程优化收益单列，不自动视为算法创新；远程协议无实际任务时不能称跨节点执行收益。']
     (out / 'ENGINEERING_BASELINE_SUMMARY.txt').write_text('\n'.join(lines + issues) + '\n')

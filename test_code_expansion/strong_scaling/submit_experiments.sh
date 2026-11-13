@@ -22,7 +22,7 @@ import json, os, pathlib, sys
 root=pathlib.Path(sys.argv[1]);root.mkdir(parents=True,exist_ok=True)
 schedulers=os.environ['KERNEL_SCHEDULERS'].split()
 arms=[dict(scheduler=s,algorithm=a) for s in schedulers
-      for a in (('baseline',) if s=='node_engineered_refine' or (s=='node_engineered' and os.environ.get('REFINEMENT_ABLATION')=='1') else ('baseline','sparse') if s=='node_engineered' else ('baseline',) if s=='node_original' else os.environ['ALGORITHMS'].replace(',',' ').split())]
+      for a in (('baseline',) if s in ('node_engineered_refine','node_engineered_refine_hash') or (s=='node_engineered' and os.environ.get('REFINEMENT_ABLATION')=='1') else ('baseline','sparse') if s=='node_engineered' else ('baseline',) if s=='node_original' else os.environ['ALGORITHMS'].replace(',',' ').split())]
 counts=list(map(int,os.environ['PROCESS_COUNTS'].replace(',',' ').split()))
 levels=list(map(int,os.environ.get('RULE_SEARCH_LEVELS',os.environ['LEVELS']).replace(',',' ').split()))
 repeats=int(os.environ['REPEATS']);seeds=os.environ['PARTITION_SEEDS'].split()
@@ -35,6 +35,9 @@ plan=dict(schema='engineering_baseline_v1',baseline='node_engineered/baseline',
 if os.environ.get('REFINEMENT_ABLATION')=='1':
     plan.update(refinement_ablation=True,matched_baseline='node_engineered_refine/baseline',
                 matched_baseline_contract='fixed_recovery_refine_v1')
+if os.environ.get('REFINEMENT_INDEX_ABLATION')=='1':
+    plan.update(refinement_index_ablation=True,matched_baseline='node_engineered_refine_hash/baseline',
+                matched_baseline_contract='fixed_recovery_refine_hash_v1')
 path=root/'engineering_baseline_plan.json'
 if path.exists():
     old=json.loads(path.read_text())

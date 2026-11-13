@@ -9,6 +9,7 @@
 #include "GProp_GProps.hxx"
 #include "BRepGProp.hxx"
 #include "3DNgmesher.h"
+#include "refine_edge_index.h"
 #include "scaling_profiler.h"
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
@@ -326,8 +327,11 @@ int main(int argc, char **argv) {
     const bool smoothing_compact=requested_scheduler=="node_rules_recovery_dag_compact" || smoothing_stream;
     const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag" || smoothing_compact;
     const int smoothing_mode=smoothing_stream?(profile_repeat<=0?6:5):smoothing_compact?(profile_repeat<=0?4:3):smoothing_dag?(profile_repeat<=0?2:1):0;
-    const bool refine_engineered=requested_scheduler=="node_engineered_refine";
-    const bool refine_quiet=requested_scheduler=="node_rules_recovery_refine";
+    const bool hash_engineered=requested_scheduler=="node_engineered_refine_hash";
+    const bool hash_quiet=requested_scheduler=="node_rules_recovery_refine_hash";
+    const bool refine_hash=hash_engineered || hash_quiet;
+    const bool refine_engineered=requested_scheduler=="node_engineered_refine" || hash_engineered;
+    const bool refine_quiet=requested_scheduler=="node_rules_recovery_refine" || hash_quiet;
     const int refine_cache_mode=(refine_engineered || refine_quiet)?(profile_repeat<=0?2:1):0;
     const bool environment_band=requested_scheduler=="node_rules_recovery_band";
     const bool open_boundary=requested_scheduler=="node_rules_recovery_open";
@@ -488,10 +492,12 @@ int main(int argc, char **argv) {
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
-    profiler.add_metadata("engineering_baseline_contract",refine_engineered?"fixed_recovery_refine_v1":engineered?"fixed_recovery_v1":"off");
+    profiler.add_metadata("engineering_baseline_contract",hash_engineered?"fixed_recovery_refine_hash_v1":refine_engineered?"fixed_recovery_refine_v1":engineered?"fixed_recovery_v1":"off");
     if(research.mesh_tasks==0) {
         profiler.add_metadata("volume_refine_profile","bounded_edge_cache_v1");
         profiler.add_metadata("volume_refine_cache_mode",std::to_string(refine_cache_mode));
+        profiler.add_metadata("volume_refine_index_profile","persistent_hash_v1");
+        profiler.add_metadata("volume_refine_index_mode",std::to_string(refine_hash?refine_cache_mode:0));
     }
     if(research.kernel_threads>0 && rule_search_mode>=0) {
         profiler.add_metadata("rule_search_profile","rule_search_v1");
@@ -1051,17 +1057,37 @@ int main(int argc, char **argv) {
             validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,"kernel_complete");
         {
             scaling::StageScope profile_stage("volume_refine", "compute");
-            for (const char *metric : {"refine_calls", "refine_parent_elements",
+            mesh_refine::EdgeIndex edge_index;
+            for (const char *metric : {"refine_calls", "refine_parent_elements", "refine_surface_edge_queries",
+                    "refine_index_migration_seconds",
                     "refine_surface_seconds", "refine_volume_seconds", "refine_cache_queries",
                     "refine_cache_hits", "refine_cache_misses", "refine_cache_map_hits",
                     "refine_cache_inserts", "refine_cache_verified", "refine_cache_mismatches",
                     "refine_cache_capacity", "refine_cache_bytes"}) profiler.set_metric(metric, 0);
             for (i = 0; i < numrefine; i++) {
-                Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap, refine_cache_mode);
+                try {
+                    Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap,
+                                 refine_cache_mode, refine_hash?&edge_index:nullptr);
+                } catch(const std::exception &error) {
+                    std::cerr<<"细化索引失败，进程 "<<id<<"："<<error.what()<<std::endl;
+                    MPI_Abort(MPI_COMM_WORLD,6);
+                }
                 if(validate_volume)
                     validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,
                         ("refine_"+std::to_string(i+1)).c_str());
             }
+            profiler.set_metric("refine_index_migrations",edge_index.migrations);
+            profiler.set_metric("refine_index_seed_entries",edge_index.seed_entries);
+            profiler.set_metric("refine_index_queries",edge_index.queries);
+            profiler.set_metric("refine_index_hits",edge_index.hits);
+            profiler.set_metric("refine_index_misses",edge_index.misses);
+            profiler.set_metric("refine_index_inserts",edge_index.inserts);
+            profiler.set_metric("refine_index_verified",edge_index.verified);
+            profiler.set_metric("refine_index_mismatches",edge_index.mismatches);
+            profiler.set_metric("refine_index_rehashes",edge_index.rehashes);
+            profiler.set_metric("refine_index_entries",edge_index.size());
+            profiler.set_metric("refine_index_buckets",edge_index.buckets());
+            // Dictionary destruction remains inside the full refinement timer.
         }
 
         std::string savepvname = OUTPUT_PATH + "volfined/volfined" + str_id + ".vol";
