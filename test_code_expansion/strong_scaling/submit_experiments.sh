@@ -22,7 +22,7 @@ import json, os, pathlib, sys
 root=pathlib.Path(sys.argv[1]);root.mkdir(parents=True,exist_ok=True)
 schedulers=os.environ['KERNEL_SCHEDULERS'].split()
 arms=[dict(scheduler=s,algorithm=a) for s in schedulers
-      for a in (('baseline','sparse') if s=='node_engineered' else ('baseline',) if s=='node_original' else os.environ['ALGORITHMS'].replace(',',' ').split())]
+      for a in (('baseline',) if s=='node_engineered_refine' or (s=='node_engineered' and os.environ.get('REFINEMENT_ABLATION')=='1') else ('baseline','sparse') if s=='node_engineered' else ('baseline',) if s=='node_original' else os.environ['ALGORITHMS'].replace(',',' ').split())]
 counts=list(map(int,os.environ['PROCESS_COUNTS'].replace(',',' ').split()))
 levels=list(map(int,os.environ.get('RULE_SEARCH_LEVELS',os.environ['LEVELS']).replace(',',' ').split()))
 repeats=int(os.environ['REPEATS']);seeds=os.environ['PARTITION_SEEDS'].split()
@@ -32,6 +32,9 @@ plan=dict(schema='engineering_baseline_v1',baseline='node_engineered/baseline',
           refines=int(os.environ['REFINES']),threads=int(os.environ['CPUS_PER_TASK']),
           ranks_per_node=int(os.environ['RANKS_PER_NODE']),seeds=list(map(int,seeds)),
           warmups=1,repeats=repeats,total_runs=total,start_epoch=int(os.environ['START_EPOCH']))
+if os.environ.get('REFINEMENT_ABLATION')=='1':
+    plan.update(refinement_ablation=True,matched_baseline='node_engineered_refine/baseline',
+                matched_baseline_contract='fixed_recovery_refine_v1')
 path=root/'engineering_baseline_plan.json'
 if path.exists():
     old=json.loads(path.read_text())

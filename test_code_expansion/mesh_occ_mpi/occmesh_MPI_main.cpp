@@ -326,17 +326,20 @@ int main(int argc, char **argv) {
     const bool smoothing_compact=requested_scheduler=="node_rules_recovery_dag_compact" || smoothing_stream;
     const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag" || smoothing_compact;
     const int smoothing_mode=smoothing_stream?(profile_repeat<=0?6:5):smoothing_compact?(profile_repeat<=0?4:3):smoothing_dag?(profile_repeat<=0?2:1):0;
+    const bool refine_engineered=requested_scheduler=="node_engineered_refine";
+    const bool refine_quiet=requested_scheduler=="node_rules_recovery_refine";
+    const int refine_cache_mode=(refine_engineered || refine_quiet)?(profile_repeat<=0?2:1):0;
     const bool environment_band=requested_scheduler=="node_rules_recovery_band";
     const bool open_boundary=requested_scheduler=="node_rules_recovery_open";
     const bool surface_reuse=requested_scheduler=="node_rules_recovery_surface";
-    const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet" || smoothing_dag || surface_reuse || open_boundary || environment_band;
+    const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet" || smoothing_dag || surface_reuse || open_boundary || environment_band || refine_quiet;
     const bool shared_rules=requested_scheduler=="node_rules_recovery_shared";
     const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules || quiet_rules;
     const int recovery_topology_mode=environment_band?(profile_repeat<=0?8:7):open_boundary?(profile_repeat<=0?6:5):surface_reuse?(profile_repeat<=0?4:3):recovery_topology?(profile_repeat<=0?2:1):0;
     const bool front_group=requested_scheduler=="node_rules_recovery_front" || recovery_topology;
-    // Frozen engineering reference: native fixed-core repair plus recovery teams.
-    // It retains original communication/search and never acquires borrowed cores.
-    const bool engineered=requested_scheduler=="node_engineered";
+    // Both engineering routes use native fixed-core repair/recovery teams.
+    // Only the explicit refine route adds the shared volume-edge cache.
+    const bool engineered=requested_scheduler=="node_engineered" || refine_engineered;
     const bool recovery_fixed=requested_scheduler=="node_recovery_fixed";
     const bool rules_recovery_fixed=requested_scheduler=="node_rules_recovery_fixed";
     const bool generation_recovery=engineered || recovery_fixed || rules_recovery_fixed || requested_scheduler=="node_rules_recovery" || requested_scheduler=="node_rules_recovery_online" || front_group;
@@ -485,7 +488,11 @@ int main(int argc, char **argv) {
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
-    profiler.add_metadata("engineering_baseline_contract",engineered?"fixed_recovery_v1":"off");
+    profiler.add_metadata("engineering_baseline_contract",refine_engineered?"fixed_recovery_refine_v1":engineered?"fixed_recovery_v1":"off");
+    if(research.mesh_tasks==0) {
+        profiler.add_metadata("volume_refine_profile","bounded_edge_cache_v1");
+        profiler.add_metadata("volume_refine_cache_mode",std::to_string(refine_cache_mode));
+    }
     if(research.kernel_threads>0 && rule_search_mode>=0) {
         profiler.add_metadata("rule_search_profile","rule_search_v1");
         profiler.add_metadata("post_work_profile","rank_counts_v1");
@@ -1044,8 +1051,13 @@ int main(int argc, char **argv) {
             validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,"kernel_complete");
         {
             scaling::StageScope profile_stage("volume_refine", "compute");
+            for (const char *metric : {"refine_calls", "refine_parent_elements",
+                    "refine_surface_seconds", "refine_volume_seconds", "refine_cache_queries",
+                    "refine_cache_hits", "refine_cache_misses", "refine_cache_map_hits",
+                    "refine_cache_inserts", "refine_cache_verified", "refine_cache_mismatches",
+                    "refine_cache_capacity", "refine_cache_bytes"}) profiler.set_metric(metric, 0);
             for (i = 0; i < numrefine; i++) {
-                Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap);
+                Refineforvol(submesh, id, newfaces, baryc2locvrtxmap, edgemap, refine_cache_mode);
                 if(validate_volume)
                     validated_connectivity=mesh_audit::checkpoint({submesh},MPI_COMM_WORLD,
                         ("refine_"+std::to_string(i+1)).c_str());

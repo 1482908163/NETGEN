@@ -5,6 +5,7 @@
 #include <vector>
 #include <limits>
 #include "3DNgmesher.h"
+#include "refine_edge_cache.h"
 #include "scaling_profiler.h"
 #include "mpi_debug.h"
 #include "mesh_mpi_types.h"
@@ -916,8 +917,9 @@ void BarycMidPoint(Barycentric p1, Barycentric p2, Barycentric &res)
 }
 
 
-void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap, std::map<IntPair, int, IntPairCompare> &edgemap)
+void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &newfaces, std::map<Barycentric, int, CompBarycentric> &baryc2locvrtxmap, std::map<IntPair, int, IntPairCompare> &edgemap, int edge_cache_mode)
 {
+	const double surface_start = MPI_Wtime();
 	int v[3];
 	int u[3];
 	std::list<xdFace>::iterator li;
@@ -1017,6 +1019,9 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 	{
 		Ng_AddSurfaceElementwithIndex((nglib::Ng_Mesh *)submesh, nglib::NG_TRIG, (*li).lsvrtx, (*li).geoboundary);
 	}
+	const double volume_start = MPI_Wtime();
+	mesh_refine::EdgeCache edge_cache(edge_cache_mode != 0);
+	std::uint64_t queries=0, hits=0, misses=0, verified=0, map_hits=0, inserts=0;
 	int oldne = nglib::Ng_GetNE((nglib::Ng_Mesh *)submesh);
 	int Ev[10];
 	double Evxyz[4][3];
@@ -1054,6 +1059,29 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 				pr.y = Ev[betw[k][0]];
 				pr.x = Ev[betw[k][1]];
 			}
+			mesh_refine::EdgeCache::Entry *cached = nullptr;
+			std::uint64_t edge_key = 0;
+			if (edge_cache_mode != 0) {
+				++queries;
+				edge_key = mesh_refine::EdgeCache::key(pr.x, pr.y);
+				cached = &edge_cache.slot(edge_key);
+				if (cached->key == edge_key) {
+					++hits;
+					if (edge_cache_mode == 2) {
+						const auto reference = edgemap.find(pr);
+						if (reference == edgemap.end() || reference->second != cached->midpoint) {
+							scaling::Profiler::instance().add_metric("refine_cache_mismatches", 1);
+							const int edge[2] = {pr.x, pr.y};
+							mesh_audit::reject(MPI_COMM_WORLD,"refine_edge_cache",i+1,edge,2,
+							                  nglib::Ng_GetNP((nglib::Ng_Mesh *)submesh));
+						}
+						++verified;
+					}
+					Ev[k + 4] = cached->midpoint;
+					continue;
+				}
+				++misses;
+			}
 			ei = edgemap.find(pr);
 			if (ei == edgemap.end())
 			{
@@ -1063,10 +1091,16 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 				nglib::Ng_AddPoint((nglib::Ng_Mesh *)submesh, Euxyz[k], index);
 				Ev[k + 4] = index;
 				edgemap[pr] = index;
+				if (cached) ++inserts;
 			}
 			else
 			{
-				Ev[k + 4] = edgemap[pr];
+				Ev[k + 4] = cached ? ei->second : edgemap[pr];
+				if (cached) ++map_hits;
+			}
+			if (cached) {
+				cached->key = edge_key;
+				cached->midpoint = Ev[k + 4];
 			}
 		}
 		static int reftab[8][4] =
@@ -1092,6 +1126,21 @@ void Refineforvol(void *submesh, int belongNumberPartition, std::list<xdFace> &n
 				nglib::Ng_AddVolumeElement((nglib::Ng_Mesh *)submesh, nglib::NG_TET, pointindex, domainidx);
 		}
 	}
+	const double volume_end = MPI_Wtime();
+	auto &profile = scaling::Profiler::instance();
+	profile.add_metric("refine_calls", 1);
+	profile.add_metric("refine_parent_elements", oldne);
+	profile.add_metric("refine_surface_seconds", volume_start-surface_start);
+	profile.add_metric("refine_volume_seconds", volume_end-volume_start);
+	profile.add_metric("refine_cache_queries", queries);
+	profile.add_metric("refine_cache_hits", hits);
+	profile.add_metric("refine_cache_misses", misses);
+	profile.add_metric("refine_cache_map_hits", map_hits);
+	profile.add_metric("refine_cache_inserts", inserts);
+	profile.add_metric("refine_cache_verified", verified);
+	profile.set_metric("refine_cache_capacity", edge_cache.size());
+	profile.set_metric("refine_cache_bytes", edge_cache.bytes());
+
 }
 
 //将顶点和面的关系添加到一个映射中
