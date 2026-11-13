@@ -1,0 +1,9 @@
+scheduler,threads,algorithm,timing,seed,repeats,phase,phase_name,epochs_median,seconds_median,core_seconds_median,borrowed_core_seconds_median,below_base_epochs_median,min_threads_median,max_threads_median,early_epochs_median,reclaims_median
+node_rules_recovery_band,4,sparse,natural,-1,3,0,rule_search,547.0,206.7711848339999,827.0847393359996,0.0,0.0,4.0,4.0,,
+node_rules_recovery_band,4,sparse,natural,-1,3,1,delaunay_opt,512.0,375.77993446999983,1503.1197378799993,0.0,0.0,4.0,4.0,,
+node_rules_recovery_band,4,sparse,natural,-1,3,6,final_opt,834.0,1682.8934338180002,8598.870578793012,1868.7133674330007,0.0,4.0,13.0,,
+node_rules_recovery_band,4,sparse,natural,-1,3,7,repair_group,1118.0,2138.6122860100004,8737.743031574999,187.744693092,0.0,4.0,13.0,,
+node_rules_recovery_quiet,4,sparse,natural,-1,3,0,rule_search,547.0,207.39413156599988,829.5765262639995,0.0,0.0,4.0,4.0,,
+node_rules_recovery_quiet,4,sparse,natural,-1,3,1,delaunay_opt,512.0,375.1842679459998,1500.7370717839992,0.0,0.0,4.0,4.0,,
+node_rules_recovery_quiet,4,sparse,natural,-1,3,6,final_opt,836.0,1686.8687365619999,8583.325329158997,1831.5031842029998,0.0,4.0,13.0,,
+node_rules_recovery_quiet,4,sparse,natural,-1,3,7,repair_group,1120.0,2139.2860969979965,8758.412803965999,191.10544322999993,0.0,4.0,13.0,,
