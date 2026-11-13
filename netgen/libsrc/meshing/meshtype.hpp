@@ -122,7 +122,7 @@ namespace netgen
     static constexpr int adaptive_count = 14;
     static constexpr int generation_count = 19;
     static constexpr int group_count = 9;
-    static constexpr int topology_count = 12;
+    static constexpr int topology_count = 14;
     static constexpr int shared_rule_count = 6;
     static constexpr int quiet_rule_count = 8;
     static constexpr int smoothing_count = 18;
@@ -1813,7 +1813,8 @@ namespace netgen
     bool volume_repair_frontier = false;
     VolumeKernelStats * volume_kernel_stats = nullptr;
     bool volume_generation_recovery = false;
-    // 0 original; 1/2 smoothing reuse; 3/4 also post-swap surface reuse (formal/replay).
+    // 0 original; 1/2 smoothing reuse; 3/4 add post-swap surface reuse;
+    // 5/6 add deferred open-boundary construction to 1/2 (formal/replay).
     int volume_recovery_topology_mode = 0;
     int volume_recovery_smoothing_mode = 0; // 0 original, 1/2 tet-chain queue/replay, 3/4 incident compact, 5/6 edge-stream compact (formal/replay)
     int volume_smoothing_dag_mode = 0; // activated only inside recovery smoothing

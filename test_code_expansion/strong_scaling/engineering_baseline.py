@@ -33,6 +33,7 @@ INCREMENTS = (
     ('连续边去重增量', ('node_rules_recovery_dag', 'sparse'), ('node_rules_recovery_dag_stream', 'sparse')),
     ('连续边依赖调度整体增量', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_dag_stream', 'sparse')),
     ('换边后表面分类复用', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_surface', 'sparse')),
+    ('省去无效边界边构建', ('node_rules_recovery_quiet', 'sparse'), ('node_rules_recovery_open', 'sparse')),
     ('共享规则准备', ('node_rules_recovery_topology', 'sparse'), ('node_rules_recovery_shared', 'sparse')),
     ('自适应搜索', ('node_rules_elastic', 'sparse'), ('node_search_elastic', 'sparse')),
     ('搜索基础上的在线借核', ('node_search_elastic', 'sparse'), ('node_search_online', 'sparse')),
@@ -96,6 +97,21 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('kernel_topology_post_swap_verified')==(6*sweeps if repeat==0 else 0) and
                     r.get('kernel_topology_skipped_rebuilds')==31*sweeps and
                     r.get('recovery_smoothing_mode')=='0', '换边后表面复用身份、覆盖或重放不完整')
+        if scheduler == 'node_rules_recovery_open':
+            sweeps=r.get('kernel_gen_recovery_sweeps',0)
+            require(sweeps>0 and r.get('recovery_open_boundary')=='deferred_v1' and
+                    r.get('recovery_topology_detail_profile')=='preparation_costs_v2' and
+                    r.get('recovery_topology_mode')==('6' if repeat==0 else '5') and
+                    r.get('kernel_topology_boundary_skipped')==11*sweeps and
+                    r.get('kernel_topology_boundary_verified')==(11*sweeps if repeat==0 else 0) and
+                    r.get('kernel_topology_calls')==18*sweeps and
+                    r.get('kernel_topology_optimized')==18*sweeps and
+                    r.get('kernel_topology_verified')==(18*sweeps if repeat==0 else 0) and
+                    r.get('kernel_topology_skipped_rebuilds')==25*sweeps and
+                    r.get('recovery_surface_reuse')=='off' and
+                    r.get('kernel_topology_post_swap_reuses')==0 and
+                    r.get('kernel_topology_post_swap_verified')==0 and
+                    r.get('recovery_smoothing_mode')=='0', '开面边界省略身份、覆盖或重放不完整')
         if scheduler == 'node_engineered':
             require(r.get('engineering_baseline_contract') == CONTRACT and
                     r.get('generation_recovery') == 'ordered_team_v1' and

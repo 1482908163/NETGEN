@@ -2501,6 +2501,17 @@ namespace netgen
 
   void Mesh :: FindOpenElements (int dom)
   {
+    FindOpenElementsImpl(dom, true);
+  }
+
+  void Mesh :: FindOpenElementsForRecovery ()
+  {
+    // Only the 3D recovery preparation has the overwrite-before-read contract.
+    FindOpenElementsImpl(0, GetDimension()!=3);
+  }
+
+  void Mesh :: FindOpenElementsImpl (int dom, bool build_boundary)
+  {
     static Timer t("Mesh::FindOpenElements"); RegionTimer reg (t);
     static Timer t_table("Mesh::FindOpenElements - build table"); 
     static Timer t_pointloop("Mesh::FindOpenElements - pointloop"); 
@@ -2932,6 +2943,10 @@ namespace netgen
 
     PrintMessage (5, openelements.Size(), treequad, " open elements");
 
+    // Ordered open faces above are identical. These remaining writes affect
+    // only the boundary-edge cache and point types; recovery preparation
+    // overwrites both in CalcSurfacesOfNode before any consumer can read them.
+    if (!build_boundary) return;
     BuildBoundaryEdges();
 
 

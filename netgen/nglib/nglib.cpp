@@ -480,7 +480,7 @@ namespace nglib
    }
    static thread_local double last_topology_stats[VolumeKernelStats::topology_count] = {};
    NGLIB_API Ng_Result Ng_SetVolumeRecoveryTopologyMode(int mode) {
-     if(mode<0 || mode>4) return NG_ERROR;
+     if(mode<0 || mode>6) return NG_ERROR;
      recovery_topology_mode=mode;return NG_OK;
    }
    NGLIB_API void Ng_GetVolumeRecoveryTopologyStats(double *values) {
@@ -488,6 +488,9 @@ namespace nglib
    }
    NGLIB_API void Ng_GetVolumeRecoveryTopologyDetailStats(double *values) {
      if(values) std::copy_n(last_topology_stats+5,7,values);
+   }
+   NGLIB_API void Ng_GetVolumeRecoveryOpenBoundaryStats(double *values) {
+     if(values) std::copy_n(last_topology_stats+12,2,values);
    }
    static thread_local bool quiet_rule_parallelism = false;
    static thread_local double last_quiet_rule_stats[VolumeKernelStats::quiet_rule_count] = {};

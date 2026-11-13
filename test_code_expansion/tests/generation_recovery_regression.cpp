@@ -78,9 +78,10 @@ static void PrepareOriginal(Mesh &m) {
 }
 static void PreparationChecks() {
   int cases=0;
-  for(int dimension:{2,3}) for(int variant:{0,1}) for(int mode:{0,1,2}) {
+  for(int dimension:{2,3}) for(int variant:{0,1}) for(int mode:{0,1,2,3,4,5,6}) {
     auto old=Fixture(5,variant),candidate=Fixture(5,variant);
-    for(auto *m:{old.get(),candidate.get()}) {Decorate(*m,variant);m->SetDimension(dimension);}
+    for(auto *m:{old.get(),candidate.get()}) {Decorate(*m,variant);m->SetDimension(dimension);
+      if(variant==1) m->BuildBoundaryEdges();}
     PrepareOriginal(*old);
     MeshingParameters mp;VolumeKernelStats stats;mp.volume_kernel_stats=&stats;
     mp.volume_recovery_topology_mode=mode;PrepareRecoveryTopology(*candidate,mp);
@@ -94,7 +95,7 @@ static void PreparationChecks() {
     ++cases;
   }
   // No face descriptors or surface elements: reset unreferenced point types too.
-  for(int mode:{1,2,3,4}) {
+  for(int mode:{1,2,3,4,5,6}) {
     Mesh a,b;
     for(auto *m:{&a,&b}) {
       for(auto p:{Point<3>(0,0,0),Point<3>(1,0,0),Point<3>(0,1,0),Point<3>(0,0,1)})m->AddPoint(p);
@@ -156,7 +157,7 @@ int main(int argc,char **argv) {
     MeshingParameters mp;mp.nthreads=1;Original(*reference,mp);
     Require(reference->GetNE()>0 && State(*reference)!=before,"trivial recovery fixture");
     auto expected=State(*reference);
-    for(int topology_mode:{0,1,2,3,4}) for(int threads:{0,1,2,4}) for(bool resize:{false,true}) {
+    for(int topology_mode:{0,1,2,3,4,5,6}) for(int threads:{0,1,2,4}) for(bool resize:{false,true}) {
       auto mesh=Fixture(n,variant);VolumeKernelStats stats;Lease lease{std::max(1,threads)};lease.resize=resize;
       VolumeResources resources;resources.context=&lease;
       resources.acquire=[](void *ctx,int phase,double,int) {
@@ -179,10 +180,12 @@ int main(int argc,char **argv) {
       Require(lease.polls==(threads>0?int(strlen("mcmstmcmstmcmstmcm")):0),"missing safe checkpoint");
       Require(stats.generation_values[15]==1 && stats.generation_values[16]==int(threads>0),"missing coverage");
       Require(stats.topology_values[0]==18 && stats.topology_values[1]==(topology_mode?18:0) &&
-              stats.topology_values[2]==((topology_mode==2 || topology_mode==4)?18:0) && stats.topology_values[3]==0 &&
-              stats.topology_values[4]==(topology_mode>=3?31:topology_mode?25:0),"missing topology replay coverage");
-      Require(stats.topology_values[5]==(topology_mode>=3?6:0) &&
+              stats.topology_values[2]==((topology_mode==2 || topology_mode==4 || topology_mode==6)?18:0) && stats.topology_values[3]==0 &&
+              stats.topology_values[4]==((topology_mode==3 || topology_mode==4)?31:topology_mode?25:0),"missing topology replay coverage");
+      Require(stats.topology_values[5]==((topology_mode==3 || topology_mode==4)?6:0) &&
               stats.topology_values[11]==(topology_mode==4?6:0),"missing post-swap surface coverage");
+      Require(stats.topology_values[12]==((topology_mode==5 || topology_mode==6)?11:0) &&
+              stats.topology_values[13]==(topology_mode==6?11:0),"missing deferred boundary coverage");
       ++cases;
     }
     // A caller-owned team must never recursively acquire a host CPU lease.

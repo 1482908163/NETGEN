@@ -445,6 +445,12 @@ namespace netgen
        Results are stored in openelements.
        if dom == 0, all sub-domains, else subdomain dom */
     DLL_HEADER void FindOpenElements (int dom = 0);
+    // Recovery-only: caller must next mark the free environment, then rebuild
+    // surface classification before any boundary-edge/type consumer runs.
+    DLL_HEADER void FindOpenElementsForRecovery ();
+  private:
+    void FindOpenElementsImpl (int dom, bool build_boundary);
+  public:
 
   
     /**

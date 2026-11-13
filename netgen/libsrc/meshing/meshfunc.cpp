@@ -430,7 +430,13 @@ namespace netgen
   {
     auto *stats=mp.volume_kernel_stats;
     if(stats) stats->AddTopology(0,1);
-    TimeRecoveryTopology(stats,7,[&]{mesh.FindOpenElements();});
+    const bool defer_boundary=(mp.volume_recovery_topology_mode==5 ||
+                               mp.volume_recovery_topology_mode==6) && mesh.GetDimension()==3;
+    TimeRecoveryTopology(stats,7,[&] {
+      if(defer_boundary) mesh.FindOpenElementsForRecovery();
+      else mesh.FindOpenElements();
+    });
+    if(defer_boundary && stats) stats->AddTopology(12,1);
     const bool optimized=mp.volume_recovery_topology_mode>0 && mesh.GetDimension()==3;
     // FreeOpenElementsEnvironment reads connectivity/open faces only. Its writes
     // are element fixed flags and point types. In 3D CalcSurfacesOfNode resets
@@ -441,7 +447,11 @@ namespace netgen
     TimeRecoveryTopology(stats,9,[&]{mesh.CalcSurfacesOfNode();});
     if(!optimized) return;
     if(stats) {stats->AddTopology(1,1);stats->AddTopology(4,1);}
-    if(mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4) VerifyRecoveryTopology(mesh,stats);
+    if(mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4 ||
+       mp.volume_recovery_topology_mode==6) {
+      VerifyRecoveryTopology(mesh,stats);
+      if(defer_boundary && stats) stats->AddTopology(13,1);
+    }
   }
 
   void RecoverOpenElements(Mesh & mesh,const MeshingParameters & mp,int domain)
@@ -461,8 +471,8 @@ namespace netgen
 #endif
       const char *optstr="mcmstmcmstmcmstmcm";
       std::vector<POINTTYPE> smooth_types;
-      const bool surface_reuse=mp.volume_recovery_topology_mode>=3 && mesh.GetDimension()==3;
-      const bool verify=mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4;
+      const bool surface_reuse=(mp.volume_recovery_topology_mode==3 || mp.volume_recovery_topology_mode==4) && mesh.GetDimension()==3;
+      const bool verify=mp.volume_recovery_topology_mode==2 || mp.volume_recovery_topology_mode==4 || mp.volume_recovery_topology_mode==6;
       bool surface_ready=false;
       auto save_types=[&] {
         TimeRecoveryTopology(stats,6,[&] {

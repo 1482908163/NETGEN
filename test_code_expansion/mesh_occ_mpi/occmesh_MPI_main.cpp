@@ -326,11 +326,12 @@ int main(int argc, char **argv) {
     const bool smoothing_compact=requested_scheduler=="node_rules_recovery_dag_compact" || smoothing_stream;
     const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag" || smoothing_compact;
     const int smoothing_mode=smoothing_stream?(profile_repeat<=0?6:5):smoothing_compact?(profile_repeat<=0?4:3):smoothing_dag?(profile_repeat<=0?2:1):0;
+    const bool open_boundary=requested_scheduler=="node_rules_recovery_open";
     const bool surface_reuse=requested_scheduler=="node_rules_recovery_surface";
-    const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet" || smoothing_dag || surface_reuse;
+    const bool quiet_rules=requested_scheduler=="node_rules_recovery_quiet" || smoothing_dag || surface_reuse || open_boundary;
     const bool shared_rules=requested_scheduler=="node_rules_recovery_shared";
     const bool recovery_topology=requested_scheduler=="node_rules_recovery_topology" || shared_rules || quiet_rules;
-    const int recovery_topology_mode=surface_reuse?(profile_repeat<=0?4:3):recovery_topology?(profile_repeat<=0?2:1):0;
+    const int recovery_topology_mode=open_boundary?(profile_repeat<=0?6:5):surface_reuse?(profile_repeat<=0?4:3):recovery_topology?(profile_repeat<=0?2:1):0;
     const bool front_group=requested_scheduler=="node_rules_recovery_front" || recovery_topology;
     // Frozen engineering reference: native fixed-core repair plus recovery teams.
     // It retains original communication/search and never acquires borrowed cores.
@@ -506,6 +507,7 @@ int main(int argc, char **argv) {
         profiler.add_metadata("recovery_topology_mode",std::to_string(recovery_topology_mode));
         profiler.add_metadata("recovery_topology_detail_profile","preparation_costs_v2");
         profiler.add_metadata("recovery_surface_reuse",surface_reuse?"post_swap_v1":"off");
+        profiler.add_metadata("recovery_open_boundary",open_boundary?"deferred_v1":"off");
         profiler.add_metadata("front_group_profile","bounded_group_v1");
         profiler.add_metadata("front_group_mode",std::to_string(front_group_mode));
     }
@@ -970,6 +972,9 @@ int main(int argc, char **argv) {
                 const char *topology_detail_names[]={"post_swap_reuses","snapshot_seconds","find_open_seconds",
                     "free_environment_seconds","surface_rebuild_seconds","restore_seconds","post_swap_verified"};
                 for(int k=0;k<7;++k) profiler.set_metric(std::string("kernel_topology_")+topology_detail_names[k],topology_detail[k]);
+                double open_boundary_stats[2]={};nglib::Ng_GetVolumeRecoveryOpenBoundaryStats(open_boundary_stats);
+                profiler.set_metric("kernel_topology_boundary_skipped",open_boundary_stats[0]);
+                profiler.set_metric("kernel_topology_boundary_verified",open_boundary_stats[1]);
                 double groups[9]={};nglib::Ng_GetVolumeFrontGroupStats(groups);
                 const char *group_names[]={"build_seconds","inner_seconds","inside_seconds","calls",
                     "rejected","verified","inside_calls","inside_verified","mismatches"};
