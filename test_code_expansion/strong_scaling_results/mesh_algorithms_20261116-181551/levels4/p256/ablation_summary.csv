@@ -1,0 +1,4 @@
+contribution,threads,timing,seed,control,candidate,control_seconds,candidate_seconds,speedup,reduction_pct,paired_count,paired_wins,paired_reduction_pct,quality_pass,quality_issues,same_volume_fingerprint
+refine_engineered,4,natural,-1,baseline+node_engineered,baseline+node_engineered_refine,66.11408518799999,64.18401744200003,1.0300708466518798,2.9192988763463656,3,3,2.119052633060281,True,,True
+refine_index_engineered,4,natural,-1,baseline+node_engineered_refine,baseline+node_engineered_refine_hash,64.18401744200003,63.04629446299998,1.0180458342348375,1.7725954596534144,3,3,1.7030928844362636,True,,True
+refine_index_quiet,4,natural,-1,sparse+node_rules_recovery_refine,sparse+node_rules_recovery_refine_hash,51.38571323200006,49.332659842,1.0416165152370755,3.995377821712387,3,3,3.995377821712387,True,,True
