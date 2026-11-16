@@ -1,0 +1,22 @@
+{
+  "schema": "failure_diagnostics_v1",
+  "exit_code": 137,
+  "quality_read_error": "quality_summary.json unavailable; no per-rank error category can be inferred",
+  "log_source": "run.log",
+  "exit_checkpoints": {
+    "profile.begin": 149
+  },
+  "messages": [],
+  "mesh_evidence": [],
+  "mesh_evidence_dropped": 0,
+  "mesh_evidence_malformed": 0,
+  "mesh_checkpoint_counts": {
+    "kernel_complete": 256,
+    "refine_1": 256,
+    "refine_2": 256,
+    "audit_complete": 256,
+    "vertex_numbering_complete": 256
+  },
+  "mesh_checkpoints": [],
+  "frames": []
+}

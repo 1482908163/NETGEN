@@ -1,0 +1,10 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_engineered_refine+baseline,valid,,38.860919206999824,38.736159859000054,0.6016222339999331,1.5293750740131062,1.0155312823003066,2,3
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_engineered_refine_hash+baseline,valid,,38.860919206999824,38.23895918800008,0.6966987050000171,1.8069301422748096,1.0184018092610092,3,3
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_rules_recovery_refine+sparse,valid,,38.860919206999824,28.8049630349999,10.120848222999939,26.043769497806736,1.3521511212910502,3,3
+total,相对工程基准,512,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,valid,,38.860919206999824,27.97936508599969,10.577670889000274,27.433827890345984,1.3780525704027904,3,3
+matched_total,相对统一细化工程基准,512,4,-1,node_engineered_refine+baseline,node_rules_recovery_refine+sparse,valid,,38.736159859000054,28.8049630349999,9.931196824000153,25.63805204271614,1.3447738090110757,3,3
+matched_hash_total,相对统一完整索引工程基准,512,4,-1,node_engineered_refine_hash+baseline,node_rules_recovery_refine_hash+sparse,valid,,38.23895918800008,27.97936508599969,9.883382137999888,26.09847903238256,1.3531521231317896,3,3
+increment,工程完整边索引增量,512,4,-1,node_engineered_refine+baseline,node_engineered_refine_hash+baseline,valid,,38.736159859000054,38.23895918800008,0.35831812800006446,0.925022328760372,1.0093365888189234,2,3
+increment,高容错完整边索引增量,512,4,-1,node_rules_recovery_refine+sparse,node_rules_recovery_refine_hash+sparse,valid,,28.8049630349999,27.97936508599969,0.9471588999997493,3.2881795364531063,1.0339997688048124,3,3
+increment,工程源代码细化缓存,512,4,-1,node_engineered+baseline,node_engineered_refine+baseline,valid,,38.860919206999824,38.736159859000054,0.6016222339999331,1.5293750740131062,1.0155312823003066,2,3

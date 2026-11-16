@@ -1,0 +1,10 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_engineered_refine+baseline,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_engineered_refine_hash+baseline,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+matched_total,相对统一细化工程基准,256,4,-1,node_engineered_refine+baseline,node_rules_recovery_refine+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+matched_hash_total,相对统一完整索引工程基准,256,4,-1,node_engineered_refine_hash+baseline,node_rules_recovery_refine_hash+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+increment,工程完整边索引增量,256,4,-1,node_engineered_refine+baseline,node_engineered_refine_hash+baseline,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+increment,高容错完整边索引增量,256,4,-1,node_rules_recovery_refine+sparse,node_rules_recovery_refine_hash+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+increment,工程源代码细化缓存,256,4,-1,node_engineered+baseline,node_engineered_refine+baseline,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0

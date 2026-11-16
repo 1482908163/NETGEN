@@ -1,0 +1,49 @@
+{
+  "schema": "engineering_baseline_v1",
+  "baseline": "node_engineered/baseline",
+  "baseline_contract": "fixed_recovery_v1",
+  "arms": [
+    {
+      "scheduler": "node_engineered",
+      "algorithm": "baseline"
+    },
+    {
+      "scheduler": "node_engineered_refine",
+      "algorithm": "baseline"
+    },
+    {
+      "scheduler": "node_engineered_refine_hash",
+      "algorithm": "baseline"
+    },
+    {
+      "scheduler": "node_rules_recovery_refine",
+      "algorithm": "sparse"
+    },
+    {
+      "scheduler": "node_rules_recovery_refine_hash",
+      "algorithm": "sparse"
+    }
+  ],
+  "process_counts": [
+    256,
+    512,
+    1024
+  ],
+  "levels": [
+    4
+  ],
+  "refines": 2,
+  "threads": 4,
+  "ranks_per_node": 4,
+  "seeds": [
+    -1
+  ],
+  "warmups": 1,
+  "repeats": 3,
+  "total_runs": 60,
+  "start_epoch": 1794812807,
+  "refinement_ablation": true,
+  "matched_baseline": "node_engineered_refine_hash/baseline",
+  "matched_baseline_contract": "fixed_recovery_refine_hash_v1",
+  "refinement_index_ablation": true
+}

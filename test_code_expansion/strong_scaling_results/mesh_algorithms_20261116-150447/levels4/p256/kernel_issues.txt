@@ -1,0 +1,24 @@
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_refine_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_refine_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_refine_hash_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_engineered_refine_hash_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_rules_recovery_refine_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_rules_recovery_refine_t4/p256/analysis/issues.txt'
+/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_rules_recovery_refine_hash_t4/p256: [Errno 2] No such file or directory: '/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447/levels4/kernel_node_rules_recovery_refine_hash_t4/p256/analysis/issues.txt'
+baseline_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+baseline_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+baseline_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+sparse_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+sparse_natural: missing/invalid quality warmup: missing rank_profiles.jsonl(.gz); the executable may be stale or profiling was not enabled
+node_engineered/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_engineered_refine/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_engineered_refine_hash/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_rules_recovery_refine/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+node_rules_recovery_refine_hash/t4: 缺少关键进程明细，请执行 --refresh-kernel-reports
+相对工程基准/node_engineered_refine+baseline/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+相对工程基准/node_engineered_refine_hash+baseline/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+相对工程基准/node_rules_recovery_refine+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+相对工程基准/node_rules_recovery_refine_hash+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+相对统一细化工程基准/node_rules_recovery_refine+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+相对统一完整索引工程基准/node_rules_recovery_refine_hash+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+工程完整边索引增量/node_engineered_refine_hash+baseline/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+高容错完整边索引增量/node_rules_recovery_refine_hash+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+工程源代码细化缓存/node_engineered_refine+baseline/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
