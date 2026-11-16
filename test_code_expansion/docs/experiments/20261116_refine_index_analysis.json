@@ -1,0 +1,364 @@
+{
+  "data_commit": "99d840d08d14f5a0919e43775ab7b6cf7aac3d66",
+  "code_commit": "168bafe3a1ae1f41c5d6c884d876d16a5306ac3b",
+  "batch": "test_code_expansion/strong_scaling_results/mesh_algorithms_20261116-150447",
+  "method": "读取上传的逐轮 JSON/状态记录独立复算；未运行项目代码、编译或测试",
+  "checks": {
+    "status_counts": {
+      "attempted": 45,
+      "successful": 40,
+      "failed": 5,
+      "planned": 60
+    },
+    "independent_audit_issues": [],
+    "scope": "40 个逐轮聚合指标、10 次完整预热质量摘要、45 个状态；未重新执行全部进程的原始剖析分析器",
+    "resource_contract": "工程三路线固定四核不借核；高容错两路线保留既有节点内借核，均同样每节点4进程/16物理核",
+    "skipped_formal_runs": 15
+  },
+  "scales": {
+    "512": {
+      "nodes": 128,
+      "routes": {
+        "node_engineered": {
+          "formal_core_seconds": [
+            39.33778209299999,
+            38.55703597499996,
+            38.860919206999824
+          ],
+          "median_core_seconds": 38.860919206999824
+        },
+        "node_engineered_refine": {
+          "formal_core_seconds": [
+            38.736159859000054,
+            37.507095501000094,
+            39.462888080000084
+          ],
+          "median_core_seconds": 38.736159859000054
+        },
+        "node_engineered_refine_hash": {
+          "formal_core_seconds": [
+            38.37784173099999,
+            37.860337269999945,
+            38.23895918800008
+          ],
+          "median_core_seconds": 38.23895918800008
+        },
+        "node_rules_recovery_refine": {
+          "formal_core_seconds": [
+            28.8049630349999,
+            28.989052985999933,
+            28.740070983999885
+          ],
+          "median_core_seconds": 28.8049630349999
+        },
+        "node_rules_recovery_refine_hash": {
+          "formal_core_seconds": [
+            27.85780413500015,
+            27.97936508599969,
+            28.355577050000193
+          ],
+          "median_core_seconds": 27.97936508599969
+        }
+      },
+      "paired_comparisons": {
+        "engineering_index_increment": {
+          "reference": "node_engineered_refine",
+          "candidate": "node_engineered_refine_hash",
+          "paired_reductions_percent": [
+            0.9250223287603765,
+            -0.9417998495522858,
+            3.1014681173836705
+          ],
+          "median_reduction_percent": 0.9250223287603765,
+          "wins": 2,
+          "pairs": 3
+        },
+        "candidate_index_increment": {
+          "reference": "node_rules_recovery_refine",
+          "candidate": "node_rules_recovery_refine_hash",
+          "paired_reductions_percent": [
+            3.28817953645311,
+            3.482997186861766,
+            1.3378322350482272
+          ],
+          "median_reduction_percent": 3.28817953645311,
+          "wins": 3,
+          "pairs": 3
+        },
+        "matched_cached_total": {
+          "reference": "node_engineered_refine",
+          "candidate": "node_rules_recovery_refine",
+          "paired_reductions_percent": [
+            25.63805204271614,
+            22.71048291322114,
+            27.171901545225616
+          ],
+          "median_reduction_percent": 25.63805204271614,
+          "wins": 3,
+          "pairs": 3
+        },
+        "matched_hash_total": {
+          "reference": "node_engineered_refine_hash",
+          "candidate": "node_rules_recovery_refine_hash",
+          "paired_reductions_percent": [
+            27.411748867321528,
+            26.098479032382564,
+            25.846368070345992
+          ],
+          "median_reduction_percent": 26.098479032382564,
+          "wins": 3,
+          "pairs": 3
+        }
+      }
+    },
+    "1024": {
+      "nodes": 256,
+      "routes": {
+        "node_engineered": {
+          "formal_core_seconds": [
+            24.505375250000043,
+            23.91572671600011,
+            24.133238940999945
+          ],
+          "median_core_seconds": 24.133238940999945
+        },
+        "node_engineered_refine": {
+          "formal_core_seconds": [
+            24.161403787999916,
+            23.92683663600019,
+            23.65086245999987
+          ],
+          "median_core_seconds": 23.92683663600019
+        },
+        "node_engineered_refine_hash": {
+          "formal_core_seconds": [
+            25.150801261000197,
+            23.786860968999918,
+            23.34686686400005
+          ],
+          "median_core_seconds": 23.786860968999918
+        },
+        "node_rules_recovery_refine": {
+          "formal_core_seconds": [
+            16.95020730100009,
+            16.96706456799984,
+            16.967521482999928
+          ],
+          "median_core_seconds": 16.96706456799984
+        },
+        "node_rules_recovery_refine_hash": {
+          "formal_core_seconds": [
+            16.762528261999933,
+            16.879738080999914,
+            16.878164720999848
+          ],
+          "median_core_seconds": 16.878164720999848
+        }
+      },
+      "paired_comparisons": {
+        "engineering_index_increment": {
+          "reference": "node_engineered_refine",
+          "candidate": "node_engineered_refine_hash",
+          "paired_reductions_percent": [
+            -4.094950283855934,
+            0.5850153496248852,
+            1.2853467670109822
+          ],
+          "median_reduction_percent": 0.5850153496248852,
+          "wins": 2,
+          "pairs": 3
+        },
+        "candidate_index_increment": {
+          "reference": "node_rules_recovery_refine",
+          "candidate": "node_rules_recovery_refine_hash",
+          "paired_reductions_percent": [
+            1.1072374258755255,
+            0.5146823520942254,
+            0.5266341468293272
+          ],
+          "median_reduction_percent": 0.5266341468293272,
+          "wins": 3,
+          "pairs": 3
+        },
+        "matched_cached_total": {
+          "reference": "node_engineered_refine",
+          "candidate": "node_rules_recovery_refine",
+          "paired_reductions_percent": [
+            29.845933416258543,
+            29.087723437408822,
+            28.25833936628449
+          ],
+          "median_reduction_percent": 29.087723437408822,
+          "wins": 3,
+          "pairs": 3
+        },
+        "matched_hash_total": {
+          "reference": "node_engineered_refine_hash",
+          "candidate": "node_rules_recovery_refine_hash",
+          "paired_reductions_percent": [
+            33.35191158306135,
+            29.03755521588859,
+            27.70693892538825
+          ],
+          "median_reduction_percent": 29.03755521588859,
+          "wins": 3,
+          "pairs": 3
+        }
+      }
+    }
+  },
+  "failed_runs": [
+    {
+      "route": "kernel_node_engineered_refine_hash_t4",
+      "exit_code": 137,
+      "observed_termination": [
+        "yhrun: error: cn8672: task 210: Killed",
+        "slurmstepd: error:  mpi/pmix_v3: _errhandler: cn8672 [52]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.7331373.2:210]",
+        "slurmstepd: error: *** STEP 7331373.2 ON cn2188 CANCELLED AT 2026-11-16T15:28:09 ***"
+      ],
+      "exit_checkpoints": {},
+      "mesh_checkpoint_counts": {
+        "kernel_complete": 256,
+        "refine_1": 256,
+        "refine_2": 256,
+        "audit_complete": 94
+      }
+    },
+    {
+      "route": "kernel_node_engineered_refine_t4",
+      "exit_code": 137,
+      "observed_termination": [
+        "yhrun: error: cn8672: task 210: Killed",
+        "slurmstepd: error:  mpi/pmix_v3: _errhandler: cn8672 [52]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.7331373.1:210]",
+        "slurmstepd: error: *** STEP 7331373.1 ON cn2188 CANCELLED AT 2026-11-16T15:23:47 ***"
+      ],
+      "exit_checkpoints": {
+        "profile.begin": 254
+      },
+      "mesh_checkpoint_counts": {
+        "kernel_complete": 256,
+        "refine_1": 256,
+        "refine_2": 256,
+        "audit_complete": 256,
+        "vertex_numbering_complete": 256
+      }
+    },
+    {
+      "route": "kernel_node_engineered_t4",
+      "exit_code": 137,
+      "observed_termination": [
+        "yhrun: error: cn8672: task 210: Killed",
+        "slurmstepd: error:  mpi/pmix_v3: _errhandler: cn8672 [52]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.7331373.0:210]",
+        "slurmstepd: error: *** STEP 7331373.0 ON cn2188 CANCELLED AT 2026-11-16T15:15:18 ***"
+      ],
+      "exit_checkpoints": {
+        "profile.begin": 149
+      },
+      "mesh_checkpoint_counts": {
+        "kernel_complete": 256,
+        "refine_1": 256,
+        "refine_2": 256,
+        "audit_complete": 256,
+        "vertex_numbering_complete": 256
+      }
+    },
+    {
+      "route": "kernel_node_rules_recovery_refine_hash_t4",
+      "exit_code": 137,
+      "observed_termination": [
+        "yhrun: error: cn8672: task 210: Killed",
+        "slurmstepd: error:  mpi/pmix_v3: _errhandler: cn8672 [52]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.7331373.4:210]",
+        "slurmstepd: error: *** STEP 7331373.4 ON cn2188 CANCELLED AT 2026-11-16T15:30:21 ***"
+      ],
+      "exit_checkpoints": {},
+      "mesh_checkpoint_counts": {
+        "kernel_complete": 255,
+        "refine_1": 254,
+        "refine_2": 245
+      }
+    },
+    {
+      "route": "kernel_node_rules_recovery_refine_t4",
+      "exit_code": 137,
+      "observed_termination": [
+        "yhrun: error: cn8672: task 210: Killed",
+        "slurmstepd: error:  mpi/pmix_v3: _errhandler: cn8672 [52]: pmixp_client_v2.c:211: Error handler invoked: status = -25, source = [slurm.pmix.7331373.3:210]",
+        "slurmstepd: error: *** STEP 7331373.3 ON cn2188 CANCELLED AT 2026-11-16T15:29:13 ***"
+      ],
+      "exit_checkpoints": {},
+      "mesh_checkpoint_counts": {
+        "kernel_complete": 254,
+        "refine_1": 254,
+        "refine_2": 246
+      }
+    }
+  ],
+  "input_sha256": {
+    "levels4/kernel_node_engineered_t4/p512/baseline_natural/repeat_0/analysis_metrics.json": "88bb9e7bb858e7f472c9eb3e10f901f42f4ba8dc440dc2e152ba43c145bb856e",
+    "levels4/kernel_node_engineered_t4/p512/baseline_natural/repeat_1/analysis_metrics.json": "5365e6b74535faa5afe21f088fd3b6f6505b60815d82443d57d7825977ae91b8",
+    "levels4/kernel_node_engineered_t4/p512/baseline_natural/repeat_2/analysis_metrics.json": "94d9d846cc09569357678b3247256364ee4ad29bf3899b6e7aef7477b63f82f6",
+    "levels4/kernel_node_engineered_t4/p512/baseline_natural/repeat_3/analysis_metrics.json": "1e47d123e8e5e3d76e8c89af4846998a9596806dfcd73dd92ebc36806b11f479",
+    "levels4/kernel_node_engineered_refine_t4/p512/baseline_natural/repeat_0/analysis_metrics.json": "f0ee517c1c35928b8a25ce34e31b7a0328d4346c5be2628ab04b3fe25cd7b0a5",
+    "levels4/kernel_node_engineered_refine_t4/p512/baseline_natural/repeat_1/analysis_metrics.json": "b53a150110d6eb0365ea9e0788da8f18e1d5d4d5aad8ac340f113f0980b34971",
+    "levels4/kernel_node_engineered_refine_t4/p512/baseline_natural/repeat_2/analysis_metrics.json": "1164eb283de2fdbcc2c3f58c28836967fae4f19971a27c11530858bd7100289c",
+    "levels4/kernel_node_engineered_refine_t4/p512/baseline_natural/repeat_3/analysis_metrics.json": "649ac182bd33e025b14f9313e26331e7ff16cac8376e4eb12b4956063471c2d9",
+    "levels4/kernel_node_engineered_refine_hash_t4/p512/baseline_natural/repeat_0/analysis_metrics.json": "30d4b4f9a6e7d7a3d581e9165207350599332b01ecc18b370e39e6410be5b68b",
+    "levels4/kernel_node_engineered_refine_hash_t4/p512/baseline_natural/repeat_1/analysis_metrics.json": "e82c44beaa8720ec41521130f76e37fa0664eb78944cf57db79782a55557b367",
+    "levels4/kernel_node_engineered_refine_hash_t4/p512/baseline_natural/repeat_2/analysis_metrics.json": "80436bd315eede3d1ec5df5cf05b2ea6b4988f041af3b5803536bdb41addf489",
+    "levels4/kernel_node_engineered_refine_hash_t4/p512/baseline_natural/repeat_3/analysis_metrics.json": "d183d66405acbf066a46b6a630cbb57d3fc248fe8c041ea52a8a033288eea7cc",
+    "levels4/kernel_node_rules_recovery_refine_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "237fd66b3af2431ad4dbf1b78272b9c4fadd91581dfe25d88b8cb620390fd1e9",
+    "levels4/kernel_node_rules_recovery_refine_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "4a6bc7cca93c7896b72c8749bc6a298817ec7245fe931f71c7dd61e25934999b",
+    "levels4/kernel_node_rules_recovery_refine_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "af2125e3ca7a8cb78019dfd0fda9fbff67f80e5351990de8861e8e587681c69f",
+    "levels4/kernel_node_rules_recovery_refine_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "37577bdb04f833d0fed9c0b3c4f4924fc37066b8140bba89bd1f49262722415d",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p512/sparse_natural/repeat_0/analysis_metrics.json": "645c035f1715cc123c47237d63317939bbbfe3306992f1de0728d065777403fe",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p512/sparse_natural/repeat_1/analysis_metrics.json": "a18ed318def6769425034cab4ec63a104e5503b6f755970d4ebe9fb47cf11da8",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p512/sparse_natural/repeat_2/analysis_metrics.json": "39056edf28da29cecf898f7070676ffa7a9d4698530cd58b1067f18a8be1efc0",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p512/sparse_natural/repeat_3/analysis_metrics.json": "94d437f027c97b60147aa96a7f9a7741e5e65e97e5ef26d0440b5c5c29b6fe51",
+    "levels4/kernel_node_engineered_t4/p1024/baseline_natural/repeat_0/analysis_metrics.json": "93f77786bc34632d5c3d98a0f97e865252273b6714c00484f2cb65ce7e4aa639",
+    "levels4/kernel_node_engineered_t4/p1024/baseline_natural/repeat_1/analysis_metrics.json": "16680b1a3bc7ccce3783c71ad076e68b9794c46cf64c16d7089db8a6e66ae1ba",
+    "levels4/kernel_node_engineered_t4/p1024/baseline_natural/repeat_2/analysis_metrics.json": "337971924db5709fdd5b8b4a913b2a901bc1f6490d6c6bfb9a620c3641763c65",
+    "levels4/kernel_node_engineered_t4/p1024/baseline_natural/repeat_3/analysis_metrics.json": "0c718ca0f0eea3ee978d16b63207f58f7c54efe75fa33b6775bc4c709788c3c3",
+    "levels4/kernel_node_engineered_refine_t4/p1024/baseline_natural/repeat_0/analysis_metrics.json": "59002f982108b30ec3ce89b0fd1c6f4bb9bca9738772c6f7d1caae817304ee57",
+    "levels4/kernel_node_engineered_refine_t4/p1024/baseline_natural/repeat_1/analysis_metrics.json": "bcd50cf33d79f366cebfd458b1e7a66cbf0ce8e8fd46446427389c9443e8e4dc",
+    "levels4/kernel_node_engineered_refine_t4/p1024/baseline_natural/repeat_2/analysis_metrics.json": "2d6be867e5f50b39415dc235e41dc147fe44952d14cc548b51aacc1ecc51ecf2",
+    "levels4/kernel_node_engineered_refine_t4/p1024/baseline_natural/repeat_3/analysis_metrics.json": "f951e819b6f50e5f8174b5a497b1f5e836153043c8ca7b9f994beef14b774f02",
+    "levels4/kernel_node_engineered_refine_hash_t4/p1024/baseline_natural/repeat_0/analysis_metrics.json": "19efb1a6da7f072fc68a79c9217c04a3a59555bae095e3a636f8658b29f5ad98",
+    "levels4/kernel_node_engineered_refine_hash_t4/p1024/baseline_natural/repeat_1/analysis_metrics.json": "1146ab34162730f8ccbf39d82aa3685ec86680549db39561a22ed305cb0228cf",
+    "levels4/kernel_node_engineered_refine_hash_t4/p1024/baseline_natural/repeat_2/analysis_metrics.json": "90f124028873a32f35f18896e108cd4d65772b11da45c9b8f22bb35b0f095dfe",
+    "levels4/kernel_node_engineered_refine_hash_t4/p1024/baseline_natural/repeat_3/analysis_metrics.json": "9e3f743659359ab7de11ec38d5d2e3507faf2c24b343d9f49f5bdd642fd7e438",
+    "levels4/kernel_node_rules_recovery_refine_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "56c1b8365e145fda4eb6e65369299fb2d18108d26ff152c9a7e56704411fa31b",
+    "levels4/kernel_node_rules_recovery_refine_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "b2387b247b90f6d0a585e2c9b583d23be14d698b1a8c3f8a89250295e89398ab",
+    "levels4/kernel_node_rules_recovery_refine_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "b99b7678098f589487fff38d0b50230304df1a396fe3061c84ae68e487af5754",
+    "levels4/kernel_node_rules_recovery_refine_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "fb9b9809d42af635c3b58f0bc00728835dd807460f135aba444f48fed7579478",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p1024/sparse_natural/repeat_0/analysis_metrics.json": "08c771d443baa67fece61d38b25e9083c947970b9448bce494e1ca720618c860",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p1024/sparse_natural/repeat_1/analysis_metrics.json": "8c30f075a62971c37747801850fc83aaf13423c4b6a00611694848cc4454fbb6",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p1024/sparse_natural/repeat_2/analysis_metrics.json": "674c1c4d451d44e4d2f81544335f5919a2d9eb21cffed27e9f73fe7bfd64e36d",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p1024/sparse_natural/repeat_3/analysis_metrics.json": "8b86776ab21610bbfe34c650cfdfa061fedcc16f3e3051ffcc797ecd1e9dc617",
+    "engineering_baseline_plan.json": "d4e73d2edbd48c8823da27abb1d1feb5e12c4ed07f26724b390fa1f2874ae369",
+    "levels4/kernel_node_engineered_refine_hash_t4/p1024/run_status.tsv": "f419d39954b4a8952704a595b320d22a820a063968ab46961793c903d1304643",
+    "levels4/kernel_node_engineered_refine_hash_t4/p256/baseline_natural/repeat_0/failure_diagnostics.json": "b30de024f8d689367c136613f9e7e1a5f913a704ff8d5bdc6bf6e08cbb3f93eb",
+    "levels4/kernel_node_engineered_refine_hash_t4/p256/baseline_natural/repeat_0/failure_summary.txt": "93c1f03363760f94771c1a510c8a8e49c84340aa13b2f1111564b3f23fe12765",
+    "levels4/kernel_node_engineered_refine_hash_t4/p256/run_status.tsv": "a285d5e18209e3a4a672029028fba660b2f655689b3a658568051e69288fd0bf",
+    "levels4/kernel_node_engineered_refine_hash_t4/p512/run_status.tsv": "fc37b98d30c32bfd9724bb426531ee40ccd7ac08937a968f5b516faa45328c81",
+    "levels4/kernel_node_engineered_refine_t4/p1024/run_status.tsv": "a3162eab7a9c3bb55259bb90034116e53420f10f66c942d4b7c910450553c812",
+    "levels4/kernel_node_engineered_refine_t4/p256/baseline_natural/repeat_0/failure_diagnostics.json": "224fd8f42920ff27dfd4bfe54057e79512b1dacd1b4324a3d2338528df7c89fb",
+    "levels4/kernel_node_engineered_refine_t4/p256/baseline_natural/repeat_0/failure_summary.txt": "f62635b60e4e41deecba6090dbc4470d27c30021cb2e1135e9d7858429181e62",
+    "levels4/kernel_node_engineered_refine_t4/p256/run_status.tsv": "d51c17915aa2dba7ffbb56305bde503ec2c658a535946b301efab9d18ac5f024",
+    "levels4/kernel_node_engineered_refine_t4/p512/run_status.tsv": "5c7346be4cb80d6ce8ee57698856a3558aa627d7c87b22610d197a4b04f9e8c3",
+    "levels4/kernel_node_engineered_t4/p1024/run_status.tsv": "7d96b37a63a4b8803ab5c7018f791731b1f995e908ad1114cc0ff6319be4b0d4",
+    "levels4/kernel_node_engineered_t4/p256/baseline_natural/repeat_0/failure_diagnostics.json": "521a4a15b4f89563c07f1975b1734c865255d49e1582097edc65ed27ec865ace",
+    "levels4/kernel_node_engineered_t4/p256/baseline_natural/repeat_0/failure_summary.txt": "e525b9dc28283a94eea0cbc0113021801020d44c30f972a30bf6881fb334d21e",
+    "levels4/kernel_node_engineered_t4/p256/run_status.tsv": "c048d507a5f711ca0073dd2277c0cac00d0ecfaeab9fb2634ccdf1ac9a858f96",
+    "levels4/kernel_node_engineered_t4/p512/run_status.tsv": "159439fb745e54bd685e1c484f9b6c36498d3fed29539e2ea54a2004508e255e",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p1024/run_status.tsv": "347a42d2376407b39e5d355bfce868a9a5a978e27313c126c1a4e3f7c256fbc8",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p256/run_status.tsv": "3e35b9cbe08ba8dbc0c867b748540d1d0d43241b31c3959ae4c9b9b44eefce90",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p256/sparse_natural/repeat_0/failure_diagnostics.json": "df9bf1b3526c08c87db5d4a7083096f74a80889a0a433312f67f7f5c5fc7d671",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p256/sparse_natural/repeat_0/failure_summary.txt": "64df054b9bef637912ca688bd5e2d76399f38a94c98c70ea8d06f6bfba911210",
+    "levels4/kernel_node_rules_recovery_refine_hash_t4/p512/run_status.tsv": "037ca2b8dc6cad0dd87b3eda56697e72ea4c6b5f3e438c6ae9d27a2c6e21eb89",
+    "levels4/kernel_node_rules_recovery_refine_t4/p1024/run_status.tsv": "7260ddf1e0367040ea3f2b80d3e7058cd4075a96ac939d94f873099344176abe",
+    "levels4/kernel_node_rules_recovery_refine_t4/p256/run_status.tsv": "85efdc6eb5e09cb52a4d39b0f07ba6209ac66597f697f8e25fcbb9ba92bc3197",
+    "levels4/kernel_node_rules_recovery_refine_t4/p256/sparse_natural/repeat_0/failure_diagnostics.json": "dc7a3d6800eae22d4b2f7fc53d7ec432694fde1e9640bd356e0c8a45198eede7",
+    "levels4/kernel_node_rules_recovery_refine_t4/p256/sparse_natural/repeat_0/failure_summary.txt": "e92128fa156001bb6a2ba3e16425b2ad973b28c80cb5a419a8a0115f6afce0f0",
+    "levels4/kernel_node_rules_recovery_refine_t4/p512/run_status.tsv": "a0630f56da0052009ff8079793fc23bd741ef3c36f736fa787614778f0993106"
+  }
+}

@@ -4,10 +4,24 @@ import argparse
 import gzip
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
+
+
+def record_execution(directory, args):
+    """记录启动器状态；与后续分析退出码分开，不推断终止原因。"""
+    data = dict(schema='execution_context_v1', launcher_exit_code=args.exit_code,
+                launcher=args.launcher, started_epoch=args.started_epoch,
+                elapsed_seconds=args.elapsed_seconds, timeout_seconds=args.timeout_seconds,
+                environment={key: os.environ[key] for key in (
+                    'SLURM_JOB_ID', 'SLURM_JOB_NODELIST', 'SLURM_NTASKS',
+                    'PROCESS_COUNT', 'KERNEL_SCHEDULER', 'EXCLUDE_NODES',
+                    'MESH_BINARY_SHA256', 'MESH_KERNEL_SHA256', 'MESH_INPUT_SHA256')
+                    if key in os.environ})
+    (directory/'execution_context.json').write_text(json.dumps(data, ensure_ascii=False, indent=2)+'\n')
 
 
 def allocation_timeout_before_start(directory, exit_code, launcher, job_id):
@@ -95,10 +109,41 @@ def resolve_frames(text, configuration, cache):
     return frames
 
 
-def collect(directory, cache=None, exit_code=None):
+def scheduler_accounting():
+    """失败后尽力读取调度器已有账单；缺工具、超时或无记录均不改变原退出码。"""
+    job_id=os.environ.get('SLURM_JOB_ID','')
+    command=shutil.which('sacct')
+    if not command or not re.fullmatch(r'[0-9]+',job_id):
+        return dict(status='unavailable',job_id=job_id)
+    argv=[command,'-j',job_id,'--noheader','--parsable2',
+          '--format=JobID,State,ExitCode,Elapsed,MaxRSS,MaxRSSNode,MaxRSSTask,NodeList']
+    try:
+        proc=subprocess.run(argv,text=True,encoding='utf-8',errors='replace',capture_output=True,timeout=8)
+        return dict(status='observed' if proc.returncode==0 else 'query_failed',
+                    command=argv,exit_code=proc.returncode,
+                    stdout=proc.stdout[:65536],stderr=proc.stderr[:4096],
+                    truncated=len(proc.stdout)>65536 or len(proc.stderr)>4096,
+                    note='账单可能延迟；父作业尚未结束。空记录/无内存统计不能排除内存不足。')
+    except (OSError,subprocess.TimeoutExpired) as e:
+        return dict(status='query_failed',command=argv,error=str(e)[:4096])
+
+
+def collect(directory, cache=None, exit_code=None, query_accounting=False):
     cache={} if cache is None else cache
     qpath=directory/'quality_summary.json';summary=directory/'failure_summary.txt'
     data=dict(schema='failure_diagnostics_v1',exit_code=exit_code)
+    if query_accounting:data['scheduler_accounting']=scheduler_accounting()
+    elif (directory/'failure_diagnostics.json').exists():
+        # 离线重新导出时保留当时的账单，不能查询或覆盖成另一个作业的记录。
+        try:
+            previous=json.loads((directory/'failure_diagnostics.json').read_text())
+            if 'scheduler_accounting' in previous:
+                data['scheduler_accounting']=previous['scheduler_accounting']
+        except (ValueError,OSError):pass
+    context=directory/'execution_context.json'
+    if context.exists():
+        try:data['execution_context']=json.loads(context.read_text())
+        except (ValueError,OSError) as e:data['execution_context_read_error']=str(e)
     if qpath.exists():
         try:data['quality']=quality_details(json.loads(qpath.read_text()))
         except (ValueError,OSError) as e:data['quality_read_error']=str(e)
@@ -108,12 +153,26 @@ def collect(directory, cache=None, exit_code=None):
     candidates=[directory/'run.log',directory/'run.log.gz',summary]
     log=next((p for p in candidates if p.is_file()),None)
     stages={};diagnostics=[];tail='';checkpoints={};evidence=[];evidence_dropped=0;malformed=0
+    termination=[];termination_dropped=0;killed=set();pmix=set()
     affected={r['rank'] for r in data.get('quality',{}).get('failed_ranks',[]) if 'rank' in r}
     if log:
         opener=gzip.open if log.suffix=='.gz' else open
         with opener(log,'rt',errors='replace') as stream:
             for line in stream:
                 tail=(tail+line)[-32768:]
+                # 独立预算，避免大量网格进度/警告挤掉调度器终止证据。
+                if re.search(r'\b(?:yhrun|srun|slurmstepd):.*(?:error:|Killed|CANCELLED)|'
+                             r'Job step aborted|TIME LIMIT|OUT_OF_MEMORY|oom[_ -]kill|Out of memory',line,re.I):
+                    if len(termination)<128:termination.append(line.strip()[:2048])
+                    else:termination_dropped+=1
+                m=re.search(r'\b(?:yhrun|srun): error: ([\w.-]+): task (\d+): Killed\b',line)
+                if m:
+                    rank=int(m[2]);affected.add(rank)
+                    if len(killed)<256:killed.add((m[1],rank))
+                m=re.search(r'_errhandler: ([\w.-]+).*source = \[slurm\.pmix\.(\d+)\.(\d+):(\d+)\]',line)
+                if m:
+                    rank=int(m[4]);affected.add(rank)
+                    if len(pmix)<256:pmix.add((m[1],m[2],m[3],rank))
                 m=re.search(r'\[EXIT_CHECKPOINT\] rank=(\d+) stage=([\w.]+)',line)
                 if m:stages.setdefault(m[2],set()).add(int(m[1]))
                 if '[MESH_EVIDENCE] ' in line:
@@ -151,6 +210,10 @@ def collect(directory, cache=None, exit_code=None):
         for row in rows:
             stage=row.get('stage','unknown');checkpoint_counts[stage]=checkpoint_counts.get(stage,0)+1
     data.update(exit_checkpoints=counts,messages=diagnostics,
+                termination_messages=termination,termination_messages_dropped=termination_dropped,
+                killed_processes=[dict(host=h,rank=r) for h,r in sorted(killed)],
+                pmix_sources=[dict(host=h,job_id=j,step_id=s,rank=r) for h,j,s,r in sorted(pmix)],
+                termination_cause='unresolved; exit code 137 alone does not establish out-of-memory',
                 mesh_evidence=evidence,mesh_evidence_dropped=evidence_dropped,mesh_evidence_malformed=malformed,
                 mesh_checkpoint_counts=checkpoint_counts,
                 mesh_checkpoints=[row for rank,rows in sorted(checkpoints.items()) if rank in affected for row in rows])
@@ -162,6 +225,9 @@ def collect(directory, cache=None, exit_code=None):
         if 'quality' in data:
             header+='质量问题：'+json.dumps(data['quality'],ensure_ascii=False)+'\n'
         header+='关键错误：\n'+'\n'.join(diagnostics)+'\n'
+        header+='启动器与调度器终止记录：\n'+'\n'.join(termination)+'\n'
+        if 'execution_context' in data:
+            header+='运行上下文：'+json.dumps(data['execution_context'],ensure_ascii=False)+'\n'
         for record in data['mesh_checkpoints']+evidence:
             header+='[MESH_EVIDENCE] '+json.dumps(record,ensure_ascii=False)+'\n'
         summary.write_text(header+tail)
@@ -175,12 +241,19 @@ def main():
     parser.add_argument('--check-launch-retry',action='store_true',help='只判定明确的启动前资源确认超时；不运行程序或修改记录')
     parser.add_argument('--launcher',default='')
     parser.add_argument('--job-id',default='')
+    parser.add_argument('--record-execution',action='store_true',help='只保存一次启动的计时和退出状态')
+    parser.add_argument('--started-epoch',type=int)
+    parser.add_argument('--elapsed-seconds',type=int)
+    parser.add_argument('--timeout-seconds',type=int)
+    parser.add_argument('--scheduler-accounting',action='store_true',help='失败后有界读取当前作业的 sacct 账单；默认不查询')
     args=parser.parse_args();cache={}
+    if args.record_execution:
+        record_execution(args.root,args);return
     if args.check_launch_retry:
         raise SystemExit(0 if allocation_timeout_before_start(
             args.root, args.exit_code, args.launcher, args.job_id) else 1)
     if args.exit_code is not None:
-        collect(args.root,cache,args.exit_code);return
+        collect(args.root,cache,args.exit_code,args.scheduler_accounting);return
     directories=sorted({p.parent for p in args.root.rglob('failure_summary.txt')})
     for directory in directories:
         data=collect(directory,cache)

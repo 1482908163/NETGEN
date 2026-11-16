@@ -32,6 +32,8 @@ plan=dict(schema='engineering_baseline_v1',baseline='node_engineered/baseline',
           refines=int(os.environ['REFINES']),threads=int(os.environ['CPUS_PER_TASK']),
           ranks_per_node=int(os.environ['RANKS_PER_NODE']),seeds=list(map(int,seeds)),
           warmups=1,repeats=repeats,total_runs=total,start_epoch=int(os.environ['START_EPOCH']))
+if os.environ.get('EXCLUDE_NODES'):
+    plan['excluded_nodes']=os.environ['EXCLUDE_NODES']
 if os.environ.get('REFINEMENT_ABLATION')=='1':
     plan.update(refinement_ablation=True,matched_baseline='node_engineered_refine/baseline',
                 matched_baseline_contract='fixed_recovery_refine_v1')
@@ -110,6 +112,7 @@ export MESH_EXPERIMENT_WORKER=1
 [[ "${RANKS_PER_NODE}" =~ ^[1-9][0-9]*$ && "${START_EPOCH}" =~ ^[0-9]+$ ]] || exit 2
 read -r -a counts <<< "${PROCESS_COUNTS//,/ }"
 read -r -a batch_extra <<< "${SBATCH_EXTRA_ARGS:-}"
+[[ -z "${EXCLUDE_NODES:-}" ]] || batch_extra+=(--exclude "${EXCLUDE_NODES}")
 # 所有协作对照采用相同物理核布局，避免把超线程当额外计算核。
 [[ "${EXPERIMENT_PRESET}" != cooperate ]] || batch_extra+=(--hint=nomultithread)
 # Unbound rank affinity must not let two independent jobs select the same pool.

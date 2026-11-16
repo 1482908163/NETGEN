@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   refine_edge_index_recheck: 仅补64节点完整索引对照，20次；本次默认排除cn8672
 #   refine_edge_index: 完整散列边索引，缓存对照及同等工程基准，64/128/256节点，共60次
 #   refine_edge_cache: 细化边缓存，工程与高容错各自开关对照，64/128/256节点，共48次
 #   recovery_band: 精确两层邻域分类，工程基准＋高容错对照，64/128/256节点，共48次
@@ -41,6 +42,13 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == refine_edge_index_recheck ]]; then
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
+    # 五条旧/新路线均在此主机的同一进程终止；仅本次补测隔离该主机。
+    # 明确设置 EXCLUDE_NODES 可覆盖；空值表示不排除。不是硬件故障定论。
+    export EXCLUDE_NODES="${EXCLUDE_NODES-cn8672}"
+    EXPERIMENT_PRESET=refine_edge_index
+fi
 if [[ "${EXPERIMENT_PRESET}" == refine_edge_index ]]; then
     export ENGINEERING_BASELINE_REQUIRED=1 REFINEMENT_ABLATION=1 REFINEMENT_INDEX_ABLATION=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256 512 1024}"
@@ -761,7 +769,7 @@ SIGNATURE
                   ( -f "${out}/rank_profiles.jsonl" || -f "${out}/rank_profiles.jsonl.gz" || -f "${out}/analysis_metrics.json" ) ]]; then
                 exec 9>&-;continue
             fi
-            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/analysis_metrics.json" "${out}/failure_summary.txt" "${out}/failure_diagnostics.json"
+            rm -f "${out}/SUCCESS" "${out}/rank_profiles.jsonl" "${out}/rank_profiles.jsonl.gz" "${out}/run.log.gz" "${out}/quality_summary.json" "${out}/analysis_metrics.json" "${out}/failure_summary.txt" "${out}/failure_diagnostics.json" "${out}/execution_context.json"
             touch "${out}/RUNNING"
             args=("${common[@]}" --algorithm "${a}" --partition-seed "${seed}" --rank-shift "${rank_shift}"
                   "${reference_args[@]}" --profile-core-only --profile-dir "${out}"
@@ -774,7 +782,15 @@ SIGNATURE
             launch_attempt=0
             while :; do
                 rc=0
+                launch_started_epoch="$(date +%s)"
+                launch_started_seconds=$SECONDS
                 timeout --kill-after=30s "${TIMEOUT_SECONDS}" "${launch[@]}" "${BINARY}" "${args[@]}" > "${out}/run.log" 2>&1 || rc=$?
+                launch_elapsed_seconds=$((SECONDS-launch_started_seconds))
+                python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" \
+                    --record-execution --exit-code "$rc" --launcher "${MPI_LAUNCHER}" \
+                    --started-epoch "$launch_started_epoch" --elapsed-seconds "$launch_elapsed_seconds" \
+                    --timeout-seconds "${TIMEOUT_SECONDS}" || \
+                    printf '运行上下文保存失败；保留启动器退出码 %s：%s\n' "$rc" "$out" >&2
                 ((rc!=0)) || break
                 if ! python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" \
                     --check-launch-retry --exit-code "$rc" --launcher "${MPI_LAUNCHER}" \
@@ -785,6 +801,9 @@ SIGNATURE
                 mkdir -p "${out}/launch_attempts"
                 attempt_dir="$(mktemp -d "${out}/launch_attempts/attempt-XXXXXX")"
                 cp "${out}/run.log" "${attempt_dir}/diagnostic.txt"
+                if [[ -f "${out}/execution_context.json" ]]; then
+                    cp "${out}/execution_context.json" "${attempt_dir}/execution_context.json"
+                fi
                 printf 'job_id=%s\nattempt=%s\nexit_code=%s\nrepeat=%s\nretry_limit=%s\n' \
                     "${SLURM_JOB_ID}" "$((launch_attempt+1))" "$rc" "$rep" "${LAUNCH_START_RETRIES}" \
                     > "${attempt_dir}/metadata.txt"
@@ -805,7 +824,7 @@ SIGNATURE
             if ((rc!=0)); then
                 failures=$((failures+1))
                 # 导出细粒度质量错误与匹配当前二进制的调用位置；不改变原失败退出码。
-                python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" --exit-code "$rc" || {
+                python3 "${SCRIPT_DIR}/collect_failure_diagnostics.py" "${out}" --exit-code "$rc" --scheduler-accounting || {
                     printf '退出码：%s\n故障诊断导出失败；原始 run.log 保留。\n' "$rc" > "${out}/failure_summary.txt"
                 }
             fi
