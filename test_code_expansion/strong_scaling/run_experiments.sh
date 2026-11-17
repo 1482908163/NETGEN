@@ -10,6 +10,7 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
 # ============================================================================
 # 统一实验配置区：通常只需修改 EXPERIMENT_PRESET，然后直接运行本脚本。
+#   ordered_mapping: 映射验证与调用边界联合调度预检；64节点、五路线、20次
 #   refine_edge_index_recheck: 仅补64节点完整索引对照，20次；本次默认排除cn8672
 #   refine_edge_index: 完整散列边索引，缓存对照及同等工程基准，64/128/256节点，共60次
 #   refine_edge_cache: 细化边缓存，工程与高容错各自开关对照，64/128/256节点，共48次
@@ -42,6 +43,16 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
 EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+if [[ "${EXPERIMENT_PRESET}" == ordered_mapping ]]; then
+    export ENGINEERING_BASELINE_REQUIRED=1 ORDERED_MAPPING_EXPERIMENT=1
+    export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
+    export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_refine_hash node_mapping_capacity node_mapping_tasks node_mapping_joint}"
+    for required in node_engineered node_rules_recovery_refine_hash node_mapping_capacity node_mapping_tasks node_mapping_joint; do
+        [[ " ${KERNEL_SCHEDULERS} " == *" ${required} "* ]] || { echo "映射研究预检缺少路线：${required}" >&2; exit 2; }
+    done
+    export ALGORITHMS=sparse
+    EXPERIMENT_PRESET=recovery_scaling
+fi
 if [[ "${EXPERIMENT_PRESET}" == refine_edge_index_recheck ]]; then
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
     # 五条旧/新路线均在此主机的同一进程终止；仅本次补测隔离该主机。
@@ -386,7 +397,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
         [[ "$threads" =~ ^[1-9][0-9]*$ ]] && ((threads<=CPUS_PER_TASK)) || { echo "KERNEL_THREAD_COUNTS 必须为不超过 CPUS_PER_TASK 的正整数。" >&2;exit 2; }
     done
     for scheduler in ${KERNEL_SCHEDULERS}; do
-        [[ "$scheduler" == node_engineered_refine_hash || "$scheduler" == node_rules_recovery_refine_hash || "$scheduler" == node_engineered_refine || "$scheduler" == node_rules_recovery_refine || "$scheduler" == node_rules_recovery_band || "$scheduler" == node_rules_recovery_open || "$scheduler" == node_rules_recovery_surface || "$scheduler" == node_rules_recovery_dag_stream || "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
+        [[ "$scheduler" == node_mapping_tasks || "$scheduler" == node_mapping_joint || "$scheduler" == node_mapping_capacity || "$scheduler" == node_engineered_refine_hash || "$scheduler" == node_rules_recovery_refine_hash || "$scheduler" == node_engineered_refine || "$scheduler" == node_rules_recovery_refine || "$scheduler" == node_rules_recovery_band || "$scheduler" == node_rules_recovery_open || "$scheduler" == node_rules_recovery_surface || "$scheduler" == node_rules_recovery_dag_stream || "$scheduler" == node_rules_recovery_dag_compact || "$scheduler" == node_rules_recovery_dag || "$scheduler" == node_engineered || "$scheduler" == node_recovery_fixed || "$scheduler" == node_rules_recovery_fixed || "$scheduler" == node_rules_recovery_quiet || "$scheduler" == node_rules_recovery_shared || "$scheduler" == node_rules_recovery_topology || "$scheduler" == node_rules_recovery_front || "$scheduler" == node_rules_recovery || "$scheduler" == node_rules_recovery_online || "$scheduler" == node_search_elastic || "$scheduler" == node_search_local || "$scheduler" == node_search_idle || "$scheduler" == node_search_remote || "$scheduler" == node_search_online || "$scheduler" == node_search_full || "$scheduler" == static || "$scheduler" == cavity || "$scheduler" == repair || "$scheduler" == frontier || "$scheduler" == node_rules_fixed || "$scheduler" == node_rules_elastic || "$scheduler" == node_original || "$scheduler" == node_native || "$scheduler" == node_scoped || "$scheduler" == node_guarded || "$scheduler" == node_fixed || "$scheduler" == node_lend || "$scheduler" == node_model || "$scheduler" == node_tail || "$scheduler" == node_budget || "$scheduler" == node_priority || "$scheduler" == node_reserved || "$scheduler" == node_elastic || "$scheduler" == node_stage || "$scheduler" == node_reclaim || "$scheduler" == node_selective || "$scheduler" == node_once || "$scheduler" == node_phaseaware ]] || { echo "未知内核策略：${scheduler}" >&2;exit 2; }
     done
     if [[ " ${KERNEL_SCHEDULERS} " == *" node_"* ]]; then
         [[ "${KERNEL_THREAD_COUNTS}" == "${CPUS_PER_TASK}" ]] && ((CPUS_PER_TASK>=2 && RANKS_PER_NODE>=2)) || {
@@ -468,7 +479,7 @@ if [[ "${EXPERIMENT_STAGE}" == kernel ]]; then
           fi
           variant="${kernel_root}/kernel_${scheduler}_t${threads}"
           variant_algorithms="${ALGORITHMS}"
-          if [[ "$scheduler" == node_engineered_refine_hash || "$scheduler" == node_engineered_refine || ( "${REFINEMENT_ABLATION:-0}" == 1 && "$scheduler" == node_engineered ) ]]; then
+          if [[ "$scheduler" == node_engineered_refine_hash || "$scheduler" == node_engineered_refine || ( ( "${REFINEMENT_ABLATION:-0}" == 1 || "${ORDERED_MAPPING_EXPERIMENT:-0}" == 1 ) && "$scheduler" == node_engineered ) ]]; then
               variant_algorithms="baseline"
           elif [[ "$scheduler" == node_engineered ]]; then
               # Same fixed-core kernel in both arms isolates communication cost.
@@ -839,6 +850,7 @@ fi
 [[ "${EXPERIMENT_STAGE}" == calibration ]] && cleanup_args+=(--require-calibration)
 python3 "${SCRIPT_DIR}/analyze_results.py" "${pdir}" "${cleanup_args[@]}" || exit $?
 ((failures==0)) || exit 1
+
 
 
 

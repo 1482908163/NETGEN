@@ -413,7 +413,7 @@ GROUP_METRICS=tuple('kernel_group_'+k for k in ('build_seconds','inner_seconds',
     'calls','rejected','verified','inside_calls','inside_verified','mismatches'))
 
 def inspect_front_group(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash')
+    candidate=scheduler in ('node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity')
     if not candidate and 'front_group_profile' not in metadata:
         return {}  # Historical data did not measure this path.
     expected='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -451,7 +451,7 @@ def inspect_recovery_topology(rows, metadata, scheduler, repeat):
     surface=scheduler=='node_rules_recovery_surface'
     defer_boundary=scheduler=='node_rules_recovery_open'
     band=scheduler=='node_rules_recovery_band'
-    candidate=surface or defer_boundary or band or scheduler in ('node_rules_recovery_refine_hash','node_rules_recovery_refine','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream')
+    candidate=surface or defer_boundary or band or scheduler in ('node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity','node_rules_recovery_refine','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream')
     if not candidate and 'recovery_topology_profile' not in metadata:
         return {}
     expected=('8' if repeat<=0 else '7') if band else ('6' if repeat<=0 else '5') if defer_boundary else ('4' if repeat<=0 else '3') if surface else ('2' if repeat<=0 else '1') if candidate else '0'
@@ -538,7 +538,7 @@ QUIET_RULE_METRICS=tuple('kernel_quiet_'+k for k in
     ('high_calls','high_seconds','eligible_calls','parallel_calls','parallel_seconds','verified','mismatches','serial_calls'))
 
 def inspect_quiet_rules(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash')
+    candidate=scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity')
     if not candidate and 'quiet_rule_profile' not in metadata:return {}
     expected='on' if candidate else 'off'
     if metadata.get('quiet_rule_profile')!='no_buffer_v1' or metadata.get('quiet_rule_parallelism')!=expected:
@@ -617,7 +617,7 @@ REFINE_INDEX_METRICS=tuple('refine_index_'+name for name in
      'verified','mismatches','rehashes','entries','buckets'))+('refine_surface_edge_queries',)
 
 def inspect_refine_index(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_engineered_refine_hash','node_rules_recovery_refine_hash')
+    candidate=scheduler in ('node_engineered_refine_hash','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity')
     if not candidate and 'volume_refine_index_profile' not in metadata:return {}
     mode='2' if candidate and repeat<=0 else '1' if candidate else '0'
     if (metadata.get('volume_refine_index_profile')!='persistent_hash_v1' or
@@ -657,7 +657,7 @@ REFINE_METRICS=('refine_calls','refine_parent_elements','refine_surface_seconds'
     'refine_cache_mismatches','refine_cache_capacity','refine_cache_bytes')
 
 def inspect_refinement(rows, metadata, scheduler, repeat):
-    candidate=scheduler in ('node_engineered_refine','node_engineered_refine_hash','node_rules_recovery_refine','node_rules_recovery_refine_hash')
+    candidate=scheduler in ('node_engineered_refine','node_engineered_refine_hash','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity')
     if not candidate and 'volume_refine_profile' not in metadata:
         return {}  # Historical archives predate this measurement.
     mode='2' if candidate and repeat<=0 else '1' if candidate else '0'
@@ -695,6 +695,42 @@ def inspect_refinement(rows, metadata, scheduler, repeat):
     result['refine_cache_hit_rate']=result['refine_cache_hits']/result['refine_cache_queries'] if candidate else 0
     return result
 
+ORDERED_MAPPING_METRICS=tuple('ordered_mapping_'+k for k in (
+    'calls','tasks','snapshot_seconds','parallel_validation_seconds','ordered_wait_seconds',
+    'capacity_rejections','peak_payload_bytes','state_work_seconds','inline_validation_seconds',
+    'verified','max_state_chain_seconds','mismatches','plan_decisions','resource_changes',
+    'predicted_gain_seconds','cold_decisions','queue_seconds','restart_seconds','peak_threads','peak_batch'))
+
+def inspect_ordered_mapping(rows, metadata, scheduler, repeat):
+    expected={'node_mapping_tasks':('1','bounded_validation_v1'),
+              'node_mapping_joint':('2','call_boundary_joint_v1'),
+              'node_mapping_capacity':('3','capacity_control_v1')}.get(scheduler,('0','off'))
+    if expected[0]=='0' and 'ordered_mapping_mode' not in metadata:return {}
+    if (metadata.get('ordered_mapping_mode'),metadata.get('ordered_mapping_policy'))!=expected:
+        raise ValueError('映射任务模式或调度身份不符')
+    result={'ordered_mapping_mode':expected[0],'ordered_mapping_policy':expected[1]}
+    for key in ORDERED_MAPPING_METRICS:
+        values=[row.get('metrics',{}).get(key) for row in rows]
+        if any(not isinstance(v,(int,float)) or not math.isfinite(v) or v<0 or
+               (not key.endswith('_seconds') and v!=int(v)) for v in values):
+            raise ValueError('映射研究统计缺失或非法：'+key)
+        result[key]=max(values) if key.endswith('_seconds') or '_peak_' in key else sum(values)
+    for row in rows:
+        m=row['metrics'];v=lambda k:m['ordered_mapping_'+k]
+        if v('mismatches') or v('verified')!=(v('calls') if repeat<=0 else 0):
+            raise ValueError('映射验证原序重放失败或覆盖不完整')
+        if expected[0] in ('0','3') and (v('calls') or v('tasks')):
+            raise ValueError('原规则路线意外启用映射任务')
+        if expected[0] in ('0','1') and v('resource_changes'):
+            raise ValueError('固定规则核数路线意外扩容')
+        if v('calls')>m['kernel_rules_parallel_calls'] or v('peak_payload_bytes')>64*1024*1024:
+            raise ValueError('映射任务调用覆盖或估算载荷预算非法')
+        if v('peak_batch') not in (0,1,2,4):
+            raise ValueError('映射任务领取批量非法')
+    # Zero tasks or zero resource changes remain valid negative coverage data.
+    result['ordered_mapping_exercised']=result['ordered_mapping_tasks']>0
+    return result
+
 # Keep small columnar records for every rank, including migrating critical ranks.
 RANK_PHASE_FIELDS=tuple(dict.fromkeys((
     'compute_seconds','face_complete_elapsed','vertex_arrival_elapsed',
@@ -705,7 +741,7 @@ RANK_PHASE_FIELDS=tuple(dict.fromkeys((
     'kernel_front_iterations','kernel_front_rotations','kernel_rules_calls','kernel_rules_parallel_calls',
     'kernel_rules_face_trials','kernel_rules_point_trials','kernel_rules_mappings',
     'kernel_rules_copy_seconds','kernel_rules_dispatch_seconds','kernel_rules_wall_seconds')+
-    GENERATION_METRICS+GROUP_METRICS+TOPOLOGY_METRICS+SHARED_RULE_METRICS+QUIET_RULE_METRICS+SMOOTHING_METRICS+REFINE_METRICS+REFINE_INDEX_METRICS))
+    GENERATION_METRICS+GROUP_METRICS+TOPOLOGY_METRICS+SHARED_RULE_METRICS+QUIET_RULE_METRICS+SMOOTHING_METRICS+REFINE_METRICS+REFINE_INDEX_METRICS+ORDERED_MAPPING_METRICS))
 
 def compact_rank_phases(rows, result):
     metadata=rows[0]['metadata']
@@ -727,7 +763,7 @@ def compact_rank_phases(rows, result):
 def inspect_generation(rows, metadata, scheduler):
     if metadata.get('generation_profile')!='generation_v1':
         raise ValueError('missing generation profile')
-    expected='ordered_team_v1' if scheduler in ('node_engineered','node_engineered_refine','node_engineered_refine_hash','node_recovery_fixed','node_rules_recovery_fixed','node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash') else 'off'
+    expected='ordered_team_v1' if scheduler in ('node_engineered','node_engineered_refine','node_engineered_refine_hash','node_recovery_fixed','node_rules_recovery_fixed','node_rules_recovery','node_rules_recovery_online','node_rules_recovery_front','node_rules_recovery_topology','node_rules_recovery_shared','node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity') else 'off'
     if metadata.get('generation_recovery')!=expected:
         raise ValueError('unexpected generation recovery mode')
     result={'generation_recovery':expected}
@@ -770,8 +806,8 @@ CRITICAL_SUMMARY_METRICS = ('compute_seconds','kernel_generation_seconds','kerne
     'front_candidate_rate','front_retry_rate','front_instrumented_seconds',
     'front_unattributed_seconds','front_profile_coverage',
     'coop_borrowed_core_seconds','first_loan_fraction') + GENERATION_METRICS + OPERATION_V5_METRICS
-CRITICAL_METRICS += GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS + SMOOTHING_METRICS + REFINE_METRICS + REFINE_INDEX_METRICS
-CRITICAL_SUMMARY_METRICS += GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS + SMOOTHING_METRICS + REFINE_METRICS + REFINE_INDEX_METRICS
+CRITICAL_METRICS += ORDERED_MAPPING_METRICS + GENERATION_METRICS + OPERATION_V5_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS + SMOOTHING_METRICS + REFINE_METRICS + REFINE_INDEX_METRICS
+CRITICAL_SUMMARY_METRICS += ORDERED_MAPPING_METRICS + GROUP_METRICS + TOPOLOGY_METRICS + SHARED_RULE_METRICS + QUIET_RULE_METRICS + SMOOTHING_METRICS + REFINE_METRICS + REFINE_INDEX_METRICS
 
 def critical_rank_details(rows, result):
     """Retain phase maxima and the slowest-compute rank's node, never all mesh data."""
@@ -1059,7 +1095,9 @@ def inspect_rule_search(rows, metadata):
     """验证规则并行覆盖、顺序重放和保底核预算；不从内部计时推算加速。"""
     if metadata.get('rule_search_mode') not in ('0','1','2','3','4'):
         raise ValueError('非法规则搜索模式')
-    if metadata.get('rule_search_resource')!='phase0_base_only':
+    mapping_elastic=metadata.get('ordered_mapping_mode') in ('2','3')
+    resource_contract='phase0_completed_donors_v1' if mapping_elastic else 'phase0_base_only'
+    if metadata.get('rule_search_resource')!=resource_contract:
         raise ValueError('缺少规则搜索资源契约')
     result={}
     for key in RULE_SEARCH_METRICS:
@@ -1083,7 +1121,16 @@ def inspect_rule_search(rows, metadata):
             raise ValueError('原规则对照意外启用并行')
         if m[prefix+'parallel_calls'] and not m['coop_phase_0_epochs']:
             raise ValueError('并行规则调用缺少资源租约')
-        if mode in ('1','2','3','4') and m['coop_phase_0_epochs'] and (
+        if mapping_elastic and m['coop_phase_0_epochs']:
+            base=int(metadata['kernel_threads'])
+            # Every donor retains its communication anchor. Ownership itself
+            # is enforced by the shared resource allocator under its mutex.
+            maximum=base+(int(metadata['RANKS_PER_NODE'])-1)*(base-1)
+            if not base<=m['coop_phase_0_min_threads']<=m['coop_phase_0_max_threads']<=maximum:
+                raise ValueError('规则借核违反保底核或节点锚点预算')
+            if m['ordered_mapping_resource_changes'] and m['coop_phase_0_max_threads']<=base:
+                raise ValueError('规则扩容计数与实际核数不符')
+        if not mapping_elastic and mode in ('1','2','3','4') and m['coop_phase_0_epochs'] and (
             m['coop_phase_0_min_threads']!=int(metadata['kernel_threads']) or
             m['coop_phase_0_max_threads']!=int(metadata['kernel_threads']) or
             m['coop_phase_0_borrowed_core_seconds']):
@@ -1165,7 +1212,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
         if not math.isfinite(r["metrics"]["core_seconds"]) or r["metrics"]["core_seconds"] <= 0:
             raise ValueError("invalid core time")
     metadata=dict(metadata)
-    rule_aliases={'node_engineered_refine_hash':'node_native','node_rules_recovery_refine_hash':'node_elastic','node_engineered_refine':'node_native','node_rules_recovery_refine':'node_elastic','node_engineered':'node_native','node_recovery_fixed':'node_fixed','node_rules_recovery_fixed':'node_fixed',
+    rule_aliases={'node_mapping_tasks':'node_elastic','node_mapping_joint':'node_elastic','node_mapping_capacity':'node_elastic','node_engineered_refine_hash':'node_native','node_rules_recovery_refine_hash':'node_elastic','node_engineered_refine':'node_native','node_rules_recovery_refine':'node_elastic','node_engineered':'node_native','node_recovery_fixed':'node_fixed','node_rules_recovery_fixed':'node_fixed',
                   'node_rules_fixed':'node_fixed','node_rules_elastic':'node_elastic',
                   'node_rules_recovery':'node_elastic','node_rules_recovery_online':'node_online',
                   'node_rules_recovery_front':'node_elastic',
@@ -1230,6 +1277,7 @@ def inspect(path, sample_sink=None, timeline_sink=None, critical_sink=None, phas
     result.update(inspect_recovery_smoothing(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_refinement(rows,metadata,requested_scheduler,rows[0]['repeat']))
     result.update(inspect_refine_index(rows,metadata,requested_scheduler,rows[0]['repeat']))
+    result.update(inspect_ordered_mapping(rows,metadata,requested_scheduler,rows[0]['repeat']))
     if metadata.get('search_revision') in ('matched_tasks_v4','generation_tail_v5'):
         result['search_revision']=metadata['search_revision']
         extra=()
@@ -1792,15 +1840,17 @@ def write_overview(root, runs, summaries, errors):
 def node_comparison_control(threads, scheduler, selected):
     """Focused rule experiments retain their declared elastic control."""
     available={(int(t),s) for t,s in selected}
+    if scheduler in ('node_mapping_tasks','node_mapping_joint','node_mapping_capacity'):
+        return 'node_rules_recovery_refine_hash'
     if scheduler=='node_rules_recovery_refine_hash' and (int(threads),'node_rules_recovery_refine') in available:
         return 'node_rules_recovery_refine'
     if scheduler=='node_engineered_refine_hash' and (int(threads),'node_engineered_refine') in available:
         return 'node_engineered_refine'
-    if scheduler in ('node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash') and (int(threads),'node_rules_recovery_quiet') in available:
+    if scheduler in ('node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity') and (int(threads),'node_rules_recovery_quiet') in available:
         return 'node_rules_recovery_quiet'
     if scheduler in ('node_rules_recovery_dag_compact','node_rules_recovery_dag_stream') and (int(threads),'node_rules_recovery_dag') in available:
         return 'node_rules_recovery_dag'
-    if (scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash') and
+    if (scheduler in ('node_rules_recovery_quiet','node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream','node_rules_recovery_surface','node_rules_recovery_open','node_rules_recovery_band','node_rules_recovery_refine','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity') and
         any((int(threads),s) in available for s in ('node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream')) and
         (int(threads),'node_rules_recovery_quiet') in available):
         return 'node_rules_recovery_quiet'
@@ -1873,7 +1923,7 @@ def kernel_overview(root, ranks):
                         value=row.get(key+'_median')
                         report[-1][key]=float(value) if value not in (None,'') else None
                     for key,value in row.items():
-                        if key.startswith(('coop_','sync_','kernel_front_','kernel_rules_','search_policy_','search_remote_','search_subtree_')) and key.endswith('_median'):
+                        if key.startswith(('coop_','sync_','kernel_front_','kernel_rules_','search_policy_','search_remote_','search_subtree_','ordered_mapping_')) and key.endswith('_median'):
                             report[-1][key[:-7]]=float(value) if value not in (None,'') else None
             except (OSError,ValueError,KeyError) as error:
                 issues.append(f"{folder}: {error}")
@@ -2247,6 +2297,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

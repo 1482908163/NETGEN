@@ -497,6 +497,20 @@ namespace nglib
    }
    static thread_local bool quiet_rule_parallelism = false;
    static thread_local double last_quiet_rule_stats[VolumeKernelStats::quiet_rule_count] = {};
+   static thread_local int (*mapping_capacity_callback)(void *)=nullptr;
+   static thread_local int (*mapping_reserve_callback)(void *,int)=nullptr;
+   NGLIB_API void Ng_SetVolumeMappingResources(int (*capacity)(void *),int (*reserve)(void *,int)) {
+     mapping_capacity_callback=capacity;mapping_reserve_callback=reserve;
+   }
+   static thread_local int ordered_mapping_mode=0;
+   static thread_local double last_mapping_stats[VolumeKernelStats::mapping_count]={};
+   NGLIB_API Ng_Result Ng_SetVolumeOrderedMapping(int mode) {
+     if(mode<0 || mode>3) return NG_ERROR;
+     ordered_mapping_mode=mode;return NG_OK;
+   }
+   NGLIB_API void Ng_GetVolumeOrderedMappingStats(double *values) {
+     if(values) std::copy_n(last_mapping_stats,VolumeKernelStats::mapping_count,values);
+   }
    NGLIB_API Ng_Result Ng_SetVolumeQuietRuleParallelism(int enabled) {
      if(enabled!=0 && enabled!=1) return NG_ERROR;
      quiet_rule_parallelism=enabled!=0;return NG_OK;
@@ -546,6 +560,7 @@ namespace nglib
       std::fill_n(last_smoothing_stats,VolumeKernelStats::smoothing_count,0.0);
       std::fill_n(last_volume_rule_stats,VolumeKernelStats::rule_count,0.0);
       std::fill_n(last_search_policy_stats,VolumeKernelStats::adaptive_count,0.0);
+      std::fill_n(last_mapping_stats,VolumeKernelStats::mapping_count,0.0);
       VolumeKernelStats stats;
       if(details) std::fill_n(details,VolumeKernelStats::count,0.0);
       try {
@@ -568,10 +583,17 @@ namespace nglib
          local.volume_recovery_topology_mode = recovery_topology_mode;
          local.volume_recovery_smoothing_mode = recovery_smoothing_mode;
          local.volume_smoothing_dag_mode = 0; // enabled only by RecoverOpenElements
+         local.volume_ordered_mapping = ordered_mapping_mode;
          local.volume_shared_rule_preparation = shared_rule_preparation;
          local.volume_quiet_rule_parallelism = quiet_rule_parallelism;
          local.volume_front_group_mode = front_group_mode;
-         local.volume_resources = resources;
+         VolumeResources mapping_resources;
+         if(resources && ordered_mapping_mode>=2) {
+           mapping_resources=*resources;
+           mapping_resources.mapping_capacity=mapping_capacity_callback;
+           mapping_resources.mapping_reserve=mapping_reserve_callback;
+           local.volume_resources=&mapping_resources;
+         } else local.volume_resources = resources;
          local.volume_rule_search = volume_rule_search_mode;
          local.volume_rule_transport = has_rule_transport ? &rule_transport : nullptr;
          Mesh & m = *reinterpret_cast<Mesh*>(mesh);
@@ -588,6 +610,8 @@ namespace nglib
          if (measure(2,[&] { return OptimizeVolume(local,m); })!=MESHING3_OK)
             return NG_VOLUME_FAILURE;
          if(details) {
+            for(int i=0;i<VolumeKernelStats::mapping_count;++i)
+              last_mapping_stats[i]=stats.mapping_values[i].load();
             for(int i=0;i<VolumeKernelStats::smoothing_count;++i)
               last_smoothing_stats[i]=stats.smoothing_values[i].load();
             for(int i=0;i<VolumeKernelStats::topology_count;++i)
@@ -2084,3 +2108,4 @@ void WriteElmerFormat (const Mesh &mesh,
     for( auto & [eltype,count] : elcount )
         outfile_h << tmap[eltype] << " " << count << "\n";
 }
+

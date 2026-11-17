@@ -45,6 +45,8 @@ namespace netgen
     bool generation_checkpoints = false;
     // Completed operation kind/work and remaining histogram of c,d,D,s,t,m,M,j.
     int (*poll_operations)(void *,double,int,double,double,double,const int *) = nullptr;
+    int (*mapping_capacity)(void *) = nullptr;
+    int (*mapping_reserve)(void *,int) = nullptr;
   };
   struct VolumeResourceScope {
     const VolumeResources * resources;
@@ -116,6 +118,8 @@ namespace netgen
 
   // Per-call diagnostics; domain workers may contribute concurrently.
   struct VolumeKernelStats {
+    static constexpr int mapping_count = 20;
+    std::atomic<double> mapping_values[mapping_count];
     static constexpr int count = 12;
     static constexpr int front_count = 20;
     static constexpr int rule_count = 24;
@@ -136,7 +140,16 @@ namespace netgen
     std::atomic<double> shared_rule_values[shared_rule_count];
     std::atomic<double> quiet_rule_values[quiet_rule_count];
     std::atomic<double> smoothing_values[smoothing_count];
+    void AddMapping(int i,double value) {
+      auto old=mapping_values[i].load(std::memory_order_relaxed);
+      while(!mapping_values[i].compare_exchange_weak(old,old+value,std::memory_order_relaxed)) {}
+    }
+    void MaxMapping(int i,double value) {
+      auto old=mapping_values[i].load(std::memory_order_relaxed);
+      while(old<value && !mapping_values[i].compare_exchange_weak(old,value,std::memory_order_relaxed)) {}
+    }
     VolumeKernelStats() {
+      for(auto &v:mapping_values) v.store(0);
       for(auto & v : values) v.store(0);
       for(auto & v : front_values) v.store(0);
       for(auto & v : rule_values) v.store(0);
@@ -1821,6 +1834,7 @@ namespace netgen
     int volume_smoothing_dag_mode = 0; // activated only inside recovery smoothing
     int volume_front_group_mode = 0; // 0=original, 1=bounded/cached, 2=exact replay
     const VolumeResources * volume_resources = nullptr;
+    int volume_ordered_mapping = 0; // 0 off, 1 mapping tasks, 2 joint admission, 3 capacity-only control
     bool volume_shared_rule_preparation = false;
     bool volume_quiet_rule_parallelism = false;
     int volume_rule_search = -1; // -1: off; 0: serial profile; 1: tasks; 2: verified tasks
@@ -2141,3 +2155,4 @@ namespace ngcore
 
 
 #endif
+

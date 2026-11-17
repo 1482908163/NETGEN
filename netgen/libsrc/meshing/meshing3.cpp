@@ -199,6 +199,8 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
   // original serial rule path rather than introducing nested parallelism.
   std::unique_ptr<VolumeResourceScope> rule_lease;
   std::unique_ptr<ngcore::RegionTaskManager> rule_team;
+  double mapping_restart_seconds=0;
+  ordered_mapping_mode=mp.volume_ordered_mapping;
   shared_rule_preparation=mp.volume_shared_rule_preparation;
   quiet_rule_parallelism=mp.volume_quiet_rule_parallelism;
   int rule_mode=mp.volume_rule_search<0?-1:0;
@@ -207,8 +209,10 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
     // Phase 0 was previously unused. Cap this first implementation at the
     // original per-rank budget, even on the elastic resource path. Acquire
     // before creating workers so they inherit the leased physical CPU mask.
+    const auto mapping_start=std::chrono::steady_clock::now();
     rule_lease.reset(new VolumeResourceScope(mp.volume_resources,0,mesh.GetNP(),mp.nthreads,mp.nthreads));
     rule_team.reset(new ngcore::RegionTaskManager(rule_lease->threads));
+    mapping_restart_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-mapping_start).count();
     rule_mode=mp.volume_rule_search;
   }
 
@@ -625,6 +629,30 @@ GenerateMesh (Mesh & mesh, const MeshingParameters & mp)
 
           {
             FrontTimer time(front_values,3);
+            // First implementation adjusts resources only between completed
+            // rule calls. In-call suspend/resume is deliberately not emulated
+            // by restarting a search or adding unleased worker threads.
+            if(ordered_mapping_mode>=2 && rule_team && mp.volume_resources &&
+               mp.volume_resources->mapping_capacity && mp.volume_resources->mapping_reserve) {
+              const auto *resources=mp.volume_resources;
+              int capacity=resources->mapping_capacity(resources->context);
+              auto it=mapping_history.find(MappingBucket(stat.qualclass,plainpoints.Size(),locfaces.Size()));
+              if(front_stats) front_stats->AddMapping(12,1);
+              if(ordered_mapping_mode==3 || (it!=mapping_history.end() && it->second.samples>=3)) {
+                auto plan=ordered_mapping_mode==3?MappingPlan{capacity,1,2,0}:
+                  it->second.Choose(rule_lease->threads,capacity,mapping_restart_seconds);
+                mapping_batch=plan.batch;mapping_window=plan.window;
+                if(plan.threads>rule_lease->threads && resources->mapping_reserve(resources->context,plan.threads)) {
+                  auto started=std::chrono::steady_clock::now();
+                  rule_team.reset();rule_lease.reset();
+                  rule_lease.reset(new VolumeResourceScope(resources,0,mesh.GetNP(),mp.nthreads,plan.threads));
+                  rule_team.reset(new ngcore::RegionTaskManager(rule_lease->threads));
+                  mapping_restart_seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-started).count();
+                  if(front_stats) {front_stats->AddMapping(13,1);front_stats->AddMapping(14,plan.gain);
+                    front_stats->AddMapping(17,mapping_restart_seconds);}
+                }
+              } else if(front_stats) front_stats->AddMapping(15,1);
+            }
 	    found = ApplyRulesTasks (plainpoints, allowpoint,
 			        locfaces, locfacesplit, connectedpairs,
 			        locelements, delfaces,
@@ -1439,3 +1467,4 @@ void Meshing3 :: BlockFillLocalH (Mesh & mesh,
 }
 
 }
+

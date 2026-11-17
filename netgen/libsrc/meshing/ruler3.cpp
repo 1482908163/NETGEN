@@ -3,10 +3,12 @@
 #include <sstream>
 #include <cstring>
 #include <cstdint>
+#include "ordered_mapping.hpp"
 
 
 namespace netgen
 {
+
 extern double minother;
 extern double minwithoutother;
 
@@ -50,6 +52,8 @@ extern double minwithoutother;
 
 
 
+
+#include "ordered_mapping_validation.inc"
 
 // Immutable preparation of a single front snapshot. Preserve the original
 // ordered relaxation sweeps and arithmetic; never retain it across calls.
@@ -164,6 +168,7 @@ struct RuleSearchPreparation {
 // Each rule is claimed exactly once. Its mutable free-zone and diagnostic slots
 // are exclusively owned until the team joins. Front and rotation order stay serial.
 struct RuleSearchQueue {
+  OrderedMappingPool *mapping_pool=nullptr;
   bool discard_trace=false; // Only a verified no-buffer sink may discard text.
   const RuleSearchPreparation *prepared=nullptr; // valid until the team joins
   std::atomic<int> next{0};
@@ -432,6 +437,11 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   workers=std::max(workers,parts);
   if(adaptive && stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
   if(stats) stats->AddRule(workers>1?1:3,1);
+  std::vector<vnetrule::FreeZoneState> mapping_initial;
+  if(ordered_mapping_mode && verify) {
+    mapping_initial.resize(rules.Size());
+    for(int id=0;id<rules.Size();++id) rules[id]->SaveFreeZoneState(mapping_initial[id]);
+  }
   const double old_other=minother, old_without=minwithoutother;
   Array<int> old_found,old_can;
   if(verify) { old_found=foundmap;old_can=canuse; }
@@ -518,12 +528,46 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     }
   }
   if(split_rule>=0) queue.order.erase(std::remove(queue.order.begin(),queue.order.end(),split_rule),queue.order.end());
+  bool mapping_enabled=(ordered_mapping_mode==1 || ordered_mapping_mode==2) && !adaptive && standard_rules && workers>1 &&
+    testout->rdbuf()==nullptr && testout->exceptions()==std::ios::goodbit && testout->tie()==nullptr;
+#ifdef TEST_JS
+  mapping_enabled=false;
+#endif
+  std::unique_ptr<OrderedMappingPool> mapping_pool;
+  if(mapping_enabled) {
+    while(int(subtree_workers.size())<workers)
+      subtree_workers.emplace_back(new Meshing3(static_cast<const char **>(nullptr)));
+    mapping_pool.reset(new OrderedMappingPool(workers,workers*mapping_window,mapping_batch,64u*1024u*1024u,stats));
+    queue.mapping_pool=mapping_pool.get();
+    if(stats) stats->AddMapping(0,1);
+  }
+  std::vector<std::exception_ptr> mapping_errors(mapping_pool?workers:0);
+  std::vector<double> mapping_state(mapping_pool?workers:0,0);
+  double mapping_before[20]={};
+  if(mapping_pool && stats) for(int k=0;k<20;++k) mapping_before[k]=stats->mapping_values[k].load();
   stamp=RuleClock::now();
   auto execute=[&](size_t i) {
+    if(mapping_pool) ++mapping_pool->started;
     auto & r=*results[i];const auto t=RuleClock::now();
-    r.found=ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,
-                          tol,sloppy,rot,r.error,&queue,&r);
+    try {
+      r.found=ApplyRulesImpl(r.points,a,r.faces,split,pairs,r.elements,r.deleted,
+                            tol,sloppy,rot,r.error,&queue,&r,int(i));
+    } catch(...) {
+      if(!mapping_pool) throw;
+      mapping_errors[i]=std::current_exception();
+    }
     r.seconds=RuleElapsed(t);
+    if(mapping_pool) {
+      mapping_state[i]=std::max(0.0,r.seconds-mapping_pool->validation[i]-mapping_pool->waiting[i]);
+      if(stats) stats->AddMapping(7,mapping_state[i]);
+      ++mapping_pool->helpers;mapping_pool->ProducerDone();
+      // A NUMA task partition may assign more callbacks than local threads.
+      // Never occupy a finished callback waiting for one not yet dispatched.
+      while(mapping_pool->started.load(std::memory_order_acquire)==workers &&
+            mapping_pool->producers.load(std::memory_order_acquire)>0)
+        if(!mapping_pool->Help(int(i))) mapping_pool->Wait(int(i));
+      --mapping_pool->helpers;
+    }
   };
   // No barrier between whole rules and subtrees: each worker searches its
   // disjoint slice first, then joins the ordinary-rule queue as soon as it is free.
@@ -555,6 +599,18 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     execute(i);
   };
   if(workers==1) unified(0);else ngcore::ParallelFor(size_t(workers),unified,workers);
+  for(auto &error:mapping_errors) if(error) std::rethrow_exception(error);
+  if(mapping_pool && stats) {
+    double now[20];for(int k=0;k<20;++k) now[k]=stats->mapping_values[k].load()-mapping_before[k];
+    double state=*std::max_element(mapping_state.begin(),mapping_state.end());
+    stats->MaxMapping(10,state);
+    // Measured longest indivisible verification, never the mean task cost.
+    double validation=now[3]+now[8];
+    double largest=*std::max_element(mapping_pool->largest.begin(),mapping_pool->largest.end());
+    mapping_history[MappingBucket(tol,p.Size(),f.Size())].Observe(workers,
+      RuleElapsed(branches),state,now[7]+validation,largest,now[16]);
+    stats->MaxMapping(18,workers);stats->MaxMapping(19,mapping_batch);
+  }
   if(split_rule>=0) {
     double elapsed=RuleElapsed(branches);
     if(profile->subtree_rule!=split_rule) {profile->subtree=SearchEstimate{};profile->subtree_rule=split_rule;}
@@ -637,9 +693,27 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     minother=old_other;minwithoutother=old_without;
     float serial_error;
     RuleSearchResult reference;
+    std::vector<vnetrule::FreeZoneState> mapping_final;
+    if(!mapping_initial.empty()) {
+      mapping_final.resize(rules.Size());
+      for(int id=0;id<rules.Size();++id) {
+        rules[id]->SaveFreeZoneState(mapping_final[id]);
+        rules[id]->RestoreFreeZoneState(mapping_initial[id]);
+      }
+    }
     int serial_found=ApplyRulesImpl(p,a,f,split,pairs,e,d,tol,sloppy,rot,serial_error,nullptr,&reference);
     bool same=serial_found==found && RuleBitsEqual(serial_error,err) &&
       RuleBitsEqual(minother,parallel_other) && RuleBitsEqual(minwithoutother,parallel_without);
+    for(int id=0;id<int(mapping_final.size());++id) {
+      vnetrule::FreeZoneState after;rules[id]->SaveFreeZoneState(after);
+      const auto &before=mapping_final[id];
+      same=same && after.points.Size()==before.points.Size() && after.planes.size()==before.planes.size();
+      if(after.points.Size()==before.points.Size())
+        for(int pi=1;pi<=after.points.Size();++pi) for(int axis=1;axis<=3;++axis)
+          same=same && RuleBitsEqual(after.points.Get(pi).X(axis),before.points.Get(pi).X(axis));
+      if(after.planes.size()==before.planes.size())
+        for(size_t pi=0;pi<after.planes.size();++pi) same=same && RuleBitsEqual(after.planes[pi],before.planes[pi]);
+    }
     int diagnostic_difference=-1;
     for(int i:foundmap.Range()) if(foundmap[i]!=parallel_found[i] || canuse[i]!=parallel_can[i] || problems[i]!=parallel_problems[i])
       {same=false;diagnostic_difference=i;}
@@ -651,7 +725,9 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
     same=same && face==reference.face_trials && point==reference.point_trials && maps==reference.mappings;
     if(stats) {stats->AddRule(2,workers>1?1:0);stats->AddRule(14,RuleElapsed(verify_begin));
       if(call_timer.quiet_parallel) stats->AddQuietRules(5,1);}
+    if(mapping_pool && stats) stats->AddMapping(9,1);
     if(!same) {
+      if(mapping_pool && stats) stats->AddMapping(11,1);
       if(stats) {stats->AddRule(17,1);if(share)stats->AddSharedRules(5,1);
         if(call_timer.quiet_parallel)stats->AddQuietRules(6,1);}
       throw NgException("规则搜索等价检查失败: class="+ToString(tol)+" rotation="+ToString(rot)+
@@ -687,7 +763,7 @@ int Meshing3 :: ApplyRulesImpl
  double sloppy,                // quality strength
  int rotind1,                  // how to rotate base element
  float & retminerr,            // element error
- RuleSearchQueue * queue, RuleSearchResult * result
+ RuleSearchQueue * queue, RuleSearchResult * result, int mapping_worker
  )
 
 {
@@ -911,6 +987,9 @@ int Meshing3 :: ApplyRulesImpl
       if (loktestmode)
 	rule_out << "Rule " << rim+1 << " = " << rule->Name() << endl;
       
+      std::unique_ptr<OrderedMappingLane> mapping_lane;
+      if(queue && queue->mapping_pool)
+        mapping_lane.reset(new OrderedMappingLane(*queue->mapping_pool,mapping_worker));
       pmap.SetSize (rule->GetNP());
       fmapi.SetSize (rule->GetNF());
       fmapr.SetSize (rule->GetNF());
@@ -1088,7 +1167,8 @@ int Meshing3 :: ApplyRulesImpl
 	      if (loktestmode)
 		{
 		  rule_out << "Faces Ok" << endl;
-		  problems[rim] = "Faces Ok";
+		  if(mapping_lane) mapping_lane->Diagnostic([&,rim] {problems[rim]="Faces Ok";});
+                  else problems[rim] = "Faces Ok";
 		}
 
 	      int npok = 1;
@@ -1204,7 +1284,8 @@ int Meshing3 :: ApplyRulesImpl
 			  for (auto pi : pmap)
 			    rule_out << pi << " ";
 			  rule_out << endl;
-			  problems[rim] = "mapping found";
+			  if(mapping_lane) mapping_lane->Diagnostic([&,rim] {problems[rim]="mapping found";});
+                  else problems[rim] = "mapping found";
 			  rule_out << rule->GetNP(1) << " = " << lfaces[0].GetNP() << endl;
 			}
 		      
@@ -1313,6 +1394,74 @@ int Meshing3 :: ApplyRulesImpl
 		      rule->SetFreeZoneTransformation (allp, 
 						       tolerance + int(sloppy));
 
+                      if(mapping_lane && queue->mapping_pool->helpers.load(std::memory_order_relaxed)>0) {
+                        auto &pool=*queue->mapping_pool;
+                        // Account front copies, result geometry, mappings and allocator slack.
+                        // This is bounded payload accounting, not an RSS limit.
+                        size_t bytes=4096+rule->FreeZoneStateBytes()*2+
+                          size_t(lpoints.Size()+rule->GetNP())*(2*sizeof(Point3d)+2*sizeof(int))+
+                          size_t(lfaces.Size()+rule->GetNF())*(2*sizeof(MiniElement2d)+2)+
+                          size_t(rule->GetNP()+rule->GetNF())*64+size_t(rule->GetNE())*2*sizeof(Element);
+                        if(pool.Reserve(bytes)) {
+                          const auto copying=RuleClock::now();
+                          try {
+                            auto candidate=std::make_shared<MappingCandidate>();
+                            candidate->points=lpoints;candidate->faces=lfaces;
+                            candidate->used=pused;candidate->fused=fused;
+                            candidate->pmap=pmap;candidate->fmapi=fmapi;candidate->newu=newu;
+                            rule->SaveFreeZoneState(candidate->zone);
+                            auto job=std::make_shared<OrderedMappingJob>();job->bytes=bytes;
+                            const bool initial_ok=ok;
+                            job->run=[&,candidate,rim,initial_ok](int worker) {
+                              const auto started=RuleClock::now();
+                              EvaluateOrderedMapping(subtree_workers[worker]->rules[rim].get(),
+                                *candidate,face_boxes,tolerance,initial_ok);
+                              if(pool.stats) pool.stats->AddMapping(3,RuleElapsed(started));
+                            };
+                            const int oldnp=lpoints.Size(),oldnf=lfaces.Size();
+                            job->commit=[&,candidate,rim,oldnp,oldnf] {
+                              if(candidate->problem.changed) problems[rim]=candidate->problem.value;
+                              if(!candidate->evaluated) return;
+                              const float quality=candidate->quality;
+                              if(candidate->ok && quality<tolerance) {
+                                ++canuse[rim];
+                                if(problems[rim]=="other") {
+                                  if(quality<local_minother) local_minother=quality;
+                                } else if(quality<local_minwithoutother) local_minwithoutother=quality;
+                              }
+                              if(quality>minteterr) impossible=0;
+                              if(candidate->ok && (quality<minteterr ||
+                                  (queue && found && quality==minteterr && rim+1<found))) {
+                                found=rim+1;minteterr=quality;
+                                tempnewpoints.SetSize(0);
+                                for(auto pi:candidate->points.Range().Modify(oldnp,0))
+                                  tempnewpoints.Append(candidate->points[pi]);
+                                tempnewfaces.SetSize(0);
+                                for(auto fi:candidate->faces.Range().Modify(oldnf,0))
+                                  tempnewfaces.Append(candidate->faces[fi]);
+                                tempdelfaces=candidate->deleted;tempelements=candidate->elements;
+                              }
+                            };
+                            mapping_lane->Push(job);
+                          } catch(...) {pool.Release(bytes);throw;}
+                          if(pool.stats) {pool.stats->AddMapping(1,1);pool.stats->AddMapping(2,RuleElapsed(copying));}
+                          if(mapping_lane->Size()>=size_t(mapping_window)) mapping_lane->Drain(false);
+                          npok=rule->GetNOldP();incnpok=0;
+                          continue;
+                        }
+                      }
+                      // Serial fallback may update winner/diagnostic state: commit
+                      // the preceding mappings first, without replaying any search.
+                      if(mapping_lane) mapping_lane->Drain();
+                      struct InlineValidationTime {
+                        OrderedMappingPool *pool;int worker;RuleClock::time_point start;
+                        ~InlineValidationTime() {if(pool) {
+                          double seconds=RuleElapsed(start);pool->validation[worker]+=seconds;
+                          pool->largest[worker]=std::max(pool->largest[worker],seconds);
+                          if(pool->stats) pool->stats->AddMapping(8,seconds);
+                        }}
+                      } inline_time{mapping_lane?queue->mapping_pool:nullptr,mapping_worker,
+                          mapping_lane?RuleClock::now():RuleClock::time_point{}};
 		      if (!rule->ConvexFreeZone())
 			{
 			  ok = 0;
@@ -1799,6 +1948,7 @@ int Meshing3 :: ApplyRulesImpl
 	      
 	    }
 	}
+      if(mapping_lane) mapping_lane->Drain();
       if (loktestmode)
 	rule_out << "end rule" << endl;
     }
@@ -1853,3 +2003,4 @@ int Meshing3 :: ApplyRulesImpl
   return found;
 }
 }
+

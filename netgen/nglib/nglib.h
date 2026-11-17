@@ -517,6 +517,11 @@ NGLIB_API void Ng_GetVolumeFrontStats(double * values);
 // Separate API: existing kernel diagnostic array sizes remain unchanged.
 NGLIB_API Ng_Result Ng_SetVolumeGenerationRecovery(int enabled);
 NGLIB_API void Ng_GetVolumeGenerationStats(double * values); // 19 doubles
+// Experimental mapping validation: 0 off, 1 tasks, 2 call-boundary admission,
+// 3 capacity-only control. Capacity/reservation callbacks are host-only.
+NGLIB_API Ng_Result Ng_SetVolumeOrderedMapping(int mode);
+NGLIB_API void Ng_SetVolumeMappingResources(int (*capacity)(void *),int (*reserve)(void *,int));
+NGLIB_API void Ng_GetVolumeOrderedMappingStats(double *values); // 20 doubles
 // Opt-in local high-tolerance parallelism only with a disabled no-buffer sink.
 NGLIB_API Ng_Result Ng_SetVolumeQuietRuleParallelism(int enabled);
 // high calls/seconds, eligible calls, parallel calls/seconds, verified, mismatches,
@@ -843,3 +848,4 @@ NGLIB_API bool ispatbound(Ng_Mesh * mesh,int j);
 #endif // OCCGEOMETRY
 //
 #endif // NGLIB
+

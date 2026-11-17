@@ -1,5 +1,6 @@
 #ifndef FILE_RULER3
 #define FILE_RULER3
+#include <vector>
 
 namespace netgen
 {
@@ -85,6 +86,14 @@ public:
 
 public:
   
+  struct FreeZoneState {
+    NgArray<Point3d> points;
+    Box3d box;
+    std::vector<double> planes;
+  };
+  void SaveFreeZoneState(FreeZoneState &state) const;
+  void RestoreFreeZoneState(const FreeZoneState &state);
+  size_t FreeZoneStateBytes() const;
   ///
   vnetrule ();
   ///
@@ -208,4 +217,5 @@ public:
 
 } // namespace netgen
 #endif
+
 

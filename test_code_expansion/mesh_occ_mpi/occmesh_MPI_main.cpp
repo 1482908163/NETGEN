@@ -327,8 +327,10 @@ int main(int argc, char **argv) {
     const bool smoothing_compact=requested_scheduler=="node_rules_recovery_dag_compact" || smoothing_stream;
     const bool smoothing_dag=requested_scheduler=="node_rules_recovery_dag" || smoothing_compact;
     const int smoothing_mode=smoothing_stream?(profile_repeat<=0?6:5):smoothing_compact?(profile_repeat<=0?4:3):smoothing_dag?(profile_repeat<=0?2:1):0;
+    const int mapping_mode=requested_scheduler=="node_mapping_tasks"?1:
+        requested_scheduler=="node_mapping_joint"?2:requested_scheduler=="node_mapping_capacity"?3:0;
     const bool hash_engineered=requested_scheduler=="node_engineered_refine_hash";
-    const bool hash_quiet=requested_scheduler=="node_rules_recovery_refine_hash";
+    const bool hash_quiet=requested_scheduler=="node_rules_recovery_refine_hash" || mapping_mode;
     const bool refine_hash=hash_engineered || hash_quiet;
     const bool refine_engineered=requested_scheduler=="node_engineered_refine" || hash_engineered;
     const bool refine_quiet=requested_scheduler=="node_rules_recovery_refine" || hash_quiet;
@@ -492,6 +494,8 @@ int main(int argc, char **argv) {
     if(research.kernel_threads>0) profiler.add_metadata("kernel_lifecycle","team_lifecycle_v1");
     profiler.add_metadata("kernel_threads",std::to_string(research.kernel_threads));
     profiler.add_metadata("kernel_scheduler",research.kernel_threads>0?requested_scheduler:"legacy");
+    profiler.add_metadata("ordered_mapping_mode",std::to_string(mapping_mode));
+    profiler.add_metadata("ordered_mapping_policy",mapping_mode==3?"capacity_control_v1":mapping_mode==2?"call_boundary_joint_v1":mapping_mode==1?"bounded_validation_v1":"off");
     profiler.add_metadata("engineering_baseline_contract",hash_engineered?"fixed_recovery_refine_hash_v1":refine_engineered?"fixed_recovery_refine_v1":engineered?"fixed_recovery_v1":"off");
     if(research.mesh_tasks==0) {
         profiler.add_metadata("volume_refine_profile","bounded_edge_cache_v1");
@@ -503,7 +507,7 @@ int main(int argc, char **argv) {
         profiler.add_metadata("rule_search_profile","rule_search_v1");
         profiler.add_metadata("post_work_profile","rank_counts_v1");
         profiler.add_metadata("rule_search_mode",std::to_string(rule_search_mode));
-        profiler.add_metadata("rule_search_resource","phase0_base_only");
+        profiler.add_metadata("rule_search_resource",mapping_mode>=2?"phase0_completed_donors_v1":"phase0_base_only");
     }
     if(research.kernel_threads>0) {
         profiler.add_metadata("search_revision","generation_tail_v5");
@@ -921,6 +925,9 @@ int main(int argc, char **argv) {
             profiler.set_metric("volume_kernel_input_points", nglib::Ng_GetNP(submesh));
             profiler.set_metric("volume_kernel_input_surface_elements", nglib::Ng_GetNSE(submesh));
             double kernel_seconds[3]={},kernel_details[12]={},front_details[20]={},rule_details[24]={};
+            if(nglib::Ng_SetVolumeOrderedMapping(mapping_mode)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
+            nglib::Ng_SetVolumeMappingResources(mapping_mode>=2?mesh_node::NodeResources::mapping_capacity_callback:nullptr,
+                mapping_mode>=2?mesh_node::NodeResources::mapping_reserve_callback:nullptr);
             if(nglib::Ng_SetVolumeRuleSearchMode(rule_search_mode)!=nglib::NG_OK)
                 MPI_Abort(MPI_COMM_WORLD,2);
             if(nglib::Ng_SetVolumeGenerationRecovery(generation_recovery?1:0)!=nglib::NG_OK) MPI_Abort(MPI_COMM_WORLD,2);
@@ -973,6 +980,13 @@ int main(int argc, char **argv) {
                     "merge_seconds","quality_seconds","recovery_sweeps","recovery_team_sweeps","domains","front_passes"};
                 for(int k=0;k<19;++k) profiler.set_metric(std::string("kernel_gen_")+generation_names[k],generation[k]);
                 nglib::Ng_GetVolumeFrontStats(front_details);
+                double mapping[20]={};nglib::Ng_GetVolumeOrderedMappingStats(mapping);
+                const char *mapping_names[]={"calls","tasks","snapshot_seconds","parallel_validation_seconds",
+                    "ordered_wait_seconds","capacity_rejections","peak_payload_bytes","state_work_seconds",
+                    "inline_validation_seconds","verified","max_state_chain_seconds","mismatches",
+                    "plan_decisions","resource_changes","predicted_gain_seconds","cold_decisions",
+                    "queue_seconds","restart_seconds","peak_threads","peak_batch"};
+                for(int k=0;k<20;++k) profiler.set_metric(std::string("ordered_mapping_")+mapping_names[k],mapping[k]);
                 double quiet[8]={};nglib::Ng_GetVolumeQuietRuleStats(quiet);
                 const char *quiet_names[]={"high_calls","high_seconds","eligible_calls","parallel_calls",
                     "parallel_seconds","verified","mismatches","serial_calls"};
@@ -1474,6 +1488,7 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
 
 
 

@@ -14,6 +14,11 @@ REFERENCE = ('node_engineered', 'baseline')
 CONTRACT = 'fixed_recovery_v1'
 WORK = ('scaling_kernel_work_sha256', 'scaling_work_sha256')
 INCREMENTS = (
+    ('映射验证任务增量', ('node_rules_recovery_refine_hash','sparse'), ('node_mapping_tasks','sparse')),
+    ('仅解除规则核数上限', ('node_rules_recovery_refine_hash','sparse'), ('node_mapping_capacity','sparse')),
+    ('调用边界联合调度增量', ('node_mapping_tasks','sparse'), ('node_mapping_joint','sparse')),
+    ('映射研究整体增量', ('node_rules_recovery_refine_hash','sparse'), ('node_mapping_joint','sparse')),
+    ('相对仅扩容的差异', ('node_mapping_capacity','sparse'), ('node_mapping_joint','sparse')),
     ('工程并行覆盖', ('node_original', 'baseline'), REFERENCE),
     ('稀疏通信', REFERENCE, ('node_engineered', 'sparse')),
     ('固定资源接口', ('node_engineered', 'sparse'), ('node_recovery_fixed', 'sparse')),
@@ -74,7 +79,7 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                 '核数或每节点进程数不符')
         require(all(isinstance(r.get(k), str) and len(r[k]) == 64 for k in WORK), '工作量指纹缺失')
         for name in ('kernel_rules_mismatches', 'kernel_group_mismatches',
-                     'kernel_topology_mismatches', 'kernel_shared_mismatches', 'kernel_quiet_mismatches', 'kernel_smoothing_mismatches'):
+                     'kernel_topology_mismatches', 'kernel_shared_mismatches', 'kernel_quiet_mismatches', 'kernel_smoothing_mismatches', 'ordered_mapping_mismatches'):
             require(r.get(name, 0) == 0, name + '非零')
         if scheduler in ('node_rules_recovery_dag','node_rules_recovery_dag_compact','node_rules_recovery_dag_stream'):
             stream=scheduler=='node_rules_recovery_dag_stream'
@@ -149,7 +154,7 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('quiet_rule_parallelism') == 'off' and
                     r.get('shared_rule_preparation') == 'off' and
                     r.get('recovery_smoothing_mode','0') == '0', '工程基准混入其他候选')
-        if scheduler in ('node_engineered_refine','node_rules_recovery_refine','node_engineered_refine_hash','node_rules_recovery_refine_hash'):
+        if scheduler in ('node_engineered_refine','node_rules_recovery_refine','node_engineered_refine_hash','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity'):
             require(r.get('volume_refine_profile')=='bounded_edge_cache_v1' and
                     r.get('volume_refine_cache_mode')==('2' if repeat==0 else '1') and
                     r.get('refine_cache_capacity')==65536 and
@@ -162,7 +167,7 @@ def read_arm(folder, scheduler, algorithm, ranks, threads, seed, repeats):
                     r.get('refine_cache_mismatches')==0 and
                     r.get('refine_cache_verified')==(r['refine_cache_hits'] if repeat==0 else 0),
                     '细化缓存身份、工作量或逐命中重放不完整')
-        if scheduler in ('node_engineered_refine_hash','node_rules_recovery_refine_hash'):
+        if scheduler in ('node_engineered_refine_hash','node_rules_recovery_refine_hash','node_mapping_tasks','node_mapping_joint','node_mapping_capacity'):
             queries=r.get('refine_index_queries',0)
             require(r.get('volume_refine_index_profile')=='persistent_hash_v1' and
                     r.get('volume_refine_index_mode')==('2' if repeat==0 else '1') and
@@ -286,7 +291,12 @@ def engineering_report(root, ranks, selected):
             pairs.extend(detail)
         hash_reference=('node_engineered_refine_hash','baseline')
         hash_candidate=('node_rules_recovery_refine_hash','sparse')
-        if hash_candidate in available:
+        mapping_study=any((s,'sparse') in available for s in
+                          ('node_mapping_tasks','node_mapping_joint','node_mapping_capacity'))
+        if mapping_study and hash_candidate not in available:
+            failures[(threads,seed,*hash_candidate)]='映射研究缺少同批冻结完整版本'
+            issues.append('映射研究缺少同批冻结完整版本')
+        if hash_candidate in available and (hash_reference in available or not mapping_study):
             if hash_reference not in available:
                 failures[(threads,seed,*hash_reference)]='缺少同批完整索引工程基准'
             row, detail = compare(hash_reference, hash_candidate,
@@ -317,8 +327,9 @@ def engineering_report(root, ranks, selected):
                          f"{row['candidate_median_seconds']:.4f}秒；配对减少{row['paired_saved_seconds']:.4f}秒，"
                          f"降幅{row['paired_reduction_pct']:.2f}%，加速比{row['paired_speedup']:.4f}，"
                          f"胜出{row['paired_wins']}/{row['paired_count']}（t{row['threads']}/seed{row['seed']}）。")
-    lines += ['细化缓存及完整边索引属于共享工程改进；新候选的公平总收益以启用相同工程能力的基准为对照，旧固定基准仅保留连续历史口径。',
+    lines += ['细化缓存及完整边索引属于共享工程改进；细化实验保留同等索引工程基准。映射研究沿用固定四核工程基准报告组合总收益，以冻结完整版本报告新增算法增量，不能把组合总收益称为纯负载均衡收益。',
               '嵌套阶段不能相加；不将局部四核旋转链计时与此处真实网格核心时间混排。',
               '相邻工程优化收益单列，不自动视为算法创新；远程协议无实际任务时不能称跨节点执行收益。']
     (out / 'ENGINEERING_BASELINE_SUMMARY.txt').write_text('\n'.join(lines + issues) + '\n')
     return lines, issues
+

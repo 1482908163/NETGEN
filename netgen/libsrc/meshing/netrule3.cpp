@@ -38,6 +38,33 @@ int vnetrule :: TestFlag (char flag) const
 }
 
 
+size_t vnetrule::FreeZoneStateBytes() const {
+  size_t bytes=sizeof(FreeZoneState)+size_t(transfreezone.Size())*sizeof(Point3d);
+  for(int fs=1;fs<=freefaceinequ.Size();++fs)
+    bytes+=size_t(freefaceinequ.Get(fs)->Height())*4*sizeof(double);
+  return bytes;
+}
+void vnetrule::SaveFreeZoneState(FreeZoneState &state) const {
+  state.points=transfreezone;state.box=fzbox;state.planes.clear();
+  for(int fs=1;fs<=freefaceinequ.Size();++fs) {
+    const DenseMatrix &m=*freefaceinequ.Get(fs);
+    for(int row=1;row<=m.Height();++row)
+      for(int col=1;col<=4;++col) state.planes.push_back(m.Get(row,col));
+  }
+}
+void vnetrule::RestoreFreeZoneState(const FreeZoneState &state) {
+  size_t expected=0;
+  for(int fs=1;fs<=freefaceinequ.Size();++fs) expected+=4*size_t(freefaceinequ.Get(fs)->Height());
+  if(state.planes.size()!=expected || (state.points.Size()!=0 && state.points.Size()!=freezone.Size()))
+    throw NgException("映射验证自由区快照尺寸不一致");
+  transfreezone=state.points;fzbox=state.box;size_t pos=0;
+  for(int fs=1;fs<=freefaceinequ.Size();++fs) {
+    DenseMatrix &m=*freefaceinequ.Get(fs);
+    for(int row=1;row<=m.Height();++row)
+      for(int col=1;col<=4;++col) m.Set(row,col,state.planes[pos++]);
+  }
+}
+
 void vnetrule :: SetFreeZoneTransformation (const Vector & allp, int tolclass)
 {
   int i, j;
@@ -1137,3 +1164,4 @@ int vnetrule :: IsDelFace (int fn) const
 }
 
 }
+

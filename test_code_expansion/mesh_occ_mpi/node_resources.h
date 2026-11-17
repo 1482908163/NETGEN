@@ -431,6 +431,36 @@ public:
         start_offset=now()-shared->origin;
         r.prepared=1;r.work=std::max(1.0,work);pthread_cond_broadcast(&shared->changed);unlock();
     }
+    static int mapping_capacity_callback(void *ctx) {
+        return static_cast<NodeResources*>(ctx)->mapping_capacity();
+    }
+    static int mapping_reserve_callback(void *ctx,int target) {
+        return static_cast<NodeResources*>(ctx)->mapping_reserve(target);
+    }
+    int mapping_capacity() {
+        lock();auto &r=shared->rank[me];int cap=r.threads;
+        if(!r.active || r.phase!=0 || r.done || checkpoint_old_threads) {unlock();return base;}
+        for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) ++cap;
+        unlock();return cap;
+    }
+    int mapping_reserve(int target) {
+        lock();account_pool();auto &r=shared->rank[me];
+        if(!r.active || r.phase!=0 || r.done || checkpoint_old_threads || target<=r.threads) {unlock();return 0;}
+        int extra=0;
+        for(int c=0;c<shared->cpus;++c)
+            if(shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) ++extra;
+        int need=target-r.threads;
+        if(need>extra) {unlock();return 0;}
+        for(int c=0;c<shared->cpus;++c) {
+            if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
+            if(need && shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) {
+                shared->reserved[c]=me+1;--need;
+            }
+        }
+        checkpoint_old_threads=r.threads;++checkpoint_restarts;
+        unlock();return 1;
+    }
     static int acquire_callback(void *ctx,int phase,double work,int maximum) {
         return static_cast<NodeResources*>(ctx)->acquire(phase,work,maximum);
     }
@@ -893,3 +923,4 @@ public:
 };
 }
 #endif
+

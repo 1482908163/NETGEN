@@ -26,7 +26,9 @@ install(FILES
   localh.hpp meshclass.hpp meshfunc.hpp meshing2.hpp meshing3.hpp
   meshing.hpp meshtool.hpp meshtype.hpp msghandler.hpp paralleltop.hpp
   ruler2.hpp ruler3.hpp specials.hpp topology.hpp validate.hpp
+  search_policy.hpp mapping_policy.hpp
   python_mesh.hpp surfacegeom.hpp delaunay2d.hpp
   fieldlines.hpp soldata.hpp visual_interface.hpp
   DESTINATION ${NG_INSTALL_DIR_INCLUDE}/meshing COMPONENT netgen_devel
 )
+

@@ -5,6 +5,7 @@
 #include "adfront3.hpp"
 #include "ruler3.hpp"
 #include "search_policy.hpp"
+#include "mapping_policy.hpp"
 #include <map>
 
 namespace netgen
@@ -38,6 +39,9 @@ class Meshing3
   Array<string> problems;
   /// tolerance criterion
   double tolfak;
+  int ordered_mapping_mode=0;
+  int mapping_window=2,mapping_batch=1;
+  std::map<int,MappingCostHistory> mapping_history;
   bool shared_rule_preparation=false;
   bool quiet_rule_parallelism=false;
   bool standard_rules=false;
@@ -50,7 +54,7 @@ class Meshing3
                     INDEX_2_HASHTABLE<int> & connectedpairs,
                     NgArray<Element> & elements, NgArray<INDEX> & delfaces,
                     int tolerance, double sloppy, int rotind1, float & retminerr,
-                    RuleSearchQueue * queue, RuleSearchResult * result);
+                    RuleSearchQueue * queue, RuleSearchResult * result, int mapping_worker=-1);
   // Defined only by the isolated rotation-chain experiment. No production
   // caller or object-layout change; keep the original search implementation.
   int ApplyRulesWorkspace(Array<Point3d, PointIndex> & lpoints,
@@ -163,3 +167,4 @@ extern int FindInnerPoint (POINTArray & grouppoints,
 } // namespace netgen
 
 #endif
+
