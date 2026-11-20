@@ -54,6 +54,7 @@ EXPERIMENT_PRESET="${requested_preset}"
 if [[ "${EXPERIMENT_PRESET}" == ordered_mapping ]]; then
     printf '映射研究入口：%s；配置版本 ordered_mapping_v1（映射预检第1版）。\n' "${invoked_script_dir}/$(basename "${BASH_SOURCE[0]}")"
     export ENGINEERING_BASELINE_REQUIRED=1 ORDERED_MAPPING_EXPERIMENT=1
+    export EXPERIMENT_STAGE=kernel
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
     export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_refine_hash node_mapping_capacity node_mapping_tasks node_mapping_joint}"
     for required in node_engineered node_rules_recovery_refine_hash node_mapping_capacity node_mapping_tasks node_mapping_joint; do
@@ -441,6 +442,28 @@ if [[ "${BALANCE_METHOD}" == task_queue ]]; then
     PLACEMENT_ROTATION=0
 fi
 export PARTITION_VARIANT PLACEMENT_ROTATION BALANCE_METHOD TASK_COUNT TASK_CUT_GROWTH
+
+# Reject an older build before reserving 64 nodes. Repeat on batch entry so
+# a replaced build between submission and execution is checked as well.
+if [[ "${ORDERED_MAPPING_EXPERIMENT:-0}" == 1 && "${EXPERIMENT_STAGE}" == kernel ]]; then
+    experiment_root="$(cd "${SCRIPT_DIR}/.." && pwd)"
+    export BINARY="${BINARY:-${experiment_root}/build/mesh_occ_mpi/mesh_occ_mpi}"
+    export NETGEN_INSTALL_LIB="${NETGEN_INSTALL_LIB:-${experiment_root}/../install/lib}"
+    mapping_lib="${NETGEN_INSTALL_LIB}/libnglib.so"
+    for mapping_route in node_mapping_capacity node_mapping_tasks node_mapping_joint; do
+        if [[ ! -x "${BINARY}" ]] || ! LC_ALL=C grep -aFq -- "${mapping_route}" "${BINARY}"; then
+            printf '[映射预检] 可执行文件缺失或不包含策略 %s：%s\n' "${mapping_route}" "${BINARY}" >&2
+            printf '请先同步映射研究分支的完整源码，再用原 build_project.sh 编译，或检查 BINARY 是否指向旧文件。\n' >&2
+            exit 2
+        fi
+    done
+    if [[ ! -r "${mapping_lib}" ]] || ! LC_ALL=C grep -aFq -- Ng_SetVolumeOrderedMapping "${mapping_lib}"; then
+        printf '[映射预检] 内核库缺失或缺少映射接口：%s\n' "${mapping_lib}" >&2
+        printf '请用原 build_project.sh 安装研究分支内核，或检查 NETGEN_INSTALL_LIB 是否指向旧目录。\n' >&2
+        exit 2
+    fi
+    printf '映射预检产物：可执行文件=%s；内核库=%s\n' "${BINARY}" "${mapping_lib}"
+fi
 
 # 登录节点：转入提交驱动；计算作业：继续执行下方 worker（工作进程）逻辑。
 if [[ "${MESH_EXPERIMENT_WORKER:-0}" != 1 ]]; then

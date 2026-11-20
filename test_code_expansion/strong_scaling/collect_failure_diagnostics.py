@@ -190,7 +190,8 @@ def collect(directory, cache=None, exit_code=None, query_accounting=False):
                             else:evidence_dropped+=1
                     except (ValueError,TypeError):malformed+=1
                     continue  # Progress lines must not exhaust the error/stack budget.
-                if re.search(r'Caught signal|Segmentation fault|\[MESH_|\[IO_ERROR\]|\[MPI_ERROR\]|^\s*\d+\s+\S+\([^)]*\)\s+\[0x',line):
+                if re.search(r'内核实验要求通信基线路径|Caught signal|Segmentation fault|'
+                             r'\[MESH_|\[IO_ERROR\]|\[MPI_ERROR\]|^\s*\d+\s+\S+\([^)]*\)\s+\[0x',line):
                     if len(diagnostics)<128:diagnostics.append(line.strip()[:2048])
         data['log_source']=log.name
     if exit_code is None and summary.exists():
