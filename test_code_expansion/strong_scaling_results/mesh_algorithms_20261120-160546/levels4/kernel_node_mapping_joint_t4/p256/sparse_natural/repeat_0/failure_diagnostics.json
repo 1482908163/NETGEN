@@ -1,0 +1,57 @@
+{
+  "schema": "failure_diagnostics_v1",
+  "exit_code": 2,
+  "scheduler_accounting": {
+    "status": "observed",
+    "command": [
+      "/usr/bin/sacct",
+      "-j",
+      "7344973",
+      "--noheader",
+      "--parsable2",
+      "--format=JobID,State,ExitCode,Elapsed,MaxRSS,MaxRSSNode,MaxRSSTask,NodeList"
+    ],
+    "exit_code": 0,
+    "stdout": "7344973|RUNNING|0:0|00:19:12||||cn[2648-2711]\n7344973.batch|RUNNING|0:0|00:19:12||||cn2648\n7344973.0|COMPLETED|0:0|00:08:38|3000476K|cn2649|7|cn[2648-2711]\n7344973.1|COMPLETED|0:0|00:08:21|3335240K|cn2649|7|cn[2648-2711]\n7344973.2|CANCELLED by 0|0:9|00:00:02|0|cn2665|69|cn[2648-2711]\n7344973.3|CANCELLED by 0|0:9|00:00:02|0|cn2691|173|cn[2648-2711]\n7344973.4|CANCELLED by 0|0:9|00:00:02|0|cn2670|88|cn[2648-2711]\n",
+    "stderr": "",
+    "truncated": false,
+    "note": "账单可能延迟；父作业尚未结束。空记录/无内存统计不能排除内存不足。"
+  },
+  "execution_context": {
+    "schema": "execution_context_v1",
+    "launcher_exit_code": 2,
+    "launcher": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/node_affinity_yhrun.sh",
+    "started_epoch": 1795163096,
+    "elapsed_seconds": 2,
+    "timeout_seconds": 7200,
+    "environment": {
+      "SLURM_JOB_ID": "7344973",
+      "SLURM_JOB_NODELIST": "cn[2648-2711]",
+      "SLURM_NTASKS": "256",
+      "PROCESS_COUNT": "256",
+      "KERNEL_SCHEDULER": "node_mapping_joint",
+      "MESH_BINARY_SHA256": "cea3016f382dfb5a2b349aa0e5a55cee47ed24e44b398dfd6fe44dd975c170e0",
+      "MESH_KERNEL_SHA256": "4218857a623ff29d3f39c4166893259026c0bb6760463435a02839e8119a2c06",
+      "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547"
+    }
+  },
+  "quality_read_error": "quality_summary.json unavailable; no per-rank error category can be inferred",
+  "log_source": "run.log",
+  "exit_checkpoints": {},
+  "messages": [],
+  "termination_messages": [
+    "yhrun: Job step aborted: Waiting up to 302 seconds for job step to finish.",
+    "slurmstepd: error: *** STEP 7344973.4 ON cn2648 CANCELLED AT 2026-11-20T16:24:57 ***",
+    "yhrun: error: cn2650: tasks 8-11: Killed"
+  ],
+  "termination_messages_dropped": 0,
+  "killed_processes": [],
+  "pmix_sources": [],
+  "termination_cause": "unresolved; exit code 137 alone does not establish out-of-memory",
+  "mesh_evidence": [],
+  "mesh_evidence_dropped": 0,
+  "mesh_evidence_malformed": 0,
+  "mesh_checkpoint_counts": {},
+  "mesh_checkpoints": [],
+  "frames": []
+}

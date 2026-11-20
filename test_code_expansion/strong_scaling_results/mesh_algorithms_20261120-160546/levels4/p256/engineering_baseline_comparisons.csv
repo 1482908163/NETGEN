@@ -1,0 +1,10 @@
+kind,comparison,ranks,threads,seed,control,candidate,status,reason,control_median_seconds,candidate_median_seconds,paired_saved_seconds,paired_reduction_pct,paired_speedup,paired_wins,paired_count
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_mapping_capacity+sparse,invalid,第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_mapping_joint+sparse,invalid,第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_mapping_tasks+sparse,invalid,第0轮未成功完成,,,,,,,0
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,valid,,61.225701185999924,49.79356792500016,11.653311532999851,19.085755706452932,1.23587633887072,3,3
+increment,映射验证任务增量,256,4,-1,node_rules_recovery_refine_hash+sparse,node_mapping_tasks+sparse,invalid,第0轮未成功完成,,,,,,,0
+increment,仅解除规则核数上限,256,4,-1,node_rules_recovery_refine_hash+sparse,node_mapping_capacity+sparse,invalid,第0轮未成功完成,,,,,,,0
+increment,调用边界联合调度增量,256,4,-1,node_mapping_tasks+sparse,node_mapping_joint+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0
+increment,映射研究整体增量,256,4,-1,node_rules_recovery_refine_hash+sparse,node_mapping_joint+sparse,invalid,第0轮未成功完成,,,,,,,0
+increment,相对仅扩容的差异,256,4,-1,node_mapping_capacity+sparse,node_mapping_joint+sparse,invalid,第0轮未成功完成; 第0轮未成功完成,,,,,,,0

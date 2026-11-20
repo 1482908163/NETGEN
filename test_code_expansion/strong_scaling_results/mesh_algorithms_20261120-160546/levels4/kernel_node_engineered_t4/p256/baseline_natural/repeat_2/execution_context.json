@@ -1,0 +1,18 @@
+{
+  "schema": "execution_context_v1",
+  "launcher_exit_code": 0,
+  "launcher": "/vol8/home/hnu_lhz/cjz/NETGEN/test_code_expansion/strong_scaling/node_affinity_yhrun.sh",
+  "started_epoch": 1795163251,
+  "elapsed_seconds": 84,
+  "timeout_seconds": 7200,
+  "environment": {
+    "SLURM_JOB_ID": "7344973",
+    "SLURM_JOB_NODELIST": "cn[2648-2711]",
+    "SLURM_NTASKS": "256",
+    "PROCESS_COUNT": "256",
+    "KERNEL_SCHEDULER": "node_engineered",
+    "MESH_BINARY_SHA256": "cea3016f382dfb5a2b349aa0e5a55cee47ed24e44b398dfd6fe44dd975c170e0",
+    "MESH_KERNEL_SHA256": "4218857a623ff29d3f39c4166893259026c0bb6760463435a02839e8119a2c06",
+    "MESH_INPUT_SHA256": "8193db1235a9d0dc24d19dd3b9a4dafccfe62d6667ab5a395f72b30a02339547"
+  }
+}

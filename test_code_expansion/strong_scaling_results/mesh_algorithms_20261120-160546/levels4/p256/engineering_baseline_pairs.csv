@@ -1,0 +1,4 @@
+kind,comparison,ranks,threads,seed,control,candidate,repeat,control_seconds,candidate_seconds,saved_seconds,reduction_pct,speedup
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,1,61.05763749799985,49.404325965,11.653311532999851,19.085755706452932,1.23587633887072
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,2,65.48235653199981,50.21009982999999,15.272256701999822,23.322704787718806,1.3041670252341306
+total,相对工程基准,256,4,-1,node_engineered+baseline,node_rules_recovery_refine_hash+sparse,3,61.225701185999924,49.79356792500016,11.432133260999763,18.6721148791251,1.2295905623436951
