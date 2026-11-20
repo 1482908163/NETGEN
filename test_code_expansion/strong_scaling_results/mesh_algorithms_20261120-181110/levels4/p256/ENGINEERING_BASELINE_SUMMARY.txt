@@ -1,0 +1,24 @@
+统一工程基准：原通信＋原规则搜索＋固定核修复/恢复并行（fixed_recovery_v1）。
+正值为降时；百分比、节省秒数和加速比分别按正式轮配对后取中位数。
+候选保留原有开关，用于重评历史组合；旧方案未含恢复并行时，退化不等于其单个组件无效。
+预热质量/网格与全部轮次工作量核对通过才发布收益；正式轮不重复完整几何审计。
+相对工程基准 node_mapping_capacity+sparse: 无效，第0轮未成功完成
+相对工程基准 node_mapping_joint+sparse: 无效，第0轮未成功完成
+相对工程基准 node_mapping_tasks+sparse: 无效，第0轮未成功完成
+相对工程基准 node_rules_recovery_refine_hash+sparse：65.0575→49.3895秒；配对减少14.9519秒，降幅22.98%，加速比1.2984，胜出3/3（t4/seed-1）。
+映射验证任务增量 node_mapping_tasks+sparse: 无效，第0轮未成功完成
+仅解除规则核数上限 node_mapping_capacity+sparse: 无效，第0轮未成功完成
+调用边界联合调度增量 node_mapping_joint+sparse: 无效，第0轮未成功完成; 第0轮未成功完成
+映射研究整体增量 node_mapping_joint+sparse: 无效，第0轮未成功完成
+相对仅扩容的差异 node_mapping_joint+sparse: 无效，第0轮未成功完成; 第0轮未成功完成
+细化缓存及完整边索引属于共享工程改进；细化实验保留同等索引工程基准。映射研究沿用固定四核工程基准报告组合总收益，以冻结完整版本报告新增算法增量，不能把组合总收益称为纯负载均衡收益。
+嵌套阶段不能相加；不将局部四核旋转链计时与此处真实网格核心时间混排。
+相邻工程优化收益单列，不自动视为算法创新；远程协议无实际任务时不能称跨节点执行收益。
+相对工程基准/node_mapping_capacity+sparse/t4/seed-1: 第0轮未成功完成
+相对工程基准/node_mapping_joint+sparse/t4/seed-1: 第0轮未成功完成
+相对工程基准/node_mapping_tasks+sparse/t4/seed-1: 第0轮未成功完成
+映射验证任务增量/node_mapping_tasks+sparse/t4/seed-1: 第0轮未成功完成
+仅解除规则核数上限/node_mapping_capacity+sparse/t4/seed-1: 第0轮未成功完成
+调用边界联合调度增量/node_mapping_joint+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
+映射研究整体增量/node_mapping_joint+sparse/t4/seed-1: 第0轮未成功完成
+相对仅扩容的差异/node_mapping_joint+sparse/t4/seed-1: 第0轮未成功完成; 第0轮未成功完成
