@@ -94,3 +94,13 @@ EXPERIMENT_PRESET=ordered_mapping bash test_code_expansion/strong_scaling/run_ex
 若复制、状态链或队列开销主导，先检验本轮假设，不原样扩大重复矩阵。
 只有正确性成立且完整版本上的新增核心收益有稳定证据，才继续实现调用内恢复与节点级联合分配；届时另行明确算法和消融。
 
+
+
+## 2026-11-20：入口目录与旧预设报错定位
+
+用户已完成编译，但提交入口报“EXPERIMENT_PRESET must be cooperate, kernel, pilot or production”。
+仓库 `51c1857` 的源码已有 `ordered_mapping → recovery_scaling → rule_search → cooperate` 转换链；仅凭这条旧报错，不能确认超算执行的是哪份脚本，也不能认定为编译失败。
+
+本次只调整脚本：从代码目录直接调用时，运行与提交入口均采用自身目录的配套文件，避免继承另一份代码目录的 `STRONG_SCALING_DIR`；调度器暂存副本仍使用提交时导出的原目录。映射预设启动时打印实际入口路径，未知预设报错打印请求值、展开值和配套目录。
+
+请同步本分支完整的 `test_code_expansion/strong_scaling` 目录，再执行原来的映射预设命令。如果仍显示原英文报错，说明仍在执行未更新的脚本。本次没有修改内核，也没有运行本地编译、测试、语法检查或集群提交；该脚本修订不要求重新编译已有同分支程序。五路线、64节点、20次运行配置不变。

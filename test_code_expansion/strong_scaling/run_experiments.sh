@@ -4,7 +4,14 @@ set -Eeuo pipefail
 # The submitter exports the original directory so worker jobs can find the
 # companion environment and analysis scripts beside the repository source.
 invoked_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="${STRONG_SCALING_DIR:-${invoked_script_dir}}"
+# A checkout entry owns its companion scripts. Only a scheduler spool copy
+# needs the original directory exported by the submitter; an inherited path
+# from another checkout must not redirect an explicit repository invocation.
+if [[ -r "${invoked_script_dir}/cluster_env.sh" && -r "${invoked_script_dir}/submit_experiments.sh" ]]; then
+    SCRIPT_DIR="${invoked_script_dir}"
+else
+    SCRIPT_DIR="${STRONG_SCALING_DIR:?调度器副本缺少原脚本目录 STRONG_SCALING_DIR}"
+fi
 SCRIPT_DIR="$(cd "${SCRIPT_DIR}" && pwd)"
 export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
@@ -42,8 +49,10 @@ export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 # 环境变量仍可覆盖这些默认值，主要供作业脚本内部传递及断点续跑使用。
 # ============================================================================
 # 借核跨规模验证：只修改这里即可选择规模、种子和重复次数。
-EXPERIMENT_PRESET="${EXPERIMENT_PRESET:-engineering_baseline}"
+requested_preset="${EXPERIMENT_PRESET:-engineering_baseline}"
+EXPERIMENT_PRESET="${requested_preset}"
 if [[ "${EXPERIMENT_PRESET}" == ordered_mapping ]]; then
+    printf '映射研究入口：%s；配置版本 ordered_mapping_v1（映射预检第1版）。\n' "${invoked_script_dir}/$(basename "${BASH_SOURCE[0]}")"
     export ENGINEERING_BASELINE_REQUIRED=1 ORDERED_MAPPING_EXPERIMENT=1
     export PROCESS_COUNTS="${PROCESS_COUNTS:-256}"
     export KERNEL_SCHEDULERS="${KERNEL_SCHEDULERS:-node_engineered node_rules_recovery_refine_hash node_mapping_capacity node_mapping_tasks node_mapping_joint}"
@@ -326,7 +335,12 @@ case "${EXPERIMENT_PRESET}" in
         default_refines=3
         default_verify_faces=0
         ;;
-    *) echo "EXPERIMENT_PRESET must be cooperate, kernel, pilot or production" >&2; exit 2 ;;
+    *)
+        printf '未知实验预设：请求=%q，展开后=%q；执行脚本=%s；配套目录=%s。\n' \
+            "${requested_preset}" "${EXPERIMENT_PRESET}" "${BASH_SOURCE[0]}" "${SCRIPT_DIR}" >&2
+        printf '请同步同一分支的 strong_scaling（强缩放）目录；ordered_mapping（映射预检）应展开为 cooperate（节点协作）。\n' >&2
+        exit 2
+        ;;
 esac
 
 TASK_COUNT="${TASK_COUNT:-${default_tasks}}"  # 仅历史 task_queue 使用；通信基线忽略。

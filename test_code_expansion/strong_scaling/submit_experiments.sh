@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 invoked_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="${STRONG_SCALING_DIR:-${invoked_script_dir}}"
+# A checkout entry owns its companion scripts. Only a scheduler spool copy
+# needs the original directory exported by the submitter; an inherited path
+# from another checkout must not redirect an explicit repository invocation.
+if [[ -r "${invoked_script_dir}/cluster_env.sh" && -r "${invoked_script_dir}/submit_experiments.sh" ]]; then
+    SCRIPT_DIR="${invoked_script_dir}"
+else
+    SCRIPT_DIR="${STRONG_SCALING_DIR:?调度器副本缺少原脚本目录 STRONG_SCALING_DIR}"
+fi
 SCRIPT_DIR="$(cd "${SCRIPT_DIR}" && pwd)"
 export STRONG_SCALING_DIR="${SCRIPT_DIR}"
 
