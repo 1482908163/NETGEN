@@ -445,21 +445,30 @@ public:
         unlock();return cap;
     }
     int mapping_reserve(int target) {
+        const double start=now();
         lock();account_pool();auto &r=shared->rank[me];
         if(!r.active || r.phase!=0 || r.done || checkpoint_old_threads || target<=r.threads) {unlock();return 0;}
+        ++checkpoint_checks;
         int extra=0;
         for(int c=0;c<shared->cpus;++c)
             if(shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) ++extra;
-        int need=target-r.threads;
-        if(need>extra) {unlock();return 0;}
+        const int requested=target-r.threads;
+        if(requested>extra) {
+            ++elastic_no_capacity;
+            unlock();checkpoint_seconds+=now()-start;return 0;
+        }
+        int need=requested;
         for(int c=0;c<shared->cpus;++c) {
             if(shared->owner[c]==me && shared->home[c]!=me) shared->reserved[c]=me+1;
             if(need && shared->owner[c]<0 && !shared->reserved[c] && shared->rank[shared->home[c]].done) {
                 shared->reserved[c]=me+1;--need;
             }
         }
-        checkpoint_old_threads=r.threads;++checkpoint_restarts;
-        unlock();return 1;
+        // Phase 0 uses the same atomic reservation and grant counters as
+        // the other leases. Only newly reserved CPUs count toward growth.
+        checkpoint_old_threads=r.threads;
+        ++checkpoint_restarts;elastic_reserved+=requested;
+        unlock();checkpoint_seconds+=now()-start;return 1;
     }
     static int acquire_callback(void *ctx,int phase,double work,int maximum) {
         return static_cast<NodeResources*>(ctx)->acquire(phase,work,maximum);

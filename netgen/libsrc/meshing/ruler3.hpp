@@ -88,7 +88,7 @@ public:
   
   struct FreeZoneState {
     NgArray<Point3d> points;
-    Box3d box;
+    Box3d box{0,0,0,0,0,0};
     std::vector<double> planes;
   };
   void SaveFreeZoneState(FreeZoneState &state) const;

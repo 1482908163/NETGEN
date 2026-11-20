@@ -5,7 +5,10 @@ static void EvaluateOrderedMapping(vnetrule *rule,MappingCandidate &out,
     const NgArrayMem<Box3d,100> &face_boxes,int tolerance,bool initial_ok) {
   auto &lpoints=out.points;auto &lfaces=out.faces;
   auto &pused=out.used;auto &fused=out.fused;auto &pmap=out.pmap;
-  auto &fmapi=out.fmapi;auto &newu=out.newu;
+  auto &fmapi=out.fmapi;
+  const auto &newu=out.newu;
+  if(newu.size()!=3*size_t(rule->GetNP()-rule->GetNOldP()))
+    throw NgException("映射候选的新点位移数量不符");
   auto &elements=out.elements;auto &delfaces=out.deleted;
   int loktestmode=tolerance>5;
   char ok=initial_ok,hc=0;
@@ -253,9 +256,9 @@ if (!rule->ConvexFreeZone())
 			  for (int i = oldnp + 1; i <= rule->GetNP(); i++)
 			    {
 			      np = rule->GetPoint(i);
-			      np.X() += newu (3 * (i-oldnp) - 3);
-			      np.Y() += newu (3 * (i-oldnp) - 2);
-			      np.Z() += newu (3 * (i-oldnp) - 1);
+			      np.X() += newu[3 * (i-oldnp) - 3];
+			      np.Y() += newu[3 * (i-oldnp) - 2];
+			      np.Z() += newu[3 * (i-oldnp) - 1];
 			      lpoints.Append (np);
                               pmap.Elem(i) = lpoints.Size()-1+PointIndex::BASE;
 			    }

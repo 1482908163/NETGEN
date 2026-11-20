@@ -148,7 +148,7 @@ struct MappingCandidate {
   NgArray<char> fused;
   NgArray<PointIndex> pmap;
   NgArray<int> fmapi;
-  Vector newu;
+  std::vector<double> newu;
   vnetrule::FreeZoneState zone;
   Array<Point3d,PointIndex> points;
   Array<MiniElement2d> faces;

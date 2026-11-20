@@ -1128,8 +1128,10 @@ def inspect_rule_search(rows, metadata):
             maximum=base+(int(metadata['RANKS_PER_NODE'])-1)*(base-1)
             if not base<=m['coop_phase_0_min_threads']<=m['coop_phase_0_max_threads']<=maximum:
                 raise ValueError('规则借核违反保底核或节点锚点预算')
-            if m['ordered_mapping_resource_changes'] and m['coop_phase_0_max_threads']<=base:
-                raise ValueError('规则扩容计数与实际核数不符')
+            changes=m['ordered_mapping_resource_changes']
+            if (bool(changes)!=(m['coop_phase_0_max_threads']>base) or
+                changes>=m['coop_phase_0_epochs'] or changes>m['coop_checkpoint_grants']):
+                raise ValueError('规则扩容计数与实际租约不符')
         if not mapping_elastic and mode in ('1','2','3','4') and m['coop_phase_0_epochs'] and (
             m['coop_phase_0_min_threads']!=int(metadata['kernel_threads']) or
             m['coop_phase_0_max_threads']!=int(metadata['kernel_threads']) or

@@ -438,7 +438,7 @@ int Meshing3::ApplyRulesTasks(Array<Point3d,PointIndex> & p, Array<int,PointInde
   if(adaptive && stats) {stats->AddAdaptive(0,1);stats->AddAdaptive(workers==1?1:2,1);}
   if(stats) stats->AddRule(workers>1?1:3,1);
   std::vector<vnetrule::FreeZoneState> mapping_initial;
-  if(ordered_mapping_mode && verify) {
+  if((ordered_mapping_mode==1 || ordered_mapping_mode==2) && verify) {
     mapping_initial.resize(rules.Size());
     for(int id=0;id<rules.Size();++id) rules[id]->SaveFreeZoneState(mapping_initial[id]);
   }
@@ -1408,7 +1408,10 @@ int Meshing3 :: ApplyRulesImpl
                             auto candidate=std::make_shared<MappingCandidate>();
                             candidate->points=lpoints;candidate->faces=lfaces;
                             candidate->used=pused;candidate->fused=fused;
-                            candidate->pmap=pmap;candidate->fmapi=fmapi;candidate->newu=newu;
+                            candidate->pmap=pmap;candidate->fmapi=fmapi;
+                            // Netgen's Vector assignment does not make an owning snapshot.
+                            candidate->newu.resize(newu.Size());
+                            for(int j=0;j<newu.Size();++j) candidate->newu[j]=newu(j);
                             rule->SaveFreeZoneState(candidate->zone);
                             auto job=std::make_shared<OrderedMappingJob>();job->bytes=bytes;
                             const bool initial_ok=ok;

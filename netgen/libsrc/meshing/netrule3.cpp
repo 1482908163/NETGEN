@@ -45,7 +45,10 @@ size_t vnetrule::FreeZoneStateBytes() const {
   return bytes;
 }
 void vnetrule::SaveFreeZoneState(FreeZoneState &state) const {
-  state.points=transfreezone;state.box=fzbox;state.planes.clear();
+  state.points=transfreezone;
+  // No box is defined before the first transformation.
+  if(state.points.Size()) state.box=fzbox;
+  state.planes.clear();
   for(int fs=1;fs<=freefaceinequ.Size();++fs) {
     const DenseMatrix &m=*freefaceinequ.Get(fs);
     for(int row=1;row<=m.Height();++row)
@@ -57,7 +60,9 @@ void vnetrule::RestoreFreeZoneState(const FreeZoneState &state) {
   for(int fs=1;fs<=freefaceinequ.Size();++fs) expected+=4*size_t(freefaceinequ.Get(fs)->Height());
   if(state.planes.size()!=expected || (state.points.Size()!=0 && state.points.Size()!=freezone.Size()))
     throw NgException("映射验证自由区快照尺寸不一致");
-  transfreezone=state.points;fzbox=state.box;size_t pos=0;
+  transfreezone=state.points;
+  if(state.points.Size()) fzbox=state.box;
+  size_t pos=0;
   for(int fs=1;fs<=freefaceinequ.Size();++fs) {
     DenseMatrix &m=*freefaceinequ.Get(fs);
     for(int row=1;row<=m.Height();++row)
